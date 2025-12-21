@@ -3,78 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ocho – The Sullivan Clan</title>
+  <title>Ocho</title>
+
   <style>
     body {
       font-family: Georgia, serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #f2f2f2;
-      color: #333;
-      line-height: 1.6;
+      background-color: #f5efe4;
+      color: #4a3a2a;
+      margin: 0;
+      padding: 40px;
+      text-align: center;
     }
 
     h1 {
-      text-align: center;
-      font-size: 2.2em;
-      margin-bottom: 10px;
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+      color: #3a2a1a;
     }
 
-    h2 {
-      text-align: center;
-      font-weight: normal;
-      margin-top: 0;
-      color: #555;
-    }
-
-    .button-container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      margin-top: 40px;
-      align-items: center;
-    }
-
-    a.button {
-      display: inline-block;
-      padding: 14px 24px;
-      background: #003366;
-      color: white;
-      text-decoration: none;
-      border-radius: 6px;
-      font-size: 18px;
-      transition: background 0.2s ease;
-      width: 260px;
-      text-align: center;
-    }
-
-    a.button:hover {
-      background: #0055aa;
-    }
-
-    p {
-      text-align: center;
+    .options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 30px;
       margin-top: 20px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .option-box {
+      background-color: #e8dfcf;
+      border: 2px solid #c8b79a;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #4a3a2a;
+      text-decoration: none;
+      display: block;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .option-box:hover {
+      background-color: #d8cdb8;
+      border-color: #b8a78a;
     }
   </style>
 </head>
 
 <body>
 
-  <h1>Ocho</h1>
-  <h2>A Sullivan Family Keepsake</h2>
+  <h1>Ocho/h1>
 
-  <p>Select an option below to view the book or its cover.</p>
+  <div class="options">
 
-  <div class="button-container">
-    <a class="button" href="https://drive.google.com/file/d/1mgklAA8pRlgjh5duwtmesW_fjh3t0taA/view?usp=drive_link" target="_blank">
-      View Ocho Cover (PDF)
+    <!-- ✅ PDF COVER -->
+    <a 
+      class="option-box" 
+      href="https://drive.google.com/file/d/1VBcAhnAaerITEwmP4VV5cp6q5X27jouI/preview" 
+      target="_blank">
+      View Cover
     </a>
 
-    <a class="button" href="https://drive.google.com/file/d/1vIMFIDDZ9N1D2mCYSg9iXxUYi3ty9rdZ/view?usp=drive_link" target="_blank">
-      View Ocho Book (PDF)
+    <!-- ✅ PDF BOOK (replace FILE_ID when ready) -->
+    <a 
+      class="option-box" 
+      href="https://drive.google.com/file/d/1mgklAA8pRlgjh5duwtmesW_fjh3t0taA/preview"  
+      href="https://drive.google.com/file/d/1vIMFIDDZ9N1D2mCYSg9iXxUYi3ty9rdZ/preview"
+      target="_blank">
+      View Full Book
     </a>
+
   </div>
 
 </body>
