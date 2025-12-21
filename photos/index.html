@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Wedding Photos • The Sullivan Clan</title>
+  <title>Photos • The Sullivan Clan</title>
   <style>
     body {
       font-family: Georgia, serif;
@@ -42,18 +42,28 @@
       margin-bottom: 10px;
       color: #4a3a2a;
     }
-    .gallery {
+    .options {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 30px;
+      margin-top: 20px;
     }
-    .placeholder {
+    .option-box {
       background-color: #e8dfcf;
       border: 2px solid #c8b79a;
-      padding: 40px;
+      padding: 40px 20px;
       text-align: center;
-      font-style: italic;
-      color: #6a5a4a;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #4a3a2a;
+      text-decoration: none;
+      display: block;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .option-box:hover {
+      background-color: #dcd1bd;
+      border-color: #b59a6a;
+      color: #2a1a0a;
     }
     footer {
       text-align: center;
@@ -64,57 +74,31 @@
       font-size: 0.9rem;
       color: #5a4a3a;
     }
-    a {
-      color: #4a3a2a;
-      text-decoration: none;
-      border-bottom: 1px solid #b59a6a;
-    }
-    a:hover {
-      color: #2a1a0a;
-    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Wedding Day</h1>
-  <h2>Bill & Lois • June 29, 1946</h2>
+  <h1>Family Photos</h1>
+  <h2>Choose a Collection to Explore</h2>
 </header>
 
 <div class="content">
 
   <div class="section">
     <p>
-      On a warm June day in 1946, just months after returning from service in the 
-      Southwest Pacific, Bill Sullivan stood beside Lois in a moment that marked the 
-      beginning of a lifetime. Their wedding was simple, heartfelt, and full of the 
-      quiet optimism that defined postwar America. These photographs preserve the joy, 
-      the hope, and the unmistakable glow of two people stepping into their future 
-      together.
+      The Sullivan family story is preserved not only in words, but in the photographs 
+      that captured our most meaningful moments. Choose a collection below to explore 
+      restored images, keepsakes, and visual memories curated with care.
     </p>
   </div>
 
   <div class="section">
-    <h3>Wedding Gallery</h3>
-    <div class="gallery">
-      <div class="placeholder">Add wedding photo here</div>
-      <div class="placeholder">Add wedding photo here</div>
-      <div class="placeholder">Add wedding photo here</div>
+    <h3>Photo Collections</h3>
+    <div class="options">
+      <a class="option-box" href="/photos/wedding">Weddings</a>
+      <a class="option-box" href="/photos/scrapbooks">Scrapbooks</a>
     </div>
-  </div>
-
-  <div class="section">
-    <h3>About the Day</h3>
-    <p>
-      Bill’s calm, dignified presence — the same steadiness he carried as a navigator 
-      aboard B‑24 Liberators — shines through in these images. Lois’s warmth and grace 
-      balance him perfectly. Together, they embody the spirit of a generation rebuilding 
-      their lives with hope, resilience, and love.
-    </p>
-    <p>
-      As more restored photographs are added, this gallery will grow into a visual 
-      tribute to the day that began the Sullivan family as we know it.
-    </p>
   </div>
 
 </div>
