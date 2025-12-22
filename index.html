@@ -57,11 +57,33 @@
     .section {
       margin-bottom: 40px;
     }
+    /* Add breathing room above the first section */
+    .section:first-of-type {
+      margin-top: 20px;
+    }
+
     .section h3 {
       font-size: 1.6rem;
       margin-bottom: 10px;
       color: #4a3a2a;
     }
+    /* Link styling */
+    a {
+      color: #4a3a2a;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      color: #b59a6a;
+      text-decoration: underline;
+      transition: 0.2s ease;
+    }
+    
+    /* Add spacing between list items */
+    ul li {
+      margin-bottom: 8px;
+    }
+    
     footer {
       text-align: center;
       padding: 20px;
