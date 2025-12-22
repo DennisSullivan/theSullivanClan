@@ -3,7 +3,6 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Books – The Sullivan Clan</title>
   <style>
     body {
@@ -14,6 +13,23 @@
       background: #F4EFE8; /* warm parchment */
       color: #4A3A28; /* warm brown text */
       line-height: 1.6;
+      @media (max-width: 600px) {
+        body {
+          margin: 20px auto;
+          padding: 15px;
+        }
+        h1 {
+          font-size: 2rem;
+        }
+        p.intro {
+          margin-bottom: 25px;
+          font-size: 1rem;
+        }
+        .books-grid {
+          gap: 20px;
+        }
+      }
+
     }
 
     h1 {
