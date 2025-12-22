@@ -3,120 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Books – The Sullivan Clan</title>
+  <title>Ocho – The Sullivan Clan</title>
   <style>
     body {
       font-family: Georgia, serif;
-      max-width: 1000px;
+      max-width: 800px;
       margin: 40px auto;
       padding: 20px;
-      background: #F4EFE8; /* warm parchment */
-      color: #4A3A28; /* warm brown text */
+      background: #F4EFE8;
+      color: #4A3A28;
       line-height: 1.6;
     }
-
     h1 {
       text-align: center;
-      font-size: 2.4em;
+      font-size: 2.2em;
       margin-bottom: 10px;
-      color: #5A3A22; /* deep Rockwell brown */
+      color: #5A3A22;
     }
-
-    p.intro {
+    h2 {
       text-align: center;
-      margin-bottom: 40px;
+      font-weight: normal;
+      margin-top: 0;
       color: #6B4E31;
     }
-
-    .books-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 30px;
-    }
-
-    .book-card {
-      background: #FAF7F2;
-      border: 1px solid #C8B8A6;
-      padding: 16px;
+    .cover {
       text-align: center;
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      margin: 20px 0 30px;
     }
-
-    .book-card img {
-      max-width: 100%;
+    .cover img {
+      max-width: 260px;
       height: auto;
       border-radius: 4px;
       border: 1px solid #C8B8A6;
-      margin-bottom: 12px;
     }
-
-    .book-title {
-      font-size: 1.1em;
-      font-weight: bold;
-      margin-bottom: 8px;
-      color: #5A3A22;
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 20px;
+      align-items: center;
     }
-
-    .book-link {
+    a.button {
       display: inline-block;
-      margin-top: 6px;
-      padding: 8px 16px;
-      background: #7A4E2D; /* warm brown button */
+      padding: 12px 24px;
+      background: #7A4E2D;
       color: white;
       text-decoration: none;
-      border-radius: 4px;
-      font-size: 0.95em;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: background 0.2s ease;
+      min-width: 240px;
+      text-align: center;
     }
-
-    .book-link:hover {
-      background: #9C6A3A; /* lighter warm brown */
+    a.button:hover {
+      background: #9C6A3A;
+    }
+    p {
+      text-align: center;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
 
-  <h1>Books</h1>
-  <p class="intro">
-    A collection of self‑published works by members of the Sullivan family.
-  </p>
+  <h1>Ocho</h1>
+  <h2>A Sullivan Family Keepsake</h2>
 
-  <div class="books-grid">
+  <div class="cover">
+    <img src="cover.jpg" alt="Ocho cover">
+  </div>
 
-    <div class="book-card">
-      <a href="arizonarose/">
-        <img src="arizonarose/cover.jpg" alt="Arizona Rose cover">
-      </a>
-      <div class="book-title">Arizona Rose</div>
-      <a class="book-link" href="arizonarose/">View details</a>
-    </div>
+  <p>Select an option below to view the cover or the full book.</p>
 
-    <div class="book-card">
-      <a href="conjugatinglove/">
-        <img src="conjugatinglove/cover.jpg" alt="Conjugating Love cover">
-      </a>
-      <div class="book-title">Conjugating Love</div>
-      <a class="book-link" href="conjugatinglove/">View details</a>
-    </div>
+  <div class="button-container">
+    <a class="button" href="https://drive.google.com/file/d/1mgklAA8pRlgjh5duwtmesW_fjh3t0taA/view?usp=drive_link" target="_blank">
+      View Cover (PDF)
+    </a>
+    <a class="button" href="https://drive.google.com/file/d/1vIMFIDDZ9N1D2mCYSg9iXxUYi3ty9rdZ/view?usp=drive_link" target="_blank">
+      View Book (PDF)
+    </a>
+  </div>
 
-    <div class="book-card">
-      <a href="ocho/">
-        <img src="ocho/cover.jpg" alt="Ocho cover">
-      </a>
-      <div class="book-title">Ocho</div>
-      <a class="book-link" href="ocho/">View details</a>
-    </div>
-
-    <div class="book-card">
-      <a href="chief/">
-        <img src="chief/cover.jpg" alt="Chief cover">
-      </a>
-      <div class="book-title">Chief</div>
-      <a class="book-link" href="chief/">View details</a>
-    </div>
-
-    <div class="book-card">
-      <a href="navigator/">
-        <img src="navigator/cover.jpg" alt="Memoirs of a Navigator cover">
-      </a>
-      <div class="book-title">
+</body>
+</html>
