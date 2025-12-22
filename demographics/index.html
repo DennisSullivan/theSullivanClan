@@ -10,8 +10,8 @@
       max-width: 900px;
       margin: 40px auto;
       padding: 20px;
-      background: #f2f2f2;
-      color: #333;
+      background: #F4EFe8;
+      color: #4A3A28;
       line-height: 1.6;
     }
 
@@ -24,7 +24,7 @@
     h2 {
       margin-top: 50px;
       font-size: 1.8em;
-      color: #003366;
+      color: #5A3A22;
       border-bottom: 2px solid #ccc;
       padding-bottom: 6px;
     }
@@ -41,8 +41,33 @@
       background: white;
     }
 
+    @media (max-width: 600px) {
+      body {
+        margin: 20px auto;
+        padding: 15px;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+      h2 {
+        font-size: 1.4em;
+        margin-top: 40px;
+      }
+      iframe {
+        height: 400px;
+      }
+    }
     .section {
       margin-bottom: 60px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid #ccc;
+    }
+    h2:hover {
+      color: #5A3A22;
+      transition: 0.2s ease;
+    }
+    .section:first-of-type {
+      margin-top: 40px;
     }
   </style>
 </head>
