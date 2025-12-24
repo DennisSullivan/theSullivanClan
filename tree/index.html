@@ -9,9 +9,7 @@
     body {
         font-family: Arial, sans-serif;
         background: #f7f7f7;
-        margin: 0;
         padding: 20px;
-        color: #333;
     }
 
     h1 {
@@ -19,33 +17,23 @@
         margin-bottom: 30px;
     }
 
-    .tree {
-        display: grid;
-        grid-template-columns: 250px 250px 250px 250px;
-        gap: 20px;
-        overflow-x: auto;
-    }
-
-    .gen {
-        background: #fff;
-        padding: 15px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-    }
-
     .person {
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #eee;
+        border: 1px solid #999;
+        background: #fff;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        width: 260px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
 
-    .name {
-        font-weight: bold;
-    }
+    .gen1 { margin-left: 0px; }
+    .gen2 { margin-left: 40px; }
+    .gen3 { margin-left: 80px; }
+    .gen4 { margin-left: 120px; }
 
-    .indent-1 { margin-left: 20px; }
-    .indent-2 { margin-left: 40px; }
-    .indent-3 { margin-left: 60px; }
+    .name { font-weight: bold; }
+    .dates { font-size: 12px; color: #666; }
 </style>
 </head>
 
@@ -53,156 +41,138 @@
 
 <h1>The Sullivan Family Tree</h1>
 
-<div class="tree">
+<!-- ========================= -->
+<!-- 1st GENERATION (LEFT)     -->
+<!-- ========================= -->
 
-    <!-- GENERATION 1 -->
-    <div class="gen">
-        <h2>1st Generation</h2>
-
-        <div class="person">
-            <div class="name">William John Sullivan</div>
-            <div>b. 12/11/1919</div>
-        </div>
-
-        <div class="person">
-            <div class="name">Lois Elaine (Welling) Sullivan</div>
-            <div>b. 5/22/1924</div>
-        </div>
-    </div>
-
-    <!-- GENERATION 2 -->
-    <div class="gen">
-        <h2>2nd Generation</h2>
-
-        <div class="person"><div class="name">Bill Sullivan</div><div>b. 10/6/1947</div></div>
-        <div class="person"><div class="name">Diane Sullivan</div><div>b. 1/11/1947</div></div>
-
-        <div class="person"><div class="name">Dennis Sullivan</div><div>b. 2/21/1949</div></div>
-        <div class="person"><div class="name">Cáit Sullivan</div><div>b. 1/27/1952</div></div>
-
-        <div class="person"><div class="name">Terry Prevey (Sullivan)</div><div>b. 4/10/1950</div></div>
-        <div class="person"><div class="name">Sally Sullivan</div><div>b. 5/23/1951</div></div>
-        <div class="person"><div class="name">Janet Sullivan</div><div>b. 7/4/1952</div></div>
-        <div class="person"><div class="name">Mary “Cookie” Sullivan</div><div>b. 11/28/1953</div></div>
-        <div class="person"><div class="name">Sheila Sullivan</div><div>b. 2/13/1956</div></div>
-        <div class="person"><div class="name">Joe (Jose) Sullivan</div><div>b. 8/25/1957</div></div>
-        <div class="person"><div class="name">Francis Sullivan</div><div>b. 10/20/1962</div></div>
-        <div class="person"><div class="name">Steven Sullivan</div><div>b. 8/10/1964</div></div>
-        <div class="person"><div class="name">Linda Sullivan</div><div>b. 2/24/1965</div></div>
-        <div class="person"><div class="name">Martin Sullivan</div><div>b. 4/4/1967</div></div>
-        <div class="person"><div class="name">Lisa Sullivan Hileman</div><div>b. 10/6/1968</div></div>
-    </div>
-
-    <!-- GENERATION 3 -->
-    <div class="gen">
-        <h2>3rd Generation</h2>
-
-        <!-- Dennis & Cait's children -->
-        <div class="person indent-1"><div class="name">Patrick Sullivan</div><div>b. 12/14/1979</div></div>
-        <div class="person indent-1"><div class="name">Braeden Sullivan</div><div>b. 5/1/1982</div></div>
-        <div class="person indent-1"><div class="name">John Barrios</div><div>b. 9/22/1990</div></div>
-
-        <!-- Terry's children -->
-        <div class="person indent-1"><div class="name">Janet Prevey</div><div>b. 9/27/1982</div></div>
-        <div class="person indent-1"><div class="name">Jesse Prevey</div><div>b. 11/2/1986</div></div>
-
-        <!-- Sally's children -->
-        <div class="person indent-1"><div class="name">Anna Salamon</div><div>b. 10/26/1980</div></div>
-        <div class="person indent-1"><div class="name">Carl Shulman</div><div>b. 8/12/1982</div></div>
-        <div class="person indent-1"><div class="name">David Salamon</div><div>b. 8/16/1984</div></div>
-        <div class="person indent-1"><div class="name">Tara D’Orazio</div><div>b. 11/4/1986</div></div>
-
-        <!-- Cookie's children -->
-        <div class="person indent-1"><div class="name">Sarah Billington</div><div>b. 10/23/1980</div></div>
-        <div class="person indent-1"><div class="name">Adam Billington</div><div>b. 2/19/1974</div></div>
-        <div class="person indent-1"><div class="name">Bennett Deacy</div><div>b. 8/26/1982</div></div>
-        <div class="person indent-1"><div class="name">Amanda Deacy</div><div>b. 3/25/1976</div></div>
-        <div class="person indent-1"><div class="name">Will Deacy</div><div>b. 9/5/1985</div></div>
-        <div class="person indent-1"><div class="name">Caroline Deacy</div><div>b. 4/28/1986</div></div>
-        <div class="person indent-1"><div class="name">James Deacy</div><div>b. 10/18/1988</div></div>
-        <div class="person indent-1"><div class="name">Chantal Deacy</div><div>b. 5/18/1990</div></div>
-
-        <!-- Sheila's children -->
-        <div class="person indent-1"><div class="name">John Polk</div><div>b. 2/12/1985</div></div>
-        <div class="person indent-1"><div class="name">Laura Polk</div><div>b. 10/15/1984</div></div>
-        <div class="person indent-1"><div class="name">Stephen Polk</div><div>b. 3/1/1987</div></div>
-        <div class="person indent-1"><div class="name">Laura Polk</div><div>b. 7/19/1987</div></div>
-        <div class="person indent-1"><div class="name">Mathew Polk</div><div>b. 6/11/1989</div></div>
-        <div class="person indent-1"><div class="name">Bethany Polk</div><div>b. 8/12/1992</div></div>
-
-        <!-- Joe's children -->
-        <div class="person indent-1"><div class="name">Teresa Hilbert</div><div>b. 1/31/1985</div></div>
-        <div class="person indent-1"><div class="name">Kevin Hilbert</div><div>b. 11/20/1984</div></div>
-        <div class="person indent-1"><div class="name">Tyrel Sullivan</div><div>b. 11/12/1987</div></div>
-        <div class="person indent-1"><div class="name">Mackenzie Sullivan</div><div>b. 7/26/1988</div></div>
-        <div class="person indent-1"><div class="name">Tessa Imus</div><div>b. 2/28/1990</div></div>
-        <div class="person indent-1"><div class="name">Matt Imus</div><div>b. 7/31/1969</div></div>
-
-        <!-- Francis's children -->
-        <div class="person indent-1"><div class="name">Benjamin Sullivan</div><div>b. 9/9/1989</div></div>
-        <div class="person indent-1"><div class="name">Natalie Sullivan</div><div>b. 8/19/1987</div></div>
-        <div class="person indent-1"><div class="name">Spencer</div><div>b. 2/5/1993</div></div>
-        <div class="person indent-1"><div class="name">Molly</div><div>b. 1/23/1996</div></div>
-
-        <!-- Steven's children -->
-        <div class="person indent-1"><div class="name">Nathaniel Sullivan</div><div>b. 5/17/2002</div></div>
-        <div class="person indent-1"><div class="name">Claire Bennet</div><div>b. 1/14/2002</div></div>
-        <div class="person indent-1"><div class="name">Liam Sullivan</div><div>b. 12/2/2005</div></div>
-
-        <!-- Linda's child -->
-        <div class="person indent-1"><div class="name">Paulina Glamann</div><div>b. 10/17/1988</div></div>
-
-        <!-- Lisa's child -->
-        <div class="person indent-1"><div class="name">Ray Hileman</div><div>b. 8/6/2004</div></div>
-    </div>
-
-    <!-- GENERATION 4 -->
-    <div class="gen">
-        <h2>4th Generation</h2>
-
-        <!-- Braeden's children -->
-        <div class="person indent-2"><div class="name">Levi Sullivan</div><div>b. 8/25/2011</div></div>
-        <div class="person indent-2"><div class="name">Adeline Sullivan</div><div>b. 3/31/2015</div></div>
-
-        <!-- Sarah's children -->
-        <div class="person indent-2"><div class="name">Arlo Billington</div><div>b. 9/16/2012</div></div>
-        <div class="person indent-2"><div class="name">Ezra Billington</div><div>b. 11/30/2015</div></div>
-
-        <!-- Bennett's children -->
-        <div class="person indent-2"><div class="name">Marshal Deacy</div><div>b. 11/1/2013</div></div>
-        <div class="person indent-2"><div class="name">Elsie Deacy</div><div>b. 6/29/2015</div></div>
-
-        <!-- Will's child -->
-        <div class="person indent-2"><div class="name">Lark Deacy</div><div>b. 5/23/2023</div></div>
-
-        <!-- James's child -->
-        <div class="person indent-2"><div class="name">Tommy Deacy</div><div>b. 2/21/2024</div></div>
-
-        <!-- John Polk's children -->
-        <div class="person indent-2"><div class="name">Luca John Polk</div><div>b. 6/19/2018</div></div>
-        <div class="person indent-2"><div class="name">Farah Polk</div><div>b. 9/9/2020</div></div>
-
-        <!-- Stephen's children -->
-        <div class="person indent-2"><div class="name">Jack Polk</div><div>b. 10/18/2021</div></div>
-        <div class="person indent-2"><div class="name">Sarah Polk</div><div>b. 1/7/2024</div></div>
-
-        <!-- Mathew's children -->
-        <div class="person indent-2"><div class="name">Lewis Polk</div><div>b. 3/17/2020</div></div>
-        <div class="person indent-2"><div class="name">Leigh Polk</div><div>b. 3/23/2022</div></div>
-        <div class="person indent-2"><div class="name">Willow Polk</div><div>b. 1/14/2024</div></div>
-
-        <!-- Teresa's children -->
-        <div class="person indent-2"><div class="name">Lincoln Hilbert</div><div>b. 11/29/2017</div></div>
-        <div class="person indent-2"><div class="name">Griffin Hilbert</div><div>b. 4/7/2020</div></div>
-        <div class="person indent-2"><div class="name">Parker Hilbert</div><div>b. 10/23/2021</div></div>
-
-        <!-- Tessa's children -->
-        <div class="person indent-2"><div class="name">Cooper Imus</div><div>b. 8/12/2019</div></div>
-        <div class="person indent-2"><div class="name">Colten Imus</div><div>b. 4/15/2021</div></div>
-        <div class="person indent-2"><div class="name">Lainey Imus</div><div>b. 4/11/2024</div></div>
-    </div>
-
+<div class="person gen1">
+    <div class="name">William John Sullivan</div>
+    <div class="dates">b. 12/11/1919</div>
 </div>
+
+<div class="person gen1">
+    <div class="name">Lois Elaine (Welling) Sullivan</div>
+    <div class="dates">b. 5/22/1924</div>
+</div>
+
+<!-- ========================= -->
+<!-- 2nd GENERATION (CHILDREN) -->
+<!-- ========================= -->
+
+<div class="person gen2"><div class="name">Bill Sullivan</div><div class="dates">b. 10/6/1947</div></div>
+<div class="person gen2"><div class="name">Diane Sullivan</div><div class="dates">b. 1/11/1947</div></div>
+
+<div class="person gen2"><div class="name">Dennis Sullivan</div><div class="dates">b. 2/21/1949</div></div>
+<div class="person gen2"><div class="name">Cáit Sullivan</div><div class="dates">b. 1/27/1952</div></div>
+
+<div class="person gen2"><div class="name">Terry Prevey (Sullivan)</div><div class="dates">b. 4/10/1950</div></div>
+<div class="person gen2"><div class="name">Sally Sullivan</div><div class="dates">b. 5/23/1951</div></div>
+<div class="person gen2"><div class="name">Janet Sullivan</div><div class="dates">b. 7/4/1952</div></div>
+<div class="person gen2"><div class="name">Mary “Cookie” Sullivan</div><div class="dates">b. 11/28/1953</div></div>
+<div class="person gen2"><div class="name">Sheila Sullivan</div><div class="dates">b. 2/13/1956</div></div>
+<div class="person gen2"><div class="name">Joe (Jose) Sullivan</div><div class="dates">b. 8/25/1957</div></div>
+<div class="person gen2"><div class="name">Francis Sullivan</div><div class="dates">b. 10/20/1962</div></div>
+<div class="person gen2"><div class="name">Steven Sullivan</div><div class="dates">b. 8/10/1964</div></div>
+<div class="person gen2"><div class="name">Linda Sullivan</div><div class="dates">b. 2/24/1965</div></div>
+<div class="person gen2"><div class="name">Martin Sullivan</div><div class="dates">b. 4/4/1967</div></div>
+<div class="person gen2"><div class="name">Lisa Sullivan Hileman</div><div class="dates">b. 10/6/1968</div></div>
+
+<!-- ========================= -->
+<!-- 3rd GENERATION (GRANDKIDS) -->
+<!-- ========================= -->
+
+<!-- Dennis & Cáit’s children -->
+<div class="person gen3"><div class="name">Patrick Sullivan</div><div class="dates">b. 12/14/1979</div></div>
+<div class="person gen3"><div class="name">John Barrios</div><div class="dates">b. 9/22/1990</div></div>
+<div class="person gen3"><div class="name">Braeden Sullivan</div><div class="dates">b. 5/1/1982</div></div>
+
+<!-- Terry’s children -->
+<div class="person gen3"><div class="name">Janet Prevey</div><div class="dates">b. 9/27/1982</div></div>
+<div class="person gen3"><div class="name">Jesse Prevey</div><div class="dates">b. 11/2/1986</div></div>
+
+<!-- Sally’s children -->
+<div class="person gen3"><div class="name">Anna Salamon</div><div class="dates">b. 10/26/1980</div></div>
+<div class="person gen3"><div class="name">Carl Shulman</div><div class="dates">b. 8/12/1982</div></div>
+<div class="person gen3"><div class="name">David Salamon</div><div class="dates">b. 8/16/1984</div></div>
+<div class="person gen3"><div class="name">Tara D’Orazio</div><div class="dates">b. 11/4/1986</div></div>
+
+<!-- Cookie’s children -->
+<div class="person gen3"><div class="name">Sarah Billington</div><div class="dates">b. 10/23/1980</div></div>
+<div class="person gen3"><div class="name">Adam Billington</div><div class="dates">b. 2/19/1974</div></div>
+<div class="person gen3"><div class="name">Bennett Deacy</div><div class="dates">b. 8/26/1982</div></div>
+<div class="person gen3"><div class="name">Amanda Deacy</div><div class="dates">b. 3/25/1976</div></div>
+<div class="person gen3"><div class="name">Will Deacy</div><div class="dates">b. 9/5/1985</div></div>
+<div class="person gen3"><div class="name">Caroline Deacy</div><div class="dates">b. 4/28/1986</div></div>
+<div class="person gen3"><div class="name">James Deacy</div><div class="dates">b. 10/18/1988</div></div>
+<div class="person gen3"><div class="name">Chantal Deacy</div><div class="dates">b. 5/18/1990</div></div>
+
+<!-- Sheila’s children -->
+<div class="person gen3"><div class="name">John Polk</div><div class="dates">b. 2/12/1985</div></div>
+<div class="person gen3"><div class="name">Laura Polk</div><div class="dates">b. 10/15/1984</div></div>
+<div class="person gen3"><div class="name">Stephen Polk</div><div class="dates">b. 3/1/1987</div></div>
+<div class="person gen3"><div class="name">Laura Polk</div><div class="dates">b. 7/19/1987</div></div>
+<div class="person gen3"><div class="name">Mathew Polk</div><div class="dates">b. 6/11/1989</div></div>
+<div class="person gen3"><div class="name">Bethany Polk</div><div class="dates">b. 8/12/1992</div></div>
+
+<!-- Joe’s children -->
+<div class="person gen3"><div class="name">Teresa Hilbert</div><div class="dates">b. 1/31/1985</div></div>
+<div class="person gen3"><div class="name">Kevin Hilbert</div><div class="dates">b. 11/20/1984</div></div>
+<div class="person gen3"><div class="name">Tyrel Sullivan</div><div class="dates">b. 11/12/1987</div></div>
+<div class="person gen3"><div class="name">Mackenzie Sullivan</div><div class="dates">b. 7/26/1988</div></div>
+<div class="person gen3"><div class="name">Tessa Imus</div><div class="dates">b. 2/28/1990</div></div>
+<div class="person gen3"><div class="name">Matt Imus</div><div class="dates">b. 7/31/1969</div></div>
+
+<!-- Francis’s children -->
+<div class="person gen3"><div class="name">Benjamin Sullivan</div><div class="dates">b. 9/9/1989</div></div>
+<div class="person gen3"><div class="name">Natalie Sullivan</div><div class="dates">b. 8/19/1987</div></div>
+<div class="person gen3"><div class="name">Spencer</div><div class="dates">b. 2/5/1993</div></div>
+<div class="person gen3"><div class="name">Molly</div><div class="dates">b. 1/23/1996</div></div>
+
+<!-- Steven’s children -->
+<div class="person gen3"><div class="name">Nathaniel Sullivan</div><div class="dates">b. 5/17/2002</div></div>
+<div class="person gen3"><div class="name">Claire Bennet</div><div class="dates">b. 1/14/2002</div></div>
+<div class="person gen3"><div class="name">Liam Sullivan</div><div class="dates">b. 12/2/2005</div></div>
+
+<!-- Linda’s child -->
+<div class="person gen3"><div class="name">Paulina Glamann</div><div class="dates">b. 10/17/1988</div></div>
+
+<!-- Lisa’s child -->
+<div class="person gen3"><div class="name">Ray Hileman</div><div class="dates">b. 8/6/2004</div></div>
+
+<!-- ========================= -->
+<!-- 4th GENERATION (GREAT-GRANDKIDS) -->
+<!-- ========================= -->
+
+<div class="person gen4"><div class="name">Levi Sullivan</div><div class="dates">b. 8/25/2011</div></div>
+<div class="person gen4"><div class="name">Adeline Sullivan</div><div class="dates">b. 3/31/2015</div></div>
+
+<div class="person gen4"><div class="name">Arlo Billington</div><div class="dates">b. 9/16/2012</div></div>
+<div class="person gen4"><div class="name">Ezra Billington</div><div class="dates">b. 11/30/2015</div></div>
+
+<div class="person gen4"><div class="name">Marshal Deacy</div><div class="dates">b. 11/1/2013</div></div>
+<div class="person gen4"><div class="name">Elsie Deacy</div><div class="dates">b. 6/29/2015</div></div>
+
+<div class="person gen4"><div class="name">Lark Deacy</div><div class="dates">b. 5/23/2023</div></div>
+
+<div class="person gen4"><div class="name">Tommy Deacy</div><div class="dates">b. 2/21/2024</div></div>
+
+<div class="person gen4"><div class="name">Luca John Polk</div><div class="dates">b. 6/19/2018</div></div>
+<div class="person gen4"><div class="name">Farah Polk</div><div class="dates">b. 9/9/2020</div></div>
+
+<div class="person gen4"><div class="name">Jack Polk</div><div class="dates">b. 10/18/2021</div></div>
+<div class="person gen4"><div class="name">Sarah Polk</div><div class="dates">b. 1/7/2024</div></div>
+
+<div class="person gen4"><div class="name">Lewis Polk</div><div class="dates">b. 3/17/2020</div></div>
+<div class="person gen4"><div class="name">Leigh Polk</div><div class="dates">b. 3/23/2022</div></div>
+<div class="person gen4"><div class="name">Willow Polk</div><div class="dates">b. 1/14/2024</div></div>
+
+<div class="person gen4"><div class="name">Lincoln Hilbert</div><div class="dates">b. 11/29/2017</div></div>
+<div class="person gen4"><div class="name">Griffin Hilbert</div><div class="dates">b. 4/7/2020</div></div>
+<div class="person gen4"><div class="name">Parker Hilbert</div><div class="dates">b. 10/23/2021</div></div>
+
+<div class="person gen4"><div class="name">Cooper Imus</div><div class="dates">b. 8/12/2019</div></div>
+<div class="person gen4"><div class="name">Colten Imus</div><div class="dates">b. 4/15/2021</div></div>
+<div class="person gen4"><div class="name">Lainey Imus</div><div class="dates">b. 4/11/2024</div></div>
 
 </body>
 </html>
