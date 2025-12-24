@@ -11,6 +11,12 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0 }
+        to { opacity: 1 }
     }
 
     .person {
@@ -34,16 +40,43 @@
         margin: 20px 0;
         text-align: center;
     }
+
+    .breadcrumb {
+        margin-bottom: 20px;
+        font-size: 0.9em;
+        color: #333;
+    }
+
+    .breadcrumb span {
+        cursor: pointer;
+        color: #0077cc;
+    }
+
+    .controls {
+        margin-bottom: 20px;
+    }
+
+    button {
+        padding: 6px 12px;
+        margin-right: 10px;
+        cursor: pointer;
+    }
 </style>
 </head>
 
 <body>
 
+<div class="controls">
+    <button id="homeBtn">Home</button>
+    <button id="zoomBtn">Zoom Out</button>
+</div>
+
+<div id="breadcrumb" class="breadcrumb"></div>
 <div id="tree" class="tree-container"></div>
 
 <script>
 // ---------------------------
-// FAMILY DATA
+// FAMILY DATA (expand as needed)
 // ---------------------------
 const family = {
     "Bill & Lois": {
@@ -73,22 +106,56 @@ const family = {
     "Anna": { name: "Anna Salamon (1980)", spouse: "Carl Shulman (1982)", children: [] },
     "David": { name: "David Salamon (1984)", spouse: "Tara D’Orazio (1986)", children: [] },
 
-    // Continue adding the rest of the family here...
+    // Continue adding the rest of the family...
 };
 
 // ---------------------------
-// RENDER A TWO-GENERATION VIEW
+// NAVIGATION STATE
 // ---------------------------
-function showTree(personKey) {
+let historyStack = [];
+let breadcrumbTrail = [];
+
+// ---------------------------
+// RENDER BREADCRUMBS
+// ---------------------------
+function renderBreadcrumbs() {
+    const bc = document.getElementById("breadcrumb");
+    bc.innerHTML = "";
+
+    breadcrumbTrail.forEach((key, index) => {
+        const span = document.createElement("span");
+        span.textContent = family[key].name;
+        span.onclick = () => {
+            breadcrumbTrail = breadcrumbTrail.slice(0, index + 1);
+            showTree(key, false);
+        };
+        bc.appendChild(span);
+
+        if (index < breadcrumbTrail.length - 1) {
+            bc.appendChild(document.createTextNode(" → "));
+        }
+    });
+}
+
+// ---------------------------
+// MAIN TREE RENDERER
+// ---------------------------
+function showTree(personKey, pushHistory = true) {
+    if (pushHistory) {
+        historyStack.push(personKey);
+        breadcrumbTrail.push(personKey);
+    }
+
+    renderBreadcrumbs();
+
     const root = family[personKey];
     const treeDiv = document.getElementById("tree");
-    treeDiv.innerHTML = ""; // clear tree
+    treeDiv.innerHTML = "";
 
     // Root person
     const rootDiv = document.createElement("div");
     rootDiv.className = "person";
     rootDiv.textContent = root.name;
-    rootDiv.onclick = () => showTree(personKey); // clicking root just reloads
     treeDiv.appendChild(rootDiv);
 
     // Spouse
@@ -99,7 +166,7 @@ function showTree(personKey) {
         treeDiv.appendChild(spouseDiv);
     }
 
-    // Children (second generation)
+    // Children
     if (root.children && root.children.length > 0) {
         const genDiv = document.createElement("div");
         genDiv.className = "generation";
@@ -111,14 +178,31 @@ function showTree(personKey) {
             const childDiv = document.createElement("div");
             childDiv.className = "person";
             childDiv.textContent = child.name;
-            childDiv.onclick = () => showTree(childKey); // clicking child becomes new root
+            childDiv.onclick = () => showTree(childKey);
             genDiv.appendChild(childDiv);
         });
     }
 }
 
 // ---------------------------
-// INITIAL VIEW: BILL & LOIS + THEIR CHILDREN
+// BUTTONS
+// ---------------------------
+document.getElementById("homeBtn").onclick = () => {
+    historyStack = [];
+    breadcrumbTrail = [];
+    showTree("Bill & Lois");
+};
+
+document.getElementById("zoomBtn").onclick = () => {
+    if (breadcrumbTrail.length > 1) {
+        const parent = breadcrumbTrail[breadcrumbTrail.length - 2];
+        breadcrumbTrail.pop();
+        showTree(parent, false);
+    }
+};
+
+// ---------------------------
+// INITIAL VIEW
 // ---------------------------
 showTree("Bill & Lois");
 </script>
