@@ -1,1 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Sullivan Family Tree</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background: #3a3a3a;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px 40px;
+        }
+
+        .intro {
+            margin-bottom: 20px;
+        }
+
+        /* Tree layout */
+
+        .tree {
+            width: 100%;
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+
+        .tree ul {
+            padding-top: 20px;
+            position: relative;
+            padding-left: 0;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .tree li {
+            list-style-type: none;
+            margin: 0 auto;
+            padding: 20px 5px 0 5px;
+            position: relative;
+            text-align: center;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        /* Lines connecting nodes */
+
+        .tree li::before, 
+        .tree li::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 50%;
+            border-top: 1px solid #ccc;
+            width: 50%;
+            height: 20px;
+        }
+
+        .tree li::after {
+            right: auto;
+            left: 50%;
+            border-left: 1px solid #ccc;
+        }
+
+        /* Remove connectors from single children */
+
+        .tree li:only-child::after,
+        .tree li:only-child::before {
+            display: none;
+        }
+
+        .tree li:only-child {
+            padding-top: 0;
+        }
+
+        /* Vertical connector to parent */
+
+        .tree li > ul::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            border-left: 1px solid #ccc;
+            width: 0;
+            height: 20px;
+        }
+
+        /* Node styling */
+
+        .tree .node {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #999;
+            background: #fff;
+            min-width: 160px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .node .name {
+            font-weight: bold;
+        }
+
+        .node .dates {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .node .notes {
+            font-size: 11px;
+            color: #777;
+            margin-top: 3px;
+        }
+
+        /* Couple nodes */
+
+        .couple .name {
+            font-weight: bold;
+        }
+
+        .couple .name span {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .node {
+                min-width: 130px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>The Sullivan Family Tree</h1>
+</header>
+
+<div class="container">
+    <p class="intro">
+        This tree shows four generations of the descendants of 
+        William John Sullivan (born 12/11/1919) and Lois Elaine (Welling) Sullivan (born 5/22/1924),
+        with names and birth dates.
+    </p>
+
+    <div class="tree">
+        <ul>
+            <li>
+                <!-- Generation 1: Bill & Lois -->
+                <div class="node couple">
+                    <div class="name">
+                        <span>William John Sullivan</span>
+                        <span>Lois Elaine (Welling) Sullivan</span>
+                    </div>
+                    <div class="dates">
+                        b. 12/11/1919 &nbsp; · &nbsp; b. 5/22/1924<br>
+                        m. 6/29/1946
+                    </div>
+                </div>
+
+                <!-- Generation 2 and below -->
+                <ul>
+                    <!-- Dennis & Cáit branch -->
+                    <li>
+                        <div class="node couple">
+                            <div class="name">
+                                <span>Dennis Sullivan</span>
+                                <span>Cáit Sullivan</span>
+                            </div>
+                            <div class="dates">
+                                b. 2/21/1949 &nbsp; · &nbsp; b. 1/27/1952<br>
+                                m. 7/15/1972
+                            </div>
+                        </div>
+                        <ul>
+                            <!-- Patrick -->
+                            <li>
+                                <div class="node">
+                                    <div class="name">Patrick Sullivan</div>
+                                    <div class="dates">b. 12/14/1979</div>
+                                </div>
+                            </li>
+
+                            <!-- Braeden & Liza-Jane -->
+                            <li>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>Braeden Sullivan</span>
+                                        <span>Liza-Jane Capatos Sullivan</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 5/1/1982 &nbsp; · &nbsp; b. 1/16/1980<br>
+                                        m. 8/9/2008
+                                    </div>
+                                </div>
+                                <ul>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Levi Sullivan</div>
+                                            <div class="dates">b. 8/25/2011</div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Adeline Sullivan</div>
+                                            <div class="dates">b. 3/31/2015</div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <!-- John -->
+                            <li>
+                                <div class="node">
+                                    <div class="name">John Barrios</div>
+                                    <div class="dates">b. 9/22/1990</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Terry & Jeff branch -->
+                    <li>
+                        <div class="node couple">
+                            <div class="name">
+                                <span>Terry Prevey</span>
+                                <span>Jeff Prevey</span>
+                            </div>
+                            <div class="dates">
+                                b. 4/10/1950 &nbsp; · &nbsp; b. 2/15/1952<br>
+                                m. 12/20/1980
+                            </div>
+                        </div>
+                        <ul>
+                            <li>
+                                <div class="node">
+                                    <div class="name">Janet Prevey</div>
+                                    <div class="dates">b. 9/27/1982</div>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="node">
+                                    <div class="name">Jesse Prevey</div>
+                                    <div class="dates">b. 11/2/1986</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Sally & Peter branch -->
+                    <li>
+                        <div class="node couple">
+                            <div class="name">
+                                <span>Sally Sullivan</span>
+                                <span>Peter Salamon</span>
+                            </div>
+                            <div class="dates">
+                                b. 5/23/1951 &nbsp; · &nbsp; b. 11/5/1950<br>
+                                m. 6/29/1976
+                            </div>
+                        </div>
+                        <ul>
+                            <!-- Anna & Carl -->
+                            <li>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>Anna Salamon</span>
+                                        <span>Carl Shulman</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 10/26/1980 &nbsp; · &nbsp; b. 8/12/1982<br>
+                                        m. 6/19/2011
+                                    </div>
+                                </div>
+                            </li>
+
+                            <!-- David & Tara -->
+                            <li>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>David Salamon</span>
+                                        <span>Tara D'Orazio</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 8/16/1984 &nbsp; · &nbsp; b. 11/4/1986<br>
+                                        m. TBD
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- You can continue adding branches here for:
+                         - Diane & Bill
+                         - Janet
+                         - Mary & Tom
+                         - Sheila & Tom
+                         - Jose & Linda
+                         - Francis & Mary Jane
+                         - Steven & Katie
+                         - Martin & (later connections)
+                         - Lisa & Nate
+                    -->
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>
+
+</body>
+</html>
 
