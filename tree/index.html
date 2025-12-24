@@ -7,21 +7,44 @@
 <style>
     body {
         font-family: Arial, sans-serif;
-        padding: 20px;
+        padding: 10px;
     }
-
+    
+    /* Make everything scale up on small screens */
+    @media (max-width: 600px) {
+        .person {
+            font-size: 1.3em;
+            padding: 14px 20px;
+            margin: 10px;
+        }
+    
+        button {
+            font-size: 1.1em;
+            padding: 10px 16px;
+        }
+    
+        .generation h3 {
+            font-size: 1.2em;
+        }
+    
+        .breadcrumb {
+            font-size: 1.1em;
+            line-height: 1.4;
+        }
+    }
+    
     .tree-container {
         display: flex;
         flex-direction: column;
         align-items: center;
         animation: fadeIn 0.4s ease;
     }
-
+    
     @keyframes fadeIn {
         from { opacity: 0 }
         to { opacity: 1 }
     }
-
+    
     .person {
         padding: 10px 16px;
         margin: 6px;
@@ -31,38 +54,44 @@
         cursor: pointer;
         display: inline-block;
         font-size: 1.1em;
+        text-align: center;
+        max-width: 90%;
     }
-
+    
     .spouse {
-        font-size: 0.9em;
+        font-size: 0.95em;
         color: #555;
         margin-bottom: 10px;
+        text-align: center;
     }
-
+    
     .generation {
         margin: 20px 0;
         text-align: center;
     }
-
+    
     .breadcrumb {
         margin-bottom: 20px;
-        font-size: 0.9em;
+        font-size: 1em;
         color: #333;
+        text-align: center;
     }
-
+    
     .breadcrumb span {
         cursor: pointer;
         color: #0077cc;
     }
-
+    
     .controls {
         margin-bottom: 20px;
+        text-align: center;
     }
-
+    
     button {
         padding: 6px 12px;
-        margin-right: 10px;
+        margin: 5px;
         cursor: pointer;
+        font-size: 1em;
     }
 </style>
 </head>
