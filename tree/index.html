@@ -27,7 +27,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 30px auto;
             padding: 0 20px 40px;
         }
@@ -36,19 +36,24 @@
             margin-bottom: 20px;
         }
 
+        .note {
+            font-size: 13px;
+            color: #666;
+        }
+
         /* Tree layout */
 
         .tree {
             width: 100%;
             overflow-x: auto;
             padding: 20px 0;
+            text-align: center;
         }
 
         .tree ul {
             padding-top: 20px;
             position: relative;
             padding-left: 0;
-            text-align: center;
             display: inline-block;
         }
 
@@ -64,7 +69,7 @@
 
         /* Lines connecting nodes */
 
-        .tree li::before, 
+        .tree li::before,
         .tree li::after {
             content: '';
             position: absolute;
@@ -112,7 +117,7 @@
             border-radius: 6px;
             border: 1px solid #999;
             background: #fff;
-            min-width: 160px;
+            min-width: 170px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         }
 
@@ -122,7 +127,7 @@
 
         .node .dates {
             font-size: 12px;
-            color: #666;
+            color: #555;
         }
 
         .node .notes {
@@ -133,17 +138,13 @@
 
         /* Couple nodes */
 
-        .couple .name {
-            font-weight: bold;
-        }
-
         .couple .name span {
             display: block;
         }
 
         @media (max-width: 768px) {
             .node {
-                min-width: 130px;
+                min-width: 140px;
                 font-size: 13px;
             }
         }
@@ -157,9 +158,13 @@
 
 <div class="container">
     <p class="intro">
-        This tree shows four generations of the descendants of 
-        William John Sullivan (born 12/11/1919) and Lois Elaine (Welling) Sullivan (born 5/22/1924),
-        with names and birth dates.
+        This tree shows four generations of the descendants of
+        <strong>William John Sullivan</strong> (b. 12/11/1919) and
+        <strong>Lois Elaine (Welling) Sullivan</strong> (b. 5/22/1924),
+        with names and birth dates. Marriages, engagements, divorces, and adoptions are noted where known.
+    </p>
+    <p class="note">
+        Note: Martin, Linda, and Lisa are adopted siblings. Linda and Lisa are natural sisters adopted together from Korea.
     </p>
 
     <div class="tree">
@@ -179,6 +184,22 @@
 
                 <!-- Generation 2 and below -->
                 <ul>
+
+                    <!-- Bill & Diane branch -->
+                    <li>
+                        <div class="node couple">
+                            <div class="name">
+                                <span>Bill Sullivan</span>
+                                <span>Diane Sullivan</span>
+                            </div>
+                            <div class="dates">
+                                b. 10/6/1947 &nbsp; · &nbsp; b. 1/11/1947<br>
+                                m. 6/26/1999
+                            </div>
+                        </div>
+                        <!-- No children listed -->
+                    </li>
+
                     <!-- Dennis & Cáit branch -->
                     <li>
                         <div class="node couple">
@@ -192,11 +213,17 @@
                             </div>
                         </div>
                         <ul>
-                            <!-- Patrick -->
+                            <!-- Patrick & John -->
                             <li>
-                                <div class="node">
-                                    <div class="name">Patrick Sullivan</div>
-                                    <div class="dates">b. 12/14/1979</div>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>Patrick Sullivan</span>
+                                        <span>John Barrios</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 12/14/1979 &nbsp; · &nbsp; b. 9/22/1990<br>
+                                        Engaged
+                                    </div>
                                 </div>
                             </li>
 
@@ -227,14 +254,6 @@
                                     </li>
                                 </ul>
                             </li>
-
-                            <!-- John -->
-                            <li>
-                                <div class="node">
-                                    <div class="name">John Barrios</div>
-                                    <div class="dates">b. 9/22/1990</div>
-                                </div>
-                            </li>
                         </ul>
                     </li>
 
@@ -242,7 +261,7 @@
                     <li>
                         <div class="node couple">
                             <div class="name">
-                                <span>Terry Prevey</span>
+                                <span>Terry Prevey (Sullivan)</span>
                                 <span>Jeff Prevey</span>
                             </div>
                             <div class="dates">
@@ -301,31 +320,196 @@
                                         <span>Tara D'Orazio</span>
                                     </div>
                                     <div class="dates">
-                                        b. 8/16/1984 &nbsp; · &nbsp; b. 11/4/1986<br>
-                                        m. TBD
+                                        b. 8/16/1984 &nbsp; · &nbsp; b. 11/4/1986
                                     </div>
                                 </div>
                             </li>
                         </ul>
                     </li>
 
-                    <!-- You can continue adding branches here for:
-                         - Diane & Bill
-                         - Janet
-                         - Mary & Tom
-                         - Sheila & Tom
-                         - Jose & Linda
-                         - Francis & Mary Jane
-                         - Steven & Katie
-                         - Martin & (later connections)
-                         - Lisa & Nate
-                    -->
-                </ul>
-            </li>
-        </ul>
-    </div>
-</div>
+                    <!-- Janet (single) -->
+                    <li>
+                        <div class="node">
+                            <div class="name">Janet Sullivan</div>
+                            <div class="dates">b. 7/4/1952</div>
+                        </div>
+                    </li>
 
-</body>
-</html>
+                    <!-- Mary "Cookie" & Tom Deacy branch -->
+                    <li>
+                        <div class="node couple">
+                            <div class="name">
+                                <span>Mary “Cookie” Sullivan</span>
+                                <span>Tom Deacy</span>
+                            </div>
+                            <div class="dates">
+                                b. 11/28/1953 &nbsp; · &nbsp; b. 12/15/1954<br>
+                                m. 5/26/1979
+                            </div>
+                        </div>
+                        <ul>
+                            <!-- Sarah & Adam -->
+                            <li>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>Sarah Billington</span>
+                                        <span>Adam Billington</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 10/23/1980 &nbsp; · &nbsp; b. 2/19/1974<br>
+                                        m. 9/26/2010
+                                    </div>
+                                </div>
+                                <ul>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Arlo Billington</div>
+                                            <div class="dates">b. 9/16/2012</div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Ezra Billington</div>
+                                            <div class="dates">b. 11/30/2015</div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
 
+                            <!-- Bennett & Amanda -->
+                            <li>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>Bennett Deacy</span>
+                                        <span>Amanda Deacy</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 8/26/1982 &nbsp; · &nbsp; b. 3/25/1976<br>
+                                        m. 1/14/2012
+                                    </div>
+                                </div>
+                                <ul>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Marshal Deacy</div>
+                                            <div class="dates">b. 11/1/2013</div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Elsie Deacy</div>
+                                            <div class="dates">b. 6/29/2015</div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <!-- Will & Caroline -->
+                            <li>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>Will Deacy</span>
+                                        <span>Caroline Deacy</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 9/5/1985 &nbsp; · &nbsp; b. 4/28/1986<br>
+                                        m. 7/2/2017
+                                    </div>
+                                </div>
+                                <ul>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Lark Deacy</div>
+                                            <div class="dates">b. 5/23/2023</div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <!-- James & Chantal -->
+                            <li>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>James Deacy</span>
+                                        <span>Chantal Deacy</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 10/18/1988 &nbsp; · &nbsp; b. 5/18/1990<br>
+                                        m. 12/28/2022
+                                    </div>
+                                </div>
+                                <ul>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Tommy Deacy</div>
+                                            <div class="dates">b. 2/21/2024</div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Sheila & Tom Polk branch -->
+                    <li>
+                        <div class="node couple">
+                            <div class="name">
+                                <span>Sheila Sullivan</span>
+                                <span>Tom Polk</span>
+                            </div>
+                            <div class="dates">
+                                b. 2/13/1956 &nbsp; · &nbsp; b. 1/23/1957<br>
+                                m. 5/22/1982
+                            </div>
+                        </div>
+                        <ul>
+                            <!-- John & Laura (Polk) -->
+                            <li>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>John Polk</span>
+                                        <span>Laura Polk</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 2/12/1985 &nbsp; · &nbsp; b. 10/15/1984<br>
+                                        m. 11/9/2013
+                                    </div>
+                                </div>
+                                <ul>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Luca John Polk</div>
+                                            <div class="dates">b. 6/19/2018</div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Farah Polk</div>
+                                            <div class="dates">b. 9/9/2020</div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <!-- Stephen & Laura -->
+                            <li>
+                                <div class="node couple">
+                                    <div class="name">
+                                        <span>Stephen Polk</span>
+                                        <span>Laura Polk</span>
+                                    </div>
+                                    <div class="dates">
+                                        b. 3/1/1987 &nbsp; · &nbsp; b. 7/19/1987<br>
+                                        m. 10/14/2017
+                                    </div>
+                                </div>
+                                <ul>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Jack Polk</div>
+                                            <div class="dates">b. 10/18/2021</div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="node">
+                                            <div class="name">Sarah Polk</div>
