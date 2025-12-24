@@ -1,515 +1,208 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>The Sullivan Family Tree</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Sullivan Family Tree</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f7f7f7;
-            margin: 0;
-            padding: 0;
-            color: #333;
-        }
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f7f7f7;
+        margin: 0;
+        padding: 20px;
+        color: #333;
+    }
 
-        header {
-            background: #3a3a3a;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-        }
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+    }
 
-        h1 {
-            margin: 0;
-            font-size: 28px;
-        }
+    .tree {
+        display: grid;
+        grid-template-columns: 250px 250px 250px 250px;
+        gap: 20px;
+        overflow-x: auto;
+    }
 
-        .container {
-            max-width: 1600px;
-            margin: 30px auto;
-            padding: 0 20px 40px;
-        }
+    .gen {
+        background: #fff;
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
 
-        .intro {
-            margin-bottom: 20px;
-        }
+    .person {
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #eee;
+    }
 
-        .note {
-            font-size: 13px;
-            color: #666;
-        }
+    .name {
+        font-weight: bold;
+    }
 
-        /* Tree layout */
-
-        .tree {
-            width: 100%;
-            overflow-x: auto;
-            padding: 20px 0;
-            text-align: center;
-        }
-
-        .tree ul {
-            padding-top: 20px;
-            position: relative;
-            padding-left: 0;
-            display: inline-block;
-        }
-
-        .tree li {
-            list-style-type: none;
-            margin: 0 auto;
-            padding: 20px 5px 0 5px;
-            position: relative;
-            text-align: center;
-            display: inline-block;
-            vertical-align: top;
-        }
-
-        /* Lines connecting nodes */
-
-        .tree li::before,
-        .tree li::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 50%;
-            border-top: 1px solid #ccc;
-            width: 50%;
-            height: 20px;
-        }
-
-        .tree li::after {
-            right: auto;
-            left: 50%;
-            border-left: 1px solid #ccc;
-        }
-
-        /* Remove connectors from single children */
-
-        .tree li:only-child::after,
-        .tree li:only-child::before {
-            display: none;
-        }
-
-        .tree li:only-child {
-            padding-top: 0;
-        }
-
-        /* Vertical connector to parent */
-
-        .tree li > ul::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            border-left: 1px solid #ccc;
-            width: 0;
-            height: 20px;
-        }
-
-        /* Node styling */
-
-        .tree .node {
-            display: inline-block;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid #999;
-            background: #fff;
-            min-width: 170px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-        }
-
-        .node .name {
-            font-weight: bold;
-        }
-
-        .node .dates {
-            font-size: 12px;
-            color: #555;
-        }
-
-        .node .notes {
-            font-size: 11px;
-            color: #777;
-            margin-top: 3px;
-        }
-
-        /* Couple nodes */
-
-        .couple .name span {
-            display: block;
-        }
-
-        @media (max-width: 768px) {
-            .node {
-                min-width: 140px;
-                font-size: 13px;
-            }
-        }
-    </style>
+    .indent-1 { margin-left: 20px; }
+    .indent-2 { margin-left: 40px; }
+    .indent-3 { margin-left: 60px; }
+</style>
 </head>
+
 <body>
 
-<header>
-    <h1>The Sullivan Family Tree</h1>
-</header>
+<h1>The Sullivan Family Tree</h1>
 
-<div class="container">
-    <p class="intro">
-        This tree shows four generations of the descendants of
-        <strong>William John Sullivan</strong> (b. 12/11/1919) and
-        <strong>Lois Elaine (Welling) Sullivan</strong> (b. 5/22/1924),
-        with names and birth dates. Marriages, engagements, divorces, and adoptions are noted where known.
-    </p>
-    <p class="note">
-        Note: Martin, Linda, and Lisa are adopted siblings. Linda and Lisa are natural sisters adopted together from Korea.
-    </p>
+<div class="tree">
 
-    <div class="tree">
-        <ul>
-            <li>
-                <!-- Generation 1: Bill & Lois -->
-                <div class="node couple">
-                    <div class="name">
-                        <span>William John Sullivan</span>
-                        <span>Lois Elaine (Welling) Sullivan</span>
-                    </div>
-                    <div class="dates">
-                        b. 12/11/1919 &nbsp; · &nbsp; b. 5/22/1924<br>
-                        m. 6/29/1946
-                    </div>
-                </div>
+    <!-- GENERATION 1 -->
+    <div class="gen">
+        <h2>1st Generation</h2>
 
-                <!-- Generation 2 and below -->
-                <ul>
+        <div class="person">
+            <div class="name">William John Sullivan</div>
+            <div>b. 12/11/1919</div>
+        </div>
 
-                    <!-- Bill & Diane branch -->
-                    <li>
-                        <div class="node couple">
-                            <div class="name">
-                                <span>Bill Sullivan</span>
-                                <span>Diane Sullivan</span>
-                            </div>
-                            <div class="dates">
-                                b. 10/6/1947 &nbsp; · &nbsp; b. 1/11/1947<br>
-                                m. 6/26/1999
-                            </div>
-                        </div>
-                        <!-- No children listed -->
-                    </li>
+        <div class="person">
+            <div class="name">Lois Elaine (Welling) Sullivan</div>
+            <div>b. 5/22/1924</div>
+        </div>
+    </div>
 
-                    <!-- Dennis & Cáit branch -->
-                    <li>
-                        <div class="node couple">
-                            <div class="name">
-                                <span>Dennis Sullivan</span>
-                                <span>Cáit Sullivan</span>
-                            </div>
-                            <div class="dates">
-                                b. 2/21/1949 &nbsp; · &nbsp; b. 1/27/1952<br>
-                                m. 7/15/1972
-                            </div>
-                        </div>
-                        <ul>
-                            <!-- Patrick & John -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>Patrick Sullivan</span>
-                                        <span>John Barrios</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 12/14/1979 &nbsp; · &nbsp; b. 9/22/1990<br>
-                                        Engaged
-                                    </div>
-                                </div>
-                            </li>
+    <!-- GENERATION 2 -->
+    <div class="gen">
+        <h2>2nd Generation</h2>
 
-                            <!-- Braeden & Liza-Jane -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>Braeden Sullivan</span>
-                                        <span>Liza-Jane Capatos Sullivan</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 5/1/1982 &nbsp; · &nbsp; b. 1/16/1980<br>
-                                        m. 8/9/2008
-                                    </div>
-                                </div>
-                                <ul>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Levi Sullivan</div>
-                                            <div class="dates">b. 8/25/2011</div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Adeline Sullivan</div>
-                                            <div class="dates">b. 3/31/2015</div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
+        <div class="person"><div class="name">Bill Sullivan</div><div>b. 10/6/1947</div></div>
+        <div class="person"><div class="name">Diane Sullivan</div><div>b. 1/11/1947</div></div>
 
-                    <!-- Terry & Jeff branch -->
-                    <li>
-                        <div class="node couple">
-                            <div class="name">
-                                <span>Terry Prevey (Sullivan)</span>
-                                <span>Jeff Prevey</span>
-                            </div>
-                            <div class="dates">
-                                b. 4/10/1950 &nbsp; · &nbsp; b. 2/15/1952<br>
-                                m. 12/20/1980
-                            </div>
-                        </div>
-                        <ul>
-                            <li>
-                                <div class="node">
-                                    <div class="name">Janet Prevey</div>
-                                    <div class="dates">b. 9/27/1982</div>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="node">
-                                    <div class="name">Jesse Prevey</div>
-                                    <div class="dates">b. 11/2/1986</div>
-                                </div>
-                            </li>
-                        </ul>
-                    </li>
+        <div class="person"><div class="name">Dennis Sullivan</div><div>b. 2/21/1949</div></div>
+        <div class="person"><div class="name">Cáit Sullivan</div><div>b. 1/27/1952</div></div>
 
-                    <!-- Sally & Peter branch -->
-                    <li>
-                        <div class="node couple">
-                            <div class="name">
-                                <span>Sally Sullivan</span>
-                                <span>Peter Salamon</span>
-                            </div>
-                            <div class="dates">
-                                b. 5/23/1951 &nbsp; · &nbsp; b. 11/5/1950<br>
-                                m. 6/29/1976
-                            </div>
-                        </div>
-                        <ul>
-                            <!-- Anna & Carl -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>Anna Salamon</span>
-                                        <span>Carl Shulman</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 10/26/1980 &nbsp; · &nbsp; b. 8/12/1982<br>
-                                        m. 6/19/2011
-                                    </div>
-                                </div>
-                            </li>
+        <div class="person"><div class="name">Terry Prevey (Sullivan)</div><div>b. 4/10/1950</div></div>
+        <div class="person"><div class="name">Sally Sullivan</div><div>b. 5/23/1951</div></div>
+        <div class="person"><div class="name">Janet Sullivan</div><div>b. 7/4/1952</div></div>
+        <div class="person"><div class="name">Mary “Cookie” Sullivan</div><div>b. 11/28/1953</div></div>
+        <div class="person"><div class="name">Sheila Sullivan</div><div>b. 2/13/1956</div></div>
+        <div class="person"><div class="name">Joe (Jose) Sullivan</div><div>b. 8/25/1957</div></div>
+        <div class="person"><div class="name">Francis Sullivan</div><div>b. 10/20/1962</div></div>
+        <div class="person"><div class="name">Steven Sullivan</div><div>b. 8/10/1964</div></div>
+        <div class="person"><div class="name">Linda Sullivan</div><div>b. 2/24/1965</div></div>
+        <div class="person"><div class="name">Martin Sullivan</div><div>b. 4/4/1967</div></div>
+        <div class="person"><div class="name">Lisa Sullivan Hileman</div><div>b. 10/6/1968</div></div>
+    </div>
 
-                            <!-- David & Tara -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>David Salamon</span>
-                                        <span>Tara D'Orazio</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 8/16/1984 &nbsp; · &nbsp; b. 11/4/1986
-                                    </div>
-                                </div>
-                            </li>
-                        </ul>
-                    </li>
+    <!-- GENERATION 3 -->
+    <div class="gen">
+        <h2>3rd Generation</h2>
 
-                    <!-- Janet (single) -->
-                    <li>
-                        <div class="node">
-                            <div class="name">Janet Sullivan</div>
-                            <div class="dates">b. 7/4/1952</div>
-                        </div>
-                    </li>
+        <!-- Dennis & Cait's children -->
+        <div class="person indent-1"><div class="name">Patrick Sullivan</div><div>b. 12/14/1979</div></div>
+        <div class="person indent-1"><div class="name">Braeden Sullivan</div><div>b. 5/1/1982</div></div>
+        <div class="person indent-1"><div class="name">John Barrios</div><div>b. 9/22/1990</div></div>
 
-                    <!-- Mary "Cookie" & Tom Deacy branch -->
-                    <li>
-                        <div class="node couple">
-                            <div class="name">
-                                <span>Mary “Cookie” Sullivan</span>
-                                <span>Tom Deacy</span>
-                            </div>
-                            <div class="dates">
-                                b. 11/28/1953 &nbsp; · &nbsp; b. 12/15/1954<br>
-                                m. 5/26/1979
-                            </div>
-                        </div>
-                        <ul>
-                            <!-- Sarah & Adam -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>Sarah Billington</span>
-                                        <span>Adam Billington</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 10/23/1980 &nbsp; · &nbsp; b. 2/19/1974<br>
-                                        m. 9/26/2010
-                                    </div>
-                                </div>
-                                <ul>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Arlo Billington</div>
-                                            <div class="dates">b. 9/16/2012</div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Ezra Billington</div>
-                                            <div class="dates">b. 11/30/2015</div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </li>
+        <!-- Terry's children -->
+        <div class="person indent-1"><div class="name">Janet Prevey</div><div>b. 9/27/1982</div></div>
+        <div class="person indent-1"><div class="name">Jesse Prevey</div><div>b. 11/2/1986</div></div>
 
-                            <!-- Bennett & Amanda -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>Bennett Deacy</span>
-                                        <span>Amanda Deacy</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 8/26/1982 &nbsp; · &nbsp; b. 3/25/1976<br>
-                                        m. 1/14/2012
-                                    </div>
-                                </div>
-                                <ul>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Marshal Deacy</div>
-                                            <div class="dates">b. 11/1/2013</div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Elsie Deacy</div>
-                                            <div class="dates">b. 6/29/2015</div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </li>
+        <!-- Sally's children -->
+        <div class="person indent-1"><div class="name">Anna Salamon</div><div>b. 10/26/1980</div></div>
+        <div class="person indent-1"><div class="name">Carl Shulman</div><div>b. 8/12/1982</div></div>
+        <div class="person indent-1"><div class="name">David Salamon</div><div>b. 8/16/1984</div></div>
+        <div class="person indent-1"><div class="name">Tara D’Orazio</div><div>b. 11/4/1986</div></div>
 
-                            <!-- Will & Caroline -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>Will Deacy</span>
-                                        <span>Caroline Deacy</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 9/5/1985 &nbsp; · &nbsp; b. 4/28/1986<br>
-                                        m. 7/2/2017
-                                    </div>
-                                </div>
-                                <ul>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Lark Deacy</div>
-                                            <div class="dates">b. 5/23/2023</div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </li>
+        <!-- Cookie's children -->
+        <div class="person indent-1"><div class="name">Sarah Billington</div><div>b. 10/23/1980</div></div>
+        <div class="person indent-1"><div class="name">Adam Billington</div><div>b. 2/19/1974</div></div>
+        <div class="person indent-1"><div class="name">Bennett Deacy</div><div>b. 8/26/1982</div></div>
+        <div class="person indent-1"><div class="name">Amanda Deacy</div><div>b. 3/25/1976</div></div>
+        <div class="person indent-1"><div class="name">Will Deacy</div><div>b. 9/5/1985</div></div>
+        <div class="person indent-1"><div class="name">Caroline Deacy</div><div>b. 4/28/1986</div></div>
+        <div class="person indent-1"><div class="name">James Deacy</div><div>b. 10/18/1988</div></div>
+        <div class="person indent-1"><div class="name">Chantal Deacy</div><div>b. 5/18/1990</div></div>
 
-                            <!-- James & Chantal -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>James Deacy</span>
-                                        <span>Chantal Deacy</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 10/18/1988 &nbsp; · &nbsp; b. 5/18/1990<br>
-                                        m. 12/28/2022
-                                    </div>
-                                </div>
-                                <ul>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Tommy Deacy</div>
-                                            <div class="dates">b. 2/21/2024</div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
+        <!-- Sheila's children -->
+        <div class="person indent-1"><div class="name">John Polk</div><div>b. 2/12/1985</div></div>
+        <div class="person indent-1"><div class="name">Laura Polk</div><div>b. 10/15/1984</div></div>
+        <div class="person indent-1"><div class="name">Stephen Polk</div><div>b. 3/1/1987</div></div>
+        <div class="person indent-1"><div class="name">Laura Polk</div><div>b. 7/19/1987</div></div>
+        <div class="person indent-1"><div class="name">Mathew Polk</div><div>b. 6/11/1989</div></div>
+        <div class="person indent-1"><div class="name">Bethany Polk</div><div>b. 8/12/1992</div></div>
 
-                    <!-- Sheila & Tom Polk branch -->
-                    <li>
-                        <div class="node couple">
-                            <div class="name">
-                                <span>Sheila Sullivan</span>
-                                <span>Tom Polk</span>
-                            </div>
-                            <div class="dates">
-                                b. 2/13/1956 &nbsp; · &nbsp; b. 1/23/1957<br>
-                                m. 5/22/1982
-                            </div>
-                        </div>
-                        <ul>
-                            <!-- John & Laura (Polk) -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>John Polk</span>
-                                        <span>Laura Polk</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 2/12/1985 &nbsp; · &nbsp; b. 10/15/1984<br>
-                                        m. 11/9/2013
-                                    </div>
-                                </div>
-                                <ul>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Luca John Polk</div>
-                                            <div class="dates">b. 6/19/2018</div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Farah Polk</div>
-                                            <div class="dates">b. 9/9/2020</div>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </li>
+        <!-- Joe's children -->
+        <div class="person indent-1"><div class="name">Teresa Hilbert</div><div>b. 1/31/1985</div></div>
+        <div class="person indent-1"><div class="name">Kevin Hilbert</div><div>b. 11/20/1984</div></div>
+        <div class="person indent-1"><div class="name">Tyrel Sullivan</div><div>b. 11/12/1987</div></div>
+        <div class="person indent-1"><div class="name">Mackenzie Sullivan</div><div>b. 7/26/1988</div></div>
+        <div class="person indent-1"><div class="name">Tessa Imus</div><div>b. 2/28/1990</div></div>
+        <div class="person indent-1"><div class="name">Matt Imus</div><div>b. 7/31/1969</div></div>
 
-                            <!-- Stephen & Laura -->
-                            <li>
-                                <div class="node couple">
-                                    <div class="name">
-                                        <span>Stephen Polk</span>
-                                        <span>Laura Polk</span>
-                                    </div>
-                                    <div class="dates">
-                                        b. 3/1/1987 &nbsp; · &nbsp; b. 7/19/1987<br>
-                                        m. 10/14/2017
-                                    </div>
-                                </div>
-                                <ul>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Jack Polk</div>
-                                            <div class="dates">b. 10/18/2021</div>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="node">
-                                            <div class="name">Sarah Polk</div>
+        <!-- Francis's children -->
+        <div class="person indent-1"><div class="name">Benjamin Sullivan</div><div>b. 9/9/1989</div></div>
+        <div class="person indent-1"><div class="name">Natalie Sullivan</div><div>b. 8/19/1987</div></div>
+        <div class="person indent-1"><div class="name">Spencer</div><div>b. 2/5/1993</div></div>
+        <div class="person indent-1"><div class="name">Molly</div><div>b. 1/23/1996</div></div>
+
+        <!-- Steven's children -->
+        <div class="person indent-1"><div class="name">Nathaniel Sullivan</div><div>b. 5/17/2002</div></div>
+        <div class="person indent-1"><div class="name">Claire Bennet</div><div>b. 1/14/2002</div></div>
+        <div class="person indent-1"><div class="name">Liam Sullivan</div><div>b. 12/2/2005</div></div>
+
+        <!-- Linda's child -->
+        <div class="person indent-1"><div class="name">Paulina Glamann</div><div>b. 10/17/1988</div></div>
+
+        <!-- Lisa's child -->
+        <div class="person indent-1"><div class="name">Ray Hileman</div><div>b. 8/6/2004</div></div>
+    </div>
+
+    <!-- GENERATION 4 -->
+    <div class="gen">
+        <h2>4th Generation</h2>
+
+        <!-- Braeden's children -->
+        <div class="person indent-2"><div class="name">Levi Sullivan</div><div>b. 8/25/2011</div></div>
+        <div class="person indent-2"><div class="name">Adeline Sullivan</div><div>b. 3/31/2015</div></div>
+
+        <!-- Sarah's children -->
+        <div class="person indent-2"><div class="name">Arlo Billington</div><div>b. 9/16/2012</div></div>
+        <div class="person indent-2"><div class="name">Ezra Billington</div><div>b. 11/30/2015</div></div>
+
+        <!-- Bennett's children -->
+        <div class="person indent-2"><div class="name">Marshal Deacy</div><div>b. 11/1/2013</div></div>
+        <div class="person indent-2"><div class="name">Elsie Deacy</div><div>b. 6/29/2015</div></div>
+
+        <!-- Will's child -->
+        <div class="person indent-2"><div class="name">Lark Deacy</div><div>b. 5/23/2023</div></div>
+
+        <!-- James's child -->
+        <div class="person indent-2"><div class="name">Tommy Deacy</div><div>b. 2/21/2024</div></div>
+
+        <!-- John Polk's children -->
+        <div class="person indent-2"><div class="name">Luca John Polk</div><div>b. 6/19/2018</div></div>
+        <div class="person indent-2"><div class="name">Farah Polk</div><div>b. 9/9/2020</div></div>
+
+        <!-- Stephen's children -->
+        <div class="person indent-2"><div class="name">Jack Polk</div><div>b. 10/18/2021</div></div>
+        <div class="person indent-2"><div class="name">Sarah Polk</div><div>b. 1/7/2024</div></div>
+
+        <!-- Mathew's children -->
+        <div class="person indent-2"><div class="name">Lewis Polk</div><div>b. 3/17/2020</div></div>
+        <div class="person indent-2"><div class="name">Leigh Polk</div><div>b. 3/23/2022</div></div>
+        <div class="person indent-2"><div class="name">Willow Polk</div><div>b. 1/14/2024</div></div>
+
+        <!-- Teresa's children -->
+        <div class="person indent-2"><div class="name">Lincoln Hilbert</div><div>b. 11/29/2017</div></div>
+        <div class="person indent-2"><div class="name">Griffin Hilbert</div><div>b. 4/7/2020</div></div>
+        <div class="person indent-2"><div class="name">Parker Hilbert</div><div>b. 10/23/2021</div></div>
+
+        <!-- Tessa's children -->
+        <div class="person indent-2"><div class="name">Cooper Imus</div><div>b. 8/12/2019</div></div>
+        <div class="person indent-2"><div class="name">Colten Imus</div><div>b. 4/15/2021</div></div>
+        <div class="person indent-2"><div class="name">Lainey Imus</div><div>b. 4/11/2024</div></div>
+    </div>
+
+</div>
+
+</body>
+</html>
