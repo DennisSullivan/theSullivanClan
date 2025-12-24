@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
+<title>Sullivan Family Tree</title>
+
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -76,37 +79,230 @@
 
 <script>
 // ---------------------------
-// FAMILY DATA (expand as needed)
+// FULL SULLIVAN FAMILY JSON
 // ---------------------------
 const family = {
-    "Bill & Lois": {
-        name: "Bill Sullivan (1919) & Lois (1924)",
-        spouse: null,
-        children: ["Bill", "Dennis", "Terry", "Sally", "Janet", "Mary", "Sheila", "Jose", "Francis", "Steven", "Martin", "Linda", "Lisa"]
-    },
+  "BillLois": {
+    "name": "Bill Sullivan (1919-12-11)",
+    "spouse": "Lois Sullivan (1924-05-22)",
+    "children": [
+      "Bill1947","Dennis1949","Terry1950","Sally1951","Janet1952","Mary1953",
+      "Sheila1956","Jose1957","Francis1962","Steven1964","Martin1967","Linda1965","Lisa1968"
+    ]
+  },
 
-    "Bill": { name: "Bill Sullivan (1947)", spouse: "Diane Sullivan (1947)", children: [] },
+  "Bill1947": {
+    "name": "Bill Sullivan (1947-10-06)",
+    "spouse": "Diane Sullivan (1947-01-11)",
+    "children": []
+  },
 
-    "Dennis": { name: "Dennis Sullivan (1949)", spouse: "Cáit Sullivan (1952)", children: ["Patrick", "Braeden"] },
+  "Dennis1949": {
+    "name": "Dennis Sullivan (1949-02-21)",
+    "spouse": "Cáit Sullivan (1952-01-27)",
+    "children": ["Patrick1979", "Braeden1982"]
+  },
 
-    "Patrick": { name: "Patrick Sullivan (1979)", spouse: "John Barrios (1990)", children: [] },
+  "Patrick1979": {
+    "name": "Patrick Sullivan (1979-12-14)",
+    "spouse": "John Barrios (1990-09-22)",
+    "children": []
+  },
 
-    "Braeden": { name: "Braeden Sullivan (1982)", spouse: "Liza‑Jane Capatos (1980)", children: ["Levi", "Adeline"] },
+  "Braeden1982": {
+    "name": "Braeden Sullivan (1982-05-01)",
+    "spouse": "Liza-Jane Capatos Sullivan (1980-01-16)",
+    "children": ["Levi2011", "Adeline2015"]
+  },
 
-    "Levi": { name: "Levi Sullivan (2011)", spouse: null, children: [] },
-    "Adeline": { name: "Adeline Sullivan (2015)", spouse: null, children: [] },
+  "Levi2011": { "name": "Levi Sullivan (2011-08-25)", "spouse": null, "children": [] },
+  "Adeline2015": { "name": "Adeline Sullivan (2015-03-31)", "spouse": null, "children": [] },
 
-    "Terry": { name: "Terry Prevey (1950)", spouse: "Jeff Prevey (1952)", children: ["JanetP", "Jesse"] },
+  "Terry1950": {
+    "name": "Terry Prevey (1950-04-10)",
+    "spouse": "Jeff Prevey (1952-02-15)",
+    "children": ["JanetPrevey1982", "JessePrevey1986"]
+  },
 
-    "JanetP": { name: "Janet Prevey (1982)", spouse: null, children: [] },
-    "Jesse": { name: "Jesse Prevey (1986)", spouse: null, children: [] },
+  "JanetPrevey1982": { "name": "Janet Prevey (1982-09-27)", "spouse": null, "children": [] },
+  "JessePrevey1986": { "name": "Jesse Prevey (1986-11-02)", "spouse": null, "children": [] },
 
-    "Sally": { name: "Sally Sullivan (1951)", spouse: "Peter Salamon (1950)", children: ["Anna", "David"] },
+  "Sally1951": {
+    "name": "Sally Sullivan (1951-05-23)",
+    "spouse": "Peter Salamon (1950-11-05)",
+    "children": ["Anna1980", "David1984"]
+  },
 
-    "Anna": { name: "Anna Salamon (1980)", spouse: "Carl Shulman (1982)", children: [] },
-    "David": { name: "David Salamon (1984)", spouse: "Tara D’Orazio (1986)", children: [] },
+  "Anna1980": {
+    "name": "Anna Salamon (1980-10-26)",
+    "spouse": "Carl Shulman (1982-08-12)",
+    "children": []
+  },
 
-    // Continue adding the rest of the family...
+  "David1984": {
+    "name": "David Salamon (1984-08-16)",
+    "spouse": "Tara D'Orazio (1986-11-04)",
+    "children": []
+  },
+
+  "Janet1952": { "name": "Janet Sullivan (1952-07-04)", "spouse": null, "children": [] },
+
+  "Mary1953": {
+    "name": "Mary Cookie Deacy (1953-11-28)",
+    "spouse": "Tom Deacy (1954-12-15)",
+    "children": ["Sarah1980","Bennett1982","Will1985","James1988"]
+  },
+
+  "Sarah1980": {
+    "name": "Sarah Billington (1980-10-23)",
+    "spouse": "Adam Billington (1974-02-19)",
+    "children": ["Arlo2012","Ezra2015"]
+  },
+
+  "Arlo2012": { "name": "Arlo Billington (2012-09-16)", "spouse": null, "children": [] },
+  "Ezra2015": { "name": "Ezra Billington (2015-11-30)", "spouse": null, "children": [] },
+
+  "Bennett1982": {
+    "name": "Bennett Deacy (1982-08-26)",
+    "spouse": "Amanda Deacy (1976-03-25)",
+    "children": ["Marshal2013","Elsie2015"]
+  },
+
+  "Marshal2013": { "name": "Marshal Deacy (2013-11-01)", "spouse": null, "children": [] },
+  "Elsie2015": { "name": "Elsie Deacy (2015-06-29)", "spouse": null, "children": [] },
+
+  "Will1985": {
+    "name": "Will Deacy (1985-09-05)",
+    "spouse": "Caroline Deacy (1986-04-28)",
+    "children": ["Lark2023"]
+  },
+
+  "Lark2023": { "name": "Lark Deacy (2023-05-23)", "spouse": null, "children": [] },
+
+  "James1988": {
+    "name": "James Deacy (1988-10-18)",
+    "spouse": "Chantal Deacy (1990-05-18)",
+    "children": ["Tommy2024"]
+  },
+
+  "Tommy2024": { "name": "Tommy Deacy (2024-02-21)", "spouse": null, "children": [] },
+
+  "Sheila1956": {
+    "name": "Sheila Polk (1956-02-13)",
+    "spouse": "Tom Polk (1957-01-23)",
+    "children": ["John1985","Stephen1987","Mathew1989"]
+  },
+
+  "John1985": {
+    "name": "John Polk (1985-02-12)",
+    "spouse": "Laura Polk (1984-10-15)",
+    "children": ["Luca2018","Farah2020"]
+  },
+
+  "Luca2018": { "name": "Luca John Polk (2018-06-19)", "spouse": null, "children": [] },
+  "Farah2020": { "name": "Farah Polk (2020-09-09)", "spouse": null, "children": [] },
+
+  "Stephen1987": {
+    "name": "Stephen Polk (1987-03-01)",
+    "spouse": "Laura Polk (1987-07-19)",
+    "children": ["Jack2021","Sarah2024"]
+  },
+
+  "Jack2021": { "name": "Jack Polk (2021-10-18)", "spouse": null, "children": [] },
+  "Sarah2024": { "name": "Sarah Polk (2024-01-07)", "spouse": null, "children": [] },
+
+  "Mathew1989": {
+    "name": "Mathew Polk (1989-06-11)",
+    "spouse": "Bethany Polk (1992-08-12)",
+    "children": ["Lewis2020","Leigh2022","Willow2024"]
+  },
+
+  "Lewis2020": { "name": "Lewis Polk (2020-03-17)", "spouse": null, "children": [] },
+  "Leigh2022": { "name": "Leigh Polk (2022-03-23)", "spouse": null, "children": [] },
+  "Willow2024": { "name": "Willow Polk (2024-01-14)", "spouse": null, "children": [] },
+
+  "Jose1957": {
+    "name": "Jose Sullivan (1957-08-25)",
+    "spouse": "Linda Sullivan (1958-01-28)",
+    "children": ["Teresa1985","Tyrel1987","Tessa1990"]
+  },
+
+  "Teresa1985": {
+    "name": "Teresa Hilbert (1985-01-31)",
+    "spouse": "Kevin Hilbert (1984-11-20)",
+    "children": ["Lincoln2017","Griffin2020","Parker2021"]
+  },
+
+  "Lincoln2017": { "name": "Lincoln Hilbert (2017-11-29)", "spouse": null, "children": [] },
+  "Griffin2020": { "name": "Griffin Hilbert (2020-04-07)", "spouse": null, "children": [] },
+  "Parker2021": { "name": "Parker Hilbert (2021-10-23)", "spouse": null, "children": [] },
+
+  "Tyrel1987": {
+    "name": "Tyrel Sullivan (1987-11-12)",
+    "spouse": "Mackenzie Sullivan (1988-07-26)",
+    "children": ["Quinn2019","Hudson2021"]
+  },
+
+  "Quinn2019": { "name": "Quinn Sullivan (2019-11-09)", "spouse": null, "children": [] },
+  "Hudson2021": { "name": "Hudson Sullivan (2021-09-22)", "spouse": null, "children": [] },
+
+  "Tessa1990": {
+    "name": "Tessa Imus (1990-02-28)",
+    "spouse": "Matt Imus (1969-07-31)",
+    "children": ["Cooper2019","Colten2021","Lainey2024"]
+  },
+
+  "Cooper2019": { "name": "Cooper Imus (2019-08-12)", "spouse": null, "children": [] },
+  "Colten2021": { "name": "Colten Imus (2021-04-15)", "spouse": null, "children": [] },
+  "Lainey2024": { "name": "Lainey Imus (2024-04-11)", "spouse": null, "children": [] },
+
+  "Francis1962": {
+    "name": "Francis Sullivan (1962-10-20)",
+    "spouse": "Mary Jane Sullivan (1964-07-25)",
+    "children": ["Benjamin1989","Spencer1993","Molly1996"]
+  },
+
+  "Benjamin1989": { "name": "Benjamin Sullivan (1989-09-09)", "spouse": null, "children": [] },
+
+  "Spencer1993": {
+    "name": "Spencer Sullivan (1993-02-05)",
+    "spouse": "Natalie Sullivan (1987-08-19)",
+    "children": []
+  },
+
+  "Molly1996": { "name": "Molly Sullivan (1996-01-23)", "spouse": null, "children": [] },
+
+  "Steven1964": {
+    "name": "Steven Sullivan (1964-08-10)",
+    "spouse": "Katie Sullivan (1964-08-01)",
+    "children": ["Nathaniel2002","Liam2005"]
+  },
+
+  "Nathaniel2002": {
+    "name": "Nathaniel Sullivan (2002-05-17)",
+    "spouse": "Claire Bennet (2002-01-14)",
+    "children": []
+  },
+
+  "Liam2005": { "name": "Liam Sullivan (2005-12-02)", "spouse": null, "children": [] },
+
+  "Martin1967": { "name": "Martin Sullivan (1967-04-04)", "spouse": null, "children": [] },
+
+  "Linda1965": {
+    "name": "Linda Koser (1965-02-24)",
+    "spouse": "Dale Koser (1971-09-15)",
+    "children": ["Paulina1988"]
+  },
+
+  "Paulina1988": { "name": "Paulina Glamann (1988-10-17)", "spouse": null, "children": [] },
+
+  "Lisa1968": {
+    "name": "Lisa Sullivan Hileman (1968-10-06)",
+    "spouse": "Nate Hileman (1978-08-09)",
+    "children": ["Ray2004"]
+  },
+
+  "Ray2004": { "name": "Ray Hileman (2004-08-06)", "spouse": null, "children": [] }
 };
 
 // ---------------------------
@@ -190,7 +386,7 @@ function showTree(personKey, pushHistory = true) {
 document.getElementById("homeBtn").onclick = () => {
     historyStack = [];
     breadcrumbTrail = [];
-    showTree("Bill & Lois");
+    showTree("BillLois");
 };
 
 document.getElementById("zoomBtn").onclick = () => {
@@ -204,7 +400,7 @@ document.getElementById("zoomBtn").onclick = () => {
 // ---------------------------
 // INITIAL VIEW
 // ---------------------------
-showTree("Bill & Lois");
+showTree("BillLois");
 </script>
 
 </body>
