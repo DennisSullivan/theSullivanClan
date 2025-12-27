@@ -36,7 +36,7 @@
         .sheet-wrapper {
             position: relative;
             width: 100%;
-            padding-bottom: 70%; /* Controls aspect ratio */
+            padding-bottom: 70%;
             height: 0;
             overflow: hidden;
             border: 1px solid #ccc;
@@ -59,13 +59,12 @@
             font-size: 14px;
         }
 
+        /* PRINT STYLES */
         @media print {
-            /* Hide header, footer, and the link */
-            header, footer, a {
+            header, footer, a, #login-box {
                 display: none !important;
             }
 
-            /* Make the sheet print full width on a portrait page */
             .sheet-wrapper {
                 padding: 0 !important;
                 padding-bottom: 0 !important;
@@ -86,6 +85,17 @@
 
 <body>
 
+<!-- ⭐ PASSWORD PROMPT ⭐ -->
+<div id="login-box" style="text-align:center; margin-top:100px;">
+    <h2>Enter Password</h2>
+    <input id="password-input" type="password" style="padding:10px; font-size:16px;">
+    <button onclick="checkPassword()" style="padding:10px 18px; font-size:16px;">Submit</button>
+    <p id="error" style="color:red; display:none;">Incorrect password</p>
+</div>
+
+<!-- ⭐ PROTECTED CONTENT ⭐ -->
+<div id="protected" style="display:none;">
+
 <header>
     <h1>Sullivan Family Medical Summary</h1>
 </header>
@@ -93,7 +103,7 @@
 <div class="container">
     <p>This page displays the Sullivan family medical summary spreadsheet. Updates made in Google Sheets will appear here automatically.</p>
 
-    <!-- ⭐ PRINTABLE VERSION LINK ⭐ -->
+    <!-- Printable Version Button -->
     <a href="https://docs.google.com/spreadsheets/d/1Q_e3QxZKyhWLpc6lf47Dx9ZPNKbnIrV0H-8BCNIrv9U/preview"
        target="_blank"
        style="
@@ -122,8 +132,22 @@
     &copy; <span id="year"></span> The Sullivan Clan — DWS Press
 </footer>
 
+</div> <!-- end protected -->
+
 <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+
+    function checkPassword() {
+        const correct = "loissullivan";  // ⭐ CHANGE PASSWORD HERE
+        const entered = document.getElementById("password-input").value;
+
+        if (entered === correct) {
+            document.getElementById("login-box").style.display = "none";
+            document.getElementById("protected").style.display = "block";
+        } else {
+            document.getElementById("error").style.display = "block";
+        }
+    }
 </script>
 
 </body>
