@@ -16,6 +16,15 @@
       font-size: 16px;
     }
     h2 { margin-top: 30px; }
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .button-row .button {
+      flex: 1 1 250px; /* minimum width before wrapping */
+    }
   </style>
 </head>
 <body>
@@ -29,14 +38,16 @@
   <p><a class="button" href="https://docs.google.com/spreadsheets/d/1qd97pESYhKL5-xLjlY7HrXF_16ooIJtx52xzA8vYta4/edit?usp=sharing" target="_blank">Open Address List</a></p>
 
   <!-- Birthdates -->
-  <h2>Birthdates & Marriage Dates, if you can get in then you can make changes.</h2>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1kXYtiLN1c0tJB6F8rYX6HWegqCdR_wGJ43JfJPfyOSs/edit?gid=0#gid=0" target="_blank">
-    Editable Family Tree Dates (Birth & Marriage)
-  </a></p>
-
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1kXYtiLN1c0tJB6F8rYX6HWegqCdR_wGJ43JfJPfyOSs/edit?gid=1884025245#gid=1884025245" target="_blank">
-    Read‑Only Rolling Dates (Next 12 Months), read only.
-  </a></p>
+  <div class="button-row">
+    <h2>Birthdates & Marriage Dates, if you can get in then you can make changes.</h2>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1kXYtiLN1c0tJB6F8rYX6HWegqCdR_wGJ43JfJPfyOSs/edit?gid=0#gid=0" target="_blank">
+      Editable Family Tree Dates (Birth & Marriage)
+    </a></p>
+  
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1kXYtiLN1c0tJB6F8rYX6HWegqCdR_wGJ43JfJPfyOSs/edit?gid=1884025245#gid=1884025245" target="_blank">
+      Read‑Only Rolling Dates (Next 12 Months), read only.
+    </a></p>
+  </div>div>
 
   <!-- Composite Medical Summary -->
   <h2>Composite Medical Summary, read only.</h2>
@@ -46,23 +57,23 @@
 
   <!-- Individual Medical Records -->
   <h2>Individual Medical Records, only your button will work (unless you are special).</h2>
-
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/17bNLVkEQrtohMD1ibTiodvIcfr6qBBWpj1Jdp5Ae78g/edit?usp=drive_link" target="_blank">Chief</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1NtKh0nucux06S8WR2gO0IMm8LA7jgpAoU7TeEbKSSsw/edit?usp=drive_link" target="_blank">B2</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1NaZ6SL42lHo6tsgU0BR-7GqyMqEtdXIKWw1oh-U8apQ/edit?usp=drive_link" target="_blank">Bill</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1jRxUSTydfUxhWLRQakJIO5rGEs7UWYyxOogMOSv9eFY/edit?usp=drive_link" target="_blank">Dennis</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1UGlOtu97J7FdU23Rt3ksuBhDdmF9EGesoZ_F_86znXo/edit?usp=drive_link" target="_blank">Terry</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1ZA2R6QFYm6NGkz1HKR516tg2UHxb0wJJT0oRGyGmFj8/edit?usp=drive_link" target="_blank">Sally</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1VbZqguWwOb2CdsZkdwLVOLJ3Ym1eyvIsJ4y9gqLMN4E/edit?usp=drive_link" target="_blank">Janet</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1noORIQdpUGun7XcUtE13UOMVFSmJFrQqkAnzU7tglVE/edit?usp=drive_link" target="_blank">Mary</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1f2G5iGdhx1IGOUqPMwLQy16P3-0amH_6ocS1wQPcHxs/edit?usp=drive_link" target="_blank">Sheila</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1lA6SfyIIs4WkKR-RYQQlb-2-idiD99e8eWbRD7sjVGE/edit?usp=drive_link" target="_blank">Joe</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1EwPXe3AxIfkPvIeYQVydqUPBC5D4JatXFFwbjpGt7dw/edit?usp=drive_link" target="_blank">Francis</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1J4CMqJaNxPHvWr8an7pC5q7Xx6Ne4RzCBdzilJtcBi0/edit?usp=drive_link" target="_blank">Steven</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1dFP8eD1BnJ10etk7sefymfwLMqrIlUcs_0nNmoh01DM/edit?usp=drive_link" target="_blank">Martin</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1kF9cJmAZj_TrUKZiNMgtJGMhb6sL37pM2sIKH9X4t7g/edit?usp=drive_link" target="_blank">Linda</a></p>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/18dUU9rs6zHeB6i3V5yNDztvQ-CDWhG0NssdOmykWkyA/edit?usp=drive_link" target="_blank">Lisa</a></p>
-
+  <div class="button-row">
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/17bNLVkEQrtohMD1ibTiodvIcfr6qBBWpj1Jdp5Ae78g/edit?usp=drive_link" target="_blank">Chief</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1NtKh0nucux06S8WR2gO0IMm8LA7jgpAoU7TeEbKSSsw/edit?usp=drive_link" target="_blank">B2</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1NaZ6SL42lHo6tsgU0BR-7GqyMqEtdXIKWw1oh-U8apQ/edit?usp=drive_link" target="_blank">Bill</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1jRxUSTydfUxhWLRQakJIO5rGEs7UWYyxOogMOSv9eFY/edit?usp=drive_link" target="_blank">Dennis</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1UGlOtu97J7FdU23Rt3ksuBhDdmF9EGesoZ_F_86znXo/edit?usp=drive_link" target="_blank">Terry</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1ZA2R6QFYm6NGkz1HKR516tg2UHxb0wJJT0oRGyGmFj8/edit?usp=drive_link" target="_blank">Sally</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1VbZqguWwOb2CdsZkdwLVOLJ3Ym1eyvIsJ4y9gqLMN4E/edit?usp=drive_link" target="_blank">Janet</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1noORIQdpUGun7XcUtE13UOMVFSmJFrQqkAnzU7tglVE/edit?usp=drive_link" target="_blank">Mary</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1f2G5iGdhx1IGOUqPMwLQy16P3-0amH_6ocS1wQPcHxs/edit?usp=drive_link" target="_blank">Sheila</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1lA6SfyIIs4WkKR-RYQQlb-2-idiD99e8eWbRD7sjVGE/edit?usp=drive_link" target="_blank">Joe</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1EwPXe3AxIfkPvIeYQVydqUPBC5D4JatXFFwbjpGt7dw/edit?usp=drive_link" target="_blank">Francis</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1J4CMqJaNxPHvWr8an7pC5q7Xx6Ne4RzCBdzilJtcBi0/edit?usp=drive_link" target="_blank">Steven</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1dFP8eD1BnJ10etk7sefymfwLMqrIlUcs_0nNmoh01DM/edit?usp=drive_link" target="_blank">Martin</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1kF9cJmAZj_TrUKZiNMgtJGMhb6sL37pM2sIKH9X4t7g/edit?usp=drive_link" target="_blank">Linda</a></p>
+    <p><a class="button" href="https://docs.google.com/spreadsheets/d/18dUU9rs6zHeB6i3V5yNDztvQ-CDWhG0NssdOmykWkyA/edit?usp=drive_link" target="_blank">Lisa</a></p>
+</div>div>
   <p><em>This page is unlisted and only accessible to those who know the URL. 
          All sensitive data remains protected inside Google Sheets.</em></p>
 
