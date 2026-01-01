@@ -1,93 +1,187 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Private Data – Family Records</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Private Family Data</title>
 
   <style>
-        body { 
-      font-family: Arial, sans-serif; 
-      margin: 40px; 
-      line-height: 1.6; 
+    body {
+      font-family: Georgia, serif;
+      background-color: #f7f2e8;
+      color: #3a2f2f;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
     }
 
-    @media (max-width: 600px) {
-      body {
-        margin: 10px;
-      }
+    header {
+      background-color: #d9c7a3;
+      padding: 35px 20px;
+      text-align: center;
+      border-bottom: 6px solid #b59a6a;
     }
-    a { color: #0645AD; text-decoration: none; }
+
+    header h1 {
+      font-size: 2.6rem;
+      margin: 0;
+      letter-spacing: 1px;
+    }
+
+    header h2 {
+      font-weight: normal;
+      margin-top: 8px;
+      font-size: 1.2rem;
+      color: #5a4a3a;
+    }
+
+    .content {
+      max-width: 850px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h3 {
+      font-size: 1.6rem;
+      margin-bottom: 10px;
+      color: #4a3a2a;
+      border-bottom: 1px solid #d2c7b8;
+      padding-bottom: 4px;
+    }
+
+    p {
+      font-size: 1.1rem;
+    }
+
+    /* Buttons */
     .button {
       display: inline-block;
-      padding: 10px 18px;
+      padding: 12px 20px;
       margin: 8px 0;
-      background-color: #e8e8e8;
-      border: 1px solid #ccc;
+      background-color: #e6dfd4;
+      border: 1px solid #b8a894;
       border-radius: 6px;
-      font-size: 16px;
+      font-size: 1.1rem;
+      color: #3a2f28;
+      text-decoration: none;
+      text-align: center;
+      transition: background 0.2s;
     }
-    h2 { margin-top: 30px; }
+
+    .button:hover {
+      background-color: #dcd3c4;
+    }
+
+    /* Responsive button rows */
     .button-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
+      margin-bottom: 20px;
     }
-    
+
     .button-row .button {
-      flex: 1 1 250px; /* minimum width before wrapping */
+      flex: 1 1 260px;
+    }
+
+    /* Mobile refinements */
+    @media (max-width: 600px) {
+      header {
+        padding: 25px 15px;
+      }
+      header h1 {
+        font-size: 2.2rem;
+      }
+      header h2 {
+        font-size: 1.1rem;
+      }
+      .content {
+        margin: 20px auto;
+        padding: 0 15px;
+      }
+      .button {
+        width: 100%;
+      }
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      background-color: #d9c7a3;
+      border-top: 6px solid #b59a6a;
+      margin-top: 60px;
+      font-size: 0.9rem;
+      color: #5a4a3a;
     }
   </style>
-  </head>
+</head>
+
 <body>
 
-  <h1>Private Data – Family Records</h1>
-  <p>This page provides secure access to private family information stored in Google Sheets. 
-     All data remains protected by Google’s authentication system.</p>
+<header>
+  <h1>Private Family Data</h1>
+  <h2>Secure Records for the Sullivan Family</h2>
+</header>
+
+<div class="content">
+
+  <p>
+    These links provide access to private family information stored securely in Google Sheets.  
+    Access is controlled by Google’s authentication system — only those with permission may view or edit.
+  </p>
 
   <!-- Addresses -->
-  <h2>Addresses, if you can get in then you can make changes.</h2>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1qd97pESYhKL5-xLjlY7HrXF_16ooIJtx52xzA8vYta4/edit?usp=sharing" target="_blank">Open Address List</a></p>
+  <h3>Addresses</h3>
+  <a class="button" href="https://docs.google.com/spreadsheets/d/1qd97pESYhKL5-xLjlY7HrXF_16ooIJtx52xzA8vYta4/edit?usp=sharing" target="_blank">
+    Open Address List
+  </a>
 
   <!-- Birthdates -->
-  <h2>Birthdates & Marriage Dates, if you can get in then you can make changes.</h2>
+  <h3>Birthdates & Marriage Dates</h3>
   <div class="button-row">
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1kXYtiLN1c0tJB6F8rYX6HWegqCdR_wGJ43JfJPfyOSs/edit?gid=0#gid=0" target="_blank">
-      Editable Family Tree Dates (Birth & Marriage)
-    </a></p>
-  
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1kXYtiLN1c0tJB6F8rYX6HWegqCdR_wGJ43JfJPfyOSs/edit?gid=1884025245#gid=1884025245" target="_blank">
-      Rolling Dates (Next 12 Months), read only.
-    </a></p>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1kXYtiLN1c0tJB6F8rYX6HWegqCdR_wGJ43JfJPfyOSs/edit?gid=0#gid=0" target="_blank">
+      Editable Family Tree Dates (Gen Bdays)
+    </a>
+
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1kXYtiLN1c0tJB6F8rYX6HWegqCdR_wGJ43JfJPfyOSs/edit?gid=1884025245#gid=1884025245" target="_blank">
+      Rolling Dates (Next 12 Months)
+    </a>
   </div>
 
   <!-- Composite Medical Summary -->
-  <h2>Composite Medical Summary, read only.</h2>
-  <p><a class="button" href="https://docs.google.com/spreadsheets/d/1Q_e3QxZKyhWLpc6lf47Dx9ZPNKbnIrV0H-8BCNIrv9U/edit?usp=sharing" target="_blank">
+  <h3>Composite Medical Summary</h3>
+  <a class="button" href="https://docs.google.com/spreadsheets/d/1Q_e3QxZKyhWLpc6lf47Dx9ZPNKbnIrV0H-8BCNIrv9U/edit?usp=sharing" target="_blank">
     Open Composite Medical Summary
-  </a></p>
+  </a>
 
   <!-- Individual Medical Records -->
-  <h2>Individual Medical Records, only your button will work (unless you are special).</h2>
+  <h3>Individual Medical Records</h3>
   <div class="button-row">
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/17bNLVkEQrtohMD1ibTiodvIcfr6qBBWpj1Jdp5Ae78g/edit?usp=drive_link" target="_blank">Chief</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1NtKh0nucux06S8WR2gO0IMm8LA7jgpAoU7TeEbKSSsw/edit?usp=drive_link" target="_blank">B2</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1NaZ6SL42lHo6tsgU0BR-7GqyMqEtdXIKWw1oh-U8apQ/edit?usp=drive_link" target="_blank">Bill</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1jRxUSTydfUxhWLRQakJIO5rGEs7UWYyxOogMOSv9eFY/edit?usp=drive_link" target="_blank">Dennis</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1UGlOtu97J7FdU23Rt3ksuBhDdmF9EGesoZ_F_86znXo/edit?usp=drive_link" target="_blank">Terry</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1ZA2R6QFYm6NGkz1HKR516tg2UHxb0wJJT0oRGyGmFj8/edit?usp=drive_link" target="_blank">Sally</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1VbZqguWwOb2CdsZkdwLVOLJ3Ym1eyvIsJ4y9gqLMN4E/edit?usp=drive_link" target="_blank">Janet</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1noORIQdpUGun7XcUtE13UOMVFSmJFrQqkAnzU7tglVE/edit?usp=drive_link" target="_blank">Mary</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1f2G5iGdhx1IGOUqPMwLQy16P3-0amH_6ocS1wQPcHxs/edit?usp=drive_link" target="_blank">Sheila</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1lA6SfyIIs4WkKR-RYQQlb-2-idiD99e8eWbRD7sjVGE/edit?usp=drive_link" target="_blank">Joe</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1EwPXe3AxIfkPvIeYQVydqUPBC5D4JatXFFwbjpGt7dw/edit?usp=drive_link" target="_blank">Francis</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1J4CMqJaNxPHvWr8an7pC5q7Xx6Ne4RzCBdzilJtcBi0/edit?usp=drive_link" target="_blank">Steven</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1dFP8eD1BnJ10etk7sefymfwLMqrIlUcs_0nNmoh01DM/edit?usp=drive_link" target="_blank">Martin</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/1kF9cJmAZj_TrUKZiNMgtJGMhb6sL37pM2sIKH9X4t7g/edit?usp=drive_link" target="_blank">Linda</a></p>
-    <p><a class="button" href="https://docs.google.com/spreadsheets/d/18dUU9rs6zHeB6i3V5yNDztvQ-CDWhG0NssdOmykWkyA/edit?usp=drive_link" target="_blank">Lisa</a></p>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/17bNLVkEQrtohMD1ibTiodvIcfr6qBBWpj1Jdp5Ae78g/edit?usp=drive_link" target="_blank">Chief</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1NtKh0nucux06S8WR2gO0IMm8LA7jgpAoU7TeEbKSSsw/edit?usp=drive_link" target="_blank">B2</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1NaZ6SL42lHo6tsgU0BR-7GqyMqEtdXIKWw1oh-U8apQ/edit?usp=drive_link" target="_blank">Bill</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1jRxUSTydfUxhWLRQakJIO5rGEs7UWYyxOogMOSv9eFY/edit?usp=drive_link" target="_blank">Dennis</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1UGlOtu97J7FdU23Rt3ksuBhDdmF9EGesoZ_F_86znXo/edit?usp=drive_link" target="_blank">Terry</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1ZA2R6QFYm6NGkz1HKR516tg2UHxb0wJJT0oRGyGmFj8/edit?usp=drive_link" target="_blank">Sally</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1VbZqguWwOb2CdsZkdwLVOLJ3Ym1eyvIsJ4y9gqLMN4E/edit?usp=drive_link" target="_blank">Janet</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1noORIQdpUGun7XcUtE13UOMVFSmJFrQqkAnzU7tglVE/edit?usp=drive_link" target="_blank">Mary</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1f2G5iGdhx1IGOUqPMwLQy16P3-0amH_6ocS1wQPcHxs/edit?usp=drive_link" target="_blank">Sheila</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1lA6SfyIIs4WkKR-RYQQlb-2-idiD99e8eWbRD7sjVGE/edit?usp=drive_link" target="_blank">Joe</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1EwPXe3AxIfkPvIeYQVydqUPBC5D4JatXFFwbjpGt7dw/edit?usp=drive_link" target="_blank">Francis</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1J4CMqJaNxPHvWr8an7pC5q7Xx6Ne4RzCBdzilJtcBi0/edit?usp=drive_link" target="_blank">Steven</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1dFP8eD1BnJ10etk7sefymfwLMqrIlUcs_0nNmoh01DM/edit?usp=drive_link" target="_blank">Martin</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/1kF9cJmAZj_TrUKZiNMgtJGMhb6sL37pM2sIKH9X4t7g/edit?usp=drive_link" target="_blank">Linda</a>
+    <a class="button" href="https://docs.google.com/spreadsheets/d/18dUU9rs6zHeB6i3V5yNDztvQ-CDWhG0NssdOmykWkyA/edit?usp=drive_link" target="_blank">Lisa</a>
+  </div>
+
+  <p><em>This page is unlisted and only accessible to those who know the URL.  
+     All sensitive data remains protected inside Google Sheets.</em></p>
+
 </div>
-  <p><em>This page is unlisted and only accessible to those who know the URL. 
-         All sensitive data remains protected inside Google Sheets.</em></p>
+
+<footer>
+  Curated with care by DWS Press • Est. 2006
+</footer>
 
 </body>
 </html>
