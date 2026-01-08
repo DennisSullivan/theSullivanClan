@@ -32,10 +32,8 @@
       .section h3 {
         font-size: 1.4rem;
       }
-      .art-buttons a {
-        display: block;
+      .nav-buttons a {
         width: 100%;
-        margin-bottom: 12px;
       }
     }
 
@@ -79,30 +77,32 @@
       color: #4a3a2a;
     }
 
-    /* Button styling */
-    .art-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
+    /* NEW BUTTON STYLE (matches top-level page) */
+    .nav-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
       margin-top: 20px;
     }
 
-    .art-buttons a {
-      flex: 1 1 calc(33% - 12px);
-      background-color: #d9c7a3;
-      border: 2px solid #b59a6a;
+    .nav-button {
+      background-color: #e8dfcf;
+      border: 2px solid #c8b79a;
       padding: 12px;
       text-align: center;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
+      font-weight: bold;
       color: #4a3a2a;
       text-decoration: none;
+      display: block;
       border-radius: 6px;
-      transition: 0.2s ease;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
     }
 
-    .art-buttons a:hover {
-      background-color: #b59a6a;
-      color: #f7f2e8;
+    .nav-button:hover {
+      background-color: #dcd1bd;
+      border-color: #b59a6a;
+      color: #2a1a0a;
     }
 
     footer {
@@ -133,14 +133,16 @@
       below to explore their artistic contributions.
     </p>
 
-    <div class="art-buttons">
-      <a href="/art/chief_art">Chief</a>
-      <a href="/art/b2_art">B2</a>
-      <a href="/art/terry_art">Terry</a>
-      <a href="/art/sally_art">Sally</a>
-      <a href="/art/mary_art">Mary</a>
-      <a href="/art/sheila_art">Sheila</a>
+    <!-- UPDATED BUTTON GRID -->
+    <div class="nav-buttons">
+      <a class="nav-button" href="/art/chief_art">Chief</a>
+      <a class="nav-button" href="/art/b2_art">B2</a>
+      <a class="nav-button" href="/art/terry_art">Terry</a>
+      <a class="nav-button" href="/art/sally_art">Sally</a>
+      <a class="nav-button" href="/art/mary_art">Mary</a>
+      <a class="nav-button" href="/art/sheila_art">Sheila</a>
     </div>
+
   </div>
 
 </div>
