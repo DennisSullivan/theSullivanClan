@@ -47,6 +47,8 @@
         margin: 20px auto;
         font-size: 1.2rem;
         color: #5a4a3a;
+        max-width: 900px;
+        padding: 0 10px;
     }
 
     .breadcrumb span {
@@ -68,38 +70,68 @@
         to { opacity: 1 }
     }
 
-    /* Generation group */
+    /* Generation / children group */
     .generation {
         margin: 30px 0;
+    }
+
+    .generation h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        font-size: 1.4rem;
+        color: #4a3a2a;
+        text-align: left;
+    }
+
+    /* Family-unit box (parent + spouse OR single person) */
+    .family-unit {
+        background-color: #e8dfcf;
+        border: 2px solid #c8b79a;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin: 8px 0;
+        display: inline-block;
+        max-width: 100%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+        cursor: default;
+    }
+
+    .family-unit.root {
+        display: block;
+        margin: 0 auto 10px auto;
         text-align: center;
     }
 
-    /* Person box — Rockwell style */
-    .person {
-        padding: 12px 18px;
-        margin: 8px;
-        border: 2px solid #b59a6a;
-        border-radius: 8px;
-        background: #FAF7F2;
-        display: inline-block;
-        font-size: 1.2rem;
+    .family-unit.child {
         cursor: pointer;
-        max-width: 90%;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .person:hover {
+    .family-unit.child:hover {
         transform: translateY(-2px);
         box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+        background-color: #dcd1bd;
+        border-color: #b59a6a;
     }
 
-    /* Spouse text */
-    .spouse {
-        font-size: 1rem;
-        color: #6b5a4a;
-        margin-bottom: 10px;
+    /* Names inside family-unit */
+    .family-names {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #4a3a2a;
+        line-height: 1.4;
         text-align: center;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+
+    .family-names .line {
+        display: block;
+    }
+
+    /* Children container indentation */
+    .children-container {
+        margin-left: 30px;
     }
 
     /* MOBILE LAYOUT FIXES */
@@ -111,27 +143,29 @@
 
         .controls button {
             width: 100%;
-            font-size: 1.3rem;
-            padding: 14px;
+            font-size: 1.2rem;
+            padding: 12px;
         }
 
         .breadcrumb {
-            font-size: 1.3rem;
-            padding: 0 10px;
+            font-size: 1.1rem;
         }
 
-        .generation {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            width: 100% !important;
+        .tree-container {
+            padding: 10px;
         }
 
-        .generation .person {
-            width: 95% !important;
-            font-size: 1.5rem !important;
-            margin: 12px 0 !important;
-            padding: 18px 20px !important;
+        .family-unit {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .children-container {
+            margin-left: 0;
+        }
+
+        .generation h3 {
+            text-align: center;
         }
     }
 </style>
@@ -148,7 +182,6 @@
 <div id="tree" class="tree-container"></div>
 
 <script>
-
 // ---------------------------
 // FULL SULLIVAN FAMILY JSON
 // ---------------------------
@@ -390,8 +423,9 @@ function renderBreadcrumbs() {
     bc.innerHTML = "";
 
     breadcrumbTrail.forEach((key, index) => {
+        const person = family[key];
         const span = document.createElement("span");
-        span.textContent = family[key].name;
+        span.textContent = person.name;
         span.onclick = () => {
             breadcrumbTrail = breadcrumbTrail.slice(0, index + 1);
             showTree(key, false);
@@ -405,6 +439,34 @@ function renderBreadcrumbs() {
 }
 
 // ---------------------------
+// HELPER: CREATE FAMILY-UNIT BOX
+// ---------------------------
+function createFamilyUnit(personKey, isRoot = false) {
+    const person = family[personKey];
+
+    const unit = document.createElement("div");
+    unit.className = "family-unit" + (isRoot ? " root" : " child");
+
+    const names = document.createElement("div");
+    names.className = "family-names";
+
+    const primaryLine = document.createElement("span");
+    primaryLine.className = "line";
+    primaryLine.textContent = person.name;
+    names.appendChild(primaryLine);
+
+    if (person.spouse) {
+        const spouseLine = document.createElement("span");
+        spouseLine.className = "line";
+        spouseLine.textContent = person.spouse;
+        names.appendChild(spouseLine);
+    }
+
+    unit.appendChild(names);
+    return unit;
+}
+
+// ---------------------------
 // MAIN TREE RENDERER
 // ---------------------------
 function showTree(personKey, pushHistory = true) {
@@ -415,39 +477,34 @@ function showTree(personKey, pushHistory = true) {
 
     renderBreadcrumbs();
 
-    const root = family[personKey];
+    const rootPerson = family[personKey];
     const treeDiv = document.getElementById("tree");
     treeDiv.innerHTML = "";
 
-    // Root person
-    const rootDiv = document.createElement("div");
-    rootDiv.className = "person";
-    rootDiv.textContent = root.name;
-    treeDiv.appendChild(rootDiv);
-
-    // Spouse
-    if (root.spouse) {
-        const spouseDiv = document.createElement("div");
-        spouseDiv.className = "spouse";
-        spouseDiv.textContent = "Spouse: " + root.spouse;
-        treeDiv.appendChild(spouseDiv);
-    }
+    // Root family-unit (person + spouse inside same box)
+    const rootUnit = createFamilyUnit(personKey, true);
+    treeDiv.appendChild(rootUnit);
 
     // Children
-    if (root.children && root.children.length > 0) {
+    if (rootPerson.children && rootPerson.children.length > 0) {
         const genDiv = document.createElement("div");
         genDiv.className = "generation";
-        genDiv.innerHTML = "<h3>Children</h3>";
-        treeDiv.appendChild(genDiv);
 
-        root.children.forEach(childKey => {
-            const child = family[childKey];
-            const childDiv = document.createElement("div");
-            childDiv.className = "person";
-            childDiv.textContent = child.name;
-            childDiv.onclick = () => showTree(childKey);
-            genDiv.appendChild(childDiv);
+        const heading = document.createElement("h3");
+        heading.textContent = "Children";
+        genDiv.appendChild(heading);
+
+        const childrenContainer = document.createElement("div");
+        childrenContainer.className = "children-container";
+        genDiv.appendChild(childrenContainer);
+
+        rootPerson.children.forEach(childKey => {
+            const childUnit = createFamilyUnit(childKey, false);
+            childUnit.onclick = () => showTree(childKey);
+            childrenContainer.appendChild(childUnit);
         });
+
+        treeDiv.appendChild(genDiv);
     }
 }
 
