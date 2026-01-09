@@ -53,7 +53,7 @@ const loisStories = {
         url: "https://docs.google.com/document/d/e/2PACX-1vT-GnV8Wu6IBmTzM1K972APcZMCgVGJHUwLs3A8FJhikZZ6RyqCE0rjRQfh9QEZyeBhEaPwwcCWqHfb/pub?embedded=true" 
     },
     13: {
-        title: "The "S" Book", 
+        title: "The \"S\" Book", 
         url: "https://docs.google.com/document/d/e/2PACX-1vSD8qbHSQ2V_lO4ue_RpCziDW2ERyO5ToYtGe7uYCGEMD-xFWE5krU3iaexKuSJk6jZ0nDev2fnalGv/pub?embedded=true" 
     },
     14: {
