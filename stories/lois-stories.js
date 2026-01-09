@@ -3,31 +3,31 @@
 
 const loisStories = {
     1: { 
-        title: "Story 1",
+        title: "A Mother's Day Message",
         url: "https://docs.google.com/document/d/e/2PACX-1vQ_Q7QWncVuRvsjQDqN_0kYwe4rcXS9Lw2WVYMP7XoO4h6Uw87aOKXu9hbIlZZV8Or8VxeLZab-QN7V/pub?embedded=true"
     },
     2: { 
-        title: "Story 2",
+        title: "Cats Eyes",
         url: "https://docs.google.com/document/d/e/2PACX-1vR7jS8v13SyEDMFl5Cs7S2tHzxSE7CP09phECfvBFtfb-L7S8xGQTltH_oWOzureJi3R_yQYO9GPb1Q/pub?embedded=true"
     },
     3: { 
-        title: "Story 3",
+        title: "Corrugated Tin",
         url: "https://docs.google.com/document/d/e/2PACX-1vRMtTi_grECewC9Zi2IbG54B3OrlW5a4AozThZ5G-A4xKDv7EKhhg6RPWkfUV_MmKNDx8jw3Sw4_nF0/pub?embedded=true"
     },
     4: { 
-        title: "Story 4",
+        title: "Creating My World",
         url: "https://docs.google.com/document/d/e/2PACX-1vR4_2JHc2uV-pggWbquFwWSSWyB9LbTTsI1FuYC3BEiFkB9lP0tTJ7iwX1IhOpsHnfzPPehG3ozR8hu/pub?embedded=true"
     },
     5: { 
-        title: "Story 5",
+        title: "Letter to a 21st Century Great Grandchild",
         url: "https://docs.google.com/document/d/e/2PACX-1vQX5YVv0qPuLf8C0EHPtZGMIuhNrsKOmfWZWzav3sDVjpnXDwek0JUYh2pbnUCJoGLhx65KsWjlguOr/pub?embedded=true"
     },
     6: { 
-        title: "Story 6",
+        title: "Faith and Love",
         url: "https://docs.google.com/document/d/e/2PACX-1vSMi9ARnIyJ9R2rE9Ygf6vlx5ijA5Uw1hWdWB67xPMwTsWuOp9-2tiJOD40MCKShCCQSq0JlKz-kd71/pub?embedded=true"
     },
     7: { 
-        title: "Story 7",
+        title: "My Crystal Cave",
         url: "https://docs.google.com/document/d/e/2PACX-1vQQtFE3aQTKQuOsNlN_QW00gcLVwAwU9Ihvai0Uuz2An41fDtWT53I3svSleo_v-ceGxL76FWKNVPjC/pub?embedded=true"
     },
 
