@@ -13,6 +13,7 @@
         margin: 0;
         padding: 0;
         line-height: 1.6;
+        text-align: center;
     }
 
     .header {
@@ -22,14 +23,12 @@
         font-size: 2rem;
         font-weight: bold;
         color: #4a3a2a;
-        text-align: center;
     }
 
     .container {
         max-width: 800px;
         margin: 40px auto;
         padding: 20px;
-        text-align: center;
     }
 
     .nav-button {
@@ -59,28 +58,30 @@
 
 <div class="header">Lois's Short Stories</div>
 
-<div class="container">
-
-    <a class="nav-button" href="index.html">← Back to Stories</a>
-
-    <a class="nav-button" href="lois-story.html?id=1">Story 1</a>
-    <a class="nav-button" href="lois-story.html?id=2">Story 2</a>
-    <a class="nav-button" href="lois-story.html?id=3">Story 3</a>
-    <a class="nav-button" href="lois-story.html?id=4">Story 4</a>
-    <a class="nav-button" href="lois-story.html?id=5">Story 5</a>
-    <a class="nav-button" href="lois-story.html?id=6">Story 6</a>
-    <a class="nav-button" href="lois-story.html?id=7">Story 7</a>
-    <a class="nav-button" href="lois-story.html?id=8">Story 8</a>
-    <a class="nav-button" href="lois-story.html?id=9">Story 9</a>
-    <a class="nav-button" href="lois-story.html?id=10">Story 10</a>
-    <a class="nav-button" href="lois-story.html?id=11">Story 11</a>
-    <a class="nav-button" href="lois-story.html?id=12">Story 12</a>
-    <a class="nav-button" href="lois-story.html?id=13">Story 13</a>
-    <a class="nav-button" href="lois-story.html?id=14">Story 14</a>
-    <a class="nav-button" href="lois-story.html?id=15">Story 15</a>
-    <a class="nav-button" href="lois-story.html?id=16">Story 16</a>
-
+<div class="container" id="storyList">
+    <p>Loading stories…</p>
 </div>
+
+<script>
+// Load the template file so we can access getLoisStories()
+const script = document.createElement("script");
+script.src = "lois-story.html";
+script.onload = () => {
+    const stories = window.getLoisStories();
+    const listDiv = document.getElementById("storyList");
+    listDiv.innerHTML = "";
+
+    Object.keys(stories).forEach(id => {
+        const story = stories[id];
+        const a = document.createElement("a");
+        a.className = "nav-button";
+        a.href = `lois-story.html?id=${id}`;
+        a.textContent = story.title;
+        listDiv.appendChild(a);
+    });
+};
+document.body.appendChild(script);
+</script>
 
 </body>
 </html>
