@@ -32,15 +32,42 @@ const loisStories = {
     },
 
     // placeholders for the remaining stories
-    8:  { title: "Story 8",  url: "" },
-    9:  { title: "Story 9",  url: "" },
-    10: { title: "Story 10", url: "" },
-    11: { title: "Story 11", url: "" },
-    12: { title: "Story 12", url: "" },
-    13: { title: "Story 13", url: "" },
-    14: { title: "Story 14", url: "" },
-    15: { title: "Story 15", url: "" },
-    16: { title: "Story 16", url: "" }
+    8:  { 
+        title: "Self-Discipline",  
+        url: "https://docs.google.com/document/d/e/2PACX-1vRDm_iemQk9aNMcHuc7bpgjRo4k-Rti_xd2DnXdKBqIVOYako3xTAxHg1i5zzRredhwf3GNYM5b88qa/pub?embedded=true" 
+    },
+    9:  { 
+        title: "Lois's Mother of the Year Speach",  
+        url: "https://docs.google.com/document/d/e/2PACX-1vTMln1bR1DjDeimqK76UCQeOeHe_ERjLSwmF3RdTjkw0R6q3ptRIw-LnZv4Mw4RctYI8_SDE8Wvo-Kh/pub?embedded=true" 
+    },
+    10: { 
+        title: "Story 10", 
+        url: "https://docs.google.com/document/d/e/2PACX-1vQs1YGP7qE3X6R-eukDgAWLv2oI9tT3aHgtaleqdXaYVUdDJtFX1Hcm0pVtwagXCrfF6Sq0yHRt057-/pub?embedded=true" 
+    },
+    11: { 
+        title: "My Wedding Dress", 
+        url: "https://docs.google.com/document/d/e/2PACX-1vQs1YGP7qE3X6R-eukDgAWLv2oI9tT3aHgtaleqdXaYVUdDJtFX1Hcm0pVtwagXCrfF6Sq0yHRt057-/pub?embedded=true" 
+    },
+    12: { 
+        title: "Reflections in a Baby's Eye", 
+        url: "https://docs.google.com/document/d/e/2PACX-1vT-GnV8Wu6IBmTzM1K972APcZMCgVGJHUwLs3A8FJhikZZ6RyqCE0rjRQfh9QEZyeBhEaPwwcCWqHfb/pub?embedded=true" 
+    },
+    13: {
+        title: "The "S" Book", 
+        url: "https://docs.google.com/document/d/e/2PACX-1vSD8qbHSQ2V_lO4ue_RpCziDW2ERyO5ToYtGe7uYCGEMD-xFWE5krU3iaexKuSJk6jZ0nDev2fnalGv/pub?embedded=true" 
+    },
+    14: {
+        title: "The Brothers",
+        url: "https://docs.google.com/document/d/e/2PACX-1vSN62CvbrGnqASQHsfeSbhiVwLP6KmMro1WFCR7mtwUGfqdLVLWDM9db3CAvUoYnZGKtkXN_gVAyoDv/pub?embedded=true"
+    },
+    15: { 
+        title: "The Mixed Bouquet Family",
+        url: "https://docs.google.com/document/d/e/2PACX-1vTCyGRYrZR21B2bworb66X1jQCdJEsvf72amNTP1wkdzNlMyLMM538tYUMbN0sbVne52N_V_ov7SDMG/pub?embedded=true" 
+    },
+    16: { 
+        title: "The Story of Rebecca ", 
+        url: "https://docs.google.com/document/d/e/2PACX-1vT-lN32GOYOh6mm7bjvAZIv05KQKHDyDr7Dj5Fj1wcrnHkoH9-jhrVGzehhtGxXwD-gxkIMo9I5ou0F/pub?embedded=true" 
+    }
 };
 
 // Expose the story list to any page that loads this file
