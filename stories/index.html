@@ -31,26 +31,27 @@
         padding: 20px;
     }
 
-    .story-button {
-        background: #7A4E2D;
-        color: white;
-        border: none;
-        padding: 14px 22px;
-        margin: 12px 0;
+    /* Your standard SullivanClan button style */
+    .nav-button {
+        background-color: #e8dfcf;
+        border: 2px solid #c8b79a;
+        padding: 12px 18px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #4a3a2a;
+        text-decoration: none;
+        display: inline-block;
         border-radius: 6px;
-        font-size: 1.3rem;
-        cursor: pointer;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        margin: 12px 0;
         width: 100%;
         max-width: 400px;
-        transition: background 0.2s ease;
     }
 
-    .story-button:hover {
-        background: #9C6A3A;
-    }
-
-    a {
-        text-decoration: none;
+    .nav-button:hover {
+        background-color: #dcd1bd;
+        border-color: #b59a6a;
     }
 </style>
 </head>
@@ -61,17 +62,11 @@
 
 <div class="container">
 
-    <a href="lois-short-stories.html">
-        <button class="story-button">Lois's Short Stories</button>
-    </a>
+    <a class="nav-button" href="lois-short-stories.html">Lois's Short Stories</a>
 
-    <a href="dear-beautiful-girls.html">
-        <button class="story-button">Dear Beautiful Girls</button>
-    </a>
+    <a class="nav-button" href="dear-beautiful-girls.html">Dear Beautiful Girls</a>
 
-    <a href="letters-from-mexico.html">
-        <button class="story-button">Letters from Mexico</button>
-    </a>
+    <a class="nav-button" href="letters-from-mexico.html">Letters from Mexico</a>
 
 </div>
 
