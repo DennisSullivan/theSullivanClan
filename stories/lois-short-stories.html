@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lois's Short Stories • The Sullivan Clan</title>
+  <title>Lois’s Short Stories • The Sullivan Clan</title>
 
   <!-- Shared site-wide stylesheet -->
   <link rel="stylesheet" href="../theSullivanStyle.css">
@@ -12,13 +12,13 @@
 <body>
 
 <header>
-  <h1>Lois's Short Stories</h1>
-  <h2>Sixteen stories written from the heart</h2>
+  <h1>Lois’s Short Stories</h1>
+  <h2>A collection of stories written from the heart</h2>
 </header>
 
 <div class="content">
 
-  <div id="storyList" class="nav-buttons"></div>
+  <ul id="storyList" class="library-list"></ul>
 
 </div>
 
@@ -29,15 +29,12 @@
 <script src="lois-stories.js"></script>
 <script>
   const stories = getLoisStories();
-  const listDiv = document.getElementById("storyList");
+  const list = document.getElementById("storyList");
 
   Object.keys(stories).forEach(id => {
-      const story = stories[id];
-      const a = document.createElement("a");
-      a.className = "nav-button";
-      a.href = `lois-story.html?id=${id}`;
-      a.textContent = story.title;
-      listDiv.appendChild(a);
+      const li = document.createElement("li");
+      li.innerHTML = `<a href="lois-story.html?id=${id}">${stories[id].title}</a>`;
+      list.appendChild(li);
   });
 </script>
 
