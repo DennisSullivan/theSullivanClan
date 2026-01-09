@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lois Story</title>
+
+<style>
+    body {
+        font-family: Georgia, serif;
+        background-color: #f7f2e8;
+        color: #3a2f2f;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+    }
+
+    .header {
+        background-color: #d9c7a3;
+        border-bottom: 6px solid #b59a6a;
+        padding: 25px;
+        font-size: 2rem;
+        font-weight: bold;
+        color: #4a3a2a;
+        text-align: center;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .nav-button {
+        background-color: #e8dfcf;
+        border: 2px solid #c8b79a;
+        padding: 12px 18px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #4a3a2a;
+        text-decoration: none;
+        display: inline-block;
+        border-radius: 6px;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        margin-bottom: 25px;
+    }
+
+    .nav-button:hover {
+        background-color: #dcd1bd;
+        border-color: #b59a6a;
+    }
+
+    iframe {
+        width: 100%;
+        height: 900px;
+        border: none;
+        background: white;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="header" id="storyTitle">Lois Story</div>
+
+<div class="container">
+
+    <a class="nav-button" href="lois-short-stories.html">← Back to Lois's Stories</a>
+
+    <iframe id="storyFrame" src=""></iframe>
+
+</div>
+
+<script>
+// Mapping story IDs to Google Doc embed URLs
+const storyMap = {
+    1: "YOUR_DOC_URL_1",
+    2: "YOUR_DOC_URL_2",
+    3: "YOUR_DOC_URL_3",
+    4: "YOUR_DOC_URL_4",
+    5: "YOUR_DOC_URL_5",
+    6: "YOUR_DOC_URL_6",
+    7: "YOUR_DOC_URL_7",
+    8: "YOUR_DOC_URL_8",
+    9: "YOUR_DOC_URL_9",
+    10: "YOUR_DOC_URL_10",
+    11: "YOUR_DOC_URL_11",
+    12: "YOUR_DOC_URL_12",
+    13: "YOUR_DOC_URL_13",
+    14: "YOUR_DOC_URL_14",
+    15: "YOUR_DOC_URL_15",
+    16: "YOUR_DOC_URL_16"
+};
+
+// Read ?id= from URL
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+// Load the correct Google Doc
+if (storyMap[id]) {
+    document.getElementById("storyFrame").src = storyMap[id];
+    document.getElementById("storyTitle").textContent = "Lois Story " + id;
+} else {
+    document.getElementById("storyFrame").outerHTML = "<p>Story not found.</p>";
+}
+</script>
+
+</body>
+</html>
