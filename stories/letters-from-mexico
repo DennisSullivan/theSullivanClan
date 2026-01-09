@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Letters from Mexico • The Sullivan Clan</title>
+
+  <link rel="stylesheet" href="../theSullivanStyle.css">
+</head>
+
+<body>
+
+<header>
+  <h1>Letters from Mexico</h1>
+  <h2>Correspondence preserved from Kenneth’s wartime service</h2>
+</header>
+
+<div class="content">
+
+  <ul id="lettersList" class="library-list"></ul>
+
+</div>
+
+<footer>
+  Curated with care by DWS Press • Est. 2006
+</footer>
+
+<script src="letters-mexico.js"></script>
+<script>
+  const letters = getLettersFromMexico();
+  const list = document.getElementById("lettersList");
+
+  letters.forEach(letter => {
+      const dateObj = new Date(letter.date);
+      const formatted = dateObj.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+      });
+
+      const li = document.createElement("li");
+      li.innerHTML = `<a href="${letter.url}" target="_blank">${formatted}</a>`;
+      list.appendChild(li);
+  });
+</script>
+
+</body>
+</html>
