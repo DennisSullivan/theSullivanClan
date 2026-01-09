@@ -313,15 +313,23 @@ footer {
 
 /* ---------------------------------------------------------
    LIBRARY LIST (Stories & Letters)
+   Responsive 2–3 column layout
 ---------------------------------------------------------- */
+
 .library-list {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 0 auto;
+    max-width: 900px;
+
+    /* Default: 2 columns on normal screens */
+    columns: 2;
+    column-gap: 40px;
 }
 
 .library-list li {
-    margin: 14px 0;
+    break-inside: avoid;
+    margin: 10px 0;
 }
 
 .library-list a {
@@ -336,6 +344,20 @@ footer {
 .library-list a:hover {
     color: #7A4E2D;
     border-color: #7A4E2D;
+}
+
+/* Large screens: expand to 3 columns */
+@media (min-width: 1200px) {
+    .library-list {
+        columns: 3;
+    }
+}
+
+/* Mobile: collapse to 1 column */
+@media (max-width: 600px) {
+    .library-list {
+        columns: 1;
+    }
 }
 
 /* ---------------------------------------------------------
