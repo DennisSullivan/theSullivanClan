@@ -62,12 +62,9 @@
     <p>Loading stories…</p>
 </div>
 
+<script src="lois-stories.js"></script>
 <script>
-// Load the template file so we can access getLoisStories()
-const script = document.createElement("script");
-script.src = "lois-story.html";
-script.onload = () => {
-    const stories = window.getLoisStories();
+    const stories = getLoisStories();
     const listDiv = document.getElementById("storyList");
     listDiv.innerHTML = "";
 
@@ -79,8 +76,6 @@ script.onload = () => {
         a.textContent = story.title;
         listDiv.appendChild(a);
     });
-};
-document.body.appendChild(script);
 </script>
 
 </body>
