@@ -5,91 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Photos • The Sullivan Clan</title>
 
-  <style>
-    body {
-      font-family: Georgia, serif;
-      background-color: #f7f2e8;
-      color: #3a2f2f;
-      margin: 0;
-      padding: 0;
-      line-height: 1.6;
-    }
-
-    header {
-      background-color: #d9c7a3;
-      padding: 40px 20px;
-      text-align: center;
-      border-bottom: 6px solid #b59a6a;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      margin: 0;
-      letter-spacing: 1px;
-    }
-
-    h2 {
-      font-weight: normal;
-      margin-top: 10px;
-      font-size: 1.2rem;
-      color: #5a4a3a;
-    }
-
-    .content {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    .section {
-      margin-bottom: 40px;
-    }
-
-    .section h3 {
-      font-size: 1.6rem;
-      margin-bottom: 10px;
-      color: #4a3a2a;
-    }
-
-    /* STANDARD NAV-BUTTON GRID */
-    .nav-buttons {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 24px;
-      margin-top: 20px;
-    }
-
-    /* STANDARD NAV-BUTTON STYLE */
-    .nav-button {
-      background-color: #e8dfcf;
-      border: 2px solid #c8b79a;
-      padding: 14px;
-      text-align: center;
-      font-size: 1.25rem;
-      font-weight: bold;
-      color: #4a3a2a;
-      text-decoration: none;
-      display: block;
-      border-radius: 6px;
-      transition: background-color 0.2s ease, border-color 0.2s ease;
-    }
-
-    .nav-button:hover {
-      background-color: #dcd1bd;
-      border-color: #b59a6a;
-      color: #2a1a0a;
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      background-color: #d9c7a3;
-      border-top: 6px solid #b59a6a;
-      margin-top: 60px;
-      font-size: 0.9rem;
-      color: #5a4a3a;
-    }
-  </style>
+  <!-- Shared site-wide stylesheet -->
+  <link rel="stylesheet" href="theSullivanStyle.css">
 </head>
 
 <body>
@@ -103,8 +20,8 @@
 
   <div class="section">
     <p>
-      The Sullivan family story is preserved not only in words, but in the photographs 
-      that captured our most meaningful moments. Choose a collection below to explore 
+      The Sullivan family story is preserved not only in words, but in the photographs
+      that captured our most meaningful moments. Choose a collection below to explore
       restored images, keepsakes, and visual memories curated with care.
     </p>
   </div>
@@ -112,10 +29,9 @@
   <div class="section">
     <h3>The Photo Collections</h3>
 
-    <!-- UPDATED BUTTON GRID -->
     <div class="nav-buttons">
-      <a class="nav-button" href="/photos/weddings">The Weddings</a>
-      <a class="nav-button" href="/photos/scrapbooks">Scrapbooks</a>
+      <a class="nav-button" href="weddings/">The Weddings</a>
+      <a class="nav-button" href="scrapbooks/">Scrapbooks</a>
     </div>
   </div>
 
