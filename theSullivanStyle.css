@@ -158,6 +158,28 @@ iframe {
     font-size: 1.15rem;
 }
 
+/* INDIVIDUAL BOOK PAGE — COVER IMAGE */
+.cover {
+    text-align: center;
+    margin: 20px 0 30px;
+}
+
+.cover img {
+    max-width: 260px;
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid #c8b79a;
+}
+
+/* INDIVIDUAL BOOK PAGE — BUTTON STACK */
+.button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+    align-items: center;
+}
+
 /* ---------------------------------------------------------
    MOBILE TWEAKS
 ---------------------------------------------------------- */
