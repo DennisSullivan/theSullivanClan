@@ -75,12 +75,12 @@ header h2 {
    UNIVERSAL BUTTONS & GRID MENUS
 ---------------------------------------------------------- */
 
-/* Responsive grid for navigation areas */
+/* Equal-width grid for all navigation menus */
 .nav-buttons {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, 260px);
     gap: 24px;
-    justify-items: center;
+    justify-content: center;
 }
 
 /* Generic auto-fit grid helper (for future use) */
@@ -102,7 +102,7 @@ header h2 {
     text-decoration: none;
     display: block;
     width: 100%;
-    max-width: 300px;
+    max-width: 260px;
     border-radius: 6px;
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -178,9 +178,9 @@ header h2 {
 ---------------------------------------------------------- */
 .story-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, 260px);
     gap: 24px;
-    justify-items: center;
+    justify-content: center;
 }
 
 /* ---------------------------------------------------------
@@ -333,6 +333,10 @@ footer {
     }
 
     .nav-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .story-grid {
         grid-template-columns: 1fr;
     }
 
