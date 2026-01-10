@@ -31,18 +31,12 @@
   const list = document.getElementById("lettersList");
 
   letters.forEach(letter => {
-      const dateObj = new Date(letter.date);
-      const formatted = dateObj.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric"
-      });
-
       const li = document.createElement("li");
-      li.innerHTML = `<a href="${letter.url}" target="_blank">${formatted}</a>`;
+      li.innerHTML = `<a href="${letter.url}" target="_blank">${letter.title}</a>`;
       list.appendChild(li);
   });
 </script>
+
 
 </body>
 </html>
