@@ -30,9 +30,9 @@
   const letters = getLettersFromMexico();
   const list = document.getElementById("lettersList");
 
-  letters.forEach(letter => {
+  letters.forEach((letter, index) => {
       const li = document.createElement("li");
-      li.innerHTML = `<a href="${letter.url}" target="_blank">${letter.title}</a>`;
+      li.innerHTML = `<a href="letter-viewer.html?i=${index}">${letter.title}</a>`;
       list.appendChild(li);
   });
 </script>
