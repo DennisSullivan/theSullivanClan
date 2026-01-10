@@ -5,19 +5,19 @@ function getLettersFromMexico() {
     return [
         {
             title: "January 18, 1987",
-            url: "https://docs.google.com/document/d/e/2PACX-1vRtYV6MosCSy84BVV7Stmd7GKKYw09EkpQYGy61MLYp7Hw_-l7DdvV98UjSburqs1yPory-Z4FhlAVK/preview"
+            url: "https://docs.google.com/document/d/14hZRHBAJuhPhVlrL8470ITNNhClVxUEy6AgQebyO3NE/preview"
         },
         {
             title: "December 26, 1991 — Letter A",
-            url: "https://docs.google.com/document/d/e/2PACX-1vRhFK1aXrzhopNGNk7LTvEJq_-uEmPQKogtQCyU2MET831wJv4h1IQwJQT87mnXch2QfVPz3lY-55fz/preview"
+            url: "https://docs.google.com/document/d/1Jjq40BxWSF33Gbp7McQG46vhITccfNHv2urDlOz3XYg/preview"
         },
         {
             title: "December 26, 1991 — Letter B",
-            url: "https://docs.google.com/document/d/e/2PACX-1vQGapTx_ySNAV4z-F44sGlGcUV4JF-OoekOXHDFj_bXVbHtorpS_0mdmsNp05gapV79XVebD_ur2Dzb/preview"
+            url: "https://docs.google.com/document/d/1xN1b_o9mXEB3RnIH85GhtXBmNZG50aHNPYE9SVMIkJk/preview"
         },
         {
             title: "February 3, 1992",
-            url: "https://docs.google.com/document/d/e/2PACX-1vSfvf_vBRPqVVuBLNDo8osCSS_KyYH0uwkM0lcwClVEG56KYT6NRehWbRvL-oCzt5j83uerlh3DQ0Qe/preview"
+            url: "https://docs.google.com/document/d/14hZRHBAJuhPhVlrL8470ITNNhClVxUEy6AgQebyO3NE/preview"
         }
         // Add more letters here, in order
     ];
