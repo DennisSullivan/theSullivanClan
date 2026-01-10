@@ -12,7 +12,6 @@ function getLettersFromMexico() {
             url: "https://docs.google.com/document/d/e/2PACX-1vRhFK1aXrzhopNGNk7LTvEJq_-uEmPQKogtQCyU2MET831wJv4h1IQwJQT87mnXch2QfVPz3lY-55fz/preview"
         },
         {
-             date: "1987-01-18",
             date: "1991-12-26",
             url: "https://docs.google.com/document/d/e/2PACX-1vQGapTx_ySNAV4z-F44sGlGcUV4JF-OoekOXHDFj_bXVbHtorpS_0mdmsNp05gapV79XVebD_ur2Dzb/preview"
         }
