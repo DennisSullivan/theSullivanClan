@@ -7,7 +7,7 @@
 
 <style>
   body {
-    background: #f2efe4;
+    background: #f7f3e8;
     font-family: "Trebuchet MS", sans-serif;
     margin: 0;
     padding: 0;
@@ -15,7 +15,7 @@
   }
 
   header {
-    background: linear-gradient(135deg, #9ccf8d, #6bbf6a);
+    background: linear-gradient(135deg, #ffb36b, #ff8a5c);
     color: white;
     padding: 22px;
     font-size: 30px;
@@ -25,36 +25,41 @@
   }
 
   .container {
-    max-width: 900px;
+    max-width: 500px;
     margin: 30px auto;
     padding: 10px;
   }
 
   #board {
-    width: 600px;
-    height: 400px;
+    width: 320px;
+    height: 320px;
     margin: 0 auto;
     position: relative;
-    background: #e0d7c6;
-    border: 3px solid #8b7d6b;
+    background: #ddd;
     border-radius: 10px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+    overflow: hidden;
   }
 
   .piece {
+    width: 80px;
+    height: 80px;
     position: absolute;
-    width: 150px;
-    height: 100px;
-    background-size: 600px 400px;
-    cursor: grab;
+    background-size: 320px 320px;
     border-radius: 6px;
-    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
-    transition: transform 0.1s ease;
+    cursor: grab;
+    transition: none;
+
+    /* Prevent mobile tap zoom / highlight */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
   }
 
   .piece:active {
-    cursor: grabbing;
-    transform: scale(1.05);
+    transform: none !important; /* Prevent expand/shrink */
+  }
+
+  .piece:focus {
+    outline: none;
   }
 
   button {
@@ -63,15 +68,15 @@
     font-size: 18px;
     border: none;
     border-radius: 8px;
-    background: #ffcf6b;
-    color: #5a4633;
+    background: #6bb8ff;
+    color: white;
     cursor: pointer;
     box-shadow: 0 3px 5px rgba(0,0,0,0.25);
     transition: 0.2s;
   }
 
   button:hover {
-    background: #ffbe3d;
+    background: #4aa6ff;
     transform: scale(1.05);
   }
 
@@ -90,11 +95,11 @@
 <header>Jigsaw Puzzle</header>
 
 <div class="container">
-  <p>Drag the pieces into place to complete the picture.</p>
+  <p>Drag each piece into the correct position.</p>
 
   <div id="board"></div>
 
-  <button onclick="shufflePieces()">Shuffle Pieces</button>
+  <button onclick="shufflePieces()">Shuffle</button>
 
   <div>
     <a class="back-link" href="index.html">← Back to Puzzles</a>
@@ -102,125 +107,98 @@
 </div>
 
 <script>
-  const board = document.getElementById("board");
-  const rows = 4;
-  const cols = 4;
-  const pieceWidth = 600 / cols;
-  const pieceHeight = 400 / rows;
+const board = document.getElementById("board");
+const size = 4; // 4x4 puzzle
+const tileSize = 80;
+let pieces = [];
+let dragging = null;
+let offsetX = 0;
+let offsetY = 0;
 
-  const imageSrc = "https://picsum.photos/600/400"; // Replace with your family photo
+function createPieces() {
+  pieces = [];
+  board.innerHTML = "";
 
-  let pieces = [];
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const index = r * size + c;
 
-  function createPieces() {
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const piece = document.createElement("div");
-        piece.className = "piece";
-        piece.style.width = pieceWidth + "px";
-        piece.style.height = pieceHeight + "px";
-        piece.style.backgroundImage = `url(${imageSrc})`;
-        piece.style.backgroundPosition = `-${c * pieceWidth}px -${r * pieceHeight}px`;
+      const piece = document.createElement("div");
+      piece.className = "piece";
+      piece.style.backgroundImage = "url('puzzle.jpg')";
+      piece.style.backgroundPosition = `-${c * tileSize}px -${r * tileSize}px`;
 
-        piece.dataset.correctX = c * pieceWidth;
-        piece.dataset.correctY = r * pieceHeight;
+      piece.dataset.correctX = c;
+      piece.dataset.correctY = r;
 
-        piece.addEventListener("mousedown", startDrag);
-        piece.addEventListener("touchstart", startDrag);
+      piece.addEventListener("pointerdown", startDrag);
+      piece.addEventListener("pointermove", drag);
+      piece.addEventListener("pointerup", endDrag);
+      piece.addEventListener("pointercancel", endDrag);
 
-        pieces.push(piece);
-        board.appendChild(piece);
-      }
+      pieces.push(piece);
+      board.appendChild(piece);
     }
-    shufflePieces();
   }
 
-  function shufflePieces() {
-    pieces.forEach(piece => {
-      piece.style.left = Math.random() * (600 - pieceWidth) + "px";
-      piece.style.top = Math.random() * (400 - pieceHeight) + "px";
-    });
-  }
+  shufflePieces();
+}
 
-  let currentPiece = null;
-  let offsetX = 0;
-  let offsetY = 0;
+function shufflePieces() {
+  pieces.forEach(piece => {
+    const x = Math.floor(Math.random() * size);
+    const y = Math.floor(Math.random() * size);
+    piece.style.left = x * tileSize + "px";
+    piece.style.top = y * tileSize + "px";
+  });
+}
 
-  function startDrag(e) {
-    e.preventDefault();
-    currentPiece = e.target;
+function startDrag(e) {
+  dragging = e.target;
 
-    const rect = currentPiece.getBoundingClientRect();
-    const boardRect = board.getBoundingClientRect();
+  const rect = dragging.getBoundingClientRect();
+  offsetX = e.clientX - rect.left;
+  offsetY = e.clientY - rect.top;
 
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  dragging.setPointerCapture(e.pointerId);
+}
 
-    offsetX = clientX - rect.left;
-    offsetY = clientY - rect.top;
+function drag(e) {
+  if (!dragging) return;
 
-    document.addEventListener("mousemove", drag);
-    document.addEventListener("mouseup", endDrag);
-    document.addEventListener("touchmove", drag);
-    document.addEventListener("touchend", endDrag);
-  }
+  const boardRect = board.getBoundingClientRect();
 
-  function drag(e) {
-    if (!currentPiece) return;
+  let x = e.clientX - boardRect.left - offsetX;
+  let y = e.clientY - boardRect.top - offsetY;
 
-    const boardRect = board.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  // Keep inside board
+  x = Math.max(0, Math.min(x, boardRect.width - tileSize));
+  y = Math.max(0, Math.min(y, boardRect.height - tileSize));
 
-    let x = clientX - boardRect.left - offsetX;
-    let y = clientY - boardRect.top - offsetY;
+  dragging.style.left = x + "px";
+  dragging.style.top = y + "px";
+}
 
-    x = Math.max(0, Math.min(x, 600 - pieceWidth));
-    y = Math.max(0, Math.min(y, 400 - pieceHeight));
+function endDrag(e) {
+  if (!dragging) return;
 
-    currentPiece.style.left = x + "px";
-    currentPiece.style.top = y + "px";
-  }
+  const boardRect = board.getBoundingClientRect();
 
-  function endDrag() {
-    if (!currentPiece) return;
+  let x = e.clientX - boardRect.left - offsetX;
+  let y = e.clientY - boardRect.top - offsetY;
 
-    const x = parseFloat(currentPiece.style.left);
-    const y = parseFloat(currentPiece.style.top);
+  // Snap to nearest grid cell
+  const col = Math.round(x / tileSize);
+  const row = Math.round(y / tileSize);
 
-    const correctX = parseFloat(currentPiece.dataset.correctX);
-    const correctY = parseFloat(currentPiece.dataset.correctY);
+  dragging.style.left = col * tileSize + "px";
+  dragging.style.top = row * tileSize + "px";
 
-    if (Math.abs(x - correctX) < 15 && Math.abs(y - correctY) < 15) {
-      currentPiece.style.left = correctX + "px";
-      currentPiece.style.top = correctY + "px";
-      currentPiece.style.boxShadow = "0 0 0 rgba(0,0,0,0)";
-      currentPiece.style.cursor = "default";
-      currentPiece.removeEventListener("mousedown", startDrag);
-      currentPiece.removeEventListener("touchstart", startDrag);
-    }
+  dragging.releasePointerCapture(e.pointerId);
+  dragging = null;
+}
 
-    currentPiece = null;
-
-    document.removeEventListener("mousemove", drag);
-    document.removeEventListener("mouseup", endDrag);
-    document.removeEventListener("touchmove", drag);
-    document.removeEventListener("touchend", endDrag);
-
-    checkWin();
-  }
-
-  function checkWin() {
-    for (const piece of pieces) {
-      if (piece.style.left !== piece.dataset.correctX + "px" ||
-          piece.style.top !== piece.dataset.correctY + "px") {
-        return;
-      }
-    }
-    alert("Puzzle complete!");
-  }
-
-  createPieces();
+createPieces();
 </script>
 
 </body>
