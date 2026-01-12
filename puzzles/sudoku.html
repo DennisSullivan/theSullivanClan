@@ -7,7 +7,7 @@
 
 <style>
   body {
-    background: #f2f8ff;
+    background: #fff8ec;
     font-family: "Trebuchet MS", sans-serif;
     margin: 0;
     padding: 0;
@@ -15,7 +15,7 @@
   }
 
   header {
-    background: linear-gradient(135deg, #6bb8ff, #4a9cff);
+    background: linear-gradient(135deg, #ffb36b, #ff8a5c);
     color: white;
     padding: 22px;
     font-size: 30px;
@@ -25,75 +25,98 @@
   }
 
   .container {
-    max-width: 600px;
-    margin: 30px auto;
+    max-width: 500px;
+    margin: 20px auto;
     padding: 10px;
   }
 
-  #sudoku {
+  select, button {
+    width: 90%;
+    padding: 14px;
+    font-size: 18px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+  }
+
+  select {
+    border: 2px solid #ffb36b;
+    background: #fffdf7;
+  }
+
+  button {
+    border: none;
+    background: #6bb8ff;
+    color: white;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #4aa6ff;
+    transform: scale(1.03);
+  }
+
+  #sudoku-container {
+    margin: 10px auto 0;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  table#sudoku {
     border-collapse: collapse;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     margin: 0 auto;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+    background: #fffdf7;
   }
 
   #sudoku td {
-    border: 1px solid #999;
-    width: 36px;
-    height: 36px;
-    text-align: center;
+    border: 1px solid #666;
+    width: calc(100% / 9);
+    height: calc(100% / 9);
     padding: 0;
   }
 
-  #sudoku input {
+  /* Thicker 3x3 region borders */
+  #sudoku tr:nth-child(1) td {
+    border-top: 3px solid #333;
+  }
+  #sudoku tr:nth-child(3n) td {
+    border-bottom: 3px solid #333;
+  }
+  #sudoku td:nth-child(1) {
+    border-left: 3px solid #333;
+  }
+  #sudoku td:nth-child(3n) {
+    border-right: 3px solid #333;
+  }
+
+  .cell-input {
     width: 100%;
     height: 100%;
     border: none;
     text-align: center;
-    font-size: 18px;
+    font-size: 20px;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+  }
+
+  .cell-input:focus {
+    outline: 2px solid #ffb36b;
+  }
+
+  /* Black givens */
+  .given {
     font-weight: bold;
-    background: #ffffff;
+    color: #000000;
+    pointer-events: none;
   }
 
-  #sudoku input:focus {
-    outline: 2px solid #6bb8ff;
-  }
-
-  .fixed {
-    background: #e0f0ff;
+  /* Dark blue user entries */
+  .user-input {
+    color: #003399;
     font-weight: bold;
-    color: #234a70;
-  }
-
-  /* thicker borders for 3x3 subgrids */
-  #sudoku tr:nth-child(3n) td {
-    border-bottom: 2px solid #555;
-  }
-  #sudoku tr:nth-child(1) td {
-    border-top: 2px solid #555;
-  }
-  #sudoku td:nth-child(3n) {
-    border-right: 2px solid #555;
-  }
-  #sudoku td:nth-child(1) {
-    border-left: 2px solid #555;
-  }
-
-  button {
-    margin-top: 20px;
-    padding: 10px 22px;
-    font-size: 18px;
-    border: none;
-    border-radius: 8px;
-    background: #ffd86b;
-    color: #5a4633;
-    cursor: pointer;
-    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
-    transition: 0.2s;
-  }
-
-  button:hover {
-    background: #ffcb3d;
-    transform: scale(1.05);
   }
 
   #message {
@@ -116,112 +139,278 @@
 <header>Sudoku</header>
 
 <div class="container">
-  <p>Fill the grid so each row, column, and 3×3 box contains the digits 1–9.</p>
+  <p>Select difficulty and generate a random puzzle.</p>
 
-  <table id="sudoku"></table>
+  <select id="difficulty">
+    <option value="easy">Easy</option>
+    <option value="medium">Medium</option>
+    <option value="hard">Hard</option>
+    <option value="veryhard">Very Hard</option>
+    <option value="expert">Expert</option>
+  </select>
 
-  <button onclick="checkSudoku()">Check Solution</button>
+  <button onclick="newSudoku()">Generate New Puzzle</button>
+
+  <div id="sudoku-container">
+    <table id="sudoku"></table>
+  </div>
+
+  <button onclick="checkSudoku()">Check My Solution</button>
   <div id="message"></div>
 
-  <div>
-    <a class="back-link" href="index.html">← Back to Puzzles</a>
-  </div>
+  <a class="back-link" href="index.html">← Back to Puzzles</a>
 </div>
 
 <script>
-  // 0 = blank
-  const puzzle = [
-    [5,3,0, 0,7,0, 0,0,0],
-    [6,0,0, 1,9,5, 0,0,0],
-    [0,9,8, 0,0,0, 0,6,0],
+/* ---------------------------------------------------------
+   CONFIG: difficulty → approximate clue counts
+   (You can tweak these later.)
+   --------------------------------------------------------- */
+const difficultyConfig = {
+  easy:     50,
+  medium:   38,
+  hard:     30,
+  veryhard: 24,
+  expert:   20
+};
 
-    [8,0,0, 0,6,0, 0,0,3],
-    [4,0,0, 8,0,3, 0,0,1],
-    [7,0,0, 0,2,0, 0,0,6],
+let currentSolution = null;
 
-    [0,6,0, 0,0,0, 2,8,0],
-    [0,0,0, 4,1,9, 0,0,5],
-    [0,0,0, 0,8,0, 0,7,9]
-  ];
+/* ---------------------------------------------------------
+   UTILITY HELPERS
+   --------------------------------------------------------- */
+function emptyGrid() {
+  const grid = [];
+  for (let r = 0; r < 9; r++) {
+    grid[r] = [];
+    for (let c = 0; c < 9; c++) {
+      grid[r][c] = 0;
+    }
+  }
+  return grid;
+}
 
-  const solution = [
-    [5,3,4, 6,7,8, 9,1,2],
-    [6,7,2, 1,9,5, 3,4,8],
-    [1,9,8, 3,4,2, 5,6,7],
+function cloneGrid(grid) {
+  return grid.map(row => row.slice());
+}
 
-    [8,5,9, 7,6,1, 4,2,3],
-    [4,2,6, 8,5,3, 7,9,1],
-    [7,1,3, 9,2,4, 8,5,6],
+/* ---------------------------------------------------------
+   SUDOKU GENERATOR: fill a full valid solution
+   --------------------------------------------------------- */
+function isSafe(grid, row, col, num) {
+  for (let x = 0; x < 9; x++) {
+    if (grid[row][x] === num || grid[x][col] === num) return false;
+  }
+  const startRow = Math.floor(row / 3) * 3;
+  const startCol = Math.floor(col / 3) * 3;
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      if (grid[startRow + r][startCol + c] === num) return false;
+    }
+  }
+  return true;
+}
 
-    [9,6,1, 5,3,7, 2,8,4],
-    [2,8,7, 4,1,9, 6,3,5],
-    [3,4,5, 2,8,6, 1,7,9]
-  ];
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function fillGrid(grid) {
+  for (let row = 0; row < 9; row++) {
+    for (let col = 0; col < 9; col++) {
+      if (grid[row][col] === 0) {
+        const numbers = [1,2,3,4,5,6,7,8,9];
+        shuffleArray(numbers);
+        for (let num of numbers) {
+          if (isSafe(grid, row, col, num)) {
+            grid[row][col] = num;
+            if (fillGrid(grid)) {
+              return true;
+            }
+            grid[row][col] = 0;
+          }
+        }
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+/* ---------------------------------------------------------
+   SOLVER with solution counting (for uniqueness check)
+   --------------------------------------------------------- */
+function solveAndCount(grid, limit = 2) {
+  function helper(g, countObj) {
+    if (countObj.count >= limit) return; // stop early if over limit
+
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        if (g[row][col] === 0) {
+          for (let num = 1; num <= 9; num++) {
+            if (isSafe(g, row, col, num)) {
+              g[row][col] = num;
+              helper(g, countObj);
+              g[row][col] = 0;
+              if (countObj.count >= limit) return;
+            }
+          }
+          return;
+        }
+      }
+    }
+    countObj.count++;
+  }
+
+  const gridCopy = cloneGrid(grid);
+  const countObj = { count: 0 };
+  helper(gridCopy, countObj);
+  return countObj.count;
+}
+
+/* ---------------------------------------------------------
+   PUZZLE GENERATION: remove cells while keeping uniqueness
+   --------------------------------------------------------- */
+function generatePuzzleGrid(difficultyKey) {
+  const cluesTarget = difficultyConfig[difficultyKey] || difficultyConfig.medium;
+
+  // 1) Generate full solution
+  const solution = emptyGrid();
+  fillGrid(solution);
+
+  // 2) Start from full grid as puzzle, then remove
+  const puzzle = cloneGrid(solution);
+
+  // Positions list
+  const positions = [];
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      positions.push({ r, c });
+    }
+  }
+  shuffleArray(positions);
+
+  let cellsToRemove = 81 - cluesTarget;
+  for (let pos of positions) {
+    if (cellsToRemove <= 0) break;
+
+    const { r, c } = pos;
+    const backup = puzzle[r][c];
+    if (backup === 0) continue;
+
+    puzzle[r][c] = 0;
+
+    const solutions = solveAndCount(puzzle, 2);
+    if (solutions !== 1) {
+      // Not unique, revert
+      puzzle[r][c] = backup;
+    } else {
+      cellsToRemove--;
+    }
+  }
+
+  return { puzzle, solution };
+}
+
+/* ---------------------------------------------------------
+   RENDERING
+   --------------------------------------------------------- */
+function renderSudoku(puzzle) {
+  const table = document.getElementById("sudoku");
+  table.innerHTML = "";
+
+  for (let r = 0; r < 9; r++) {
+    const rowEl = document.createElement("tr");
+    for (let c = 0; c < 9; c++) {
+      const cell = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "text";
+      input.maxLength = 1;
+      input.classList.add("cell-input");
+
+      const val = puzzle[r][c];
+
+      if (val !== 0) {
+        input.value = val;
+        input.classList.add("given");
+        input.readOnly = true;
+      } else {
+        input.classList.add("user-input");
+        input.addEventListener("input", () => {
+          input.value = input.value.replace(/[^1-9]/g, "");
+        });
+      }
+
+      cell.appendChild(input);
+      rowEl.appendChild(cell);
+    }
+    table.appendChild(rowEl);
+  }
+
+  const msg = document.getElementById("message");
+  msg.textContent = "";
+}
+
+/* ---------------------------------------------------------
+   PUBLIC FUNCTIONS
+   --------------------------------------------------------- */
+function newSudoku() {
+  const difficulty = document.getElementById("difficulty").value;
+  const { puzzle, solution } = generatePuzzleGrid(difficulty);
+  currentSolution = solution;
+  renderSudoku(puzzle);
+}
+
+function checkSudoku() {
+  const msg = document.getElementById("message");
+  if (!currentSolution) {
+    msg.textContent = "No puzzle loaded.";
+    msg.style.color = "#b00020";
+    return;
+  }
 
   const table = document.getElementById("sudoku");
+  const inputs = table.getElementsByTagName("input");
 
-  function buildGrid() {
-    for (let r = 0; r < 9; r++) {
-      const row = document.createElement("tr");
-      for (let c = 0; c < 9; c++) {
-        const cell = document.createElement("td");
-        const value = puzzle[r][c];
-        if (value === 0) {
-          const input = document.createElement("input");
-          input.maxLength = 1;
-          input.dataset.row = r;
-          input.dataset.col = c;
-          input.oninput = () => {
-            input.value = input.value.replace(/[^1-9]/g, "");
-          };
-          cell.appendChild(input);
-        } else {
-          const input = document.createElement("input");
-          input.value = value;
-          input.readOnly = true;
-          input.classList.add("fixed");
-          cell.appendChild(input);
-        }
-        row.appendChild(cell);
+  let idx = 0;
+  let complete = true;
+  let correct = true;
+
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const input = inputs[idx++];
+      const val = parseInt(input.value, 10);
+
+      if (!val) {
+        complete = false;
+        continue;
       }
-      table.appendChild(row);
+
+      if (val !== currentSolution[r][c]) {
+        correct = false;
+      }
     }
   }
 
-  function checkSudoku() {
-    const inputs = table.getElementsByTagName("input");
-    let index = 0;
-    let complete = true;
-    let correct = true;
-
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        const input = inputs[index++];
-        const val = parseInt(input.value, 10);
-        if (!val) {
-          complete = false;
-          continue;
-        }
-        if (val !== solution[r][c]) {
-          correct = false;
-        }
-      }
-    }
-
-    const msg = document.getElementById("message");
-    if (!complete) {
-      msg.textContent = "Keep going — some cells are still empty.";
-      msg.style.color = "#cc7a00";
-    } else if (correct) {
-      msg.textContent = "Excellent! You solved the Sudoku.";
-      msg.style.color = "#1f7a1f";
-    } else {
-      msg.textContent = "Something’s not quite right yet. Check your rows, columns, and boxes.";
-      msg.style.color = "#b00020";
-    }
+  if (!complete) {
+    msg.textContent = "Some cells are still empty.";
+    msg.style.color = "#cc7a00";
+  } else if (correct) {
+    msg.textContent = "Nice work! You solved it.";
+    msg.style.color = "#1f7a1f";
+  } else {
+    msg.textContent = "Not quite right — check rows, columns, and 3×3 blocks.";
+    msg.style.color = "#b00020";
   }
+}
 
-  buildGrid();
+/* ---------------------------------------------------------
+   INITIALIZE ON LOAD
+   --------------------------------------------------------- */
+newSudoku();
 </script>
 
 </body>
