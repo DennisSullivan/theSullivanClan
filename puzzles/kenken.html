@@ -30,27 +30,21 @@
     padding: 10px;
   }
 
-  select {
+  select, button {
     width: 90%;
-    padding: 12px;
+    padding: 14px;
     font-size: 18px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: 2px solid #ffb36b;
     margin-bottom: 15px;
   }
 
   button {
-    width: 90%;
-    padding: 14px;
-    font-size: 18px;
-    border: none;
-    border-radius: 8px;
     background: #6bb8ff;
     color: white;
-    cursor: pointer;
+    border: none;
     box-shadow: 0 3px 5px rgba(0,0,0,0.25);
-    transition: 0.2s;
-    margin-bottom: 20px;
+    cursor: pointer;
   }
 
   button:hover {
@@ -58,40 +52,41 @@
     transform: scale(1.03);
   }
 
+  /* Square responsive grid */
   #kenken {
     width: 100%;
     max-width: 420px;
-    aspect-ratio: 1 / 1; /* keeps the whole grid square */
+    aspect-ratio: 1 / 1;
     margin: 0 auto;
     border-collapse: collapse;
   }
-  
+
   #kenken td {
     position: relative;
     padding: 0;
-    border: 1px solid #999;
+    border: 1px solid #5a3e2b;
+    background: #fff8ec; /* match page */
     width: calc(100% / 6);
     height: calc(100% / 6);
-    max-width: 70px;
-    max-height: 70px;
-    background: #fff8ec; /* match the page background */
-
   }
 
-  /* Cage borders */
-  .cage-top    { border-top:    3px solid #333 !important; }
-  .cage-bottom { border-bottom: 3px solid #333 !important; }
-  .cage-left   { border-left:   3px solid #333 !important; }
-  .cage-right  { border-right:  3px solid #333 !important; }
+  /* Rounded cage borders on every cell */
+  .cage-top    { border-top:    4px solid #5a3e2b !important; border-top-left-radius: 10px; border-top-right-radius: 10px; }
+  .cage-bottom { border-bottom: 4px solid #5a3e2b !important; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
+  .cage-left   { border-left:   4px solid #5a3e2b !important; border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+  .cage-right  { border-right:  4px solid #5a3e2b !important; border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
 
+  /* Transparent inputs so borders show */
   #kenken input {
     width: 100%;
     height: 100%;
     border: none;
+    background: transparent;
     text-align: center;
     font-size: 22px;
     font-weight: bold;
-    background: transparent; /* FIX: do not cover vertical lines */
+    padding: 0;
+    margin: 0;
   }
 
   #kenken input:focus {
@@ -103,7 +98,8 @@
     top: 2px;
     left: 4px;
     font-size: 12px;
-    color: #555;
+    color: #5a3e2b;
+    font-weight: bold;
   }
 
   #message {
@@ -132,7 +128,7 @@
   <select id="difficulty">
     <option value="gentle">Gentle</option>
     <option value="moderate">Moderate</option>
-    <option value="hard">Challenging</option>
+    <option value="challenging">Challenging</option>
   </select>
 
   <button onclick="generatePuzzle()">Generate Puzzle</button>
@@ -142,17 +138,14 @@
   <button onclick="checkKenKen()">Check My Solution</button>
   <div id="message"></div>
 
-  <div>
-    <a class="back-link" href="index.html">← Back to Puzzles</a>
-  </div>
+  <a class="back-link" href="index.html">← Back to Puzzles</a>
 
 </div>
 
 <script>
 /* ---------------------------------------------------------
-   SIMPLE KENKEN GENERATOR (6×6)
+   LATIN SQUARE GENERATOR
    --------------------------------------------------------- */
-
 function generateLatinSquare(n) {
   const grid = [];
   for (let r = 0; r < n; r++) {
@@ -181,18 +174,21 @@ function shuffleCols(grid) {
   }
 }
 
+/* ---------------------------------------------------------
+   CAGE GENERATOR WITH REAL DIFFICULTY
+   --------------------------------------------------------- */
 function generateCages(solution, difficulty) {
   const n = 6;
   const cages = [];
   const used = Array.from({ length: n }, () => Array(n).fill(false));
 
-  function opForDifficulty() {
-    if (difficulty === "gentle") return ["+","-"];
-    if (difficulty === "moderate") return ["+","-","×","÷"];
-    return ["+","×","÷"];
-  }
+  const settings = {
+    gentle:      { maxSize: 2, ops: ["+","-"] },
+    moderate:    { maxSize: 3, ops: ["+","-","×","÷"] },
+    challenging: { maxSize: 4, ops: ["+","×","÷"] }
+  };
 
-  const ops = opForDifficulty();
+  const { maxSize, ops } = settings[difficulty];
 
   for (let r = 0; r < n; r++) {
     for (let c = 0; c < n; c++) {
@@ -201,20 +197,31 @@ function generateCages(solution, difficulty) {
       const cage = { cells: [[r,c]] };
       used[r][c] = true;
 
-      if (Math.random() < 0.5) {
-        const dirs = [[1,0],[0,1]];
-        const [dr,dc] = dirs[Math.floor(Math.random()*dirs.length)];
-        const nr = r + dr, nc = c + dc;
-        if (nr < n && nc < n && !used[nr][nc]) {
-          cage.cells.push([nr,nc]);
-          used[nr][nc] = true;
-        }
+      let size = 1;
+      while (size < maxSize) {
+        const neighbors = [];
+
+        cage.cells.forEach(([rr,cc]) => {
+          [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc]) => {
+            const nr = rr + dr, nc = cc + dc;
+            if (nr >= 0 && nr < n && nc >= 0 && nc < n && !used[nr][nc]) {
+              neighbors.push([nr,nc]);
+            }
+          });
+        });
+
+        if (neighbors.length === 0) break;
+
+        const [nr,nc] = neighbors[Math.floor(Math.random() * neighbors.length)];
+        cage.cells.push([nr,nc]);
+        used[nr][nc] = true;
+        size++;
       }
 
       const values = cage.cells.map(([rr,cc]) => solution[rr][cc]);
-      const op = ops[Math.floor(Math.random()*ops.length)];
+      const op = ops[Math.floor(Math.random() * ops.length)];
 
-      let label = "";
+      let label;
       if (cage.cells.length === 1) {
         label = values[0];
       } else {
@@ -236,6 +243,9 @@ function generateCages(solution, difficulty) {
   return cages;
 }
 
+/* ---------------------------------------------------------
+   APPLY CAGE BORDERS
+   --------------------------------------------------------- */
 function applyCageBorders(cages, cageMap) {
   const n = 6;
   const cells = document.querySelectorAll("#kenken td");
@@ -263,9 +273,8 @@ function applyCageBorders(cages, cageMap) {
 }
 
 /* ---------------------------------------------------------
-   RENDERING
+   RENDER PUZZLE
    --------------------------------------------------------- */
-
 function generatePuzzle() {
   const difficulty = document.getElementById("difficulty").value;
   const table = document.getElementById("kenken");
@@ -318,7 +327,6 @@ function generatePuzzle() {
 
   window.currentSolution = solution;
 
-  /* ✅ Apply cage borders AFTER rendering */
   applyCageBorders(cages, cageMap);
 }
 
@@ -357,7 +365,6 @@ function checkKenKen() {
   }
 }
 
-/* Generate first puzzle on load */
 generatePuzzle();
 </script>
 
