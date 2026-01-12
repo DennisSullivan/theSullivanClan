@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trivia Quiz • SullivanClan</title>
+
+<style>
+  body {
+    background: #f4f0ff;
+    font-family: "Trebuchet MS", sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  header {
+    background: linear-gradient(135deg, #a88bff, #7a5cff);
+    color: white;
+    padding: 22px;
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 10px;
+  }
+
+  #question-box {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+    margin-bottom: 25px;
+  }
+
+  .answer-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin: 10px 0;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #e0d6ff;
+    color: #3b2f63;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
+  .answer-btn:hover {
+    background: #d1c4ff;
+    transform: scale(1.03);
+  }
+
+  .correct {
+    background: #8df58d !important;
+    color: #1f4a1f !important;
+  }
+
+  .wrong {
+    background: #ff8a8a !important;
+    color: #5a1f1f !important;
+  }
+
+  #next-btn {
+    margin-top: 20px;
+    padding: 12px 22px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #ffd86b;
+    color: #5a4633;
+    cursor: pointer;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
+    transition: 0.2s;
+    display: none;
+  }
+
+  #next-btn:hover {
+    background: #ffcb3d;
+    transform: scale(1.05);
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 30px;
+    color: #444;
+    font-size: 18px;
+    text-decoration: none;
+  }
+</style>
+</head>
+
+<body>
+
+<header>Trivia Quiz</header>
+
+<div class="container">
+
+  <div id="question-box">
+    <h2 id="question">Loading question…</h2>
+    <div id="answers"></div>
+  </div>
+
+  <button id="next-btn" onclick="nextQuestion()">Next Question</button>
+
+  <div>
+    <a class="back-link" href="index.html">← Back to Puzzles</a>
+  </div>
+
+</div>
+
+<script>
+  const questions = [
+    {
+      q: "What is the largest planet in our solar system?",
+      answers: ["Earth", "Jupiter", "Mars", "Saturn"],
+      correct: 1
+    },
+    {
+      q: "Which ocean is the deepest?",
+      answers: ["Atlantic", "Indian", "Pacific", "Arctic"],
+      correct: 2
+    },
+    {
+      q: "How many sides does a hexagon have?",
+      answers: ["5", "6", "7", "8"],
+      correct: 1
+    },
+    {
+      q: "What is the fastest land animal?",
+      answers: ["Cheetah", "Horse", "Greyhound", "Antelope"],
+      correct: 0
+    },
+    {
+      q: "Which instrument has 88 keys?",
+      answers: ["Guitar", "Piano", "Violin", "Flute"],
+      correct: 1
+    }
+  ];
+
+  let current = 0;
+
+  function loadQuestion() {
+    const q = questions[current];
+    document.getElementById("question").textContent = q.q;
+
+    const answersDiv = document.getElementById("answers");
+    answersDiv.innerHTML = "";
+
+    q.answers.forEach((text, index) => {
+      const btn = document.createElement("button");
+      btn.className = "answer-btn";
+      btn.textContent = text;
+      btn.onclick = () => checkAnswer(index);
+      answersDiv.appendChild(btn);
+    });
+  }
+
+  function checkAnswer(index) {
+    const q = questions[current];
+    const buttons = document.querySelectorAll(".answer-btn");
+
+    buttons.forEach((btn, i) => {
+      btn.disabled = true;
+      if (i === q.correct) btn.classList.add("correct");
+      else if (i === index) btn.classList.add("wrong");
+    });
+
+    document.getElementById("next-btn").style.display = "inline-block";
+  }
+
+  function nextQuestion() {
+    current++;
+    if (current >= questions.length) {
+      endQuiz();
+      return;
+    }
+    document.getElementById("next-btn").style.display = "none";
+    loadQuestion();
+  }
+
+  function endQuiz() {
+    document.getElementById("question").textContent = "Great job! You've finished the quiz.";
+    document.getElementById("answers").innerHTML = "";
+    document.getElementById("next-btn").style.display = "none";
+  }
+
+  loadQuestion();
+</script>
+
+</body>
+</html>
