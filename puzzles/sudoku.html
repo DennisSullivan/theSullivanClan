@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudoku • SullivanClan</title>
+
+<style>
+  body {
+    background: #f2f8ff;
+    font-family: "Trebuchet MS", sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  header {
+    background: linear-gradient(135deg, #6bb8ff, #4a9cff);
+    color: white;
+    padding: 22px;
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 10px;
+  }
+
+  #sudoku {
+    border-collapse: collapse;
+    margin: 0 auto;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  #sudoku td {
+    border: 1px solid #999;
+    width: 36px;
+    height: 36px;
+    text-align: center;
+    padding: 0;
+  }
+
+  #sudoku input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    background: #ffffff;
+  }
+
+  #sudoku input:focus {
+    outline: 2px solid #6bb8ff;
+  }
+
+  .fixed {
+    background: #e0f0ff;
+    font-weight: bold;
+    color: #234a70;
+  }
+
+  /* thicker borders for 3x3 subgrids */
+  #sudoku tr:nth-child(3n) td {
+    border-bottom: 2px solid #555;
+  }
+  #sudoku tr:nth-child(1) td {
+    border-top: 2px solid #555;
+  }
+  #sudoku td:nth-child(3n) {
+    border-right: 2px solid #555;
+  }
+  #sudoku td:nth-child(1) {
+    border-left: 2px solid #555;
+  }
+
+  button {
+    margin-top: 20px;
+    padding: 10px 22px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #ffd86b;
+    color: #5a4633;
+    cursor: pointer;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #ffcb3d;
+    transform: scale(1.05);
+  }
+
+  #message {
+    margin-top: 10px;
+    font-size: 17px;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 25px;
+    color: #444;
+    font-size: 18px;
+    text-decoration: none;
+  }
+</style>
+</head>
+
+<body>
+
+<header>Sudoku</header>
+
+<div class="container">
+  <p>Fill the grid so each row, column, and 3×3 box contains the digits 1–9.</p>
+
+  <table id="sudoku"></table>
+
+  <button onclick="checkSudoku()">Check Solution</button>
+  <div id="message"></div>
+
+  <div>
+    <a class="back-link" href="index.html">← Back to Puzzles</a>
+  </div>
+</div>
+
+<script>
+  // 0 = blank
+  const puzzle = [
+    [5,3,0, 0,7,0, 0,0,0],
+    [6,0,0, 1,9,5, 0,0,0],
+    [0,9,8, 0,0,0, 0,6,0],
+
+    [8,0,0, 0,6,0, 0,0,3],
+    [4,0,0, 8,0,3, 0,0,1],
+    [7,0,0, 0,2,0, 0,0,6],
+
+    [0,6,0, 0,0,0, 2,8,0],
+    [0,0,0, 4,1,9, 0,0,5],
+    [0,0,0, 0,8,0, 0,7,9]
+  ];
+
+  const solution = [
+    [5,3,4, 6,7,8, 9,1,2],
+    [6,7,2, 1,9,5, 3,4,8],
+    [1,9,8, 3,4,2, 5,6,7],
+
+    [8,5,9, 7,6,1, 4,2,3],
+    [4,2,6, 8,5,3, 7,9,1],
+    [7,1,3, 9,2,4, 8,5,6],
+
+    [9,6,1, 5,3,7, 2,8,4],
+    [2,8,7, 4,1,9, 6,3,5],
+    [3,4,5, 2,8,6, 1,7,9]
+  ];
+
+  const table = document.getElementById("sudoku");
+
+  function buildGrid() {
+    for (let r = 0; r < 9; r++) {
+      const row = document.createElement("tr");
+      for (let c = 0; c < 9; c++) {
+        const cell = document.createElement("td");
+        const value = puzzle[r][c];
+        if (value === 0) {
+          const input = document.createElement("input");
+          input.maxLength = 1;
+          input.dataset.row = r;
+          input.dataset.col = c;
+          input.oninput = () => {
+            input.value = input.value.replace(/[^1-9]/g, "");
+          };
+          cell.appendChild(input);
+        } else {
+          const input = document.createElement("input");
+          input.value = value;
+          input.readOnly = true;
+          input.classList.add("fixed");
+          cell.appendChild(input);
+        }
+        row.appendChild(cell);
+      }
+      table.appendChild(row);
+    }
+  }
+
+  function checkSudoku() {
+    const inputs = table.getElementsByTagName("input");
+    let index = 0;
+    let complete = true;
+    let correct = true;
+
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        const input = inputs[index++];
+        const val = parseInt(input.value, 10);
+        if (!val) {
+          complete = false;
+          continue;
+        }
+        if (val !== solution[r][c]) {
+          correct = false;
+        }
+      }
+    }
+
+    const msg = document.getElementById("message");
+    if (!complete) {
+      msg.textContent = "Keep going — some cells are still empty.";
+      msg.style.color = "#cc7a00";
+    } else if (correct) {
+      msg.textContent = "Excellent! You solved the Sudoku.";
+      msg.style.color = "#1f7a1f";
+    } else {
+      msg.textContent = "Something’s not quite right yet. Check your rows, columns, and boxes.";
+      msg.style.color = "#b00020";
+    }
+  }
+
+  buildGrid();
+</script>
+
+</body>
+</html>
