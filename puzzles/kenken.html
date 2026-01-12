@@ -61,16 +61,17 @@
   #kenken {
     width: 100%;
     max-width: 420px;
+    aspect-ratio: 1 / 1; /* keeps the whole grid square */
     margin: 0 auto;
     border-collapse: collapse;
   }
-
+  
   #kenken td {
     position: relative;
     padding: 0;
     border: 1px solid #999;
-    width: 16.6vw;
-    height: 16.6vw;
+    width: calc(100% / 6);
+    height: calc(100% / 6);
     max-width: 70px;
     max-height: 70px;
   }
