@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jigsaw Puzzle • SullivanClan</title>
+
+<style>
+  body {
+    background: #f2efe4;
+    font-family: "Trebuchet MS", sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  header {
+    background: linear-gradient(135deg, #9ccf8d, #6bbf6a);
+    color: white;
+    padding: 22px;
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 10px;
+  }
+
+  #board {
+    width: 600px;
+    height: 400px;
+    margin: 0 auto;
+    position: relative;
+    background: #e0d7c6;
+    border: 3px solid #8b7d6b;
+    border-radius: 10px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  .piece {
+    position: absolute;
+    width: 150px;
+    height: 100px;
+    background-size: 600px 400px;
+    cursor: grab;
+    border-radius: 6px;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
+    transition: transform 0.1s ease;
+  }
+
+  .piece:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+  }
+
+  button {
+    margin-top: 25px;
+    padding: 12px 22px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #ffcf6b;
+    color: #5a4633;
+    cursor: pointer;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #ffbe3d;
+    transform: scale(1.05);
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 30px;
+    color: #444;
+    font-size: 18px;
+    text-decoration: none;
+  }
+</style>
+</head>
+
+<body>
+
+<header>Jigsaw Puzzle</header>
+
+<div class="container">
+  <p>Drag the pieces into place to complete the picture.</p>
+
+  <div id="board"></div>
+
+  <button onclick="shufflePieces()">Shuffle Pieces</button>
+
+  <div>
+    <a class="back-link" href="index.html">← Back to Puzzles</a>
+  </div>
+</div>
+
+<script>
+  const board = document.getElementById("board");
+  const rows = 4;
+  const cols = 4;
+  const pieceWidth = 600 / cols;
+  const pieceHeight = 400 / rows;
+
+  const imageSrc = "https://picsum.photos/600/400"; // Replace with your family photo
+
+  let pieces = [];
+
+  function createPieces() {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const piece = document.createElement("div");
+        piece.className = "piece";
+        piece.style.width = pieceWidth + "px";
+        piece.style.height = pieceHeight + "px";
+        piece.style.backgroundImage = `url(${imageSrc})`;
+        piece.style.backgroundPosition = `-${c * pieceWidth}px -${r * pieceHeight}px`;
+
+        piece.dataset.correctX = c * pieceWidth;
+        piece.dataset.correctY = r * pieceHeight;
+
+        piece.addEventListener("mousedown", startDrag);
+        piece.addEventListener("touchstart", startDrag);
+
+        pieces.push(piece);
+        board.appendChild(piece);
+      }
+    }
+    shufflePieces();
+  }
+
+  function shufflePieces() {
+    pieces.forEach(piece => {
+      piece.style.left = Math.random() * (600 - pieceWidth) + "px";
+      piece.style.top = Math.random() * (400 - pieceHeight) + "px";
+    });
+  }
+
+  let currentPiece = null;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  function startDrag(e) {
+    e.preventDefault();
+    currentPiece = e.target;
+
+    const rect = currentPiece.getBoundingClientRect();
+    const boardRect = board.getBoundingClientRect();
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    offsetX = clientX - rect.left;
+    offsetY = clientY - rect.top;
+
+    document.addEventListener("mousemove", drag);
+    document.addEventListener("mouseup", endDrag);
+    document.addEventListener("touchmove", drag);
+    document.addEventListener("touchend", endDrag);
+  }
+
+  function drag(e) {
+    if (!currentPiece) return;
+
+    const boardRect = board.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    let x = clientX - boardRect.left - offsetX;
+    let y = clientY - boardRect.top - offsetY;
+
+    x = Math.max(0, Math.min(x, 600 - pieceWidth));
+    y = Math.max(0, Math.min(y, 400 - pieceHeight));
+
+    currentPiece.style.left = x + "px";
+    currentPiece.style.top = y + "px";
+  }
+
+  function endDrag() {
+    if (!currentPiece) return;
+
+    const x = parseFloat(currentPiece.style.left);
+    const y = parseFloat(currentPiece.style.top);
+
+    const correctX = parseFloat(currentPiece.dataset.correctX);
+    const correctY = parseFloat(currentPiece.dataset.correctY);
+
+    if (Math.abs(x - correctX) < 15 && Math.abs(y - correctY) < 15) {
+      currentPiece.style.left = correctX + "px";
+      currentPiece.style.top = correctY + "px";
+      currentPiece.style.boxShadow = "0 0 0 rgba(0,0,0,0)";
+      currentPiece.style.cursor = "default";
+      currentPiece.removeEventListener("mousedown", startDrag);
+      currentPiece.removeEventListener("touchstart", startDrag);
+    }
+
+    currentPiece = null;
+
+    document.removeEventListener("mousemove", drag);
+    document.removeEventListener("mouseup", endDrag);
+    document.removeEventListener("touchmove", drag);
+    document.removeEventListener("touchend", endDrag);
+
+    checkWin();
+  }
+
+  function checkWin() {
+    for (const piece of pieces) {
+      if (piece.style.left !== piece.dataset.correctX + "px" ||
+          piece.style.top !== piece.dataset.correctY + "px") {
+        return;
+      }
+    }
+    alert("Puzzle complete!");
+  }
+
+  createPieces();
+</script>
+
+</body>
+</html>
