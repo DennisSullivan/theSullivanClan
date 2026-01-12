@@ -66,14 +66,20 @@
   }
 
   #kenken td {
-    border: 2px solid #555;
+    position: relative;
+    padding: 0;
+    border: 1px solid #999;
     width: 16.6vw;
     height: 16.6vw;
     max-width: 70px;
     max-height: 70px;
-    position: relative;
-    padding: 0;
   }
+
+  /* Cage borders */
+  .cage-top    { border-top:    3px solid #333 !important; }
+  .cage-bottom { border-bottom: 3px solid #333 !important; }
+  .cage-left   { border-left:   3px solid #333 !important; }
+  .cage-right  { border-right:  3px solid #333 !important; }
 
   #kenken input {
     width: 100%;
@@ -227,6 +233,32 @@ function generateCages(solution, difficulty) {
   return cages;
 }
 
+function applyCageBorders(cages, cageMap) {
+  const n = 6;
+  const cells = document.querySelectorAll("#kenken td");
+
+  function cellAt(r, c) {
+    return cells[r * n + c];
+  }
+
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const cell = cellAt(r, c);
+      const cageId = cageMap[r][c].id;
+
+      const up    = r > 0     && cageMap[r-1][c].id === cageId;
+      const down  = r < n - 1 && cageMap[r+1][c].id === cageId;
+      const left  = c > 0     && cageMap[r][c-1].id === cageId;
+      const right = c < n - 1 && cageMap[r][c+1].id === cageId;
+
+      if (!up)    cell.classList.add("cage-top");
+      if (!down)  cell.classList.add("cage-bottom");
+      if (!left)  cell.classList.add("cage-left");
+      if (!right) cell.classList.add("cage-right");
+    }
+  }
+}
+
 /* ---------------------------------------------------------
    RENDERING
    --------------------------------------------------------- */
@@ -259,8 +291,9 @@ function generatePuzzle() {
       labelDiv.className = "cage-label";
 
       const cage = cageMap[r][c];
-      const isFirstCell = cages[cage.id].cells[0][0] === r &&
-                          cages[cage.id].cells[0][1] === c;
+      const isFirstCell =
+        cages[cage.id].cells[0][0] === r &&
+        cages[cage.id].cells[0][1] === c;
 
       if (isFirstCell) labelDiv.textContent = cage.label;
 
@@ -281,6 +314,9 @@ function generatePuzzle() {
   }
 
   window.currentSolution = solution;
+
+  /* ✅ Apply cage borders AFTER rendering */
+  applyCageBorders(cages, cageMap);
 }
 
 function checkKenKen() {
@@ -318,6 +354,7 @@ function checkKenKen() {
   }
 }
 
+/* Generate first puzzle on load */
 generatePuzzle();
 </script>
 
