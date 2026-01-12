@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Puzzle • SullivanClan</title>
+
+<style>
+  body {
+    background: #f7f0ff;
+    font-family: "Trebuchet MS", sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  header {
+    background: linear-gradient(135deg, #c96bff, #8b5cff);
+    color: white;
+    padding: 22px;
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  .container {
+    max-width: 500px;
+    margin: 30px auto;
+    padding: 10px;
+  }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(5, 48px);
+    grid-gap: 6px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .cell {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    border: 2px solid #ccc;
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    background: #ffffff;
+  }
+
+  .correct {
+    background: #6abf69;
+    border-color: #6abf69;
+    color: white;
+  }
+
+  .present {
+    background: #ffd86b;
+    border-color: #ffd86b;
+    color: #5a4633;
+  }
+
+  .absent {
+    background: #d4d4d4;
+    border-color: #d4d4d4;
+    color: #555;
+  }
+
+  #input-row {
+    margin-top: 10px;
+  }
+
+  #guess-input {
+    width: 120px;
+    padding: 8px;
+    font-size: 18px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  button {
+    margin-left: 10px;
+    padding: 8px 16px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #a88bff;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #8f73ff;
+    transform: scale(1.05);
+  }
+
+  #message {
+    margin-top: 10px;
+    font-size: 17px;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 25px;
+    color: #444;
+    font-size: 18px;
+    text-decoration: none;
+  }
+</style>
+</head>
+
+<body>
+
+<header>Word Puzzle</header>
+
+<div class="container">
+  <p>Guess the 5‑letter word. You have 6 tries.</p>
+
+  <div id="grid"></div>
+
+  <div id="input-row">
+    <input id="guess-input" maxlength="5" autofocus>
+    <button onclick="submitGuess()">Guess</button>
+  </div>
+
+  <div id="message"></div>
+
+  <div>
+    <a class="back-link" href="index.html">← Back to Puzzles</a>
+  </div>
+</div>
+
+<script>
+  const words = ["APPLE", "BRAIN", "CLOUD", "TRAIL", "LIGHT", "RIVER"];
+  const target = words[Math.floor(Math.random() * words.length)];
+
+  const rows = 6;
+  const cols = 5;
+  let currentRow = 0;
+
+  const grid = document.getElementById("grid");
+  const message = document.getElementById("message");
+  const input = document.getElementById("guess-input");
+
+  function buildGrid() {
+    for (let r = 0; r < rows * cols; r++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      grid.appendChild(cell);
+    }
+  }
+
+  function submitGuess() {
+    if (currentRow >= rows) return;
+
+    let guess = input.value.toUpperCase().trim();
+    if (guess.length !== 5) {
+      message.textContent = "Enter a 5‑letter word.";
+      message.style.color = "#b00020";
+      return;
+    }
+
+    const startIndex = currentRow * cols;
+    const cells = grid.getElementsByClassName("cell");
+
+    // Fill letters
+    for (let i = 0; i < cols; i++) {
+      cells[startIndex + i].textContent = guess[i];
+      cells[startIndex + i].className = "cell"; // reset classes
+    }
+
+    // Mark colors
+    const targetArr = target.split("");
+    const guessArr = guess.split("");
+    const used = Array(cols).fill(false);
+
+    // First pass: correct positions
+    for (let i = 0; i < cols; i++) {
+      if (guessArr[i] === targetArr[i]) {
+        cells[startIndex + i].classList.add("correct");
+        used[i] = true;
+        guessArr[i] = null;
+      }
+    }
+
+    // Second pass: present but wrong position
+    for (let i = 0; i < cols; i++) {
+      if (!guessArr[i]) continue;
+      let found = false;
+      for (let j = 0; j < cols; j++) {
+        if (!used[j] && targetArr[j] === guessArr[i]) {
+          found = true;
+          used[j] = true;
+          break;
+        }
+      }
+      if (found) cells[startIndex + i].classList.add("present");
+      else cells[startIndex + i].classList.add("absent");
+    }
+
+    if (guess === target) {
+      message.textContent = `You got it! The word was ${target}.`;
+      message.style.color = "#1f7a1f";
+      currentRow = rows;
+      return;
+    }
+
+    currentRow++;
+    input.value = "";
+
+    if (currentRow >= rows) {
+      message.textContent = `Nice try! The word was ${target}.`;
+      message.style.color = "#444";
+    } else {
+      message.textContent = "";
+    }
+  }
+
+  input.addEventListener("keyup", (e) => {
+    if (e.key === "Enter") submitGuess();
+  });
+
+  buildGrid();
+</script>
+
+</body>
+</html>
