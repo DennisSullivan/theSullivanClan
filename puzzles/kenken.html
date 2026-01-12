@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KenKen 6×6 • SullivanClan</title>
+
+<style>
+  body {
+    background: #fff8ec;
+    font-family: "Trebuchet MS", sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  header {
+    background: linear-gradient(135deg, #ffb36b, #ff8a5c);
+    color: white;
+    padding: 22px;
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  .container {
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 10px;
+  }
+
+  select {
+    width: 90%;
+    padding: 12px;
+    font-size: 18px;
+    border-radius: 8px;
+    border: 2px solid #ffb36b;
+    margin-bottom: 15px;
+  }
+
+  button {
+    width: 90%;
+    padding: 14px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #6bb8ff;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
+    transition: 0.2s;
+    margin-bottom: 20px;
+  }
+
+  button:hover {
+    background: #4aa6ff;
+    transform: scale(1.03);
+  }
+
+  #kenken {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    border-collapse: collapse;
+  }
+
+  #kenken td {
+    border: 2px solid #555;
+    width: 16.6vw;
+    height: 16.6vw;
+    max-width: 70px;
+    max-height: 70px;
+    position: relative;
+    padding: 0;
+  }
+
+  #kenken input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 22px;
+    font-weight: bold;
+    background: #fff;
+  }
+
+  #kenken input:focus {
+    outline: 2px solid #ffb36b;
+  }
+
+  .cage-label {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 12px;
+    color: #555;
+  }
+
+  #message {
+    margin-top: 10px;
+    font-size: 17px;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 25px;
+    color: #444;
+    font-size: 18px;
+    text-decoration: none;
+  }
+</style>
+</head>
+
+<body>
+
+<header>KenKen 6×6</header>
+
+<div class="container">
+
+  <p>Select difficulty and generate a new puzzle.</p>
+
+  <select id="difficulty">
+    <option value="gentle">Gentle</option>
+    <option value="moderate">Moderate</option>
+    <option value="hard">Challenging</option>
+  </select>
+
+  <button onclick="generatePuzzle()">Generate Puzzle</button>
+
+  <table id="kenken"></table>
+
+  <button onclick="checkKenKen()">Check My Solution</button>
+  <div id="message"></div>
+
+  <div>
+    <a class="back-link" href="index.html">← Back to Puzzles</a>
+  </div>
+
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   SIMPLE KENKEN GENERATOR (6×6)
+   --------------------------------------------------------- */
+
+function generateLatinSquare(n) {
+  const grid = [];
+  for (let r = 0; r < n; r++) {
+    grid[r] = [];
+    for (let c = 0; c < n; c++) {
+      grid[r][c] = ((r + c) % n) + 1;
+    }
+  }
+  return grid;
+}
+
+function shuffleRows(grid) {
+  for (let i = grid.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [grid[i], grid[j]] = [grid[j], grid[i]];
+  }
+}
+
+function shuffleCols(grid) {
+  const n = grid.length;
+  for (let c = n - 1; c > 0; c--) {
+    const j = Math.floor(Math.random() * (c + 1));
+    for (let r = 0; r < n; r++) {
+      [grid[r][c], grid[r][j]] = [grid[r][j], grid[r][c]];
+    }
+  }
+}
+
+function generateCages(solution, difficulty) {
+  const n = 6;
+  const cages = [];
+  const used = Array.from({ length: n }, () => Array(n).fill(false));
+
+  function opForDifficulty() {
+    if (difficulty === "gentle") return ["+","-"];
+    if (difficulty === "moderate") return ["+","-","×","÷"];
+    return ["+","×","÷"];
+  }
+
+  const ops = opForDifficulty();
+
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (used[r][c]) continue;
+
+      const cage = { cells: [[r,c]] };
+      used[r][c] = true;
+
+      if (Math.random() < 0.5) {
+        const dirs = [[1,0],[0,1]];
+        const [dr,dc] = dirs[Math.floor(Math.random()*dirs.length)];
+        const nr = r + dr, nc = c + dc;
+        if (nr < n && nc < n && !used[nr][nc]) {
+          cage.cells.push([nr,nc]);
+          used[nr][nc] = true;
+        }
+      }
+
+      const values = cage.cells.map(([rr,cc]) => solution[rr][cc]);
+      const op = ops[Math.floor(Math.random()*ops.length)];
+
+      let label = "";
+      if (cage.cells.length === 1) {
+        label = values[0];
+      } else {
+        if (op === "+") label = values.reduce((a,b)=>a+b) + "+";
+        if (op === "-") label = Math.abs(values[0]-values[1]) + "-";
+        if (op === "×") label = values.reduce((a,b)=>a*b) + "×";
+        if (op === "÷") {
+          const big = Math.max(...values);
+          const small = Math.min(...values);
+          label = (big/small) + "÷";
+        }
+      }
+
+      cage.label = label;
+      cages.push(cage);
+    }
+  }
+
+  return cages;
+}
+
+/* ---------------------------------------------------------
+   RENDERING
+   --------------------------------------------------------- */
+
+function generatePuzzle() {
+  const difficulty = document.getElementById("difficulty").value;
+  const table = document.getElementById("kenken");
+  table.innerHTML = "";
+
+  const n = 6;
+  const solution = generateLatinSquare(n);
+  shuffleRows(solution);
+  shuffleCols(solution);
+
+  const cages = generateCages(solution, difficulty);
+
+  const cageMap = Array.from({ length: n }, () => Array(n).fill(null));
+  cages.forEach((cage, index) => {
+    cage.cells.forEach(([r,c]) => {
+      cageMap[r][c] = { id: index, label: cage.label };
+    });
+  });
+
+  for (let r = 0; r < n; r++) {
+    const row = document.createElement("tr");
+    for (let c = 0; c < n; c++) {
+      const cell = document.createElement("td");
+
+      const labelDiv = document.createElement("div");
+      labelDiv.className = "cage-label";
+
+      const cage = cageMap[r][c];
+      const isFirstCell = cages[cage.id].cells[0][0] === r &&
+                          cages[cage.id].cells[0][1] === c;
+
+      if (isFirstCell) labelDiv.textContent = cage.label;
+
+      cell.appendChild(labelDiv);
+
+      const input = document.createElement("input");
+      input.maxLength = 1;
+      input.dataset.row = r;
+      input.dataset.col = c;
+      input.oninput = () => {
+        input.value = input.value.replace(/[^1-6]/g, "");
+      };
+      cell.appendChild(input);
+
+      row.appendChild(cell);
+    }
+    table.appendChild(row);
+  }
+
+  window.currentSolution = solution;
+}
+
+function checkKenKen() {
+  const table = document.getElementById("kenken");
+  const inputs = table.getElementsByTagName("input");
+  const n = 6;
+  let idx = 0;
+  let complete = true;
+  let correct = true;
+
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const input = inputs[idx++];
+      const val = parseInt(input.value, 10);
+      if (!val) {
+        complete = false;
+        continue;
+      }
+      if (val !== window.currentSolution[r][c]) {
+        correct = false;
+      }
+    }
+  }
+
+  const msg = document.getElementById("message");
+  if (!complete) {
+    msg.textContent = "Some cells are still empty.";
+    msg.style.color = "#cc7a00";
+  } else if (correct) {
+    msg.textContent = "Great job! You solved it.";
+    msg.style.color = "#1f7a1f";
+  } else {
+    msg.textContent = "Not quite right yet — check rows and columns.";
+    msg.style.color = "#b00020";
+  }
+}
+
+generatePuzzle();
+</script>
+
+</body>
+</html>
