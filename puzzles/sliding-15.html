@@ -53,7 +53,7 @@
     transition: transform 0.15s ease;
   }
 
-  .tile:hover {
+  .tile.slide {
     transform: scale(1.05);
   }
 
@@ -108,64 +108,82 @@
 </div>
 
 <script>
+  let board = [];
   const puzzle = document.getElementById("puzzle");
-  let tiles = [];
 
-  function createTiles() {
-    tiles = [];
+  function initBoard() {
+    board = [
+      [1, 2, 3, 4],
+      [5, 6, 7, 8],
+      [9,10,11,12],
+      [13,14,15,0]
+    ];
+    render();
+  }
+
+  function render() {
     puzzle.innerHTML = "";
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const value = board[r][c];
+        const tile = document.createElement("div");
 
-    for (let i = 1; i <= 15; i++) {
-      const tile = document.createElement("div");
-      tile.className = "tile";
-      tile.textContent = i;
-      tile.addEventListener("click", () => moveTile(i));
-      tiles.push(tile);
-      puzzle.appendChild(tile);
+        if (value === 0) {
+          tile.className = "tile empty";
+        } else {
+          tile.className = "tile";
+          tile.textContent = value;
+          tile.onclick = () => moveTile(r, c);
+        }
+
+        puzzle.appendChild(tile);
+      }
     }
+  }
 
-    const empty = document.createElement("div");
-    empty.className = "tile empty";
-    tiles.push(empty);
-    puzzle.appendChild(empty);
+  function moveTile(r, c) {
+    const moves = [
+      [r-1, c],
+      [r+1, c],
+      [r, c-1],
+      [r, c+1]
+    ];
+
+    for (const [nr, nc] of moves) {
+      if (nr >= 0 && nr < 4 && nc >= 0 && nc < 4 && board[nr][nc] === 0) {
+        const temp = board[r][c];
+        board[r][c] = 0;
+        board[nr][nc] = temp;
+
+        render();
+
+        const tiles = document.querySelectorAll(".tile");
+        tiles[nr*4 + nc].classList.add("slide");
+        setTimeout(() => tiles[nr*4 + nc].classList.remove("slide"), 150);
+
+        checkWin();
+        return;
+      }
+    }
   }
 
   function shuffle() {
-    for (let i = tiles.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      puzzle.insertBefore(tiles[j], tiles[i]);
-      [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
-    }
-  }
-
-  function moveTile(num) {
-    const index = tiles.findIndex(t => t.textContent == num);
-    const emptyIndex = tiles.findIndex(t => t.classList.contains("empty"));
-
-    const validMoves = [
-      emptyIndex - 1,
-      emptyIndex + 1,
-      emptyIndex - 4,
-      emptyIndex + 4
-    ];
-
-    if (validMoves.includes(index)) {
-      puzzle.insertBefore(tiles[index], tiles[emptyIndex]);
-      puzzle.insertBefore(tiles[emptyIndex], tiles[index + (index < emptyIndex ? 1 : -1)]);
-      [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
-
-      checkWin();
+    for (let i = 0; i < 200; i++) {
+      const r = Math.floor(Math.random() * 4);
+      const c = Math.floor(Math.random() * 4);
+      moveTile(r, c);
     }
   }
 
   function checkWin() {
+    const flat = board.flat();
     for (let i = 0; i < 15; i++) {
-      if (tiles[i].textContent != i + 1) return;
+      if (flat[i] !== i + 1) return;
     }
     alert("You solved it!");
   }
 
-  createTiles();
+  initBoard();
 </script>
 
 </body>
