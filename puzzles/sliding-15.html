@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sliding Tile Puzzle • SullivanClan</title>
+
+<style>
+  body {
+    background: #f7f3e8;
+    font-family: "Trebuchet MS", sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  header {
+    background: linear-gradient(135deg, #ffb36b, #ff8a5c);
+    color: white;
+    padding: 22px;
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  .container {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 10px;
+  }
+
+  #puzzle {
+    width: 320px;
+    height: 320px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .tile {
+    background: #ffe1b3;
+    border-radius: 10px;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
+    font-size: 28px;
+    font-weight: bold;
+    color: #5a4633;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+
+  .tile:hover {
+    transform: scale(1.05);
+  }
+
+  .empty {
+    background: transparent;
+    box-shadow: none;
+    cursor: default;
+  }
+
+  button {
+    margin-top: 25px;
+    padding: 12px 22px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #6bb8ff;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.25);
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #4aa6ff;
+    transform: scale(1.05);
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 30px;
+    color: #444;
+    font-size: 18px;
+    text-decoration: none;
+  }
+</style>
+</head>
+
+<body>
+
+<header>Sliding Tile Puzzle</header>
+
+<div class="container">
+  <p>Slide the tiles to arrange them in order from 1 to 15.</p>
+
+  <div id="puzzle"></div>
+
+  <button onclick="shuffle()">Shuffle</button>
+
+  <div>
+    <a class="back-link" href="index.html">← Back to Puzzles</a>
+  </div>
+</div>
+
+<script>
+  const puzzle = document.getElementById("puzzle");
+  let tiles = [];
+
+  function createTiles() {
+    tiles = [];
+    puzzle.innerHTML = "";
+
+    for (let i = 1; i <= 15; i++) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.textContent = i;
+      tile.addEventListener("click", () => moveTile(i));
+      tiles.push(tile);
+      puzzle.appendChild(tile);
+    }
+
+    const empty = document.createElement("div");
+    empty.className = "tile empty";
+    tiles.push(empty);
+    puzzle.appendChild(empty);
+  }
+
+  function shuffle() {
+    for (let i = tiles.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      puzzle.insertBefore(tiles[j], tiles[i]);
+      [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+    }
+  }
+
+  function moveTile(num) {
+    const index = tiles.findIndex(t => t.textContent == num);
+    const emptyIndex = tiles.findIndex(t => t.classList.contains("empty"));
+
+    const validMoves = [
+      emptyIndex - 1,
+      emptyIndex + 1,
+      emptyIndex - 4,
+      emptyIndex + 4
+    ];
+
+    if (validMoves.includes(index)) {
+      puzzle.insertBefore(tiles[index], tiles[emptyIndex]);
+      puzzle.insertBefore(tiles[emptyIndex], tiles[index + (index < emptyIndex ? 1 : -1)]);
+      [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+
+      checkWin();
+    }
+  }
+
+  function checkWin() {
+    for (let i = 0; i < 15; i++) {
+      if (tiles[i].textContent != i + 1) return;
+    }
+    alert("You solved it!");
+  }
+
+  createTiles();
+</script>
+
+</body>
+</html>
