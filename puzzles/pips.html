@@ -262,7 +262,6 @@ Each puzzle:
           // or { type: "neq" }
           // or { type: "<", value: 3 }
           // or { type: ">", value: 1 }
-          // or { type: "sum", value: 7 }
         },
         ...
       ]
@@ -922,7 +921,7 @@ function checkPips() {
 }
 
 function regionSatisfied(rule, pips) {
-  // Region sum rule: =x
+  // Region sum rule: x
   if (rule.type === "=") {
     const total = pips.reduce((a, b) => a + b, 0);
     return total === rule.value;
