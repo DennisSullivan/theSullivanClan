@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pips • SullivanClan</title>
+
+<style>
+  body {
+    background: #fff8ec;
+    font-family: "Trebuchet MS", sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  header {
+    background: linear-gradient(135deg, #ffb36b, #ff8a5c);
+    color: white;
+    padding: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 16px auto 32px;
+    padding: 0 10px;
+  }
+
+  .controls {
+    margin-bottom: 16px;
+  }
+
+  select, button {
+    padding: 10px 14px;
+    font-size: 16px;
+    border-radius: 8px;
+    margin: 4px;
+  }
+
+  select {
+    border: 2px solid #ffb36b;
+    background: #fffdf7;
+  }
+
+  button {
+    background: #6bb8ff;
+    color: white;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #4aa6ff;
+    transform: scale(1.02);
+  }
+
+  .boards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  .board-wrapper {
+    background: #fffdf7;
+    padding: 8px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+
+  .board-title {
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #444;
+  }
+
+  .board {
+    display: grid;
+    border: 2px solid #5a3e2b;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .cell {
+    position: relative;
+    border: 1px solid #c9b39b;
+    background: #fff8ec;
+    width: 40px;
+    height: 40px;
+    box-sizing: border-box;
+    font-size: 18px;
+    line-height: 40px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .cell.inactive {
+    background: transparent;
+    border: none;
+    cursor: default;
+  }
+
+  .cell.selected {
+    outline: 2px solid #ffb36b;
+    outline-offset: -2px;
+  }
+
+  .region-label {
+    position: absolute;
+    bottom: 1px;
+    right: 2px;
+    font-size: 11px;
+    color: #5a3e2b;
+    background: rgba(255,248,236,0.8);
+    padding: 0 2px;
+    border-radius: 3px;
+    pointer-events: none;
+  }
+
+  .region {
+    /* background color per region via inline style */
+  }
+
+  .tray {
+    margin-top: 16px;
+    padding: 10px;
+    border-radius: 10px;
+    background: #fffdf7;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+
+  .tray-title {
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+
+  .domino-pool {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .domino {
+    display: flex;
+    border: 2px solid #5a3e2b;
+    border-radius: 6px;
+    overflow: hidden;
+    width: 54px;
+    height: 26px;
+    box-sizing: border-box;
+    background: #fff8ec;
+    cursor: pointer;
+  }
+
+  .domino.disabled {
+    opacity: 0.25;
+    cursor: default;
+  }
+
+  .domino.selected {
+    box-shadow: 0 0 0 3px #ffb36b;
+  }
+
+  .domino-half {
+    flex: 1;
+    border-right: 1px solid #c9b39b;
+    text-align: center;
+    line-height: 26px;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .domino-half:last-child {
+    border-right: none;
+  }
+
+  #message {
+    margin-top: 12px;
+    font-size: 16px;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: 24px;
+    color: #444;
+    font-size: 18px;
+    text-decoration: none;
+  }
+
+  @media (max-width: 600px) {
+    .cell {
+      width: 34px;
+      height: 34px;
+      line-height: 34px;
+      font-size: 16px;
+    }
+    .domino {
+      width: 48px;
+      height: 24px;
+    }
+    .domino-half {
+      line-height: 24px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>Pips</header>
+
+<div class="container">
+  <p>Place each domino exactly once so all grids are filled and every colored region obeys its rule.</p>
+
+  <div class="controls">
+    <select id="difficulty">
+      <option value="easy">Easy (one grid)</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+    <button onclick="newPipsPuzzle()">New Puzzle</button>
+    <button onclick="checkPips()">Check My Solution</button>
+  </div>
+
+  <div id="boards" class="boards"></div>
+
+  <div class="tray">
+    <div class="tray-title">Domino Pool (each used exactly once):</div>
+    <div id="domino-pool" class="domino-pool"></div>
+  </div>
+
+  <div id="message"></div>
+
+  <a class="back-link" href="index.html">← Back to Puzzles</a>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   PUZZLE REPRESENTATION
+   --------------------------------------------------------- */
+/*
+Each puzzle:
+{
+  grids: [
+    {
+      id: "A",
+      rows: 4,
+      cols: 4,
+      activeCells: [ "0,0", "0,1", ... ],
+      regions: [
+        {
+          id: "R1",
+          cells: ["0,0", "0,1"],
+          color: "#fbe0c4",
+          rule: { type: "=", value: 2 }        // all pips = 2
+          // or { type: "neq" }
+          // or { type: "<", value: 3 }
+          // or { type: ">", value: 1 }
+          // or { type: "sum", value: 7 }
+        },
+        ...
+      ]
+    },
+    ...
+  ],
+  dominoPool: [
+    [0,1], [1,1], ...
+  ]
+}
+*/
+
+const puzzles = {
+  easy: [
+    {
+      // One 4x4 grid, all active
+      grids: [
+        {
+          id: "Grid 1",
+          rows: 4,
+          cols: 4,
+          activeCells: [
+            "0,0","0,1","0,2","0,3",
+            "1,0","1,1","1,2","1,3",
+            "2,0","2,1","2,2","2,3",
+            "3,0","3,1","3,2","3,3"
+          ],
+          regions: [
+            {
+              id: "A",
+              cells: ["0,0","0,1","1,0","1,1"],
+              color: "#fce4cc",
+              rule: { type: "=", value: 2 } // all pips = 2
+            },
+            {
+              id: "B",
+              cells: ["0,2","0,3","1,2"],
+              color: "#e5f2c9",
+              rule: { type: ">", value: 1 } // all pips > 1
+            },
+            {
+              id: "C",
+              cells: ["1,3","2,3","3,3"],
+              color: "#d8efff",
+              rule: { type: "sum", value: 7 } // sum of pips = 7
+            },
+            {
+              id: "D",
+              cells: ["2,0","2,1","3,0"],
+              color: "#f9d6e5",
+              rule: { type: "<", value: 3 } // all pips < 3
+            },
+            {
+              id: "E",
+              cells: ["2,2","3,1","3,2"],
+              color: "#fdebb2",
+              rule: { type: "neq" } // all pips different
+            }
+          ]
+        }
+      ],
+      dominoPool: [
+        [1,1],[2,2],[2,1],[3,3],[2,3],[1,3],[0,2],[0,1]
+      ]
+    }
+  ],
+
+  medium: [
+    {
+      // Two grids: a 3x4 and a 3x3
+      grids: [
+        {
+          id: "Grid 1",
+          rows: 3,
+          cols: 4,
+          activeCells: [
+            "0,0","0,1","0,2","0,3",
+            "1,0","1,1","1,2","1,3",
+            "2,0","2,1","2,2","2,3"
+          ],
+          regions: [
+            {
+              id: "A",
+              cells: ["0,0","0,1"],
+              color: "#fce4cc",
+              rule: { type: "sum", value: 3 } // sum = 3
+            },
+            {
+              id: "B",
+              cells: ["0,2","0,3","1,3"],
+              color: "#e5f2c9",
+              rule: { type: "=", value: 1 }
+            },
+            {
+              id: "C",
+              cells: ["1,0","2,0","2,1"],
+              color: "#d8efff",
+              rule: { type: ">", value: 0 }
+            },
+            {
+              id: "D",
+              cells: ["1,1","1,2","2,2","2,3"],
+              color: "#f9d6e5",
+              rule: { type: "neq" }
+            }
+          ]
+        },
+        {
+          id: "Grid 2",
+          rows: 3,
+          cols: 3,
+          activeCells: [
+            "0,0","0,1","0,2",
+            "1,0","1,1","1,2",
+            "2,0","2,1","2,2"
+          ],
+          regions: [
+            {
+              id: "E",
+              cells: ["0,0","1,0"],
+              color: "#fdebb2",
+              rule: { type: "<", value: 3 }
+            },
+            {
+              id: "F",
+              cells: ["0,1","0,2","1,1"],
+              color: "#e7ddff",
+              rule: { type: "sum", value: 5 }
+            },
+            {
+              id: "G",
+              cells: ["1,2","2,2","2,1","2,0"],
+              color: "#cde8ff",
+              rule: { type: ">", value: 1 }
+            }
+          ]
+        }
+      ],
+      dominoPool: [
+        [0,1],[1,1],[1,2],[2,2],[2,3],[3,3],[0,2],[1,3],[0,3],[1,4]
+      ]
+    }
+  ],
+
+  hard: [
+    {
+      // Three grids, with one having a "hole" (inactive cells)
+      grids: [
+        {
+          id: "Grid 1",
+          rows: 3,
+          cols: 4,
+          activeCells: [
+            "0,0","0,1","0,2","0,3",
+            "1,0","1,1","1,2","1,3",
+            "2,0","2,1","2,2","2,3"
+          ],
+          regions: [
+            {
+              id: "A",
+              cells: ["0,0","0,1","1,0"],
+              color: "#fce4cc",
+              rule: { type: "sum", value: 5 }
+            },
+            {
+              id: "B",
+              cells: ["0,2","0,3","1,3"],
+              color: "#e5f2c9",
+              rule: { type: "neq" }
+            },
+            {
+              id: "C",
+              cells: ["1,1","1,2"],
+              color: "#d8efff",
+              rule: { type: "=", value: 2 }
+            },
+            {
+              id: "D",
+              cells: ["2,0","2,1","2,2","2,3"],
+              color: "#f9d6e5",
+              rule: { type: ">", value: 1 }
+            }
+          ]
+        },
+        {
+          id: "Grid 2",
+          rows: 4,
+          cols: 4,
+          activeCells: [
+            "0,0","0,1","0,2","0,3",
+            "1,0","1,1","1,2","1,3",
+            "2,0","2,1","2,2","2,3",
+            "3,0","3,1","3,2","3,3"
+          ],
+          regions: [
+            {
+              id: "E",
+              cells: ["0,0","1,0","2,0"],
+              color: "#fdebb2",
+              rule: { type: "<", value: 3 }
+            },
+            {
+              id: "F",
+              cells: ["0,1","0,2","1,1","2,1"],
+              color: "#e7ddff",
+              rule: { type: "sum", value: 7 }
+            },
+            {
+              id: "G",
+              cells: ["0,3","1,3","2,3","3,3"],
+              color: "#cde8ff",
+              rule: { type: "=", value: 3 }
+            },
+            {
+              id: "H",
+              cells: ["1,2","2,2","3,2","3,1","3,0"],
+              color: "#fcd4d2",
+              rule: { type: "neq" }
+            }
+          ]
+        },
+        {
+          id: "Grid 3",
+          rows: 3,
+          cols: 5,
+          activeCells: [
+            "0,1","0,2","0,3",
+            "1,0","1,1","1,2","1,3","1,4",
+            "2,1","2,2","2,3"
+          ],
+          regions: [
+            {
+              id: "I",
+              cells: ["0,1","0,2"],
+              color: "#fce4cc",
+              rule: { type: "sum", value: 4 }
+            },
+            {
+              id: "J",
+              cells: ["0,3","1,3","2,3"],
+              color: "#e5f2c9",
+              rule: { type: ">", value: 2 }
+            },
+            {
+              id: "K",
+              cells: ["1,0","1,1","2,1"],
+              color: "#d8efff",
+              rule: { type: "<", value: 4 }
+            },
+            {
+              id: "L",
+              cells: ["1,2","2,2","1,4"],
+              color: "#f9d6e5",
+              rule: { type: "neq" }
+            }
+          ]
+        }
+      ],
+      dominoPool: [
+        [0,1],[0,2],[1,2],[2,2],[1,3],[2,3],
+        [3,3],[0,3],[1,4],[2,4],[3,4],[4,4]
+      ]
+    }
+  ]
+};
+
+/* ---------------------------------------------------------
+   STATE
+   --------------------------------------------------------- */
+let currentPuzzle = null;
+let currentDifficulty = "easy";
+
+// key: "gIndex:r:c" → { dominoIndex, halfIndex(0 or 1) }
+let cellAssignments = {};
+// domino usage: true if placed
+let dominoUsed = [];
+let selectedDominoIndex = null;
+let pendingCell = null; // first cell clicked when placing
+
+/* ---------------------------------------------------------
+   HELPERS
+   --------------------------------------------------------- */
+function cellKey(gIndex, r, c) {
+  return gIndex + ":" + r + ":" + c;
+}
+
+function parseCellKey(key) {
+  const [g, r, c] = key.split(":").map(Number);
+  return { gIndex: g, row: r, col: c };
+}
+
+function isAdjacent(cellA, cellB) {
+  return (
+    cellA.gIndex === cellB.gIndex &&
+    Math.abs(cellA.row - cellB.row) + Math.abs(cellA.col - cellB.col) === 1
+  );
+}
+
+/* ---------------------------------------------------------
+   RENDERING
+   --------------------------------------------------------- */
+function renderPuzzle() {
+  const boardsContainer = document.getElementById("boards");
+  boardsContainer.innerHTML = "";
+  cellAssignments = {};
+  dominoUsed = currentPuzzle.dominoPool.map(() => false);
+  selectedDominoIndex = null;
+  pendingCell = null;
+
+  currentPuzzle.grids.forEach((grid, gIndex) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "board-wrapper";
+
+    const title = document.createElement("div");
+    title.className = "board-title";
+    title.textContent = grid.id;
+    wrapper.appendChild(title);
+
+    const board = document.createElement("div");
+    board.className = "board";
+    board.style.gridTemplateRows = `repeat(${grid.rows}, 1fr)`;
+    board.style.gridTemplateColumns = `repeat(${grid.cols}, 1fr)`;
+
+    const activeSet = new Set(grid.activeCells);
+
+    // Map cell -> region for label/color
+    const cellRegionMap = {};
+    grid.regions.forEach(region => {
+      region.cells.forEach(c => {
+        cellRegionMap[c] = region;
+      });
+    });
+
+    for (let r = 0; r < grid.rows; r++) {
+      for (let c = 0; c < grid.cols; c++) {
+        const cellCoord = `${r},${c}`;
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.dataset.gIndex = gIndex;
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+
+        if (!activeSet.has(cellCoord)) {
+          cell.classList.add("inactive");
+        } else {
+          const region = cellRegionMap[cellCoord];
+          if (region) {
+            cell.classList.add("region");
+            cell.style.backgroundColor = region.color;
+
+            // label only on one cell (first of region.cells)
+            if (region.cells[0] === cellCoord) {
+              const label = document.createElement("div");
+              label.className = "region-label";
+              label.textContent = regionRuleLabel(region.rule);
+              cell.appendChild(label);
+            }
+          }
+
+          cell.addEventListener("click", onCellClick);
+        }
+
+        board.appendChild(cell);
+      }
+    }
+
+    wrapper.appendChild(board);
+    boardsContainer.appendChild(wrapper);
+  });
+
+  renderDominoPool();
+  setMessage("");
+}
+
+function regionRuleLabel(rule) {
+  if (rule.type === "=") return "=" + rule.value;
+  if (rule.type === "neq") return "≠";
+  if (rule.type === "<") return "<" + rule.value;
+  if (rule.type === ">") return ">" + rule.value;
+  if (rule.type === "sum") return "sum=" + rule.value;
+  return "?";
+}
+
+function renderDominoPool() {
+  const poolDiv = document.getElementById("domino-pool");
+  poolDiv.innerHTML = "";
+
+  currentPuzzle.dominoPool.forEach((domino, index) => {
+    const [a, b] = domino;
+    const dDiv = document.createElement("div");
+    dDiv.className = "domino";
+    dDiv.dataset.index = index;
+
+    if (dominoUsed[index]) dDiv.classList.add("disabled");
+    if (selectedDominoIndex === index) dDiv.classList.add("selected");
+
+    const half1 = document.createElement("div");
+    half1.className = "domino-half";
+    half1.textContent = a;
+
+    const half2 = document.createElement("div");
+    half2.className = "domino-half";
+    half2.textContent = b;
+
+    dDiv.appendChild(half1);
+    dDiv.appendChild(half2);
+
+    dDiv.addEventListener("click", () => onDominoClick(index));
+
+    poolDiv.appendChild(dDiv);
+  });
+}
+
+/* ---------------------------------------------------------
+   INTERACTION HANDLERS
+   --------------------------------------------------------- */
+function onDominoClick(index) {
+  if (dominoUsed[index]) return;
+  if (selectedDominoIndex === index) {
+    selectedDominoIndex = null;
+  } else {
+    selectedDominoIndex = index;
+  }
+  pendingCell = null;
+  renderDominoPool();
+}
+
+function onCellClick(evt) {
+  const cell = evt.currentTarget;
+  const gIndex = parseInt(cell.dataset.gIndex, 10);
+  const row = parseInt(cell.dataset.row, 10);
+  const col = parseInt(cell.dataset.col, 10);
+  const key = cellKey(gIndex, row, col);
+
+  // If this cell already has a domino, remove it
+  const existing = cellAssignments[key];
+  if (existing) {
+    removeDomino(existing.dominoIndex);
+    return;
+  }
+
+  // No domino selected - nothing to place
+  if (selectedDominoIndex === null) {
+    setMessage("Select a domino first, then click two adjacent cells.");
+    return;
+  }
+
+  // Placing: first or second cell?
+  if (!pendingCell) {
+    pendingCell = { gIndex, row, col };
+    highlightPendingCell(true);
+  } else {
+    const cell2 = { gIndex, row, col };
+    if (!isAdjacent(pendingCell, cell2)) {
+      setMessage("Cells must be adjacent in the same grid.");
+      highlightPendingCell(false);
+      pendingCell = null;
+      return;
+    }
+
+    // Check both cells are free
+    const key1 = cellKey(pendingCell.gIndex, pendingCell.row, pendingCell.col);
+    const key2 = cellKey(cell2.gIndex, cell2.row, cell2.col);
+    if (cellAssignments[key1] || cellAssignments[key2]) {
+      setMessage("Those cells are not both free.");
+      highlightPendingCell(false);
+      pendingCell = null;
+      return;
+    }
+
+    placeDomino(selectedDominoIndex, key1, key2);
+    highlightPendingCell(false);
+    pendingCell = null;
+  }
+}
+
+function highlightPendingCell(on) {
+  const cells = document.querySelectorAll(".cell");
+  cells.forEach(cell => {
+    cell.classList.remove("selected");
+  });
+  if (on && pendingCell) {
+    const selector = `.cell[data-g-index="${pendingCell.gIndex}"][data-row="${pendingCell.row}"][data-col="${pendingCell.col}"]`;
+    const cell = document.querySelector(selector);
+    if (cell) cell.classList.add("selected");
+  }
+}
+
+function placeDomino(dominoIndex, key1, key2) {
+  const [a, b] = currentPuzzle.dominoPool[dominoIndex];
+
+  cellAssignments[key1] = { dominoIndex, halfIndex: 0 };
+  cellAssignments[key2] = { dominoIndex, halfIndex: 1 };
+  dominoUsed[dominoIndex] = true;
+  selectedDominoIndex = null;
+
+  updateBoardValues();
+  renderDominoPool();
+}
+
+function removeDomino(dominoIndex) {
+  // Remove domino from all cells
+  Object.keys(cellAssignments).forEach(k => {
+    if (cellAssignments[k].dominoIndex === dominoIndex) {
+      delete cellAssignments[k];
+    }
+  });
+  dominoUsed[dominoIndex] = false;
+  selectedDominoIndex = null;
+  pendingCell = null;
+  highlightPendingCell(false);
+  updateBoardValues();
+  renderDominoPool();
+}
+
+function updateBoardValues() {
+  const cells = document.querySelectorAll(".cell");
+  cells.forEach(cell => {
+    if (cell.classList.contains("inactive")) return;
+    const gIndex = parseInt(cell.dataset.gIndex, 10);
+    const row = parseInt(cell.dataset.row, 10);
+    const col = parseInt(cell.dataset.col, 10);
+    const key = cellKey(gIndex, row, col);
+    const assignment = cellAssignments[key];
+    cell.textContent = "";
+    // keep region label if present
+    const label = cell.querySelector(".region-label");
+    if (label) {
+      const labelText = label.textContent;
+      cell.innerHTML = "";
+      cell.appendChild(label);
+      // place digit centered behind label
+      if (assignment) {
+        const numSpan = document.createElement("span");
+        numSpan.textContent = assignmentHalfValue(assignment);
+        numSpan.style.position = "absolute";
+        numSpan.style.left = "50%";
+        numSpan.style.top = "50%";
+        numSpan.style.transform = "translate(-50%, -50%)";
+        numSpan.style.fontSize = "18px";
+        numSpan.style.fontWeight = "bold";
+        cell.appendChild(numSpan);
+      }
+    } else {
+      if (assignment) {
+        cell.textContent = assignmentHalfValue(assignment);
+      }
+    }
+  });
+}
+
+function assignmentHalfValue(assignment) {
+  const domino = currentPuzzle.dominoPool[assignment.dominoIndex];
+  return assignment.halfIndex === 0 ? domino[0] : domino[1];
+}
+
+/* ---------------------------------------------------------
+   CHECKING
+   --------------------------------------------------------- */
+function checkPips() {
+  // 1) Every active cell must be filled
+  for (let gIndex = 0; gIndex < currentPuzzle.grids.length; gIndex++) {
+    const grid = currentPuzzle.grids[gIndex];
+    const activeSet = new Set(grid.activeCells);
+    for (let r = 0; r < grid.rows; r++) {
+      for (let c = 0; c < grid.cols; c++) {
+        const coord = `${r},${c}`;
+        if (!activeSet.has(coord)) continue;
+        const key = cellKey(gIndex, r, c);
+        if (!cellAssignments[key]) {
+          setMessage("Some cells are still empty.");
+          return;
+        }
+      }
+    }
+  }
+
+  // 2) Every domino must be used exactly once
+  for (let i = 0; i < currentPuzzle.dominoPool.length; i++) {
+    if (!dominoUsed[i]) {
+      setMessage("Not all dominoes have been used.");
+      return;
+    }
+    // ensure exactly two cells
+    let countCells = 0;
+    Object.values(cellAssignments).forEach(a => {
+      if (a.dominoIndex === i) countCells++;
+    });
+    if (countCells !== 2) {
+      setMessage("A domino is only partially placed.");
+      return;
+    }
+  }
+
+  // 3) Check region rules
+  for (let gIndex = 0; gIndex < currentPuzzle.grids.length; gIndex++) {
+    const grid = currentPuzzle.grids[gIndex];
+    for (const region of grid.regions) {
+      const pips = [];
+      for (const coord of region.cells) {
+        const [r, c] = coord.split(",").map(Number);
+        const key = cellKey(gIndex, r, c);
+        const assignment = cellAssignments[key];
+        if (!assignment) {
+          setMessage("Some region cells are unfilled.");
+          return;
+        }
+        pips.push(assignmentHalfValue(assignment));
+      }
+
+      if (!regionSatisfied(region.rule, pips)) {
+        setMessage(`A region rule is not satisfied (${region.id}).`);
+        return;
+      }
+    }
+  }
+
+  setMessage("Beautiful! All dominoes placed and all regions satisfied.", "#1f7a1f");
+}
+
+function regionSatisfied(rule, pips) {
+  if (rule.type === "=") {
+    return pips.every(v => v === rule.value);
+  }
+  if (rule.type === "neq") {
+    const set = new Set(pips);
+    return set.size === pips.length;
+  }
+  if (rule.type === "<") {
+    return pips.every(v => v < rule.value);
+  }
+  if (rule.type === ">") {
+    return pips.every(v => v > rule.value);
+  }
+  if (rule.type === "sum") {
+    const total = pips.reduce((a,b) => a + b, 0);
+    return total === rule.value;
+  }
+  return false;
+}
+
+/* ---------------------------------------------------------
+   MISC
+   --------------------------------------------------------- */
+function setMessage(msg, color) {
+  const el = document.getElementById("message");
+  el.textContent = msg;
+  el.style.color = color || "#444";
+}
+
+function newPipsPuzzle() {
+  const difficulty = document.getElementById("difficulty").value;
+  currentDifficulty = difficulty;
+  const pool = puzzles[difficulty];
+  if (!pool || pool.length === 0) {
+    setMessage("No puzzles defined for this difficulty yet.");
+    return;
+  }
+  // For now, always use the first puzzle in that difficulty
+  currentPuzzle = pool[0];
+  renderPuzzle();
+}
+
+/* ---------------------------------------------------------
+   INIT
+   --------------------------------------------------------- */
+newPipsPuzzle();
+</script>
+
+</body>
+</html>
