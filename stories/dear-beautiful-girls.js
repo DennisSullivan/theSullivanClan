@@ -1,4 +1,4 @@
-// dear-beautiful-girls.js
+// dear-beautiful-girls.js 
 // Clean, sorted list of Dear Beautiful Girls Google Docs only
 
 const dearBeautifulGirls = [
