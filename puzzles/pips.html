@@ -567,7 +567,7 @@ function renderPuzzle() {
   const boardsContainer = document.getElementById("boards");
   boardsContainer.innerHTML = "";
   cellAssignments = {};
-  dominoUsed = currentPuzzle.dominoPool.map(() => false);
+  dominoUsed = currentPuzzle.dominoPool.map(() => false);region-label
   selectedDominoIndex = null;
   pendingCell = null;
 
@@ -611,14 +611,6 @@ function renderPuzzle() {
           if (region) {
             cell.classList.add("region");
             cell.style.backgroundColor = region.color;
-
-            // label only on one cell (first of region.cells)
-            if (region.cells[0] === cellCoord) {
-              const label = document.createElement("div");
-              label.className = "region-label";
-              label.textContent = regionRuleLabel(region.rule);
-              cell.appendChild(label);
-            }
           }
 
           cell.addEventListener("click", onCellClick);
@@ -629,14 +621,51 @@ function renderPuzzle() {
     }
 
     wrapper.appendChild(board);
+    
+    const overlay = document.createElement("div");
+    overlay.className = "region-overlays";
+    overlay.dataset.gIndex = gIndex;
+    wrapper.appendChild(overlay);
+    
+    // ⭐ ADD THIS LINE ⭐
+    renderRegionBadges(grid, gIndex, 40);
+    
     boardsContainer.appendChild(wrapper);
+
   });
 
   renderDominoPool();
   setMessage("");
 }
 
-function updateCellDisplay(key) {
+/* The floating overlay layer that sits above the board */
+.region-overlays {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;   /* badges should not block clicks */
+  z-index: 20;            /* above the grid cells */
+}
+
+/* The NYT-style clue badge */
+.region-badge {
+  position: absolute;
+  padding: 4px 7px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 14px;
+  color: black;
+  background: var(--region-color);   /* region color injected via JS */
+  box-shadow: 0 0 2px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+
+/* Required so the overlay positions correctly relative to the board */
+.board-wrapper {
+  position: relative;
+}
+
+  function updateCellDisplay(key) {
   const [gIndex, row, col] = key.split(",").map(Number);
   const selector = `.cell[data-g-index="${gIndex}"][data-row="${row}"][data-col="${col}"]`;
   const cell = document.querySelector(selector);
@@ -698,7 +727,46 @@ function renderDominoPool() {
   });
 }
 
-/* ---------------------------------------------------------
+function computeRegionBounds(region, cellSize) {
+  const xs = region.cells.map(c => c.col * cellSize);
+  const ys = region.cells.map(c => c.row * cellSize);
+
+  return {
+    left: Math.min(...xs),
+    top: Math.min(...ys),
+    right: Math.max(...xs) + cellSize,
+    bottom: Math.max(...ys) + cellSize
+  };
+}
+
+  function renderRegionBadges(grid, gIndex, cellSize) {
+  // Find the overlay for this grid
+  const overlay = document.querySelector(`.region-overlays[data-g-index="${gIndex}"]`);
+  if (!overlay) return;
+
+  overlay.innerHTML = ""; // clear old badges
+
+  grid.regions.forEach(region => {
+    const bounds = computeRegionBounds(region, cellSize);
+
+    const badge = document.createElement("div");
+    badge.className = "region-badge";
+
+    // region color (CSS variable)
+    badge.style.setProperty("--region-color", region.color);
+
+    // NYT-style placement: slightly offset above the region
+    badge.style.left = (bounds.left - 6) + "px";
+    badge.style.top = (bounds.top - 6) + "px";
+
+    // rule text (NYT-style: bare number for sums)
+    badge.textContent = regionRuleLabel(region.rule);
+
+    overlay.appendChild(badge);
+  });
+}
+
+  /* ---------------------------------------------------------
    INTERACTION HANDLERS
    --------------------------------------------------------- */
 function onDominoClick(index) {
