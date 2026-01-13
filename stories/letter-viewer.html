@@ -28,7 +28,6 @@
 
 <header>
   <h1 id="title"></h1>
-  <a id="backLink" href="#" class="back-button">← Back to List</a>
 </header>
 
 <main>
@@ -45,17 +44,14 @@
   const collection = params.get("collection");
 
   let entries;
-  let backPage;
 
   switch (collection) {
     case "mexico":
       entries = getLettersFromMexico();
-      backPage = "letters-from-mexico.html";
       break;
 
     case "dbg":
       entries = getDearBeautifulGirls();
-      backPage = "dear-beautiful-girls.html";
       break;
 
     default:
