@@ -113,9 +113,9 @@
     pointer-events: none;
   }
 
-  /* Dark blue user entries */
+  /* Lighter blue user entries */
   .user-input {
-    color: #003399;
+    color: #3A7BD5;
     font-weight: bold;
   }
 
@@ -141,6 +141,7 @@
 <div class="container">
   <p>Select difficulty and generate a random puzzle.</p>
 
+  <!-- 5 difficulty levels -->
   <select id="difficulty">
     <option value="easy">Easy</option>
     <option value="medium">Medium</option>
@@ -163,8 +164,7 @@
 
 <script>
 /* ---------------------------------------------------------
-   CONFIG: difficulty → approximate clue counts
-   (You can tweak these later.)
+   DIFFICULTY CONFIG (5 levels)
    --------------------------------------------------------- */
 const difficultyConfig = {
   easy:     50,
@@ -177,17 +177,10 @@ const difficultyConfig = {
 let currentSolution = null;
 
 /* ---------------------------------------------------------
-   UTILITY HELPERS
+   GRID HELPERS
    --------------------------------------------------------- */
 function emptyGrid() {
-  const grid = [];
-  for (let r = 0; r < 9; r++) {
-    grid[r] = [];
-    for (let c = 0; c < 9; c++) {
-      grid[r][c] = 0;
-    }
-  }
-  return grid;
+  return Array.from({ length: 9 }, () => Array(9).fill(0));
 }
 
 function cloneGrid(grid) {
@@ -195,44 +188,50 @@ function cloneGrid(grid) {
 }
 
 /* ---------------------------------------------------------
-   SUDOKU GENERATOR: fill a full valid solution
+   SAFETY CHECKS
    --------------------------------------------------------- */
 function isSafe(grid, row, col, num) {
   for (let x = 0; x < 9; x++) {
     if (grid[row][x] === num || grid[x][col] === num) return false;
   }
-  const startRow = Math.floor(row / 3) * 3;
-  const startCol = Math.floor(col / 3) * 3;
+
+  const sr = Math.floor(row / 3) * 3;
+  const sc = Math.floor(col / 3) * 3;
+
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
-      if (grid[startRow + r][startCol + c] === num) return false;
+      if (grid[sr + r][sc + c] === num) return false;
     }
   }
+
   return true;
 }
 
-function shuffleArray(arr) {
+function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 }
 
+/* ---------------------------------------------------------
+   GENERATE FULL SOLUTION GRID
+   --------------------------------------------------------- */
 function fillGrid(grid) {
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 9; col++) {
-      if (grid[row][col] === 0) {
-        const numbers = [1,2,3,4,5,6,7,8,9];
-        shuffleArray(numbers);
-        for (let num of numbers) {
-          if (isSafe(grid, row, col, num)) {
-            grid[row][col] = num;
-            if (fillGrid(grid)) {
-              return true;
-            }
-            grid[row][col] = 0;
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (grid[r][c] === 0) {
+        const nums = [1,2,3,4,5,6,7,8,9];
+        shuffle(nums);
+
+        for (let num of nums) {
+          if (isSafe(grid, r, c, num)) {
+            grid[r][c] = num;
+            if (fillGrid(grid)) return true;
+            grid[r][c] = 0;
           }
         }
+
         return false;
       }
     }
@@ -241,61 +240,61 @@ function fillGrid(grid) {
 }
 
 /* ---------------------------------------------------------
-   SOLVER with solution counting (for uniqueness check)
+   SOLVER WITH SOLUTION COUNTING (uniqueness check)
    --------------------------------------------------------- */
 function solveAndCount(grid, limit = 2) {
-  function helper(g, countObj) {
-    if (countObj.count >= limit) return; // stop early if over limit
+  const copy = cloneGrid(grid);
+  let count = 0;
 
-    for (let row = 0; row < 9; row++) {
-      for (let col = 0; col < 9; col++) {
-        if (g[row][col] === 0) {
+  function solveHelper() {
+    if (count >= limit) return;
+
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        if (copy[r][c] === 0) {
           for (let num = 1; num <= 9; num++) {
-            if (isSafe(g, row, col, num)) {
-              g[row][col] = num;
-              helper(g, countObj);
-              g[row][col] = 0;
-              if (countObj.count >= limit) return;
+            if (isSafe(copy, r, c, num)) {
+              copy[r][c] = num;
+              solveHelper();
+              copy[r][c] = 0;
+              if (count >= limit) return;
             }
           }
           return;
         }
       }
     }
-    countObj.count++;
+
+    count++;
   }
 
-  const gridCopy = cloneGrid(grid);
-  const countObj = { count: 0 };
-  helper(gridCopy, countObj);
-  return countObj.count;
+  solveHelper();
+  return count;
 }
 
 /* ---------------------------------------------------------
-   PUZZLE GENERATION: remove cells while keeping uniqueness
+   PUZZLE GENERATOR (remove clues while keeping uniqueness)
    --------------------------------------------------------- */
-function generatePuzzleGrid(difficultyKey) {
-  const cluesTarget = difficultyConfig[difficultyKey] || difficultyConfig.medium;
+function generatePuzzleGrid(level) {
+  const clues = difficultyConfig[level] || difficultyConfig.medium;
 
-  // 1) Generate full solution
   const solution = emptyGrid();
   fillGrid(solution);
 
-  // 2) Start from full grid as puzzle, then remove
   const puzzle = cloneGrid(solution);
 
-  // Positions list
   const positions = [];
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
       positions.push({ r, c });
     }
   }
-  shuffleArray(positions);
+  shuffle(positions);
 
-  let cellsToRemove = 81 - cluesTarget;
+  let toRemove = 81 - clues;
+
   for (let pos of positions) {
-    if (cellsToRemove <= 0) break;
+    if (toRemove <= 0) break;
 
     const { r, c } = pos;
     const backup = puzzle[r][c];
@@ -305,10 +304,9 @@ function generatePuzzleGrid(difficultyKey) {
 
     const solutions = solveAndCount(puzzle, 2);
     if (solutions !== 1) {
-      // Not unique, revert
       puzzle[r][c] = backup;
     } else {
-      cellsToRemove--;
+      toRemove--;
     }
   }
 
@@ -324,9 +322,11 @@ function renderSudoku(puzzle) {
 
   for (let r = 0; r < 9; r++) {
     const rowEl = document.createElement("tr");
+
     for (let c = 0; c < 9; c++) {
       const cell = document.createElement("td");
       const input = document.createElement("input");
+
       input.type = "text";
       input.maxLength = 1;
       input.classList.add("cell-input");
@@ -347,42 +347,40 @@ function renderSudoku(puzzle) {
       cell.appendChild(input);
       rowEl.appendChild(cell);
     }
+
     table.appendChild(rowEl);
   }
 
-  const msg = document.getElementById("message");
-  msg.textContent = "";
+  document.getElementById("message").textContent = "";
 }
 
 /* ---------------------------------------------------------
    PUBLIC FUNCTIONS
    --------------------------------------------------------- */
 function newSudoku() {
-  const difficulty = document.getElementById("difficulty").value;
-  const { puzzle, solution } = generatePuzzleGrid(difficulty);
+  const level = document.getElementById("difficulty").value;
+  const { puzzle, solution } = generatePuzzleGrid(level);
   currentSolution = solution;
   renderSudoku(puzzle);
 }
 
 function checkSudoku() {
   const msg = document.getElementById("message");
+
   if (!currentSolution) {
     msg.textContent = "No puzzle loaded.";
     msg.style.color = "#b00020";
     return;
   }
 
-  const table = document.getElementById("sudoku");
-  const inputs = table.getElementsByTagName("input");
-
+  const inputs = document.querySelectorAll("#sudoku input");
   let idx = 0;
   let complete = true;
   let correct = true;
 
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
-      const input = inputs[idx++];
-      const val = parseInt(input.value, 10);
+      const val = parseInt(inputs[idx++].value, 10);
 
       if (!val) {
         complete = false;
