@@ -638,13 +638,14 @@ function renderPuzzle() {
 }
 
 function updateCellDisplay(key) {
-  const { gIndex, row, col } = parseCellKey(key);
+  const [gIndex, row, col] = key.split(",").map(Number);
   const selector = `.cell[data-g-index="${gIndex}"][data-row="${row}"][data-col="${col}"]`;
   const cell = document.querySelector(selector);
   if (!cell) return;
 
-  // Clear previous content but keep region label
+  // Preserve region label if present
   const label = cell.querySelector(".region-label");
+
   cell.innerHTML = "";
   if (label) cell.appendChild(label);
 
