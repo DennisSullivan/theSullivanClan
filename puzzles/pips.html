@@ -637,6 +637,29 @@ function renderPuzzle() {
   setMessage("");
 }
 
+function updateCellDisplay(key) {
+  const { gIndex, row, col } = parseCellKey(key);
+  const selector = `.cell[data-g-index="${gIndex}"][data-row="${row}"][data-col="${col}"]`;
+  const cell = document.querySelector(selector);
+  if (!cell) return;
+
+  // Clear previous content but keep region label
+  const label = cell.querySelector(".region-label");
+  cell.innerHTML = "";
+  if (label) cell.appendChild(label);
+
+  const assignment = cellAssignments[key];
+  if (assignment) {
+    const [a, b] = currentPuzzle.dominoPool[assignment.dominoIndex];
+    const half = assignment.halfIndex === 0 ? a : b;
+
+    const div = document.createElement("div");
+    div.className = "placed-domino";
+    div.textContent = half;
+    cell.appendChild(div);
+  }
+}
+  
 function regionRuleLabel(rule) {
   if (rule.type === "=") return "=" + rule.value;
   if (rule.type === "neq") return "≠";
@@ -760,21 +783,34 @@ function placeDomino(dominoIndex, key1, key2) {
   selectedDominoIndex = null;
 
   updateBoardValues();
+  updateCellDisplay(key1);
+  updateCellDisplay(key2);
   renderDominoPool();
+
 }
 
 function removeDomino(dominoIndex) {
-  // Remove domino from all cells
+  // Find the two keys before deleting them
+  const keysToClear = [];
   Object.keys(cellAssignments).forEach(k => {
     if (cellAssignments[k].dominoIndex === dominoIndex) {
-      delete cellAssignments[k];
+      keysToClear.push(k);
     }
   });
+
+  // Remove assignments
+  keysToClear.forEach(k => delete cellAssignments[k]);
+
   dominoUsed[dominoIndex] = false;
   selectedDominoIndex = null;
   pendingCell = null;
   highlightPendingCell(false);
+
   updateBoardValues();
+
+  // Re-render only the affected cells
+  keysToClear.forEach(k => updateCellDisplay(k));
+
   renderDominoPool();
 }
 
