@@ -21,25 +21,6 @@
       text-align: center;
       margin-top: 20px;
     }
-
-    .back-button {
-      display: inline-block;
-      margin: 20px auto;
-      padding: 10px 18px;
-      background-color: #e8dfcf;
-      border: 2px solid #c8b79a;
-      border-radius: 6px;
-      text-decoration: none;
-      color: #4a3a2a;
-      font-size: 1.1rem;
-      font-weight: bold;
-      transition: background-color 0.2s ease, border-color 0.2s ease;
-    }
-
-    .back-button:hover {
-      background-color: #dcd1bd;
-      border-color: #b59a6a;
-    }
   </style>
 </head>
 
@@ -86,7 +67,6 @@
 
   document.getElementById("title").textContent = entry.date;
   document.getElementById("iframe").src = entry.url;
-  document.getElementById("backLink").href = backPage;
 </script>
 
 <footer>
