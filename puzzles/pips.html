@@ -662,7 +662,7 @@ function updateCellDisplay(key) {
 }
   
 function regionRuleLabel(rule) {
-  if (rule.type === "=") return "=" + rule.value;
+  if (rule.type === "=") return rule.value;
   if (rule.type === "neq") return "≠";
   if (rule.type === "<") return "<" + rule.value;
   if (rule.type === ">") return ">" + rule.value;
