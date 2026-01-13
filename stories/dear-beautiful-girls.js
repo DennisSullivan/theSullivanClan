@@ -1,10 +1,10 @@
 // dear-beautiful-girls.js
-// Clean, sorted, deduplicated list of Dear Beautiful Girls entries
+// Clean, sorted list of Dear Beautiful Girls Google Docs only
 
 const dearBeautifulGirls = [
   { date: "January 26, 1977", url: "https://docs.google.com/document/d/1cUJuy74pUZJ55t9WFkgmH6-gbq3Ryb83fgC8TXwPfwk/preview" },
-  { date: "February 22, 1977", url: "https://docs.google.com/document/d/1rgkK0q_bbz94o_bqOvOT7baaMb6lyukHDWGX4NM5XhE/preview" },
-  { date: "March 7, 1977", url: "https://docs.google.com/document/d/1RBFP0vPuWyLXkyH2FytE4IxGrrv2khTj9_QsRutyToY/preview" },
+  { date: "February 22, 1977", url: "https://docs.google.com/document/d/1WiatzDg04kW5-nW3yXqGp9-EYcL73Cj0/preview" },
+  { date: "March 7, 1977", url: "https://docs.google.com/document/d/1Fm0bnG2qp6XwlLQZ_v6hCSDd7JTimk2g/preview" },
   { date: "March 15, 1977", url: "https://docs.google.com/document/d/16Tacx39jWRjT6f8HqTAABVhhiD2kKl-zSleNF-K3DCo/preview" },
   { date: "March 27, 1977", url: "https://docs.google.com/document/d/1QTa1pUAVe662UiCeNKbXx6axywtwvaXc_3gLi8eE5Jg/preview" },
   { date: "April 20, 1977", url: "https://docs.google.com/document/d/1C2rWzTbXzaznv_YrIzFQKghzZzjUd1tEwMH09katb30/preview" },
@@ -46,3 +46,7 @@ const dearBeautifulGirls = [
 
   { date: "December 9, 1986", url: "https://docs.google.com/document/d/1xSZEO1o-lrlXFvmErjgkhA30G_bDbgtiNCqg0UzPhfM/preview" }
 ];
+
+function getDearBeautifulGirls() {
+  return dearBeautifulGirls;
+}
