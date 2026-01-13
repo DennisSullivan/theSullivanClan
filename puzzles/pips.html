@@ -827,22 +827,21 @@ function updateBoardValues() {
     const key = cellKey(gIndex, row, col);
     const assignment = cellAssignments[key];
 
-    // Preserve region label and clue BEFORE wiping content
+    // Grab the label BEFORE clearing
     const label = cell.querySelector(".region-label");
-    const clue  = cell.querySelector(".clue");
 
-    // Clear cell
+    // Clear the cell's contents
     cell.innerHTML = "";
 
-    // Re‑insert preserved elements
-    if (label) cell.appendChild(label);
-    if (clue)  cell.appendChild(clue);
+    // Re‑insert the region label (the clue) if it existed
+    if (label) {
+      cell.appendChild(label);
+    }
 
-    // Insert domino value if present
+    // Now draw the domino value, if any
     if (assignment) {
       const numSpan = document.createElement("span");
       numSpan.textContent = assignmentHalfValue(assignment);
-      numSpan.className = "placed-number";
       numSpan.style.position = "absolute";
       numSpan.style.left = "50%";
       numSpan.style.top = "50%";
