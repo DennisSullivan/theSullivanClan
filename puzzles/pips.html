@@ -666,7 +666,6 @@ function regionRuleLabel(rule) {
   if (rule.type === "neq") return "≠";
   if (rule.type === "<") return "<" + rule.value;
   if (rule.type === ">") return ">" + rule.value;
-  if (rule.type === "sum") return "sum=" + rule.value;
   return "?";
 }
 
@@ -923,26 +922,31 @@ function checkPips() {
 }
 
 function regionSatisfied(rule, pips) {
+  // Region sum rule: =x
   if (rule.type === "=") {
-    return pips.every(v => v === rule.value);
+    const total = pips.reduce((a, b) => a + b, 0);
+    return total === rule.value;
   }
+
+  // All-different rule
   if (rule.type === "neq") {
     const set = new Set(pips);
     return set.size === pips.length;
   }
+
+  // Less-than rule
   if (rule.type === "<") {
     return pips.every(v => v < rule.value);
   }
+
+  // Greater-than rule
   if (rule.type === ">") {
     return pips.every(v => v > rule.value);
   }
-  if (rule.type === "sum") {
-    const total = pips.reduce((a,b) => a + b, 0);
-    return total === rule.value;
-  }
+
   return false;
 }
-
+  
 /* ---------------------------------------------------------
    MISC
    --------------------------------------------------------- */
