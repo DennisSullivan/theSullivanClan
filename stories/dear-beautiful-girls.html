@@ -3,35 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dear Beautiful Girls</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Dear Beautiful Girls • The Sullivan Clan</title>
+
+  <link rel="stylesheet" href="../theSullivanStyle.css">
 </head>
 
 <body>
-  <header>
-    <h1>Dear Beautiful Girls</h1>
-  </header>
 
-  <main id="list"></main>
+<header>
+  <h1>Dear Beautiful Girls</h1>
+  <h2>Letters from Lois to her Beautiful Girls</h2>
+</header>
 
-  <script src="dear-beautiful-girls.js"></script>
+<div class="content">
 
-  <script>
-    const entries = getDearBeautifulGirls();
-    const list = document.getElementById("list");
+  <ul id="lettersList" class="library-list"></ul>
 
-    entries.forEach((entry, i) => {
-      const div = document.createElement("div");
-      div.className = "letter-item";
+</div>
 
-      div.innerHTML = `
-        <a href="letter-viewer.html?collection=dbg&i=${i}">
-          ${entry.date}
-        </a>
-      `;
+<footer>
+  Curated with care by DWS Press • Est. 2006
+</footer>
 
-      list.appendChild(div);
-    });
-  </script>
+<script src="dear-beautiful-girls.js"></script>
+
+<script>
+  const entries = getDearBeautifulGirls();
+  const list = document.getElementById("lettersList");
+
+  entries.forEach((entry, index) => {
+    const li = document.createElement("li");
+    li.className = "library-item";
+
+    li.innerHTML = `
+      <a href="letter-viewer.html?collection=dbg&i=${index}">
+        ${entry.date}
+      </a>
+    `;
+
+    list.appendChild(li);
+  });
+</script>
+
 </body>
 </html>
