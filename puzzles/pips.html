@@ -817,36 +817,39 @@ function removeDomino(dominoIndex) {
 
 function updateBoardValues() {
   const cells = document.querySelectorAll(".cell");
+
   cells.forEach(cell => {
     if (cell.classList.contains("inactive")) return;
+
     const gIndex = parseInt(cell.dataset.gIndex, 10);
     const row = parseInt(cell.dataset.row, 10);
     const col = parseInt(cell.dataset.col, 10);
     const key = cellKey(gIndex, row, col);
     const assignment = cellAssignments[key];
-    cell.textContent = "";
-    // keep region label if present
+
+    // Preserve region label and clue BEFORE wiping content
     const label = cell.querySelector(".region-label");
-    if (label) {
-      const labelText = label.textContent;
-      cell.innerHTML = "";
-      cell.appendChild(label);
-      // place digit centered behind label
-      if (assignment) {
-        const numSpan = document.createElement("span");
-        numSpan.textContent = assignmentHalfValue(assignment);
-        numSpan.style.position = "absolute";
-        numSpan.style.left = "50%";
-        numSpan.style.top = "50%";
-        numSpan.style.transform = "translate(-50%, -50%)";
-        numSpan.style.fontSize = "18px";
-        numSpan.style.fontWeight = "bold";
-        cell.appendChild(numSpan);
-      }
-    } else {
-      if (assignment) {
-        cell.textContent = assignmentHalfValue(assignment);
-      }
+    const clue  = cell.querySelector(".clue");
+
+    // Clear cell
+    cell.innerHTML = "";
+
+    // Re‑insert preserved elements
+    if (label) cell.appendChild(label);
+    if (clue)  cell.appendChild(clue);
+
+    // Insert domino value if present
+    if (assignment) {
+      const numSpan = document.createElement("span");
+      numSpan.textContent = assignmentHalfValue(assignment);
+      numSpan.className = "placed-number";
+      numSpan.style.position = "absolute";
+      numSpan.style.left = "50%";
+      numSpan.style.top = "50%";
+      numSpan.style.transform = "translate(-50%, -50%)";
+      numSpan.style.fontSize = "18px";
+      numSpan.style.fontWeight = "bold";
+      cell.appendChild(numSpan);
     }
   });
 }
