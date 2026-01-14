@@ -649,6 +649,8 @@ function renderPuzzle() {
     const overlay = document.createElement("div");
     overlay.className = "region-overlays";
     overlay.dataset.gIndex = gIndex;
+    overlay.style.width = board.offsetWidth + "px";
+    overlay.style.height = board.offsetHeight + "px";
     wrapper.appendChild(overlay);
 
     renderRegionBadges(grid, gIndex, 40);
