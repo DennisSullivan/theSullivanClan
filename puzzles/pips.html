@@ -646,23 +646,29 @@ function renderPuzzle() {
     // Put wrapper into the DOM before measuring
     boardsContainer.appendChild(wrapper);
 
-    // Now create overlay and size it to the board
+    // Put wrapper into the DOM first
+    boardsContainer.appendChild(wrapper);
+    
+    // Force layout BEFORE measuring board size
+    board.getBoundingClientRect();  // <-- required
+    
+    // Now create overlay and size it correctly
     const overlay = document.createElement("div");
     overlay.className = "region-overlays";
     overlay.dataset.gIndex = gIndex;
-
-    // Force layout so board has real dimensions
+    
     const rect = board.getBoundingClientRect();
     overlay.style.width = rect.width + "px";
     overlay.style.height = rect.height + "px";
-
+    
     wrapper.appendChild(overlay);
-
+    
     // Use the actual rendered cell width
     const sampleCell = board.querySelector(".cell:not(.inactive)");
     const cellSize = sampleCell ? sampleCell.offsetWidth : 40;
-
+    
     renderRegionBadges(grid, gIndex, cellSize);
+
   });
 
   renderDominoPool();
