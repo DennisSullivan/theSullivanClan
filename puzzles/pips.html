@@ -72,11 +72,23 @@
   }
 
   .board-wrapper {
+    position: relative;
+    padding: 0;   /* FIX */
+  }
+  
+  .board-outer {
     background: #fffdf7;
-    padding: 8px;
+    padding: 8px;   /* moved here */
     border-radius: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.15);
   }
+  
+  <div class="board-outer">
+    <div class="board-wrapper">
+      <div class="board">…cells…</div>
+      <div class="region-overlays"></div>
+    </div>
+  </div>
 
   .board-title {
     font-size: 14px;
@@ -227,12 +239,6 @@
     box-shadow: 0 0 2px rgba(0,0,0,0.4);
     pointer-events: none;
   }
-
-  /* Required so the overlay positions correctly relative to the board */
-  .board-wrapper {
-    position: relative;
-  }
-
 </style>
 </head>
 <body>
@@ -594,8 +600,13 @@ function renderPuzzle() {
   pendingCell = null;
 
   currentPuzzle.grids.forEach((grid, gIndex) => {
+    const outer = document.createElement("div");
+    outer.className = "board-outer";
+    
     const wrapper = document.createElement("div");
     wrapper.className = "board-wrapper";
+    
+    outer.appendChild(wrapper);
 
     const title = document.createElement("div");
     title.className = "board-title";
@@ -643,11 +654,8 @@ function renderPuzzle() {
 
     wrapper.appendChild(board);
 
-    // Put wrapper into the DOM before measuring
-    boardsContainer.appendChild(wrapper);
-
     // Put wrapper into the DOM first
-    boardsContainer.appendChild(wrapper);
+    boardsContainer.appendChild(outer);
     
     // Force layout BEFORE measuring board size
     board.getBoundingClientRect();  // <-- required
@@ -660,6 +668,8 @@ function renderPuzzle() {
     const rect = board.getBoundingClientRect();
     overlay.style.width = rect.width + "px";
     overlay.style.height = rect.height + "px";
+    overlay.style.top = "0px";
+    overlay.style.left = "0px";
     
     wrapper.appendChild(overlay);
     
