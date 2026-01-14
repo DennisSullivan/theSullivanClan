@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pips • SullivanClan</title>
+<title>Pips • SullivanClan</title>style
 
 <style>
   body {
@@ -201,6 +201,34 @@
       line-height: 24px;
     }
   }
+  
+  /* The floating overlay layer that sits above the board */
+  .region-overlays {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;   /* badges should not block clicks */
+    z-index: 20;            /* above the grid cells */
+  }
+  
+    /* The NYT-style clue badge */
+  .region-badge {
+    position: absolute;
+    padding: 4px 7px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 14px;
+    color: black;
+    background: var(--region-color);   /* region color injected via JS */
+    box-shadow: 0 0 2px rgba(0,0,0,0.4);
+    pointer-events: none;
+  }
+
+  /* Required so the overlay positions correctly relative to the board */
+  .board-wrapper {
+    position: relative;
+  }
+
 </style>
 </head>
 <body>
@@ -628,33 +656,6 @@ function renderPuzzle() {
 
   renderDominoPool();
   setMessage("");
-}
-
-/* The floating overlay layer that sits above the board */
-.region-overlays {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;   /* badges should not block clicks */
-  z-index: 20;            /* above the grid cells */
-}
-
-/* The NYT-style clue badge */
-.region-badge {
-  position: absolute;
-  padding: 4px 7px;
-  border-radius: 6px;
-  font-weight: 700;
-  font-size: 14px;
-  color: black;
-  background: var(--region-color);   /* region color injected via JS */
-  box-shadow: 0 0 2px rgba(0,0,0,0.4);
-  pointer-events: none;
-}
-
-/* Required so the overlay positions correctly relative to the board */
-.board-wrapper {
-  position: relative;
 }
 
   function updateCellDisplay(key) {
