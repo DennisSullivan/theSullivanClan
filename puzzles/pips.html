@@ -650,8 +650,7 @@ function renderPuzzle() {
     overlay.className = "region-overlays";
     overlay.dataset.gIndex = gIndex;
     wrapper.appendChild(overlay);
-    
-    // ⭐ ADD THIS LINE ⭐
+
     renderRegionBadges(grid, gIndex, 40);
     
     boardsContainer.appendChild(wrapper);
@@ -752,6 +751,7 @@ function computeRegionBounds(region, cellSize) {
     const bounds = computeRegionBounds(region, cellSize);
 
     const badge = document.createElement("div");
+console.log("bounds:", bounds);
     badge.className = "region-badge";
 
     // region color (CSS variable)
