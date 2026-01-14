@@ -721,8 +721,13 @@ function renderDominoPool() {
 }
 
 function computeRegionBounds(region, cellSize) {
-  const xs = region.cells.map(c => c.col * cellSize);
-  const ys = region.cells.map(c => c.row * cellSize);
+  const coords = region.cells.map(c => {
+    const [r, c2] = c.split(",").map(Number);
+    return { row: r, col: c2 };
+  });
+
+  const xs = coords.map(pt => pt.col * cellSize);
+  const ys = coords.map(pt => pt.row * cellSize);
 
   return {
     left: Math.min(...xs),
