@@ -6,29 +6,36 @@
 <title>Pips • SullivanClan</title>
 
 <style>
-.region-overlays {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 5;
-}
+ .badge-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 30;
+  }
 
-.overlay-boundary {
-  position: absolute;
-  border: 3px solid var(--overlay-border-color);
-  border-radius: 6px;
-  pointer-events: none;
-  box-sizing: border-box;
-  z-index: 10;
-}
+  .region-overlays {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
 
-.region-outline {
-  position: absolute;
-  background: var(--outline-color);
-  pointer-events: none;
-  z-index: 12;
-}
+  .overlay-boundary {
+    position: absolute;
+    border: 3px solid var(--overlay-border-color);
+    border-radius: 6px;
+    pointer-events: none;
+    box-sizing: border-box;
+    z-index: 10;
+  }
+  
+  .region-outline {
+    position: absolute;
+    background: var(--outline-color);
+    pointer-events: none;
+    z-index: 12;
+  }
 
  body {
     background: #fff8ec;
@@ -245,11 +252,20 @@
   z-index: 20;
 }
 
+.badge-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+  
 </style>
 
 </head>
 
 <body>
+<div class="badge-layer" data-g-index="0"></div>
+<div class="region-overlays" data-g-index="0"></div>
 
 <header>Pips</header>
 
@@ -811,7 +827,8 @@ console.log("outline color for region", region.color, "→", color);
       edge.style.width = cellSize + "px";
       edge.style.height = "2px";
       edge.style.setProperty("--outline-color", color);
-      overlayEl.appendChild(edge);
+      const badgeLayer = document.querySelector(`.badge-layer[data-g-index="${gIndex}"]`);
+      badgeLayer.appendChild(badge);
     }
 
     // Bottom edge
@@ -876,7 +893,8 @@ function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
   });
 
   // 3. Badges on top
-  placeRegionBadges(grid.regions, cellSize, overlayEl);
+  const badgeLayer = document.querySelector(`.badge-layer[data-g-index="${gIndex}"]`);
+  placeRegionBadges(grid, gIndex, cellSize, badgeLayer);
 }
     
 async function renderPuzzle() {
@@ -952,44 +970,36 @@ async function renderPuzzle() {
     // ⭐ Force layout BEFORE measuring anything
     await new Promise(r => requestAnimationFrame(r));
 
-    // Create overlay INSIDE the board
+    // Measure board
+    const rect = board.getBoundingClientRect();
+
+    // ⭐ Create badge layer (NOT scaled)
+    const badgeLayer = document.createElement("div");
+    badgeLayer.className = "badge-layer";
+    badgeLayer.dataset.gIndex = gIndex;
+    badgeLayer.style.width = rect.width + "px";
+    badgeLayer.style.height = rect.height + "px";
+    badgeLayer.style.top = "0px";
+    badgeLayer.style.left = "0px";
+    board.appendChild(badgeLayer);
+
+    // ⭐ Create region overlay (scaled)
     const overlay = document.createElement("div");
     overlay.className = "region-overlays";
     overlay.dataset.gIndex = gIndex;
-
-    const rect = board.getBoundingClientRect();
     overlay.style.width = rect.width + "px";
     overlay.style.height = rect.height + "px";
     overlay.style.top = "0px";
     overlay.style.left = "0px";
-
     board.appendChild(overlay);
 
     // Now that layout is final, cellSize is correct
     const sampleCell = board.querySelector(".cell:not(.inactive)");
     const cellSize = sampleCell ? sampleCell.offsetWidth : 40;
 
-    // Bounding boxes are now correct
+    // Compute bounding boxes
     computeRegionBoundingBoxes(grid, cellSize);
 
-
-console.group(`Grid ${gIndex} Region Color Diagnostics`);
-grid.regions.forEach((region, i) => {
-  const ctx = document.createElement("canvas").getContext("2d");
-  ctx.fillStyle = region.color;
-  const normalized = ctx.fillStyle;
-
-  const dark = darkenColor(region.color);
-
-  console.log(`Region ${i}`);
-  console.log("  original:", region.color);
-  console.log("  normalized:", normalized);
-  console.log("  darkened:", dark);
-});
-console.groupEnd();
-
-
-    
     // Draw outlines + badges
     renderRegionBadges(grid, gIndex, cellSize, overlay);
   }
