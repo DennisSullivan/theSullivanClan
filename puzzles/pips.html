@@ -6,10 +6,6 @@
 <title>Pips • SullivanClan</title>
 
 <style>
-  .region-overlays {
-    outline: 2px solid red;
-  }
-  
   body {
     background: #fff8ec;
     font-family: "Trebuchet MS", sans-serif;
@@ -73,12 +69,12 @@
 
   .board-wrapper {
     position: relative;
-    padding: 0;   /* FIX */
+    padding: 0;
   }
   
   .board-outer {
     background: #fffdf7;
-    padding: 8px;   /* moved here */
+    padding: 8px;
     border-radius: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.15);
   }
@@ -90,7 +86,7 @@
   }
 
   .board {
-    position: relative;   /* ← REQUIRED */
+    position: relative;
     display: grid;
     border: 2px solid #5a3e2b;
     border-radius: 8px;
@@ -121,6 +117,31 @@
     outline-offset: -2px;
   }
 
+  /* Floating badge layer */
+  .region-overlays {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  /* Compact NYT-style region badge */
+  .region-badge {
+    position: absolute;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1;
+    color: black;
+    background: var(--region-color);
+    box-shadow: 0 0 2px rgba(0,0,0,0.35);
+    pointer-events: none;
+    transform: translate(-2px, -2px);
+    white-space: nowrap;
+  }
+
   .region-label {
     position: absolute;
     bottom: 1px;
@@ -131,10 +152,6 @@
     padding: 0 2px;
     border-radius: 3px;
     pointer-events: none;
-  }
-
-  .region {
-    /* background color per region via inline style */
   }
 
   .tray {
@@ -211,30 +228,9 @@
       line-height: 24px;
     }
   }
-  
-  /* The floating overlay layer that sits above the board */
-  .region-overlays {
-    position: absolute;
-    top: 0;
-    left: 0;
-    pointer-events: none;   /* badges should not block clicks */
-    z-index: 20;            /* above the grid cells */
-  }
-  
-    /* The NYT-style clue badge */
-  .region-badge {
-    position: absolute;
-    padding: 4px 7px;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 14px;
-    color: black;
-    background: var(--region-color);   /* region color injected via JS */
-    box-shadow: 0 0 2px rgba(0,0,0,0.4);
-    pointer-events: none;
-  }
 </style>
 </head>
+
 <body>
 
 <header>Pips</header>
@@ -263,6 +259,7 @@
 </div>
 
 <script>
+
 /* ---------------------------------------------------------
    PUZZLE REPRESENTATION
    -------------------------------------------------------- */
@@ -585,6 +582,67 @@ function isAdjacent(cellA, cellB) {
 /* ---------------------------------------------------------
    RENDERING
    --------------------------------------------------------- */
+function placeRegionBadges(regions, cellSize, overlayEl) {
+  const placed = [];
+
+  regions.forEach(region => {
+    const box = region.boundingBox;
+
+    const candidates = [
+      { x: box.x,                 y: box.y                 },
+      { x: box.x + box.width,     y: box.y                 },
+      { x: box.x,                 y: box.y + box.height    },
+      { x: box.x + box.width,     y: box.y + box.height    }
+    ];
+
+    let chosen = null;
+
+    for (const c of candidates) {
+      const badgeWidth = 28;
+      const badgeHeight = 18;
+
+      const bb = {
+        left:   c.x - 2,
+        top:    c.y - 2,
+        right:  c.x - 2 + badgeWidth,
+        bottom: c.y - 2 + badgeHeight
+      };
+
+      const overlaps = placed.some(p =>
+        !(bb.right < p.left ||
+          bb.left > p.right ||
+          bb.bottom < p.top ||
+          bb.top > p.bottom)
+      );
+
+      if (!overlaps) {
+        chosen = bb;
+        break;
+      }
+    }
+
+    if (!chosen) {
+      chosen = {
+        left: box.x - 6,
+        top: box.y - 6,
+        right: box.x - 6 + 28,
+        bottom: box.y - 6 + 18
+      };
+    }
+
+    placed.push(chosen);
+
+    const badge = document.createElement("div");
+    badge.className = "region-badge";
+    badge.style.left = chosen.left + "px";
+    badge.style.top = chosen.top + "px";
+    badge.style.background = region.color;
+    badge.textContent = regionRuleLabel(region.rule);
+
+    overlayEl.appendChild(badge);
+  });
+}
+
 function renderPuzzle() {
   const boardsContainer = document.getElementById("boards");
   boardsContainer.innerHTML = "";
@@ -677,7 +735,8 @@ function renderPuzzle() {
     const sampleCell = board.querySelector(".cell:not(.inactive)");
     const cellSize = sampleCell ? sampleCell.offsetWidth : 40;
 
-    renderRegionBadges(grid, gIndex, cellSize);
+    computeRegionBoundingBoxes(grid, cellSize);
+   renderRegionBadges(grid, gIndex, cellSize, overlay);
   });
 
   renderDominoPool();
@@ -707,13 +766,36 @@ function updateCellDisplay(key) {
     cell.appendChild(div);
   }
 }
-  
+
 function regionRuleLabel(rule) {
-  if (rule.type === "=") return rule.value;
-  if (rule.type === "neq") return "≠";
-  if (rule.type === "<") return "<" + rule.value;
-  if (rule.type === ">") return ">" + rule.value;
-  return "?";
+  if (!rule) return "";
+
+  // sum = x
+  if (rule.sum !== undefined) {
+    return String(rule.sum);
+  }
+
+  // all identical
+  if (rule["="] !== undefined) {
+    return "=";
+  }
+
+  // sum < x
+  if (rule["<"] !== undefined) {
+    return "<" + String(rule["<"]);
+  }
+
+  // sum > x
+  if (rule[">"] !== undefined) {
+    return ">" + String(rule[">"]);
+  }
+
+  // all different
+  if (rule.neq !== undefined) {
+    return "≠";
+  }
+
+  return "";
 }
 
 function renderDominoPool() {
@@ -746,49 +828,34 @@ function renderDominoPool() {
   });
 }
 
-function computeRegionBounds(region, cellSize) {
-  const coords = region.cells.map(c => {
-    const [r, c2] = c.split(",").map(Number);
-    return { row: r, col: c2 };
+function computeRegionBoundingBoxes(grid, cellSize) {
+  grid.regions.forEach(region => {
+    let minRow = Infinity, maxRow = -Infinity;
+    let minCol = Infinity, maxCol = -Infinity;
+
+    region.cells.forEach(cell => {
+      const [r, c] = cell.split(",").map(Number);
+      minRow = Math.min(minRow, r);
+      maxRow = Math.max(maxRow, r);
+      minCol = Math.min(minCol, c);
+      maxCol = Math.max(maxCol, c);
+    });
+
+    region.boundingBox = {
+      x: minCol * cellSize,
+      y: minRow * cellSize,
+      width: (maxCol - minCol + 1) * cellSize,
+      height: (maxRow - minRow + 1) * cellSize
+    };
   });
-
-  const xs = coords.map(pt => pt.col * cellSize);
-  const ys = coords.map(pt => pt.row * cellSize);
-
-  return {
-    left: Math.min(...xs),
-    top: Math.min(...ys),
-    right: Math.max(...xs) + cellSize,
-    bottom: Math.max(...ys) + cellSize
-  };
 }
 
-  function renderRegionBadges(grid, gIndex, cellSize) {
-  // Find the overlay for this grid
-  const overlay = document.querySelector(`.region-overlays[data-g-index="${gIndex}"]`);
-  if (!overlay) return;
+function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
+  // Clear old badges
+  overlayEl.innerHTML = "";
 
-  overlay.innerHTML = ""; // clear old badges
-
-  grid.regions.forEach(region => {
-    const bounds = computeRegionBounds(region, cellSize);
-
-    const badge = document.createElement("div");
-console.log("bounds:", bounds);
-    badge.className = "region-badge";
-
-    // region color (CSS variable)
-    badge.style.setProperty("--region-color", region.color);
-
-    // NYT-style placement: slightly offset above the region
-    badge.style.left = (bounds.left - 6) + "px";
-    badge.style.top = (bounds.top - 6) + "px";
-
-    // rule text (NYT-style: bare number for sums)
-    badge.textContent = regionRuleLabel(region.rule);
-
-    overlay.appendChild(badge);
-  });
+  // Use the new collision-free placement algorithm
+  placeRegionBadges(grid.regions, cellSize, overlayEl);
 }
 
   /* ---------------------------------------------------------
