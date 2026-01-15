@@ -675,7 +675,7 @@ function darkenColor(hex, amount) {
   return `rgb(${r}, ${g}, ${b})`;
 }
     
-function renderPuzzle() {
+async function renderPuzzle() {
   const boardsContainer = document.getElementById("boards");
   boardsContainer.innerHTML = "";
   cellAssignments = {};
@@ -683,7 +683,8 @@ function renderPuzzle() {
   selectedDominoIndex = null;
   pendingCell = null;
 
-  currentPuzzle.grids.forEach((grid, gIndex) => {
+  for (let gIndex = 0; gIndex < currentPuzzle.grids.length; gIndex++) {
+    const grid = currentPuzzle.grids[gIndex];
 
     // OUTER wrapper (holds padding)
     const outer = document.createElement("div");
@@ -742,14 +743,12 @@ function renderPuzzle() {
     }
 
     wrapper.appendChild(board);
-
-    // Insert into DOM before measuring
     boardsContainer.appendChild(outer);
 
-    // Force layout
-    board.getBoundingClientRect();
+    // ⭐ Force layout BEFORE measuring anything
+    await new Promise(r => requestAnimationFrame(r));
 
-    // Create overlay INSIDE the board (Fix A)
+    // Create overlay INSIDE the board
     const overlay = document.createElement("div");
     overlay.className = "region-overlays";
     overlay.dataset.gIndex = gIndex;
@@ -760,16 +759,18 @@ function renderPuzzle() {
     overlay.style.top = "0px";
     overlay.style.left = "0px";
 
-    // FIX A: overlay goes inside the board
     board.appendChild(overlay);
 
-    // Cell size
+    // Now that layout is final, cellSize is correct
     const sampleCell = board.querySelector(".cell:not(.inactive)");
     const cellSize = sampleCell ? sampleCell.offsetWidth : 40;
 
+    // Bounding boxes are now correct
     computeRegionBoundingBoxes(grid, cellSize);
-   renderRegionBadges(grid, gIndex, cellSize, overlay);
-  });
+
+    // Draw outlines + badges
+    renderRegionBadges(grid, gIndex, cellSize, overlay);
+  }
 
   renderDominoPool();
   setMessage("");
