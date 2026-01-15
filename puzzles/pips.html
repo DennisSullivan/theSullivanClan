@@ -213,7 +213,15 @@
     }
   }
 
-  /* Floating badge layer */
+    /* Floating badge layer */
+    .overlay-boundary {
+      position: absolute;
+      border: 3px solid var(--overlay-border-color);
+      border-radius: 6px;
+      pointer-events: none;
+      box-sizing: border-box;
+      z-index: 5; /* below region outlines and badges */
+    }
   .region-overlays {
     position: absolute;
     top: 0;
@@ -654,6 +662,19 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
   });
 }
 
+function darkenColor(hex, amount) {
+  const num = parseInt(hex.slice(1), 16);
+  let r = (num >> 16) & 255;
+  let g = (num >> 8) & 255;
+  let b = num & 255;
+
+  r = Math.floor(r * (1 - amount));
+  g = Math.floor(g * (1 - amount));
+  b = Math.floor(b * (1 - amount));
+
+  return `rgb(${r}, ${g}, ${b})`;
+}
+    
 function renderPuzzle() {
   const boardsContainer = document.getElementById("boards");
   boardsContainer.innerHTML = "";
@@ -864,7 +885,23 @@ function computeRegionBoundingBoxes(grid, cellSize) {
 function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
   overlayEl.innerHTML = "";
 
-  // Draw red region outlines
+  // 1. Add the overlay boundary (darkened region color)
+  const boundary = document.createElement("div");
+  boundary.className = "overlay-boundary";
+
+  // Use the first region's color as the base
+  const baseColor = grid.regions[0].color;
+  boundary.style.setProperty("--overlay-border-color", darkenColor(baseColor, 0.45));
+
+  // Size it to the overlay
+  boundary.style.left = "0px";
+  boundary.style.top = "0px";
+  boundary.style.width = overlayEl.style.width;
+  boundary.style.height = overlayEl.style.height;
+
+  overlayEl.appendChild(boundary);
+
+  // 2. Draw per-region outlines
   grid.regions.forEach(region => {
     const box = region.boundingBox;
 
@@ -878,7 +915,7 @@ function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
     overlayEl.appendChild(outline);
   });
 
-  // Draw badges on top
+  // 3. Draw badges on top
   placeRegionBadges(grid.regions, cellSize, overlayEl);
 }
 
