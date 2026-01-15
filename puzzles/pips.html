@@ -662,12 +662,13 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
 }
 
 function darkenColor(color) {
+  // Normalize ANY CSS color to rgb(r,g,b)
   const ctx = document.createElement("canvas").getContext("2d");
   ctx.fillStyle = color;
-  const computed = ctx.fillStyle;
+  const computed = ctx.fillStyle;  // always becomes rgb(...)
 
   const m = computed.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-  if (!m) return color;
+  if (!m) return computed; // fallback
 
   let r = parseInt(m[1], 10);
   let g = parseInt(m[2], 10);
