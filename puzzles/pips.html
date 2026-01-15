@@ -6,15 +6,31 @@
 <title>Pips • SullivanClan</title>
 
 <style>
-   .region-outline {
-      position: absolute;
-      background: var(--outline-color);
-      pointer-events: none;
-      z-index: 10;
-    }
+.region-overlays {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 5;
+}
 
+.overlay-boundary {
+  position: absolute;
+  border: 3px solid var(--overlay-border-color);
+  border-radius: 6px;
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 10;
+}
 
-  body {
+.region-outline {
+  position: absolute;
+  background: var(--outline-color);
+  pointer-events: none;
+  z-index: 12;
+}
+
+ body {
     background: #fff8ec;
     font-family: "Trebuchet MS", sans-serif;
     margin: 0;
@@ -212,38 +228,22 @@
     }
   }
 
-    /* Floating badge layer */
-    .overlay-boundary {
-      position: absolute;
-      border: 3px solid var(--overlay-border-color);
-      border-radius: 6px;
-      pointer-events: none;
-      box-sizing: border-box;
-      z-index: 5; /* below region outlines and badges */
-    }
-  .region-overlays {
-    position: absolute;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    z-index: 20;
-  }
-
   /* Compact NYT-style region badge */
-  .region-badge {
-    position: absolute;
-    padding: 2px 6px;
-    border-radius: 5px;
-    font-weight: 700;
-    font-size: 13px;
-    line-height: 1;
-    color: black;
-    background: var(--region-color);
-    box-shadow: 0 0 2px rgba(0,0,0,0.35);
-    pointer-events: none;
-    transform: translate(-2px, -2px);
-    white-space: nowrap;
-  }
+.region-badge {
+  position: absolute;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  color: black;
+  background: var(--region-color);
+  box-shadow: 0 0 2px rgba(0,0,0,0.35);
+  pointer-events: none;
+  transform: translate(-2px, -2px);
+  white-space: nowrap;
+  z-index: 20;
+}
 
 </style>
 
@@ -661,6 +661,7 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
   });
 }
 
+// Darken a hex color by a percentage (0.0–1.0)
 function darkenColor(hex, amount) {
   const num = parseInt(hex.slice(1), 16);
   let r = (num >> 16) & 255;
@@ -672,6 +673,94 @@ function darkenColor(hex, amount) {
   b = Math.floor(b * (1 - amount));
 
   return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Draw the true polyomino perimeter for a region
+function drawRegionPerimeter(region, cellSize, overlayEl) {
+  const cellSet = new Set(region.cells);
+
+  region.cells.forEach(cell => {
+    const [r, c] = cell.split(",").map(Number);
+    const x = c * cellSize;
+    const y = r * cellSize;
+
+    const color = darkenColor(region.color, 0.45);
+
+    // Top edge
+    if (!cellSet.has(`${r-1},${c}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = x + "px";
+      edge.style.top = y + "px";
+      edge.style.width = cellSize + "px";
+      edge.style.height = "2px";
+      edge.style.setProperty("--outline-color", color);
+      overlayEl.appendChild(edge);
+    }
+
+    // Bottom edge
+    if (!cellSet.has(`${r+1},${c}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = x + "px";
+      edge.style.top = (y + cellSize - 2) + "px";
+      edge.style.width = cellSize + "px";
+      edge.style.height = "2px";
+      edge.style.setProperty("--outline-color", color);
+      overlayEl.appendChild(edge);
+    }
+
+    // Left edge
+    if (!cellSet.has(`${r},${c-1}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = x + "px";
+      edge.style.top = y + "px";
+      edge.style.width = "2px";
+      edge.style.height = cellSize + "px";
+      edge.style.setProperty("--outline-color", color);
+      overlayEl.appendChild(edge);
+    }
+
+    // Right edge
+    if (!cellSet.has(`${r},${c+1}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = (x + cellSize - 2) + "px";
+      edge.style.top = y + "px";
+      edge.style.width = "2px";
+      edge.style.height = cellSize + "px";
+      edge.style.setProperty("--outline-color", color);
+      overlayEl.appendChild(edge);
+    }
+  });
+}
+
+// Draw outer boundary + region outlines + badges
+function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
+  overlayEl.innerHTML = "";
+
+  // 1. Outer boundary (darkened version of first region color)
+  const boundary = document.createElement("div");
+  boundary.className = "overlay-boundary";
+
+  const baseColor = grid.regions[0].color;
+  boundary.style.setProperty("--overlay-border-color", darkenColor(baseColor, 0.45));
+
+  boundary.style.left = "0px";
+  boundary.style.top = "0px";
+  boundary.style.width = overlayEl.style.width;
+  boundary.style.height = overlayEl.style.height;
+
+  overlayEl.appendChild(boundary);
+
+  // 2. True polyomino outlines
+  grid.regions.forEach(region => {
+    drawRegionPerimeter(region, cellSize, overlayEl);
+  });
+
+  // 3. Badges on top
+  placeRegionBadges(grid.regions, cellSize, overlayEl);
 }
     
 async function renderPuzzle() {
@@ -879,65 +968,6 @@ function computeRegionBoundingBoxes(grid, cellSize) {
       width: (maxCol - minCol + 1) * cellSize,
       height: (maxRow - minRow + 1) * cellSize
     };
-  });
-}
-
-function drawRegionPerimeter(region, cellSize, overlayEl) {
-  const cellSet = new Set(region.cells);
-
-  region.cells.forEach(cell => {
-    const [r, c] = cell.split(",").map(Number);
-
-    const x = c * cellSize;
-    const y = r * cellSize;
-
-    // Top edge
-    if (!cellSet.has(`${r-1},${c}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = x + "px";
-      edge.style.top = y + "px";
-      edge.style.width = cellSize + "px";
-      edge.style.height = "2px";
-      edge.style.setProperty("--outline-color", darkenColor(region.color, 0.45));
-      overlayEl.appendChild(edge);
-    }
-
-    // Bottom edge
-    if (!cellSet.has(`${r+1},${c}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = x + "px";
-      edge.style.top = (y + cellSize - 2) + "px";
-      edge.style.width = cellSize + "px";
-      edge.style.height = "2px";
-      edge.style.setProperty("--outline-color", darkenColor(region.color, 0.45));
-      overlayEl.appendChild(edge);
-    }
-
-    // Left edge
-    if (!cellSet.has(`${r},${c-1}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = x + "px";
-      edge.style.top = y + "px";
-      edge.style.width = "2px";
-      edge.style.height = cellSize + "px";
-      edge.style.setProperty("--outline-color", darkenColor(region.color, 0.45));
-      overlayEl.appendChild(edge);
-    }
-
-    // Right edge
-    if (!cellSet.has(`${r},${c+1}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = (x + cellSize - 2) + "px";
-      edge.style.top = y + "px";
-      edge.style.width = "2px";
-      edge.style.height = cellSize + "px";
-      edge.style.setProperty("--outline-color", darkenColor(region.color, 0.45));
-      overlayEl.appendChild(edge);
-    }
   });
 }
 
