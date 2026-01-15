@@ -613,6 +613,34 @@ function isAdjacent(cellA, cellB) {
   );
 }
 
+function regionRuleLabel(rule) {
+  if (rule == null) return "?";
+
+  // If rule is already a string or number
+  if (typeof rule === "string" || typeof rule === "number") {
+    return String(rule);
+  }
+
+  // If rule is an object, convert it to a compact label
+  if (typeof rule === "object") {
+    // Common patterns
+    if (rule.op && rule.value !== undefined) {
+      return `${rule.op}${rule.value}`;
+    }
+    if (rule.sum !== undefined) {
+      return `${rule.sum}`;
+    }
+    if (rule.type && rule.n !== undefined) {
+      return `${rule.type}${rule.n}`;
+    }
+
+    // Fallback: JSON stringify
+    return JSON.stringify(rule);
+  }
+
+  return "?";
+}
+ 
 /* ---------------------------------------------------------
    RENDERING
    --------------------------------------------------------- */
@@ -678,7 +706,7 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
       region.rule ||
       "?";
 
-    badge.textContent = label;
+    badge.textContent = regionRuleLabel(region.rule);
 
     overlayEl.appendChild(badge);
   });
