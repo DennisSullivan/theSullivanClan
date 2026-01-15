@@ -886,7 +886,7 @@ function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
     drawRegionPerimeter(region, cellSize, overlayEl);
   });
 
-  // 3. Badges on top (corrected)
+  // 3. Badges on top
   const badgeLayer = document.querySelector(`.badge-layer[data-g-index="${gIndex}"]`);
   placeRegionBadges(grid.regions, cellSize, badgeLayer);
 }
