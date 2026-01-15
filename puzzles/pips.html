@@ -6,6 +6,15 @@
 <title>Pips • SullivanClan</title>
 
 <style>
+    .region-outline {
+    position: absolute;
+    border: 2px solid red;
+    border-radius: 4px;
+    pointer-events: none;
+    box-sizing: border-box;
+    z-index: 10; /* below badges, above grid */
+  }
+
   body {
     background: #fff8ec;
     font-family: "Trebuchet MS", sans-serif;
@@ -853,10 +862,23 @@ function computeRegionBoundingBoxes(grid, cellSize) {
 }
 
 function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
-  // Clear old badges
   overlayEl.innerHTML = "";
 
-  // Use the new collision-free placement algorithm
+  // Draw red region outlines
+  grid.regions.forEach(region => {
+    const box = region.boundingBox;
+
+    const outline = document.createElement("div");
+    outline.className = "region-outline";
+    outline.style.left = box.x + "px";
+    outline.style.top = box.y + "px";
+    outline.style.width = box.width + "px";
+    outline.style.height = box.height + "px";
+
+    overlayEl.appendChild(outline);
+  });
+
+  // Draw badges on top
   placeRegionBadges(grid.regions, cellSize, overlayEl);
 }
 
