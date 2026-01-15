@@ -662,19 +662,35 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
 }
 
 function darkenColor(color) {
-  // Normalize ANY CSS color to rgb(r,g,b)
+  // If hex, convert manually
+  if (color.startsWith("#")) {
+    const hex = color.slice(1);
+    const bigint = parseInt(hex, 16);
+
+    let r = (bigint >> 16) & 255;
+    let g = (bigint >> 8) & 255;
+    let b = bigint & 255;
+
+    // Warm darkening curve
+    r = Math.floor(r * 0.55);
+    g = Math.floor(g * 0.40);
+    b = Math.floor(b * 0.30);
+
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  // Otherwise normalize via canvas
   const ctx = document.createElement("canvas").getContext("2d");
   ctx.fillStyle = color;
-  const computed = ctx.fillStyle;  // always becomes rgb(...)
+  const computed = ctx.fillStyle;
 
   const m = computed.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-  if (!m) return computed; // fallback
+  if (!m) return computed;
 
   let r = parseInt(m[1], 10);
   let g = parseInt(m[2], 10);
   let b = parseInt(m[3], 10);
 
-  // Warm darkening curve tuned for your palette
   r = Math.floor(r * 0.55);
   g = Math.floor(g * 0.40);
   b = Math.floor(b * 0.30);
