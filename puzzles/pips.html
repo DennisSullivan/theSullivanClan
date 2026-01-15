@@ -661,41 +661,77 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
   });
 }
 
-function darkenColor(color) {
-  // If hex, convert manually
-  if (color.startsWith("#")) {
-    const hex = color.slice(1);
-    const bigint = parseInt(hex, 16);
+/**
+ * Darkens a CSS color string by the given factor.
+ * Supports: rgb(), rgba(), #rgb, #rrggbb
+ * 
+ * @param {string} color - The original CSS color string.
+ * @param {number} factor - Darkening factor between 0 and 1 (e.g. 0.2 = 20% darker).
+ * @returns {string} - A new CSS color string in rgba() form.
+ */
+function darkenColor(color, factor) {
+  console.log('[darkenColor] input:', { color, factor });
 
-    let r = (bigint >> 16) & 255;
-    let g = (bigint >> 8) & 255;
-    let b = bigint & 255;
+  // Safety clamp for factor
+  if (typeof factor !== 'number' || isNaN(factor)) {
+    console.warn('[darkenColor] invalid factor, defaulting to 0.2:', factor);
+    factor = 0.2;
+  }
+  factor = Math.min(Math.max(factor, 0), 1);
 
-    // Warm darkening curve
-    r = Math.floor(r * 0.55);
-    g = Math.floor(g * 0.40);
-    b = Math.floor(b * 0.30);
-
-    return `rgb(${r}, ${g}, ${b})`;
+  // Helper to clamp channel values
+  function clampChannel(v) {
+    return Math.min(255, Math.max(0, Math.round(v)));
   }
 
-  // Otherwise normalize via canvas
-  const ctx = document.createElement("canvas").getContext("2d");
-  ctx.fillStyle = color;
-  const computed = ctx.fillStyle;
+  let r, g, b, a = 1;
 
-  const m = computed.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-  if (!m) return computed;
+  // --- Parse rgb() / rgba() ---
+  const rgbMatch = color.match(/^rgba?\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
+  if (rgbMatch) {
+    r = parseFloat(rgbMatch[1]);
+    g = parseFloat(rgbMatch[2]);
+    b = parseFloat(rgbMatch[3]);
+    if (rgbMatch[4] !== undefined) {
+      a = parseFloat(rgbMatch[4]);
+    }
+    console.log('[darkenColor] parsed as rgb/rgba:', { r, g, b, a });
+  } else {
+    // --- Parse hex (#rgb or #rrggbb) ---
+    const hexMatch = color.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (hexMatch) {
+      let hex = hexMatch[1];
+      if (hex.length === 3) {
+        // Expand shorthand #rgb to #rrggbb
+        hex = hex.split('').map(ch => ch + ch).join('');
+      }
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+      console.log('[darkenColor] parsed as hex:', { hex, r, g, b, a });
+    } else {
+      // Fallback: log and return original color unchanged
+      console.warn('[darkenColor] unsupported color format, returning original:', color);
+      return color;
+    }
+  }
 
-  let r = parseInt(m[1], 10);
-  let g = parseInt(m[2], 10);
-  let b = parseInt(m[3], 10);
+  // --- Apply darkening ---
+  const original = { r, g, b, a };
+  r = clampChannel(r * (1 - factor));
+  g = clampChannel(g * (1 - factor));
+  b = clampChannel(b * (1 - factor));
 
-  r = Math.floor(r * 0.55);
-  g = Math.floor(g * 0.40);
-  b = Math.floor(b * 0.30);
+  console.log('[darkenColor] darkened:', {
+    original,
+    factor,
+    result: { r, g, b, a }
+  });
 
-  return `rgb(${r}, ${g}, ${b})`;
+  // Always return rgba() for consistency
+  const result = `rgba(${r}, ${g}, ${b}, ${a})`;
+  console.log('[darkenColor] output:', result);
+  return result;
 }
 
 // Draw the true polyomino perimeter for a region
