@@ -867,7 +867,7 @@ function drawRegionPerimeter(region, cellSize, overlayEl) {
 function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
   overlayEl.innerHTML = "";
 
-  // 1. Outer boundary (darkened version of first region color)
+  // 1. Outer boundary
   const boundary = document.createElement("div");
   boundary.className = "overlay-boundary";
 
@@ -886,9 +886,9 @@ function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
     drawRegionPerimeter(region, cellSize, overlayEl);
   });
 
-  // 3. Badges on top
+  // 3. Badges on top (corrected)
   const badgeLayer = document.querySelector(`.badge-layer[data-g-index="${gIndex}"]`);
-  placeRegionBadges(grid, gIndex, cellSize, badgeLayer);
+  placeRegionBadges(grid.regions, cellSize, badgeLayer);
 }
     
 async function renderPuzzle() {
