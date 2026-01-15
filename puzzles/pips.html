@@ -883,40 +883,81 @@ function computeRegionBoundingBoxes(grid, cellSize) {
   });
 }
 
+function drawRegionPerimeter(region, cellSize, overlayEl) {
+  const cellSet = new Set(region.cells);
+
+  region.cells.forEach(cell => {
+    const [r, c] = cell.split(",").map(Number);
+
+    const x = c * cellSize;
+    const y = r * cellSize;
+
+    // Top edge
+    if (!cellSet.has(`${r-1},${c}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = x + "px";
+      edge.style.top = y + "px";
+      edge.style.width = cellSize + "px";
+      edge.style.height = "2px";
+      overlayEl.appendChild(edge);
+    }
+
+    // Bottom edge
+    if (!cellSet.has(`${r+1},${c}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = x + "px";
+      edge.style.top = (y + cellSize - 2) + "px";
+      edge.style.width = cellSize + "px";
+      edge.style.height = "2px";
+      overlayEl.appendChild(edge);
+    }
+
+    // Left edge
+    if (!cellSet.has(`${r},${c-1}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = x + "px";
+      edge.style.top = y + "px";
+      edge.style.width = "2px";
+      edge.style.height = cellSize + "px";
+      overlayEl.appendChild(edge);
+    }
+
+    // Right edge
+    if (!cellSet.has(`${r},${c+1}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = (x + cellSize - 2) + "px";
+      edge.style.top = y + "px";
+      edge.style.width = "2px";
+      edge.style.height = cellSize + "px";
+      overlayEl.appendChild(edge);
+    }
+  });
+}
+    
 function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
   overlayEl.innerHTML = "";
 
-  // 1. Add the overlay boundary (darkened region color)
+  // Outer boundary stays
   const boundary = document.createElement("div");
   boundary.className = "overlay-boundary";
-
-  // Use the first region's color as the base
   const baseColor = grid.regions[0].color;
   boundary.style.setProperty("--overlay-border-color", darkenColor(baseColor, 0.45));
-
-  // Size it to the overlay
   boundary.style.left = "0px";
   boundary.style.top = "0px";
   boundary.style.width = overlayEl.style.width;
   boundary.style.height = overlayEl.style.height;
-
   overlayEl.appendChild(boundary);
 
-  // 2. Draw per-region outlines
+  // Correct per-region outlines
   grid.regions.forEach(region => {
-    const box = region.boundingBox;
-
-    const outline = document.createElement("div");
-    outline.className = "region-outline";
-    outline.style.left = box.x + "px";
-    outline.style.top = box.y + "px";
-    outline.style.width = box.width + "px";
-    outline.style.height = box.height + "px";
-
-    overlayEl.appendChild(outline);
+    drawRegionPerimeter(region, cellSize, overlayEl);
   });
 
-  // 3. Draw badges on top
+  // Badges on top
   placeRegionBadges(grid.regions, cellSize, overlayEl);
 }
 
