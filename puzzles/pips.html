@@ -813,11 +813,6 @@ function drawRegionPerimeter(region, cellSize, overlayEl) {
 
     const color = darkenColor(region.color, 0.45);
 
-
-console.log("outline color for region", region.color, "→", color);
-
-
-    
     // Top edge
     if (!cellSet.has(`${r-1},${c}`)) {
       const edge = document.createElement("div");
@@ -827,8 +822,7 @@ console.log("outline color for region", region.color, "→", color);
       edge.style.width = cellSize + "px";
       edge.style.height = "2px";
       edge.style.setProperty("--outline-color", color);
-      const badgeLayer = document.querySelector(`.badge-layer[data-g-index="${gIndex}"]`);
-      badgeLayer.appendChild(badge);
+      overlayEl.appendChild(edge);
     }
 
     // Bottom edge
