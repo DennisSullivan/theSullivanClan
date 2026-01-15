@@ -6,14 +6,13 @@
 <title>Pips • SullivanClan</title>
 
 <style>
-    .region-outline {
-    position: absolute;
-    border: 2px solid red;
-    border-radius: 4px;
-    pointer-events: none;
-    box-sizing: border-box;
-    z-index: 10; /* below badges, above grid */
-  }
+   .region-outline {
+      position: absolute;
+      background: var(--outline-color);
+      pointer-events: none;
+      z-index: 10;
+    }
+
 
   body {
     background: #fff8ec;
@@ -900,6 +899,7 @@ function drawRegionPerimeter(region, cellSize, overlayEl) {
       edge.style.top = y + "px";
       edge.style.width = cellSize + "px";
       edge.style.height = "2px";
+      edge.style.setProperty("--outline-color", darkenColor(region.color, 0.45));
       overlayEl.appendChild(edge);
     }
 
@@ -911,6 +911,7 @@ function drawRegionPerimeter(region, cellSize, overlayEl) {
       edge.style.top = (y + cellSize - 2) + "px";
       edge.style.width = cellSize + "px";
       edge.style.height = "2px";
+      edge.style.setProperty("--outline-color", darkenColor(region.color, 0.45));
       overlayEl.appendChild(edge);
     }
 
@@ -922,6 +923,7 @@ function drawRegionPerimeter(region, cellSize, overlayEl) {
       edge.style.top = y + "px";
       edge.style.width = "2px";
       edge.style.height = cellSize + "px";
+      edge.style.setProperty("--outline-color", darkenColor(region.color, 0.45));
       overlayEl.appendChild(edge);
     }
 
@@ -933,32 +935,10 @@ function drawRegionPerimeter(region, cellSize, overlayEl) {
       edge.style.top = y + "px";
       edge.style.width = "2px";
       edge.style.height = cellSize + "px";
+      edge.style.setProperty("--outline-color", darkenColor(region.color, 0.45));
       overlayEl.appendChild(edge);
     }
   });
-}
-    
-function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
-  overlayEl.innerHTML = "";
-
-  // Outer boundary stays
-  const boundary = document.createElement("div");
-  boundary.className = "overlay-boundary";
-  const baseColor = grid.regions[0].color;
-  boundary.style.setProperty("--overlay-border-color", darkenColor(baseColor, 0.45));
-  boundary.style.left = "0px";
-  boundary.style.top = "0px";
-  boundary.style.width = overlayEl.style.width;
-  boundary.style.height = overlayEl.style.height;
-  overlayEl.appendChild(boundary);
-
-  // Correct per-region outlines
-  grid.regions.forEach(region => {
-    drawRegionPerimeter(region, cellSize, overlayEl);
-  });
-
-  // Badges on top
-  placeRegionBadges(grid.regions, cellSize, overlayEl);
 }
 
   /* ---------------------------------------------------------
