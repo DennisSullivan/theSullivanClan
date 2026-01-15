@@ -673,10 +673,10 @@ function darkenColor(color) {
   let g = parseInt(m[2], 10);
   let b = parseInt(m[3], 10);
 
-  // Weighted warm darkening (NYT-style)
+  // Warm darkening curve tuned for your palette
   r = Math.floor(r * 0.55);
-  g = Math.floor(g * 0.45);
-  b = Math.floor(b * 0.35);
+  g = Math.floor(g * 0.40);
+  b = Math.floor(b * 0.30);
 
   return `rgb(${r}, ${g}, ${b})`;
 }
