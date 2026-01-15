@@ -662,21 +662,20 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
 }
 
 // Darken a hex color by a percentage (0.0–1.0)
-function darkenColor(color, amount) {
+function darkenColor(color, amount = 0.55) {
   // Convert any CSS color to RGB
   const ctx = document.createElement("canvas").getContext("2d");
   ctx.fillStyle = color;
   const computed = ctx.fillStyle; // normalized CSS color
 
-  // Extract RGB values
   const m = computed.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-  if (!m) return color; // fallback
+  if (!m) return "black"; // fallback
 
   let r = parseInt(m[1], 10);
   let g = parseInt(m[2], 10);
   let b = parseInt(m[3], 10);
 
-  // Darken
+  // Stronger darkening curve
   r = Math.floor(r * (1 - amount));
   g = Math.floor(g * (1 - amount));
   b = Math.floor(b * (1 - amount));
