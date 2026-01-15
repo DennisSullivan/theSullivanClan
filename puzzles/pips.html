@@ -669,9 +669,14 @@ function darkenColor(color) {
   const m = computed.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
   if (!m) return color;
 
-  let r = Math.floor(parseInt(m[1], 10) * 0.65);
-  let g = Math.floor(parseInt(m[2], 10) * 0.65);
-  let b = Math.floor(parseInt(m[3], 10) * 0.65);
+  let r = parseInt(m[1], 10);
+  let g = parseInt(m[2], 10);
+  let b = parseInt(m[3], 10);
+
+  // Weighted warm darkening (NYT-style)
+  r = Math.floor(r * 0.55);
+  g = Math.floor(g * 0.45);
+  b = Math.floor(b * 0.35);
 
   return `rgb(${r}, ${g}, ${b})`;
 }
