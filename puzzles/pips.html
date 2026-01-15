@@ -618,6 +618,7 @@ function isAdjacent(cellA, cellB) {
    --------------------------------------------------------- */
 function placeRegionBadges(regions, cellSize, overlayEl) {
   const placed = [];
+console.log("region.rule =", region.rule, "label =", regionRuleLabel?.(region.rule));
 
   regions.forEach(region => {
     const box = region.boundingBox;
@@ -687,10 +688,7 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
  * @returns {string} - A new CSS color string in rgba() form.
  */
 function darkenColor(color, factor) {
-  console.log('[darkenColor] input:', { color, factor });
-
   if (typeof factor !== 'number' || isNaN(factor)) {
-    console.warn('[darkenColor] invalid factor, defaulting to 0.2:', factor);
     factor = 0.2;
   }
 
@@ -720,15 +718,11 @@ function darkenColor(color, factor) {
       return { r, g, b, a };
     }
 
-    console.warn('[darkenColor] unsupported color format:', c);
     return null;
   }
 
   const rgb = parseColor(color);
   if (!rgb) return color;
-
-  console.log('[darkenColor] parsed RGB:', rgb);
-
   // --- Convert RGB → HSL ---
   function rgbToHsl(r, g, b) {
     r /= 255; g /= 255; b /= 255;
@@ -795,11 +789,7 @@ function darkenColor(color, factor) {
   }
 
   const outRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
-  console.log('[darkenColor] final RGB:', outRgb);
-
   const result = `rgba(${outRgb.r}, ${outRgb.g}, ${outRgb.b}, ${rgb.a})`;
-  console.log('[darkenColor] output:', result);
-
   return result;
 }
 
