@@ -692,6 +692,11 @@ function drawRegionPerimeter(region, cellSize, overlayEl) {
 
     const color = darkenColor(region.color, 0.45);
 
+
+console.log("outline color for region", region.color, "→", color);
+
+
+    
     // Top edge
     if (!cellSet.has(`${r-1},${c}`)) {
       const edge = document.createElement("div");
@@ -862,6 +867,24 @@ async function renderPuzzle() {
     // Bounding boxes are now correct
     computeRegionBoundingBoxes(grid, cellSize);
 
+
+console.group(`Grid ${gIndex} Region Color Diagnostics`);
+grid.regions.forEach((region, i) => {
+  const ctx = document.createElement("canvas").getContext("2d");
+  ctx.fillStyle = region.color;
+  const normalized = ctx.fillStyle;
+
+  const dark = darkenColor(region.color);
+
+  console.log(`Region ${i}`);
+  console.log("  original:", region.color);
+  console.log("  normalized:", normalized);
+  console.log("  darkened:", dark);
+});
+console.groupEnd();
+
+
+    
     // Draw outlines + badges
     renderRegionBadges(grid, gIndex, cellSize, overlay);
   }
