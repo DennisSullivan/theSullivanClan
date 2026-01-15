@@ -694,19 +694,39 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
 
     placed.push(chosen);
 
+    // -------------------------------
+    // 🔍 DIAGNOSTIC: compute and log label
+    // -------------------------------
+    let label = null;
+
+    if (typeof regionRuleLabel === "function") {
+      label = regionRuleLabel(region.rule);
+    } else {
+      label = region.rule;
+    }
+
+    console.log("Badge label check:", {
+      region,
+      rule: region.rule,
+      computedLabel: label,
+      labelType: typeof label
+    });
+
+    // Prevent collapse if label is missing
+    if (label == null || String(label).trim() === "") {
+      console.warn("⚠️ Missing badge text for region:", region);
+      label = "??";
+    }
+
+    // -------------------------------
+    // Create badge
+    // -------------------------------
     const badge = document.createElement("div");
     badge.className = "region-badge";
     badge.style.left = chosen.left + "px";
     badge.style.top = chosen.top + "px";
     badge.style.background = region.color;
-
-    // Guaranteed visible label
-    const label =
-      (typeof regionRuleLabel === "function" && regionRuleLabel(region.rule)) ||
-      region.rule ||
-      "?";
-
-    badge.textContent = regionRuleLabel(region.rule);
+    badge.textContent = String(label);
 
     overlayEl.appendChild(badge);
   });
