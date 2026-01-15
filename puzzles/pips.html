@@ -618,7 +618,6 @@ function isAdjacent(cellA, cellB) {
    --------------------------------------------------------- */
 function placeRegionBadges(regions, cellSize, overlayEl) {
   const placed = [];
-console.log("region.rule =", region.rule, "label =", regionRuleLabel?.(region.rule));
 
   regions.forEach(region => {
     const box = region.boundingBox;
@@ -672,12 +671,18 @@ console.log("region.rule =", region.rule, "label =", regionRuleLabel?.(region.ru
     badge.style.left = chosen.left + "px";
     badge.style.top = chosen.top + "px";
     badge.style.background = region.color;
-    badge.textContent = regionRuleLabel(region.rule);
+
+    // Guaranteed visible label
+    const label =
+      (typeof regionRuleLabel === "function" && regionRuleLabel(region.rule)) ||
+      region.rule ||
+      "?";
+
+    badge.textContent = label;
 
     overlayEl.appendChild(badge);
   });
 }
-
 
 /**
  * Darkens a CSS color string by the given factor.
@@ -872,16 +877,16 @@ function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
 
   overlayEl.appendChild(boundary);
 
-  // 2. True polyomino outlines
+  // 2. Region outlines
   grid.regions.forEach(region => {
     drawRegionPerimeter(region, cellSize, overlayEl);
   });
 
-  // 3. Badges on top
+  // 3. Badges (in badge-layer, not overlay)
   const badgeLayer = document.querySelector(`.badge-layer[data-g-index="${gIndex}"]`);
   placeRegionBadges(grid.regions, cellSize, badgeLayer);
 }
-    
+ 
 async function renderPuzzle() {
   const boardsContainer = document.getElementById("boards");
   boardsContainer.innerHTML = "";
