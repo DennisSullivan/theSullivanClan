@@ -753,6 +753,238 @@ function regionRuleLabel(rule) {
   return "";
 }
 
+function chooseDominoPool(rng, count, difficulty) {
+  let candidates = STANDARD_DOMINO_SET.slice();
+
+  if (difficulty === "easy") {
+    candidates = candidates.filter(([a,b]) => a <= 4 && b <= 4);
+  }
+
+  if (difficulty === "hard") {
+    // Weight toward high numbers
+    candidates = candidates.flatMap(tile => {
+      const [a,b] = tile;
+      const weight = Math.max(a,b) >= 5 ? 3 : 1;
+      return Array(weight).fill(tile);
+    });
+  }
+
+  // Shuffle with seeded RNG
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  // Take the first N unique tiles
+  const pool = [];
+  const used = new Set();
+
+  for (const tile of candidates) {
+    const key = tile.join(",");
+    if (!used.has(key)) {
+      pool.push(tile);
+      used.add(key);
+      if (pool.length === count) break;
+    }
+  }
+
+  return pool;
+}
+
+function generatePipsPuzzle(seed, difficulty) {
+  const rng = makeSeededRNG(seed);
+
+  // Step 1: grids
+  const grids = generateGrids(rng, difficulty);
+
+  // Step 2: count active cells
+  const activeCellCount = countActiveCells(grids);
+  const dominoCount = activeCellCount / 2;
+
+  // Step 3: choose domino pool
+  const dominoPool = chooseDominoPool(rng, dominoCount, difficulty);
+
+  // Step 4: generate tiling
+  let tiling = generateDominoTiling(grids, dominoPool, rng);
+
+  // Step 7: assign pip values to each domino
+  tiling = assignPipValues(tiling, dominoPool, rng);
+
+  // Step 5: generate regions
+  let regions = generateRegions(grids, tiling, rng, difficulty);
+
+  // Step 6: assign rules to regions
+  regions = assignRegionRules(regions, tiling, rng, difficulty);
+
+  // --- Step 8C: Attach regions to their grids ---
+  grids.forEach(grid => {
+    grid.regions = [];
+  });
+
+  regions.forEach(region => {
+    // All cells in a region belong to the same grid
+    const firstCell = region.cells[0];
+    const [gIndex] = firstCell.split(",").map(Number);
+    grids[gIndex].regions.push(region);
+  });
+
+  // Final puzzle object (matches your renderer)
+  return {
+    seed,
+    difficulty,
+    grids,        // each grid now has grid.regions
+    dominoPool,   // the tiles used
+    tiling        // for debugging or future features
+  };
+}
+ 
+// ---------------------------------------------------------
+// Standard double-six domino set (28 tiles)
+// ---------------------------------------------------------
+const STANDARD_DOMINO_SET = [
+  [0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],
+  [1,1],[1,2],[1,3],[1,4],[1,5],[1,6],
+  [2,2],[2,3],[2,4],[2,5],[2,6],
+  [3,3],[3,4],[3,5],[3,6],
+  [4,4],[4,5],[4,6],
+  [5,5],[5,6],
+  [6,6]
+];
+
+// ---------------------------------------------------------
+// Seeded RNG (Mulberry32 — fast, stable, reproducible)
+// ---------------------------------------------------------
+function makeSeededRNG(seed) {
+  let t = seed >>> 0;
+  return function() {
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ t >>> 15, t | 1);
+    r ^= r + Math.imul(r ^ r >>> 7, r | 61);
+    return ((r ^ r >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// ---------------------------------------------------------
+// Choose a domino pool of size `count`
+// Difficulty affects weighting
+// ---------------------------------------------------------
+function chooseDominoPool(rng, count, difficulty) {
+  let candidates = STANDARD_DOMINO_SET.slice();
+
+  // Difficulty-based filtering or weighting
+  if (difficulty === "easy") {
+    // Avoid high numbers and too many doubles
+    candidates = candidates.filter(([a,b]) => a <= 4 && b <= 4);
+  }
+
+  if (difficulty === "hard") {
+    // Weight toward high numbers and doubles
+    candidates = candidates.flatMap(tile => {
+      const [a,b] = tile;
+      const high = Math.max(a,b);
+      const weight = (high >= 5 ? 3 : 1) + (a === b ? 1 : 0);
+      return Array(weight).fill(tile);
+    });
+  }
+
+  // Shuffle with seeded RNG
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  // Select unique tiles until we reach the required count
+  const pool = [];
+  const used = new Set();
+
+  for (const tile of candidates) {
+    const key = tile.join(",");
+    if (!used.has(key)) {
+      pool.push(tile);
+      used.add(key);
+      if (pool.length === count) break;
+    }
+  }
+
+  return pool;
+}
+ 
+function generateDominoTiling(grids, dominoPool, rng) {
+  const tiling = [];
+  const used = new Set();
+
+  // Collect all active cells across all grids
+  const cells = [];
+  grids.forEach((grid, gIndex) => {
+    grid.cells.forEach((row, r) => {
+      row.forEach((active, c) => {
+        if (active) cells.push({ gIndex, r, c });
+      });
+    });
+  });
+
+  // Shuffle cells with seeded RNG
+  for (let i = cells.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [cells[i], cells[j]] = [cells[j], cells[i]];
+  }
+
+  // Helper to check if a cell is used
+  const key = (g, r, c) => `${g},${r},${c}`;
+
+  // Try to pair cells
+  for (const cell of cells) {
+    const k = key(cell.gIndex, cell.r, cell.c);
+    if (used.has(k)) continue;
+
+    // Find neighbors
+    const neighbors = [
+      { g: cell.gIndex, r: cell.r - 1, c: cell.c },
+      { g: cell.gIndex, r: cell.r + 1, c: cell.c },
+      { g: cell.gIndex, r: cell.r,     c: cell.c - 1 },
+      { g: cell.gIndex, r: cell.r,     c: cell.c + 1 }
+    ];
+
+    // Shuffle neighbors
+    for (let i = neighbors.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [neighbors[i], neighbors[j]] = [neighbors[j], neighbors[i]];
+    }
+
+    // Try to pair with a neighbor
+    let paired = false;
+    for (const n of neighbors) {
+      const nk = key(n.g, n.r, n.c);
+
+      // Check bounds and active status
+      const grid = grids[n.g];
+      if (!grid) continue;
+      if (!grid.cells[n.r] || !grid.cells[n.r][n.c]) continue;
+
+      if (!used.has(nk)) {
+        // Pair them
+        tiling.push({
+          cells: [
+            { g: cell.gIndex, r: cell.r, c: cell.c },
+            { g: n.g,         r: n.r,    c: n.c }
+          ]
+        });
+        used.add(k);
+        used.add(nk);
+        paired = true;
+        break;
+      }
+    }
+
+    // If we couldn't pair this cell, restart tiling
+    if (!paired) {
+      return generateDominoTiling(grids, dominoPool, rng);
+    }
+  }
+
+  return tiling;
+}
+ 
 function drawRegionPerimeter(region, cellSize, overlayEl) {
   const cellSet = new Set(region.cells);
 
@@ -969,23 +1201,18 @@ class PipsGame {
   }
 
   newPuzzle() {
-    const difficulty = this.difficultySelect
-      ? this.difficultySelect.value
-      : this.currentDifficulty;
-
-    this.currentDifficulty = difficulty;
-    const pool = this.puzzles[difficulty];
-
-    if (!pool || pool.length === 0) {
-      this.setMessage("No puzzles defined for this difficulty yet.");
-      return;
-    }
-
-    this.currentPuzzle = pool[0];
+    const difficulty = this.difficultySelect.value;
+  
+    const seed = Date.now();  // or daily seed
+    const puzzle = generatePipsPuzzle(seed, difficulty);
+  
+    this.currentPuzzle = puzzle;
+console.log("Generated puzzle:", puzzle);
     this.renderPuzzle();
   }
 
   renderPuzzle() {
+console.log("Rendering puzzle:", this.currentPuzzle);
     if (!this.currentPuzzle) return;
 
     this.boardsContainer.innerHTML = "";
@@ -1367,6 +1594,382 @@ class PipsGame {
 
     return false;
   }
+}  // End of PipsGame class
+
+/* ---------------------------------------------------------
+   Generator functions
+   --------------------------------------------------------- */
+ // Seeded RNG from earlier
+function makeSeededRNG(seed) {
+  let t = seed >>> 0;
+  return function() {
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ t >>> 15, t | 1);
+    r ^= r + Math.imul(r ^ r >>> 7, r | 61);
+    return ((r ^ r >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// You’ll fill these in over time
+function generateGrids(rng, difficulty) {
+  // TEMP: return your current static grid layout for that difficulty
+  // so the generator can start working without changing visuals.
+  return YOUR_EXISTING_GRIDS_FOR(difficulty);
+}
+
+function countActiveCells(grids) {
+  let count = 0;
+  grids.forEach(grid => {
+    grid.cells.forEach(row => {
+      row.forEach(active => {
+        if (active) count++;
+      });
+    });
+  });
+  return count;
+}
+
+// From earlier
+const STANDARD_DOMINO_SET = [
+  [0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],
+  [1,1],[1,2],[1,3],[1,4],[1,5],[1,6],
+  [2,2],[2,3],[2,4],[2,5],[2,6],
+  [3,3],[3,4],[3,5],[3,6],
+  [4,4],[4,5],[4,6],
+  [5,5],[5,6],
+  [6,6]
+];
+
+function chooseDominoPool(rng, count, difficulty) {
+  let candidates = STANDARD_DOMINO_SET.slice();
+
+  if (difficulty === "easy") {
+    candidates = candidates.filter(([a,b]) => a <= 4 && b <= 4);
+  }
+
+  if (difficulty === "hard") {
+    candidates = candidates.flatMap(tile => {
+      const [a,b] = tile;
+      const high = Math.max(a,b);
+      const weight = (high >= 5 ? 3 : 1) + (a === b ? 1 : 0);
+      return Array(weight).fill(tile);
+    });
+  }
+
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  const pool = [];
+  const used = new Set();
+
+  for (const tile of candidates) {
+    const key = tile.join(",");
+    if (!used.has(key)) {
+      pool.push(tile);
+      used.add(key);
+      if (pool.length === count) break;
+    }
+  }
+
+  return pool;
+}
+
+function generateDominoTiling(grids, dominoPool, rng) {
+  const tiling = [];
+  const used = new Set();
+  const cells = [];
+
+  grids.forEach((grid, gIndex) => {
+    grid.cells.forEach((row, r) => {
+      row.forEach((active, c) => {
+        if (active) cells.push({ gIndex, r, c });
+      });
+    });
+  });
+
+  for (let i = cells.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [cells[i], cells[j]] = [cells[j], cells[i]];
+  }
+
+  const key = (g, r, c) => `${g},${r},${c}`;
+
+  for (const cell of cells) {
+    const k = key(cell.gIndex, cell.r, cell.c);
+    if (used.has(k)) continue;
+
+    const neighbors = [
+      { g: cell.gIndex, r: cell.r - 1, c: cell.c },
+      { g: cell.gIndex, r: cell.r + 1, c: cell.c },
+      { g: cell.gIndex, r: cell.r,     c: cell.c - 1 },
+      { g: cell.gIndex, r: cell.r,     c: cell.c + 1 }
+    ];
+
+    for (let i = neighbors.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [neighbors[i], neighbors[j]] = [neighbors[j], neighbors[i]];
+    }
+
+    let paired = false;
+    for (const n of neighbors) {
+      const nk = key(n.g, n.r, n.c);
+      const grid = grids[n.g];
+      if (!grid) continue;
+      if (!grid.cells[n.r] || !grid.cells[n.r][n.c]) continue;
+      if (!used.has(nk)) {
+        tiling.push({
+          cells: [
+            { g: cell.gIndex, r: cell.r, c: cell.c },
+            { g: n.g,         r: n.r,    c: n.c }
+          ]
+        });
+        used.add(k);
+        used.add(nk);
+        paired = true;
+        break;
+      }
+    }
+
+    if (!paired) {
+      return generateDominoTiling(grids, dominoPool, rng);
+    }
+  }
+
+  return tiling;
+}
+
+// The generator skeleton
+function (seed, difficulty) {
+  const rng = makeSeededRNG(seed);
+
+  const grids = generateGrids(rng, difficulty);
+  const activeCellCount = countActiveCells(grids);
+  const dominoCount = activeCellCount / 2;
+
+  const dominoPool = chooseDominoPool(rng, dominoCount, difficulty);
+  const tiling = generateDominoTiling(grids, dominoPool, rng);
+
+  // TEMP: until we wire regions/rules, return something your renderer understands
+  return {
+    seed,
+    difficulty,
+    grids,
+    dominoPool,
+    tiling
+  };
+}
+
+function generateRegions(grids, tiling, rng, difficulty) {
+  const regions = [];
+  const used = new Set();
+
+  // Build adjacency map: which dominoes touch which
+  const adjacency = new Map();
+
+  function dominoKey(dom) {
+    return dom.cells.map(c => `${c.g},${c.r},${c.c}`).join("|");
+  }
+
+  // Precompute adjacency
+  for (let i = 0; i < tiling.length; i++) {
+    const A = tiling[i];
+    const Akey = dominoKey(A);
+    adjacency.set(Akey, []);
+
+    for (let j = 0; j < tiling.length; j++) {
+      if (i === j) continue;
+      const B = tiling[j];
+
+      // Check if any cell in A touches any cell in B
+      for (const a of A.cells) {
+        for (const b of B.cells) {
+          if (a.g === b.g &&
+              Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1) {
+            adjacency.get(Akey).push(tiling[j]);
+          }
+        }
+      }
+    }
+  }
+
+  // Difficulty-based region size
+  function targetRegionSize() {
+    if (difficulty === "easy") return Math.floor(rng() * 2) + 1;   // 1–2
+    if (difficulty === "medium") return Math.floor(rng() * 2) + 2; // 2–3
+    return Math.floor(rng() * 3) + 3;                              // 3–5
+  }
+
+  // Shuffle dominoes
+  const dominos = tiling.slice();
+  for (let i = dominos.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [dominos[i], dominos[j]] = [dominos[j], dominos[i]];
+  }
+
+  // Build regions
+  for (const dom of dominos) {
+    const key = dominoKey(dom);
+    if (used.has(key)) continue;
+
+    const region = [];
+    const queue = [dom];
+    const maxSize = targetRegionSize();
+
+    while (queue.length > 0 && region.length < maxSize) {
+      const d = queue.shift();
+      const dkey = dominoKey(d);
+      if (used.has(dkey)) continue;
+
+      used.add(dkey);
+      region.push(d);
+
+      // Add neighbors
+      for (const n of adjacency.get(dkey)) {
+        const nkey = dominoKey(n);
+        if (!used.has(nkey)) queue.push(n);
+      }
+    }
+
+    // Flatten region cells
+    const cells = [];
+    region.forEach(dom => {
+      dom.cells.forEach(c => cells.push(`${c.g},${c.r},${c.c}`));
+    });
+
+    // Assign a random color
+    const color = randomPastelColor(rng);
+
+    regions.push({
+      color,
+      cells
+    });
+  }
+
+  return regions;
+}
+
+// Helper for region colors
+function randomPastelColor(rng) {
+  const r = Math.floor(150 + rng() * 100);
+  const g = Math.floor(150 + rng() * 100);
+  const b = Math.floor(150 + rng() * 100);
+  return `rgb(${r},${g},${b})`;
+}
+ 
+function assignRegionRules(regions, tiling, rng, difficulty) {
+  // Build pip map: cell -> pip value
+  const pipMap = new Map();
+  tiling.forEach(dom => {
+    const [a, b] = dom.pips; // Step 7 will assign these
+    dom.cells.forEach(c => {
+      pipMap.set(`${c.g},${c.r},${c.c}`, [a, b]);
+    });
+  });
+
+  // Helper: get all pip values in a region
+  function regionPips(region) {
+    const values = [];
+    region.cells.forEach(cell => {
+      const p = pipMap.get(cell);
+      if (p) values.push(...p);
+    });
+    return values;
+  }
+
+  // Difficulty-based rule weighting
+  function chooseRuleType() {
+    if (difficulty === "easy") {
+      // Mostly sum and =, avoid inequalities
+      const r = rng();
+      if (r < 0.6) return "sum";
+      if (r < 0.9) return "=";
+      return "neq";
+    }
+
+    if (difficulty === "medium") {
+      const r = rng();
+      if (r < 0.5) return "sum";
+      if (r < 0.7) return "=";
+      if (r < 0.85) return "<";
+      if (r < 0.95) return ">";
+      return "neq";
+    }
+
+    // hard
+    const r = rng();
+    if (r < 0.4) return "sum";
+    if (r < 0.55) return "=";
+    if (r < 0.75) return "<";
+    if (r < 0.9) return ">";
+    return "neq";
+  }
+
+  // Assign rules
+  regions.forEach(region => {
+    const pips = regionPips(region);
+    const sum = pips.reduce((a, b) => a + b, 0);
+    const unique = new Set(pips).size === pips.length;
+
+    const ruleType = chooseRuleType();
+
+    if (ruleType === "sum") {
+      region.rule = { type: "sum", value: sum };
+    }
+
+    else if (ruleType === "=") {
+      // Only valid if all pips identical
+      const allSame = pips.every(v => v === pips[0]);
+      if (allSame) {
+        region.rule = { type: "=" };
+      } else {
+        // fallback to sum
+        region.rule = { type: "sum", value: sum };
+      }
+    }
+
+    else if (ruleType === "<") {
+      // Pick a threshold greater than sum
+      const threshold = sum + Math.floor(rng() * 3) + 1;
+      region.rule = { type: "<", value: threshold };
+    }
+
+    else if (ruleType === ">") {
+      // Pick a threshold less than sum
+      const threshold = Math.max(0, sum - (Math.floor(rng() * 3) + 1));
+      region.rule = { type: ">", value: threshold };
+    }
+
+    else if (ruleType === "neq") {
+      if (unique) {
+        region.rule = { type: "neq" };
+      } else {
+        // fallback to sum
+        region.rule = { type: "sum", value: sum };
+      }
+    }
+  });
+
+  return regions;
+}
+
+function assignPipValues(tiling, dominoPool, rng) {
+  // Make a copy of the pool so we can shuffle it
+  const pool = dominoPool.slice();
+
+  // Shuffle with seeded RNG
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  // Assign pips to each domino in the tiling
+  tiling.forEach((dom, i) => {
+    dom.pips = pool[i];  // [a, b]
+  });
+
+  return tiling;
 }
 
 /* ---------------------------------------------------------
