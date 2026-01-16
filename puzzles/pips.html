@@ -267,6 +267,12 @@
 <div class="badge-layer" data-g-index="0"></div>
 <div class="region-overlays" data-g-index="0"></div>
 
+<select id="difficulty">
+  <option value="easy">Easy</option>
+  <option value="medium">Medium</option>
+  <option value="hard">Hard</option>
+</select>
+ 
 <header>Pips</header>
 
 <div class="container">
@@ -583,7 +589,7 @@ const puzzles = {
 
 /* ---------------------------------------------------------
    STATE
-   --------------------------------------------------------- */
+   ---------------------------------------------------------
 let currentPuzzle = null;
 let currentDifficulty = "easy";
 
@@ -595,7 +601,7 @@ let selectedDominoIndex = null;
 let pendingCell = null; // first cell clicked when placing
 
 /* ---------------------------------------------------------
-   HELPERS
+   HELPERS (pure functions)
    --------------------------------------------------------- */
 function cellKey(gIndex, r, c) {
   return gIndex + ":" + r + ":" + c;
@@ -612,10 +618,209 @@ function isAdjacent(cellA, cellB) {
     Math.abs(cellA.row - cellB.row) + Math.abs(cellA.col - cellB.col) === 1
   );
 }
- 
-/* ---------------------------------------------------------
-   RENDERING
-   --------------------------------------------------------- */
+
+/**
+ * Darkens a CSS color string by the given factor.
+ * Supports: rgb(), rgba(), #rgb, #rrggbb
+ */
+function darkenColor(color, factor) {
+  if (typeof factor !== "number" || isNaN(factor)) {
+    factor = 0.2;
+  }
+
+  function parseColor(c) {
+    let r, g, b, a = 1;
+
+    const rgbMatch = c.match(/^rgba?\(([^)]+)\)$/);
+    if (rgbMatch) {
+      const parts = rgbMatch[1].split(",").map(x => x.trim());
+      r = parseFloat(parts[0]);
+      g = parseFloat(parts[1]);
+      b = parseFloat(parts[2]);
+      if (parts[3]) a = parseFloat(parts[3]);
+      return { r, g, b, a };
+    }
+
+    const hexMatch = c.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (hexMatch) {
+      let hex = hexMatch[1];
+      if (hex.length === 3) {
+        hex = hex.split("").map(ch => ch + ch).join("");
+      }
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+      return { r, g, b, a };
+    }
+
+    return null;
+  }
+
+  const rgb = parseColor(color);
+  if (!rgb) return color;
+
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+        case g: h = ((b - r) / d + 2); break;
+        case b: h = ((r - g) / d + 4); break;
+      }
+      h /= 6;
+    }
+
+    return { h, s, l };
+  }
+
+  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+  // Slight darken, keep colorfulness
+  hsl.s = Math.min(1, hsl.s * (1 + factor * 1.5));
+  hsl.l = Math.max(0, hsl.l - factor * 0.25);
+
+  function hslToRgb(h, s, l) {
+    let r, g, b;
+
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+
+      r = hue2rgb(p, q, h + 1 / 3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1 / 3);
+    }
+
+    return {
+      r: Math.round(r * 255),
+      g: Math.round(g * 255),
+      b: Math.round(b * 255)
+    };
+  }
+
+  const outRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
+  return `rgba(${outRgb.r}, ${outRgb.g}, ${outRgb.b}, ${rgb.a})`;
+}
+
+function computeRegionBoundingBoxes(grid, cellSize) {
+  grid.regions.forEach(region => {
+    let minRow = Infinity, maxRow = -Infinity;
+    let minCol = Infinity, maxCol = -Infinity;
+
+    region.cells.forEach(cell => {
+      const [r, c] = cell.split(",").map(Number);
+      minRow = Math.min(minRow, r);
+      maxRow = Math.max(maxRow, r);
+      minCol = Math.min(minCol, c);
+      maxCol = Math.max(maxCol, c);
+    });
+
+    region.boundingBox = {
+      x: minCol * cellSize,
+      y: minRow * cellSize,
+      width: (maxCol - minCol + 1) * cellSize,
+      height: (maxRow - minRow + 1) * cellSize
+    };
+  });
+}
+
+function regionRuleLabel(rule) {
+  if (!rule) return "";
+
+  if (rule.type === "=" && rule.value !== undefined) {
+    return "=" + String(rule.value);
+  }
+  if (rule.type === "<" && rule.value !== undefined) {
+    return "<" + String(rule.value);
+  }
+  if (rule.type === ">" && rule.value !== undefined) {
+    return ">" + String(rule.value);
+  }
+  if (rule.type === "neq") {
+    return "≠";
+  }
+
+  return "";
+}
+
+function drawRegionPerimeter(region, cellSize, overlayEl) {
+  const cellSet = new Set(region.cells);
+
+  region.cells.forEach(cell => {
+    const [r, c] = cell.split(",").map(Number);
+    const x = c * cellSize;
+    const y = r * cellSize;
+
+    const color = darkenColor(region.color, 0.45);
+
+    // Top edge
+    if (!cellSet.has(`${r - 1},${c}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = x + "px";
+      edge.style.top = y + "px";
+      edge.style.width = cellSize + "px";
+      edge.style.height = "2px";
+      edge.style.setProperty("--outline-color", color);
+      overlayEl.appendChild(edge);
+    }
+
+    // Bottom edge
+    if (!cellSet.has(`${r + 1},${c}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = x + "px";
+      edge.style.top = (y + cellSize - 2) + "px";
+      edge.style.width = cellSize + "px";
+      edge.style.height = "2px";
+      edge.style.setProperty("--outline-color", color);
+      overlayEl.appendChild(edge);
+    }
+
+    // Left edge
+    if (!cellSet.has(`${r},${c - 1}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = x + "px";
+      edge.style.top = y + "px";
+      edge.style.width = "2px";
+      edge.style.height = cellSize + "px";
+      edge.style.setProperty("--outline-color", color);
+      overlayEl.appendChild(edge);
+    }
+
+    // Right edge
+    if (!cellSet.has(`${r},${c + 1}`)) {
+      const edge = document.createElement("div");
+      edge.className = "region-outline";
+      edge.style.left = (x + cellSize - 2) + "px";
+      edge.style.top = y + "px";
+      edge.style.width = "2px";
+      edge.style.height = cellSize + "px";
+      edge.style.setProperty("--outline-color", color);
+      overlayEl.appendChild(edge);
+    }
+  });
+}
+
 function placeRegionBadges(regions, cellSize, overlayEl) {
   const placed = [];
 
@@ -623,10 +828,10 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
     const box = region.boundingBox;
 
     const candidates = [
-      { x: box.x,                 y: box.y                 },
-      { x: box.x + box.width,     y: box.y                 },
-      { x: box.x,                 y: box.y + box.height    },
-      { x: box.x + box.width,     y: box.y + box.height    }
+      { x: box.x,             y: box.y },
+      { x: box.x + box.width, y: box.y },
+      { x: box.x,             y: box.y + box.height },
+      { x: box.x + box.width, y: box.y + box.height }
     ];
 
     let chosen = null;
@@ -666,34 +871,11 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
 
     placed.push(chosen);
 
-    // ------------------------------------
-    // 🔍 DIAGNOSTIC: compute and log label
-    // ------------------------------------
-    let label = null;
-
-    if (typeof regionRuleLabel === "function") {
-      label = regionRuleLabel(region.rule);
-    } else {
-      label = region.rule;
-    }
-
-    console.log("──────────── Badge Diagnostic ────────────");
-    console.log("Region ID:", region.id);
-    console.log("Rule object:", JSON.stringify(region.rule, null, 2));
-    console.log("Computed label:", label);
-    console.log("Label RAW:", JSON.stringify(label));   // ← shows whitespace/newlines
-    console.log("Label type:", typeof label);
-    console.log("──────────────────────────────────────────");
-
-    // Prevent collapse if label is missing
+    let label = regionRuleLabel(region.rule);
     if (label == null || String(label).trim() === "") {
-      console.warn("⚠️ Missing badge text for region:", region.id);
       label = "??";
     }
 
-    // ------------------------------------
-    // Create badge
-    // ------------------------------------
     const badge = document.createElement("div");
     badge.className = "region-badge";
     badge.style.left = chosen.left + "px";
@@ -705,186 +887,9 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
   });
 }
 
-/**
- * Darkens a CSS color string by the given factor.
- * Supports: rgb(), rgba(), #rgb, #rrggbb
- * 
- * @param {string} color - The original CSS color string.
- * @param {number} factor - Darkening factor between 0 and 1 (e.g. 0.2 = 20% darker).
- * @returns {string} - A new CSS color string in rgba() form.
- */
-function darkenColor(color, factor) {
-  if (typeof factor !== 'number' || isNaN(factor)) {
-    factor = 0.2;
-  }
-
-  // --- Parse color into RGB ---
-  function parseColor(c) {
-    let r, g, b, a = 1;
-
-    const rgbMatch = c.match(/^rgba?\(([^)]+)\)$/);
-    if (rgbMatch) {
-      const parts = rgbMatch[1].split(',').map(x => x.trim());
-      r = parseFloat(parts[0]);
-      g = parseFloat(parts[1]);
-      b = parseFloat(parts[2]);
-      if (parts[3]) a = parseFloat(parts[3]);
-      return { r, g, b, a };
-    }
-
-    const hexMatch = c.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-    if (hexMatch) {
-      let hex = hexMatch[1];
-      if (hex.length === 3) {
-        hex = hex.split('').map(ch => ch + ch).join('');
-      }
-      r = parseInt(hex.substring(0, 2), 16);
-      g = parseInt(hex.substring(2, 4), 16);
-      b = parseInt(hex.substring(4, 6), 16);
-      return { r, g, b, a };
-    }
-
-    return null;
-  }
-
-  const rgb = parseColor(color);
-  if (!rgb) return color;
-  // --- Convert RGB → HSL ---
-  function rgbToHsl(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h, s, l = (max + min) / 2;
-
-    if (max === min) {
-      h = s = 0;
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
-        case g: h = ((b - r) / d + 2); break;
-        case b: h = ((r - g) / d + 4); break;
-      }
-      h /= 6;
-    }
-
-    return { h, s, l };
-  }
-
-  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-
-
-  // --- NEW STRATEGY ---
-  // Boost saturation to avoid gray
-  hsl.s = Math.min(1, hsl.s * (1 + factor * 1.5));
-
-  // Reduce lightness only slightly
-  hsl.l = Math.max(0, hsl.l - factor * 0.25);
-
- console.log('[darkenColor] HSL after adjust:', hsl);
-
-  // --- Convert HSL → RGB ---
-  function hslToRgb(h, s, l) {
-    let r, g, b;
-
-    if (s === 0) {
-      r = g = b = l;
-    } else {
-      const hue2rgb = (p, q, t) => {
-        if (t < 0) t += 1;
-        if (t > 1) t -= 1;
-        if (t < 1/6) return p + (q - p) * 6 * t;
-        if (t < 1/2) return q;
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-        return p;
-      };
-
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-
-      r = hue2rgb(p, q, h + 1/3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
-    }
-
-    return {
-      r: Math.round(r * 255),
-      g: Math.round(g * 255),
-      b: Math.round(b * 255)
-    };
-  }
-
-  const outRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
-  const result = `rgba(${outRgb.r}, ${outRgb.g}, ${outRgb.b}, ${rgb.a})`;
-  return result;
-}
-
-// Draw the true polyomino perimeter for a region
-function drawRegionPerimeter(region, cellSize, overlayEl) {
-  const cellSet = new Set(region.cells);
-
-  region.cells.forEach(cell => {
-    const [r, c] = cell.split(",").map(Number);
-    const x = c * cellSize;
-    const y = r * cellSize;
-
-    const color = darkenColor(region.color, 0.45);
-
-    // Top edge
-    if (!cellSet.has(`${r-1},${c}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = x + "px";
-      edge.style.top = y + "px";
-      edge.style.width = cellSize + "px";
-      edge.style.height = "2px";
-      edge.style.setProperty("--outline-color", color);
-      overlayEl.appendChild(edge);
-    }
-
-    // Bottom edge
-    if (!cellSet.has(`${r+1},${c}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = x + "px";
-      edge.style.top = (y + cellSize - 2) + "px";
-      edge.style.width = cellSize + "px";
-      edge.style.height = "2px";
-      edge.style.setProperty("--outline-color", color);
-      overlayEl.appendChild(edge);
-    }
-
-    // Left edge
-    if (!cellSet.has(`${r},${c-1}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = x + "px";
-      edge.style.top = y + "px";
-      edge.style.width = "2px";
-      edge.style.height = cellSize + "px";
-      edge.style.setProperty("--outline-color", color);
-      overlayEl.appendChild(edge);
-    }
-
-    // Right edge
-    if (!cellSet.has(`${r},${c+1}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = (x + cellSize - 2) + "px";
-      edge.style.top = y + "px";
-      edge.style.width = "2px";
-      edge.style.height = cellSize + "px";
-      edge.style.setProperty("--outline-color", color);
-      overlayEl.appendChild(edge);
-    }
-  });
-}
-
-// Draw outer boundary + region outlines + badges
 function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
   overlayEl.innerHTML = "";
 
-  // 1. Outer boundary
   const boundary = document.createElement("div");
   boundary.className = "overlay-boundary";
 
@@ -898,505 +903,475 @@ function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
 
   overlayEl.appendChild(boundary);
 
-  // 2. Region outlines
   grid.regions.forEach(region => {
     drawRegionPerimeter(region, cellSize, overlayEl);
   });
 
-  // 3. Badges (in badge-layer, not overlay)
   const badgeLayer = document.querySelector(`.badge-layer[data-g-index="${gIndex}"]`);
-  placeRegionBadges(grid.regions, cellSize, badgeLayer);
-}
- 
-async function renderPuzzle() {
-  const boardsContainer = document.getElementById("boards");
-  boardsContainer.innerHTML = "";
-  cellAssignments = {};
-  dominoUsed = currentPuzzle.dominoPool.map(() => false);
-  selectedDominoIndex = null;
-  pendingCell = null;
-
-  for (let gIndex = 0; gIndex < currentPuzzle.grids.length; gIndex++) {
-    const grid = currentPuzzle.grids[gIndex];
-
-    // OUTER wrapper (holds padding)
-    const outer = document.createElement("div");
-    outer.className = "board-outer";
-
-    // INNER wrapper (position: relative; holds title + board)
-    const wrapper = document.createElement("div");
-    wrapper.className = "board-wrapper";
-    outer.appendChild(wrapper);
-
-    // Title
-    const title = document.createElement("div");
-    title.className = "board-title";
-    title.textContent = grid.id;
-    wrapper.appendChild(title);
-
-    // Board grid
-    const board = document.createElement("div");
-    board.className = "board";
-    board.style.gridTemplateRows = `repeat(${grid.rows}, 1fr)`;
-    board.style.gridTemplateColumns = `repeat(${grid.cols}, 1fr)`;
-
-    const activeSet = new Set(grid.activeCells);
-
-    // Map cell -> region
-    const cellRegionMap = {};
-    grid.regions.forEach(region => {
-      region.cells.forEach(c => {
-        cellRegionMap[c] = region;
-      });
-    });
-
-    // Build cells
-    for (let r = 0; r < grid.rows; r++) {
-      for (let c = 0; c < grid.cols; c++) {
-        const cellCoord = `${r},${c}`;
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        cell.dataset.gIndex = gIndex;
-        cell.dataset.row = r;
-        cell.dataset.col = c;
-
-        if (!activeSet.has(cellCoord)) {
-          cell.classList.add("inactive");
-        } else {
-          const region = cellRegionMap[cellCoord];
-          if (region) {
-            cell.classList.add("region");
-            cell.style.backgroundColor = region.color;
-          }
-          cell.addEventListener("click", onCellClick);
-        }
-
-        board.appendChild(cell);
-      }
-    }
-
-    wrapper.appendChild(board);
-    boardsContainer.appendChild(outer);
-
-    // ⭐ Force layout BEFORE measuring anything
-    await new Promise(r => requestAnimationFrame(r));
-
-    // Measure board
-    const rect = board.getBoundingClientRect();
-
-    // ⭐ Create badge layer (NOT scaled)
-    const badgeLayer = document.createElement("div");
-    badgeLayer.className = "badge-layer";
-    badgeLayer.dataset.gIndex = gIndex;
-    badgeLayer.style.width = rect.width + "px";
-    badgeLayer.style.height = rect.height + "px";
-    badgeLayer.style.top = "0px";
-    badgeLayer.style.left = "0px";
-    board.appendChild(badgeLayer);
-
-    // ⭐ Create region overlay (scaled)
-    const overlay = document.createElement("div");
-    overlay.className = "region-overlays";
-    overlay.dataset.gIndex = gIndex;
-    overlay.style.width = rect.width + "px";
-    overlay.style.height = rect.height + "px";
-    overlay.style.top = "0px";
-    overlay.style.left = "0px";
-    board.appendChild(overlay);
-
-    // Now that layout is final, cellSize is correct
-    const sampleCell = board.querySelector(".cell:not(.inactive)");
-    const cellSize = sampleCell ? sampleCell.offsetWidth : 40;
-
-    // Compute bounding boxes
-    computeRegionBoundingBoxes(grid, cellSize);
-
-    // Draw outlines + badges
-    renderRegionBadges(grid, gIndex, cellSize, overlay);
-  }
-
-  renderDominoPool();
-  setMessage("");
-}
-
-function updateCellDisplay(key) {
-  const { gIndex, row, col } = parseCellKey(key);
-  const selector = `.cell[data-g-index="${gIndex}"][data-row="${row}"][data-col="${col}"]`;
-  const cell = document.querySelector(selector);
-  if (!cell) return;
-
-  // Preserve region label if present
-  const label = cell.querySelector(".region-label");
-
-  cell.innerHTML = "";
-  if (label) cell.appendChild(label);
-
-  const assignment = cellAssignments[key];
-  if (assignment) {
-    const [a, b] = currentPuzzle.dominoPool[assignment.dominoIndex];
-    const half = assignment.halfIndex === 0 ? a : b;
-
-    const div = document.createElement("div");
-    div.className = "placed-domino";
-    div.textContent = half;
-    cell.appendChild(div);
+  if (badgeLayer) {
+    badgeLayer.innerHTML = "";
+    placeRegionBadges(grid.regions, cellSize, badgeLayer);
   }
 }
 
-function regionRuleLabel(rule) {
-  if (!rule) return "";
-
-  // Equality: type "=" with a value
-  if (rule.type === "=" && rule.value !== undefined) {
-    return "=" + String(rule.value);
-  }
-
-  // Less-than: type "<" with a value
-  if (rule.type === "<" && rule.value !== undefined) {
-    return "<" + String(rule.value);
-  }
-
-  // Greater-than: type ">" with a value
-  if (rule.type === ">" && rule.value !== undefined) {
-    return ">" + String(rule.value);
-  }
-
-  // All different: type "neq"
-  if (rule.type === "neq") {
-    return "≠";
-  }
-
-  // Fallback for unknown formats
-  return "";
-}
-
-function renderDominoPool() {
-  const poolDiv = document.getElementById("domino-pool");
-  poolDiv.innerHTML = "";
-
-  currentPuzzle.dominoPool.forEach((domino, index) => {
-    const [a, b] = domino;
-    const dDiv = document.createElement("div");
-    dDiv.className = "domino";
-    dDiv.dataset.index = index;
-
-    if (dominoUsed[index]) dDiv.classList.add("disabled");
-    if (selectedDominoIndex === index) dDiv.classList.add("selected");
-
-    const half1 = document.createElement("div");
-    half1.className = "domino-half";
-    half1.textContent = a;
-
-    const half2 = document.createElement("div");
-    half2.className = "domino-half";
-    half2.textContent = b;
-
-    dDiv.appendChild(half1);
-    dDiv.appendChild(half2);
-
-    dDiv.addEventListener("click", () => onDominoClick(index));
-
-    poolDiv.appendChild(dDiv);
-  });
-}
-
-function computeRegionBoundingBoxes(grid, cellSize) {
-  grid.regions.forEach(region => {
-    let minRow = Infinity, maxRow = -Infinity;
-    let minCol = Infinity, maxCol = -Infinity;
-
-    region.cells.forEach(cell => {
-      const [r, c] = cell.split(",").map(Number);
-      minRow = Math.min(minRow, r);
-      maxRow = Math.max(maxRow, r);
-      minCol = Math.min(minCol, c);
-      maxCol = Math.max(maxCol, c);
-    });
-
-    region.boundingBox = {
-      x: minCol * cellSize,
-      y: minRow * cellSize,
-      width: (maxCol - minCol + 1) * cellSize,
-      height: (maxRow - minRow + 1) * cellSize
-    };
-  });
-}
-
-  /* ---------------------------------------------------------
-   INTERACTION HANDLERS
+/* ---------------------------------------------------------
+   PIPS GAME CLASS
    --------------------------------------------------------- */
-function onDominoClick(index) {
-  if (dominoUsed[index]) return;
-  if (selectedDominoIndex === index) {
-    selectedDominoIndex = null;
-  } else {
-    selectedDominoIndex = index;
-  }
-  pendingCell = null;
-  renderDominoPool();
-}
+class PipsGame {
+  constructor(puzzles) {
+    this.puzzles = puzzles;
+    this.currentPuzzle = null;
+    this.currentDifficulty = "easy";
 
-function onCellClick(evt) {
-  const cell = evt.currentTarget;
-  const gIndex = parseInt(cell.dataset.gIndex, 10);
-  const row = parseInt(cell.dataset.row, 10);
-  const col = parseInt(cell.dataset.col, 10);
-  const key = cellKey(gIndex, row, col);
+    this.cellAssignments = {};
+    this.dominoUsed = [];
+    this.selectedDominoIndex = null;
+    this.pendingCell = null;
 
-  // If this cell already has a domino, remove it
-  const existing = cellAssignments[key];
-  if (existing) {
-    removeDomino(existing.dominoIndex);
-    return;
+    this.boardsContainer = document.getElementById("boards");
+    this.poolDiv = document.getElementById("domino-pool");
+    this.messageEl = document.getElementById("message");
+    this.difficultySelect = document.getElementById("difficulty");
+
+    this.handleDominoClick = this.handleDominoClick.bind(this);
+    this.handleCellClick = this.handleCellClick.bind(this);
   }
 
-  // No domino selected - nothing to place
-  if (selectedDominoIndex === null) {
-    setMessage("Select a domino first, then click two adjacent cells.");
-    return;
+  setMessage(msg, color) {
+    if (!this.messageEl) return;
+    this.messageEl.textContent = msg;
+    this.messageEl.style.color = color || "#444";
   }
 
-  // Placing: first or second cell?
-  if (!pendingCell) {
-    pendingCell = { gIndex, row, col };
-    highlightPendingCell(true);
-  } else {
-    const cell2 = { gIndex, row, col };
-    if (!isAdjacent(pendingCell, cell2)) {
-      setMessage("Cells must be adjacent in the same grid.");
-      highlightPendingCell(false);
-      pendingCell = null;
+  newPuzzle() {
+    const difficulty = this.difficultySelect
+      ? this.difficultySelect.value
+      : this.currentDifficulty;
+
+    this.currentDifficulty = difficulty;
+    const pool = this.puzzles[difficulty];
+
+    if (!pool || pool.length === 0) {
+      this.setMessage("No puzzles defined for this difficulty yet.");
       return;
     }
 
-    // Check both cells are free
-    const key1 = cellKey(pendingCell.gIndex, pendingCell.row, pendingCell.col);
-    const key2 = cellKey(cell2.gIndex, cell2.row, cell2.col);
-    if (cellAssignments[key1] || cellAssignments[key2]) {
-      setMessage("Those cells are not both free.");
-      highlightPendingCell(false);
-      pendingCell = null;
-      return;
+    this.currentPuzzle = pool[0];
+    this.renderPuzzle();
+  }
+
+  renderPuzzle() {
+    if (!this.currentPuzzle) return;
+
+    this.boardsContainer.innerHTML = "";
+    this.cellAssignments = {};
+    this.dominoUsed = this.currentPuzzle.dominoPool.map(() => false);
+    this.selectedDominoIndex = null;
+    this.pendingCell = null;
+
+    const grids = this.currentPuzzle.grids;
+
+    const renderOneGrid = async (gIndex) => {
+      const grid = grids[gIndex];
+
+      const outer = document.createElement("div");
+      outer.className = "board-outer";
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "board-wrapper";
+      outer.appendChild(wrapper);
+
+      const title = document.createElement("div");
+      title.className = "board-title";
+      title.textContent = grid.id;
+      wrapper.appendChild(title);
+
+      const board = document.createElement("div");
+      board.className = "board";
+      board.dataset.gIndex = gIndex;
+      board.style.gridTemplateRows = `repeat(${grid.rows}, 1fr)`;
+      board.style.gridTemplateColumns = `repeat(${grid.cols}, 1fr)`;
+
+      const activeSet = new Set(grid.activeCells);
+
+      const cellRegionMap = {};
+      grid.regions.forEach(region => {
+        region.cells.forEach(c => {
+          cellRegionMap[c] = region;
+        });
+      });
+
+      for (let r = 0; r < grid.rows; r++) {
+        for (let c = 0; c < grid.cols; c++) {
+          const cellCoord = `${r},${c}`;
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.gIndex = gIndex;
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          if (!activeSet.has(cellCoord)) {
+            cell.classList.add("inactive");
+          } else {
+            const region = cellRegionMap[cellCoord];
+            if (region) {
+              cell.classList.add("region");
+              cell.style.backgroundColor = region.color;
+            }
+            cell.addEventListener("click", this.handleCellClick);
+          }
+
+          board.appendChild(cell);
+        }
+      }
+
+      wrapper.appendChild(board);
+      this.boardsContainer.appendChild(outer);
+
+      await new Promise(r => requestAnimationFrame(r));
+
+      const rect = board.getBoundingClientRect();
+
+      const badgeLayer = document.createElement("div");
+      badgeLayer.className = "badge-layer";
+      badgeLayer.dataset.gIndex = gIndex;
+      badgeLayer.style.width = rect.width + "px";
+      badgeLayer.style.height = rect.height + "px";
+      badgeLayer.style.top = "0px";
+      badgeLayer.style.left = "0px";
+      board.appendChild(badgeLayer);
+
+      const overlay = document.createElement("div");
+      overlay.className = "region-overlays";
+      overlay.dataset.gIndex = gIndex;
+      overlay.style.width = rect.width + "px";
+      overlay.style.height = rect.height + "px";
+      overlay.style.top = "0px";
+      overlay.style.left = "0px";
+      board.appendChild(overlay);
+
+      const sampleCell = board.querySelector(".cell:not(.inactive)");
+      const cellSize = sampleCell ? sampleCell.offsetWidth : 40;
+
+      computeRegionBoundingBoxes(grid, cellSize);
+      renderRegionBadges(grid, gIndex, cellSize, overlay);
+    };
+
+    const tasks = [];
+    for (let gIndex = 0; gIndex < grids.length; gIndex++) {
+      tasks.push(renderOneGrid(gIndex));
     }
 
-    placeDomino(selectedDominoIndex, key1, key2);
-    highlightPendingCell(false);
-    pendingCell = null;
+    Promise.all(tasks).then(() => {
+      this.renderDominoPool();
+      this.setMessage("");
+    });
   }
-}
 
-function highlightPendingCell(on) {
-  const cells = document.querySelectorAll(".cell");
-  cells.forEach(cell => {
-    cell.classList.remove("selected");
-  });
-  if (on && pendingCell) {
-    const selector = `.cell[data-g-index="${pendingCell.gIndex}"][data-row="${pendingCell.row}"][data-col="${pendingCell.col}"]`;
-    const cell = document.querySelector(selector);
-    if (cell) cell.classList.add("selected");
+  renderDominoPool() {
+    this.poolDiv.innerHTML = "";
+
+    this.currentPuzzle.dominoPool.forEach((domino, index) => {
+      const [a, b] = domino;
+      const dDiv = document.createElement("div");
+      dDiv.className = "domino";
+      dDiv.dataset.index = index;
+
+      if (this.dominoUsed[index]) dDiv.classList.add("disabled");
+      if (this.selectedDominoIndex === index) dDiv.classList.add("selected");
+
+      const half1 = document.createElement("div");
+      half1.className = "domino-half";
+      half1.textContent = a;
+
+      const half2 = document.createElement("div");
+      half2.className = "domino-half";
+      half2.textContent = b;
+
+      dDiv.appendChild(half1);
+      dDiv.appendChild(half2);
+
+      dDiv.addEventListener("click", () => this.handleDominoClick(index));
+
+      this.poolDiv.appendChild(dDiv);
+    });
   }
-}
 
-function placeDomino(dominoIndex, key1, key2) {
-  const [a, b] = currentPuzzle.dominoPool[dominoIndex];
-
-  cellAssignments[key1] = { dominoIndex, halfIndex: 0 };
-  cellAssignments[key2] = { dominoIndex, halfIndex: 1 };
-  dominoUsed[dominoIndex] = true;
-  selectedDominoIndex = null;
-
-  updateBoardValues();
-  updateCellDisplay(key1);
-  updateCellDisplay(key2);
-  renderDominoPool();
-
-}
-
-function removeDomino(dominoIndex) {
-  // Find the two keys before deleting them
-  const keysToClear = [];
-  Object.keys(cellAssignments).forEach(k => {
-    if (cellAssignments[k].dominoIndex === dominoIndex) {
-      keysToClear.push(k);
+  handleDominoClick(index) {
+    if (this.dominoUsed[index]) return;
+    if (this.selectedDominoIndex === index) {
+      this.selectedDominoIndex = null;
+    } else {
+      this.selectedDominoIndex = index;
     }
-  });
+    this.pendingCell = null;
+    this.renderDominoPool();
+  }
 
-  // Remove assignments
-  keysToClear.forEach(k => delete cellAssignments[k]);
-
-  dominoUsed[dominoIndex] = false;
-  selectedDominoIndex = null;
-  pendingCell = null;
-  highlightPendingCell(false);
-
-  updateBoardValues();
-
-  // Re-render only the affected cells
-  keysToClear.forEach(k => updateCellDisplay(k));
-
-  renderDominoPool();
-}
-
-function updateBoardValues() {
-  const cells = document.querySelectorAll(".cell");
-
-  cells.forEach(cell => {
-    if (cell.classList.contains("inactive")) return;
-
+  handleCellClick(evt) {
+    const cell = evt.currentTarget;
     const gIndex = parseInt(cell.dataset.gIndex, 10);
     const row = parseInt(cell.dataset.row, 10);
     const col = parseInt(cell.dataset.col, 10);
     const key = cellKey(gIndex, row, col);
-    const assignment = cellAssignments[key];
 
-    // Grab the label BEFORE clearing
+    const existing = this.cellAssignments[key];
+    if (existing) {
+      this.removeDomino(existing.dominoIndex);
+      return;
+    }
+
+    if (this.selectedDominoIndex === null) {
+      this.setMessage("Select a domino first, then click two adjacent cells.");
+      return;
+    }
+
+    if (!this.pendingCell) {
+      this.pendingCell = { gIndex, row, col };
+      this.highlightPendingCell(true);
+    } else {
+      const cell2 = { gIndex, row, col };
+      if (!isAdjacent(this.pendingCell, cell2)) {
+        this.setMessage("Cells must be adjacent in the same grid.");
+        this.highlightPendingCell(false);
+        this.pendingCell = null;
+        return;
+      }
+
+      const key1 = cellKey(this.pendingCell.gIndex, this.pendingCell.row, this.pendingCell.col);
+      const key2 = cellKey(cell2.gIndex, cell2.row, cell2.col);
+      if (this.cellAssignments[key1] || this.cellAssignments[key2]) {
+        this.setMessage("Those cells are not both free.");
+        this.highlightPendingCell(false);
+        this.pendingCell = null;
+        return;
+      }
+
+      this.placeDomino(this.selectedDominoIndex, key1, key2);
+      this.highlightPendingCell(false);
+      this.pendingCell = null;
+    }
+  }
+
+  highlightPendingCell(on) {
+    const cells = document.querySelectorAll(".cell");
+    cells.forEach(cell => cell.classList.remove("selected"));
+
+    if (on && this.pendingCell) {
+      const selector = `.cell[data-g-index="${this.pendingCell.gIndex}"][data-row="${this.pendingCell.row}"][data-col="${this.pendingCell.col}"]`;
+      const cell = document.querySelector(selector);
+      if (cell) cell.classList.add("selected");
+    }
+  }
+
+  placeDomino(dominoIndex, key1, key2) {
+    const [a, b] = this.currentPuzzle.dominoPool[dominoIndex];
+
+    this.cellAssignments[key1] = { dominoIndex, halfIndex: 0 };
+    this.cellAssignments[key2] = { dominoIndex, halfIndex: 1 };
+    this.dominoUsed[dominoIndex] = true;
+    this.selectedDominoIndex = null;
+
+    this.updateBoardValues();
+    this.updateCellDisplay(key1);
+    this.updateCellDisplay(key2);
+    this.renderDominoPool();
+  }
+
+  removeDomino(dominoIndex) {
+    const keysToClear = [];
+    Object.keys(this.cellAssignments).forEach(k => {
+      if (this.cellAssignments[k].dominoIndex === dominoIndex) {
+        keysToClear.push(k);
+      }
+    });
+
+    keysToClear.forEach(k => delete this.cellAssignments[k]);
+
+    this.dominoUsed[dominoIndex] = false;
+    this.selectedDominoIndex = null;
+    this.pendingCell = null;
+    this.highlightPendingCell(false);
+
+    this.updateBoardValues();
+    keysToClear.forEach(k => this.updateCellDisplay(k));
+
+    this.renderDominoPool();
+  }
+
+  assignmentHalfValue(assignment) {
+    const domino = this.currentPuzzle.dominoPool[assignment.dominoIndex];
+    return assignment.halfIndex === 0 ? domino[0] : domino[1];
+  }
+
+  updateCellDisplay(key) {
+    const { gIndex, row, col } = parseCellKey(key);
+    const selector = `.cell[data-g-index="${gIndex}"][data-row="${row}"][data-col="${col}"]`;
+    const cell = document.querySelector(selector);
+    if (!cell) return;
+
     const label = cell.querySelector(".region-label");
 
-    // Clear the cell's contents
     cell.innerHTML = "";
+    if (label) cell.appendChild(label);
 
-    // Re‑insert the region label (the clue) if it existed
-    if (label) {
-      cell.appendChild(label);
-    }
-
-    // Now draw the domino value, if any
+    const assignment = this.cellAssignments[key];
     if (assignment) {
-      const numSpan = document.createElement("span");
-      numSpan.textContent = assignmentHalfValue(assignment);
-      numSpan.style.position = "absolute";
-      numSpan.style.left = "50%";
-      numSpan.style.top = "50%";
-      numSpan.style.transform = "translate(-50%, -50%)";
-      numSpan.style.fontSize = "18px";
-      numSpan.style.fontWeight = "bold";
-      cell.appendChild(numSpan);
-    }
-  });
-}
+      const [a, b] = this.currentPuzzle.dominoPool[assignment.dominoIndex];
+      const half = assignment.halfIndex === 0 ? a : b;
 
-function assignmentHalfValue(assignment) {
-  const domino = currentPuzzle.dominoPool[assignment.dominoIndex];
-  return assignment.halfIndex === 0 ? domino[0] : domino[1];
-}
-
-/* ---------------------------------------------------------
-   CHECKING
-   --------------------------------------------------------- */
-function checkPips() {
-  // 1) Every active cell must be filled
-  for (let gIndex = 0; gIndex < currentPuzzle.grids.length; gIndex++) {
-    const grid = currentPuzzle.grids[gIndex];
-    const activeSet = new Set(grid.activeCells);
-    for (let r = 0; r < grid.rows; r++) {
-      for (let c = 0; c < grid.cols; c++) {
-        const coord = `${r},${c}`;
-        if (!activeSet.has(coord)) continue;
-        const key = cellKey(gIndex, r, c);
-        if (!cellAssignments[key]) {
-          setMessage("Some cells are still empty.");
-          return;
-        }
-      }
+      const div = document.createElement("div");
+      div.className = "placed-domino";
+      div.textContent = half;
+      cell.appendChild(div);
     }
   }
 
-  // 2) Every domino must be used exactly once
-  for (let i = 0; i < currentPuzzle.dominoPool.length; i++) {
-    if (!dominoUsed[i]) {
-      setMessage("Not all dominoes have been used.");
-      return;
-    }
-    // ensure exactly two cells
-    let countCells = 0;
-    Object.values(cellAssignments).forEach(a => {
-      if (a.dominoIndex === i) countCells++;
+  updateBoardValues() {
+    const cells = document.querySelectorAll(".cell");
+
+    cells.forEach(cell => {
+      if (cell.classList.contains("inactive")) return;
+
+      const gIndex = parseInt(cell.dataset.gIndex, 10);
+      const row = parseInt(cell.dataset.row, 10);
+      const col = parseInt(cell.dataset.col, 10);
+      const key = cellKey(gIndex, row, col);
+      const assignment = this.cellAssignments[key];
+
+      const label = cell.querySelector(".region-label");
+      cell.innerHTML = "";
+      if (label) cell.appendChild(label);
+
+      if (assignment) {
+        const numSpan = document.createElement("span");
+        numSpan.textContent = this.assignmentHalfValue(assignment);
+        numSpan.style.position = "absolute";
+        numSpan.style.left = "50%";
+        numSpan.style.top = "50%";
+        numSpan.style.transform = "translate(-50%, -50%)";
+        numSpan.style.fontSize = "18px";
+        numSpan.style.fontWeight = "bold";
+        cell.appendChild(numSpan);
+      }
     });
-    if (countCells !== 2) {
-      setMessage("A domino is only partially placed.");
-      return;
-    }
   }
 
-  // 3) Check region rules
-  for (let gIndex = 0; gIndex < currentPuzzle.grids.length; gIndex++) {
-    const grid = currentPuzzle.grids[gIndex];
-    for (const region of grid.regions) {
-      const pips = [];
-      for (const coord of region.cells) {
-        const [r, c] = coord.split(",").map(Number);
-        const key = cellKey(gIndex, r, c);
-        const assignment = cellAssignments[key];
-        if (!assignment) {
-          setMessage("Some region cells are unfilled.");
-          return;
-        }
-        pips.push(assignmentHalfValue(assignment));
-      }
+  checkPips() {
+    if (!this.currentPuzzle) return;
 
-      if (!regionSatisfied(region.rule, pips)) {
-        setMessage(`A region rule is not satisfied (${region.id}).`);
+    // 1) Every active cell must be filled
+    for (let gIndex = 0; gIndex < this.currentPuzzle.grids.length; gIndex++) {
+      const grid = this.currentPuzzle.grids[gIndex];
+      const activeSet = new Set(grid.activeCells);
+      for (let r = 0; r < grid.rows; r++) {
+        for (let c = 0; c < grid.cols; c++) {
+          const coord = `${r},${c}`;
+          if (!activeSet.has(coord)) continue;
+          const key = cellKey(gIndex, r, c);
+          if (!this.cellAssignments[key]) {
+            this.setMessage("Some cells are still empty.");
+            return;
+          }
+        }
+      }
+    }
+
+    // 2) Every domino must be used exactly once
+    for (let i = 0; i < this.currentPuzzle.dominoPool.length; i++) {
+      if (!this.dominoUsed[i]) {
+        this.setMessage("Not all dominoes have been used.");
+        return;
+      }
+      let countCells = 0;
+      Object.values(this.cellAssignments).forEach(a => {
+        if (a.dominoIndex === i) countCells++;
+      });
+      if (countCells !== 2) {
+        this.setMessage("A domino is only partially placed.");
         return;
       }
     }
+
+    // 3) Check region rules
+    for (let gIndex = 0; gIndex < this.currentPuzzle.grids.length; gIndex++) {
+      const grid = this.currentPuzzle.grids[gIndex];
+      for (const region of grid.regions) {
+        const pips = [];
+        for (const coord of region.cells) {
+          const [r, c] = coord.split(",").map(Number);
+          const key = cellKey(gIndex, r, c);
+          const assignment = this.cellAssignments[key];
+          if (!assignment) {
+            this.setMessage("Some region cells are unfilled.");
+            return;
+          }
+          pips.push(this.assignmentHalfValue(assignment));
+        }
+
+        if (!this.regionSatisfied(region.rule, pips)) {
+          this.setMessage(`A region rule is not satisfied (${region.id}).`);
+          return;
+        }
+      }
+    }
+
+    this.setMessage("Beautiful! All dominoes placed and all regions satisfied.", "#1f7a1f");
   }
 
-  setMessage("Beautiful! All dominoes placed and all regions satisfied.", "#1f7a1f");
+  regionSatisfied(rule, pips) {
+    if (!rule) return false;
+
+    if (rule.type === "=") {
+      const total = pips.reduce((a, b) => a + b, 0);
+      return total === rule.value;
+    }
+
+    if (rule.type === "neq") {
+      const set = new Set(pips);
+      return set.size === pips.length;
+    }
+
+    if (rule.type === "<") {
+      return pips.every(v => v < rule.value);
+    }
+
+    if (rule.type === ">") {
+      return pips.every(v => v > rule.value);
+    }
+
+    return false;
+  }
 }
 
-function regionSatisfied(rule, pips) {
-  // Region sum rule: x
-  if (rule.type === "=") {
-    const total = pips.reduce((a, b) => a + b, 0);
-    return total === rule.value;
-  }
-
-  // All-different rule
-  if (rule.type === "neq") {
-    const set = new Set(pips);
-    return set.size === pips.length;
-  }
-
-  // Less-than rule
-  if (rule.type === "<") {
-    return pips.every(v => v < rule.value);
-  }
-
-  // Greater-than rule
-  if (rule.type === ">") {
-    return pips.every(v => v > rule.value);
-  }
-
-  return false;
-}
-  
 /* ---------------------------------------------------------
-   MISC
+   GLOBAL HOOKS / INIT
    --------------------------------------------------------- */
+let pipsGame = null;
+
 function setMessage(msg, color) {
-  const el = document.getElementById("message");
-  el.textContent = msg;
-  el.style.color = color || "#444";
+  if (pipsGame) {
+    pipsGame.setMessage(msg, color);
+  }
 }
 
 function newPipsPuzzle() {
-  const difficulty = document.getElementById("difficulty").value;
-  currentDifficulty = difficulty;
-  const pool = puzzles[difficulty];
-  if (!pool || pool.length === 0) {
-    setMessage("No puzzles defined for this difficulty yet.");
-    return;
+  if (pipsGame) {
+    pipsGame.newPuzzle();
   }
-  // For now, always use the first puzzle in that difficulty
-  currentPuzzle = pool[0];
-  renderPuzzle();
 }
 
-/* ---------------------------------------------------------
-   INIT
-   --------------------------------------------------------- */
-newPipsPuzzle();
-</script>
+function checkPips() {
+  if (pipsGame) {
+    pipsGame.checkPips();
+  }
+}
 
+document.addEventListener("DOMContentLoaded", () => {
+  // `puzzles` is assumed to be defined globally as before
+  pipsGame = new PipsGame(puzzles);
+  pipsGame.newPuzzle();
+});
+</script>
 </body>
 </html>
