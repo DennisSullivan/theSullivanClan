@@ -1046,31 +1046,27 @@ function updateCellDisplay(key) {
 function regionRuleLabel(rule) {
   if (!rule) return "";
 
-  // sum = x
-  if (rule.sum !== undefined) {
-    return String(rule.sum);
+  // Equality: type "=" with a value
+  if (rule.type === "=" && rule.value !== undefined) {
+    return "=" + String(rule.value);
   }
 
-  // all identical
-  if (rule["="] !== undefined) {
-    return "=";
+  // Less-than: type "<" with a value
+  if (rule.type === "<" && rule.value !== undefined) {
+    return "<" + String(rule.value);
   }
 
-  // sum < x
-  if (rule["<"] !== undefined) {
-    return "<" + String(rule["<"]);
+  // Greater-than: type ">" with a value
+  if (rule.type === ">" && rule.value !== undefined) {
+    return ">" + String(rule.value);
   }
 
-  // sum > x
-  if (rule[">"] !== undefined) {
-    return ">" + String(rule[">"]);
-  }
-
-  // all different
-  if (rule.neq !== undefined) {
+  // All different: type "neq"
+  if (rule.type === "neq") {
     return "≠";
   }
 
+  // Fallback for unknown formats
   return "";
 }
 
