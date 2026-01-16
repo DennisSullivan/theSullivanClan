@@ -666,9 +666,9 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
 
     placed.push(chosen);
 
-    // -------------------------------
+    // ------------------------------------
     // 🔍 DIAGNOSTIC: compute and log label
-    // -------------------------------
+    // ------------------------------------
     let label = null;
 
     if (typeof regionRuleLabel === "function") {
@@ -677,22 +677,23 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
       label = region.rule;
     }
 
-    console.log("Badge label check:", {
-      region,
-      rule: region.rule,
-      computedLabel: label,
-      labelType: typeof label
-    });
+    console.log("──────────── Badge Diagnostic ────────────");
+    console.log("Region ID:", region.id);
+    console.log("Rule object:", JSON.stringify(region.rule, null, 2));
+    console.log("Computed label:", label);
+    console.log("Label RAW:", JSON.stringify(label));   // ← shows whitespace/newlines
+    console.log("Label type:", typeof label);
+    console.log("──────────────────────────────────────────");
 
     // Prevent collapse if label is missing
     if (label == null || String(label).trim() === "") {
-      console.warn("⚠️ Missing badge text for region:", region);
+      console.warn("⚠️ Missing badge text for region:", region.id);
       label = "??";
     }
 
-    // -------------------------------
+    // ------------------------------------
     // Create badge
-    // -------------------------------
+    // ------------------------------------
     const badge = document.createElement("div");
     badge.className = "region-badge";
     badge.style.left = chosen.left + "px";
@@ -771,7 +772,7 @@ function darkenColor(color, factor) {
   }
 
   const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-  console.log('[darkenColor] HSL before adjust:', hsl);
+
 
   // --- NEW STRATEGY ---
   // Boost saturation to avoid gray
@@ -780,7 +781,7 @@ function darkenColor(color, factor) {
   // Reduce lightness only slightly
   hsl.l = Math.max(0, hsl.l - factor * 0.25);
 
-  console.log('[darkenColor] HSL after adjust:', hsl);
+ console.log('[darkenColor] HSL after adjust:', hsl);
 
   // --- Convert HSL → RGB ---
   function hslToRgb(h, s, l) {
