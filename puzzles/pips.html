@@ -819,12 +819,44 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
   regions.forEach(region => {
     const box = region.boundingBox;
 
-    const candidates = [
-      { x: box.x,             y: box.y },
-      { x: box.x + box.width, y: box.y },
-      { x: box.x,             y: box.y + box.height },
-      { x: box.x + box.width, y: box.y + box.height }
+    // Build candidate anchor cells: corners of the region that are REAL cells
+    const cellSet = new Set(region.cells);
+
+    // Compute min/max row/col from the region itself
+    let minRow = Infinity, maxRow = -Infinity;
+    let minCol = Infinity, maxCol = -Infinity;
+    region.cells.forEach(cell => {
+      const [r, c] = cell.split(",").map(Number);
+      minRow = Math.min(minRow, r);
+      maxRow = Math.max(maxRow, r);
+      minCol = Math.min(minCol, c);
+      maxCol = Math.max(maxCol, c);
+    });
+
+    const cornerCoords = [
+      { r: minRow, c: minCol }, // top-left
+      { r: minRow, c: maxCol }, // top-right
+      { r: maxRow, c: minCol }, // bottom-left
+      { r: maxRow, c: maxCol }  // bottom-right
     ];
+
+    // Only keep corners that are actually part of the region
+    const anchorCells = cornerCoords.filter(cc =>
+      cellSet.has(`${cc.r},${cc.c}`)
+    );
+
+    // Fallback: if none of the corners are region cells (weird shape),
+    // just use the first cell in the region.
+    if (anchorCells.length === 0 && region.cells.length > 0) {
+      const [r, c] = region.cells[0].split(",").map(Number);
+      anchorCells.push({ r, c });
+    }
+
+    const candidates = anchorCells.map(cc => {
+      const x = cc.c * cellSize;
+      const y = cc.r * cellSize;
+      return { x, y };
+    });
 
     let chosen = null;
 
@@ -852,6 +884,7 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
       }
     }
 
+    // If all anchors overlapped, just tuck it near the bounding box
     if (!chosen) {
       chosen = {
         left: box.x - 6,
