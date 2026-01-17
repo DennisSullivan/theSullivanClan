@@ -1289,42 +1289,6 @@ const STANDARD_DOMINO_SET = [
   [6,6]
 ];
 
-function chooseDominoPool(rng, count, difficulty) {
-  let candidates = STANDARD_DOMINO_SET.slice();
-
-  if (difficulty === "easy") {
-    candidates = candidates.filter(([a,b]) => a <= 4 && b <= 4);
-  }
-
-  if (difficulty === "hard") {
-    candidates = candidates.flatMap(tile => {
-      const [a,b] = tile;
-      const high = Math.max(a,b);
-      const weight = (high >= 5 ? 3 : 1) + (a === b ? 1 : 0);
-      return Array(weight).fill(tile);
-    });
-  }
-
-  for (let i = candidates.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-  }
-
-  const pool = [];
-  const used = new Set();
-
-  for (const tile of candidates) {
-    const key = tile.join(",");
-    if (!used.has(key)) {
-      pool.push(tile);
-      used.add(key);
-      if (pool.length === count) break;
-    }
-  }
-
-  return pool;
-}
-
 function generateDominoTiling(grids, dominoPool, rng) {
   const tiling = [];
   const used = new Set();
