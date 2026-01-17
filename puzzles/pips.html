@@ -6,6 +6,12 @@
 <title>Pips • SullivanClan</title>
 
 <style>
+ .region-edge {
+   position: absolute;
+   background-color: black;
+   pointer-events: none;
+ }
+
  .badge-layer {
     position: absolute;
     inset: 0;
@@ -308,6 +314,61 @@ let pendingCell = null; // first cell clicked when placing
 /* ---------------------------------------------------------
    HELPERS (pure functions)
    --------------------------------------------------------- */
+function drawRegionLine(overlay, x1, y1, x2, y2) {
+  const line = document.createElement("div");
+  line.className = "region-edge";
+
+  const left = Math.min(x1, x2);
+  const top = Math.min(y1, y2);
+  const width = Math.abs(x2 - x1) || 2;   // vertical line
+  const height = Math.abs(y2 - y1) || 2;  // horizontal line
+
+  line.style.left = `${left}px`;
+  line.style.top = `${top}px`;
+  line.style.width = `${width}px`;
+  line.style.height = `${height}px`;
+
+  overlay.appendChild(line);
+}
+ 
+function drawRegionOutline(region, cellSize, overlay) {
+  const cellSet = new Set(region.cells); // "r,c" strings
+
+  region.cells.forEach(cell => {
+    const [r, c] = cell.split(",").map(Number);
+
+    const x = c * cellSize;
+    const y = r * cellSize;
+
+    const neighbors = {
+      top:    `${r-1},${c}`,
+      bottom: `${r+1},${c}`,
+      left:   `${r},${c-1}`,
+      right:  `${r},${c+1}`
+    };
+
+    // Top edge
+    if (!cellSet.has(neighbors.top)) {
+      drawRegionLine(overlay, x, y, x + cellSize, y);
+    }
+
+    // Bottom edge
+    if (!cellSet.has(neighbors.bottom)) {
+      drawRegionLine(overlay, x, y + cellSize, x + cellSize, y + cellSize);
+    }
+
+    // Left edge
+    if (!cellSet.has(neighbors.left)) {
+      drawRegionLine(overlay, x, y, x, y + cellSize);
+    }
+
+    // Right edge
+    if (!cellSet.has(neighbors.right)) {
+      drawRegionLine(overlay, x + cellSize, y, x + cellSize, y + cellSize);
+    }
+  });
+}
+ 
 function cellKey(gIndex, r, c) {
   return gIndex + ":" + r + ":" + c;
 }
@@ -729,6 +790,7 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
   });
 }
 
+// No longer used.
 function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
   overlayEl.innerHTML = "";
 
@@ -890,7 +952,9 @@ console.log("Rendering puzzle:", this.currentPuzzle);
       const cellSize = sampleCell ? sampleCell.offsetWidth : 40;
 
       computeRegionBoundingBoxes(grid, cellSize);
-      renderRegionBadges(grid, gIndex, cellSize, overlay);
+      grid.regions.forEach(region => {
+        drawRegionOutline(region, cellSize, overlay);
+      });
     };
 
     const tasks = [];
