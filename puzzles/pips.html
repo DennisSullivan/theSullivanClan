@@ -1420,29 +1420,34 @@ function generateRegions(grids, tiling, rng, difficulty) {
       }
     }
 
-// Flatten region cells and record grid index
-const cells = [];
-let gIndex = null;
-
-regionDominos.forEach(dom => {
-  dom.cells.forEach(c => {
-    if (gIndex === null) gIndex = c.g;
-    cells.push(`${c.r},${c.c}`);
+  // Flatten region cells and record grid index
+  const cells = [];
+  let gIndex = null;
+  
+  regionDominos.forEach(dom => {
+    dom.cells.forEach(c => {
+      if (gIndex === null) gIndex = c.g;
+      cells.push(`${c.r},${c.c}`);
+    });
   });
-});
 
-// Skip empty or invalid regions
-if (cells.length === 0 || gIndex === null || !grids[gIndex]) {
-  continue;
-}
-
-const color = randomPastelColor(rng);
-
-regions.push({
-  color,
-  cells,
-  gIndex
- });
+  // Skip empty or invalid regions
+  if (
+    regionDominos.length === 0 ||
+    cells.length === 0 ||
+    gIndex === null ||
+    !grids[gIndex]
+  ) {
+    continue;
+  }
+  
+  const color = randomPastelColor(rng);
+  
+  regions.push({
+    color,
+    cells,
+    gIndex
+  });
  }   // closes the for-loop
  
  return regions;
