@@ -325,98 +325,21 @@ function isAdjacent(cellA, cellB) {
 }
 
 /**
- * Darkens a CSS color string by the given factor.
- * Supports: rgb(), rgba(), #rgb, #rrggbb
+ * Darkens a CSS color string 
  */
-function darkenColor(color, factor) {
-  if (typeof factor !== "number" || isNaN(factor)) {
-    factor = 0.2;
-  }
+function darkenColor(rgbString, amount = 10) {
+  // rgbString is like "rgb(200,180,220)"
+  const match = rgbString.match(/rgb\((\d+),(\d+),(\d+)\)/);
+  if (!match) return rgbString;
 
-  function parseColor(c) {
-    let r, g, b, a = 1;
+  let [_, r, g, b] = match.map(Number);
 
-    const rgbMatch = c.match(/^rgba?\(([^)]+)\)$/);
-    if (rgbMatch) {
-      const parts = rgbMatch[1].split(",").map(x => x.trim());
-      r = parseFloat(parts[0]);
-      g = parseFloat(parts[1]);
-      b = parseFloat(parts[2]);
-      if (parts[3]) a = parseFloat(parts[3]);
-      return { r, g, b, a };
-    }
+  // darken by reducing each channel
+  r = Math.max(0, r - amount);
+  g = Math.max(0, g - amount);
+  b = Math.max(0, b - amount);
 
-    const hexMatch = c.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-    if (hexMatch) {
-      let hex = hexMatch[1];
-      if (hex.length === 3) {
-        hex = hex.split("").map(ch => ch + ch).join("");
-      }
-      r = parseInt(hex.substring(0, 2), 16);
-      g = parseInt(hex.substring(2, 4), 16);
-      b = parseInt(hex.substring(4, 6), 16);
-      return { r, g, b, a };
-    }
-
-    return null;
-  }
-
-  const rgb = parseColor(color);
-  if (!rgb) return color;
-
-  function rgbToHsl(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h, s, l = (max + min) / 2;
-
-    if (max === min) {
-      h = s = 0;
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
-        case g: h = ((b - r) / d + 2); break;
-        case b: h = ((r - g) / d + 4); break;
-      }
-      h /= 6;
-    }
-
-    return { h, s, l };
-  }
-
-  function hslToRgb(h, s, l) {
-    let r, g, b;
-
-    if (s === 0) {
-      r = g = b = l;
-    } else {
-      const hue2rgb = (p, q, t) => {
-        if (t < 0) t += 1;
-        if (t > 1) t -= 1;
-        if (t < 1 / 6) return p + (q - p) * 6 * t;
-        if (t < 1 / 2) return q;
-        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-        return p;
-      };
-
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-
-      r = hue2rgb(p, q, h + 1 / 3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1 / 3);
-    }
-
-    return {
-      r: Math.round(r * 255),
-      g: Math.round(g * 255),
-      b: Math.round(b * 255)
-    };
-  }
-
-  const outRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
-  return `rgba(${outRgb.r}, ${outRgb.g}, ${outRgb.b}, ${rgb.a})`;
+  return `rgb(${r},${g},${b})`;
 }
 
 function computeRegionBoundingBoxes(grid, cellSize) {
@@ -509,21 +432,25 @@ function generatePipsPuzzle(seed, difficulty) {
 // Choose a domino pool of size `count`
 // Difficulty affects weighting
 // ---------------------------------------------------------
-function chooseDominoPool(rng, count, difficulty) {
+function chooseDominoPool(rng, dominoCount, difficulty) {
+  // Start from the full double-six set
   let candidates = STANDARD_DOMINO_SET.slice();
 
-  // Difficulty-based filtering or weighting
+  // Difficulty filtering / weighting
   if (difficulty === "easy") {
-    // Avoid high numbers and too many doubles
-    candidates = candidates.filter(([a,b]) => a <= 4 && b <= 4);
+    // Avoid high numbers and doubles
+    candidates = candidates.filter(([a, b]) => {
+      const high = Math.max(a, b);
+      return high <= 4 && a !== b;
+    });
   }
 
   if (difficulty === "hard") {
     // Weight toward high numbers and doubles
     candidates = candidates.flatMap(tile => {
-      const [a,b] = tile;
-      const high = Math.max(a,b);
-      const weight = (high >= 5 ? 3 : 1) + (a === b ? 1 : 0);
+      const [a, b] = tile;
+      const high = Math.max(a, b);
+      const weight = (high >= 5 ? 3 : 1) + (a === b ? 2 : 0);
       return Array(weight).fill(tile);
     });
   }
@@ -534,7 +461,7 @@ function chooseDominoPool(rng, count, difficulty) {
     [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
   }
 
-  // Select unique tiles until we reach the required count
+  // Select unique tiles until we reach dominoCount
   const pool = [];
   const used = new Set();
 
@@ -543,13 +470,31 @@ function chooseDominoPool(rng, count, difficulty) {
     if (!used.has(key)) {
       pool.push(tile);
       used.add(key);
-      if (pool.length === count) break;
+      if (pool.length === dominoCount) break;
+    }
+  }
+
+  // Fallback: if difficulty filtering removed too many tiles,
+  // fill remaining slots from the full set.
+  if (pool.length < dominoCount) {
+    const fallback = STANDARD_DOMINO_SET.slice();
+    for (let i = fallback.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [fallback[i], fallback[j]] = [fallback[j], fallback[i]];
+    }
+    for (const tile of fallback) {
+      const key = tile.join(",");
+      if (!used.has(key)) {
+        pool.push(tile);
+        used.add(key);
+        if (pool.length === dominoCount) break;
+      }
     }
   }
 
   return pool;
 }
- 
+
 function generateDominoTiling(grids, dominoPool, rng) {
   const tiling = [];
   const used = new Set();
