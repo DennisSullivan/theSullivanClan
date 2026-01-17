@@ -128,23 +128,12 @@
       justify-content: center;
     }
     
-    .domino {
-      width: calc(var(--cell-size) * 2 + var(--cell-gap));
-      height: var(--cell-size);
-      background: var(--domino-bg);
-      border: 2px solid var(--domino-border);
-      border-radius: var(--radius);
-      display: flex;
-      align-items: center;
-      justify-content: space-evenly;
-      box-shadow: 0 2px 4px var(--domino-shadow);
-      cursor: grab;
-      user-select: none;
-      transition: transform 0.15s ease;
-    }
+    /* ============================================================
+       DOMINO TILE — COMPLETE REPLACEMENT BLOCK
+       ============================================================ */
     
-    /* Domino matches puzzle cell size exactly */
     .domino {
+      position: relative; /* required for center line */
       width: calc(var(--cell-size) * 2 + var(--cell-gap));
       height: var(--cell-size);
       background: var(--domino-bg);
@@ -165,11 +154,47 @@
       height: calc(var(--cell-size) * 2 + var(--cell-gap));
       flex-direction: column;
     }
-      
-    /* Pips inside dominos */
+    
+    /* Center dividing line */
+    .domino::after {
+      content: "";
+      position: absolute;
+      background: var(--domino-border);
+      opacity: 0.8;
+    }
+    
+    /* Horizontal dominos: vertical line */
+    .domino:not(.vertical)::after {
+      width: 2px;
+      height: 80%;
+      left: 50%;
+      top: 10%;
+      transform: translateX(-1px);
+    }
+    
+    /* Vertical dominos: horizontal line */
+    .domino.vertical::after {
+      height: 2px;
+      width: 80%;
+      top: 50%;
+      left: 10%;
+      transform: translateY(-1px);
+    }
+    
+    /* Pip group alignment */
+    .pip-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      width: calc(var(--cell-size) - 12px);
+      height: calc(var(--cell-size) - 12px);
+      place-items: center;
+    }
+    
+    /* Pip size */
     .pip {
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       background: var(--line);
       border-radius: 50%;
     }
