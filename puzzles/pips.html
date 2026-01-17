@@ -834,6 +834,8 @@ console.log("Rendering puzzle:", this.currentPuzzle);
       grid.regions.forEach(region => {
         drawRegionOutline(region, cellSize, overlay);
       });
+      // Draw region badges
+      placeRegionBadges(grid.regions, cellSize, badgeLayer);
     };
 
     const tasks = [];
