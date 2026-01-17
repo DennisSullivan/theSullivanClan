@@ -181,13 +181,17 @@
       transform: translateY(-1px);
     }
     
-    /* Pip group alignment (smaller interior box) */
+    /* Tighter pip group — smaller box, centered */
     .pip-group {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
-      width: calc(var(--cell-size) - 18px);
-      height: calc(var(--cell-size) - 18px);
+    
+      /* Shrink the interior box so pips cluster inward */
+      width: calc(var(--cell-size) - 26px);
+      height: calc(var(--cell-size) - 26px);
+    
+      margin: auto; /* centers the pip group inside each half */
       place-items: center;
     }
     
@@ -580,7 +584,8 @@
       
         // Snap to the actual cell’s pixel position
         const targetRect = bestCell.getBoundingClientRect();
-      
+        
+        // Align the domino’s top-left corner to the cell’s top-left corner
         domino.style.left = `${targetRect.left}px`;
         domino.style.top = `${targetRect.top}px`;
         domino.classList.add("domino-placed");
