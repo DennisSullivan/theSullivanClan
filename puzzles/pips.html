@@ -836,7 +836,8 @@ console.log("Rendering puzzle:", this.currentPuzzle);
       board.appendChild(overlay);
 
       const boardRect = board.getBoundingClientRect();
-      const cellSize = boardRect.width / grid.cols;
+      const border = 2; // .board { border: 2px solid ... }
+      const cellSize = (boardRect.width - border * 2) / grid.cols;
      
       computeRegionBoundingBoxes(grid, cellSize);
       grid.regions.forEach(region => {
