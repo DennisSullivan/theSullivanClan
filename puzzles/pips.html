@@ -1335,11 +1335,11 @@ function generatePipsPuzzle(seed, difficulty) {
 
   // Step 5: generate regions
   let regions = generateRegions(grids, tiling, rng, difficulty);
-
-  // Step 6: assign rules to regions
-  regions = assignRegionRules(regions, tiling, rng, difficulty);
-
-  // --- Step 8C: Attach regions to their grids ---
+  
+  // Assign rules directly into the same region objects
+  assignRegionRules(regions, tiling, rng, difficulty);
+  
+  // NOW attach regions to grids
   regions.forEach(region => {
     grids[region.gIndex].regions.push(region);
   });
