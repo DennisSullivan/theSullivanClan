@@ -444,51 +444,6 @@ function regionRuleLabel(rule) {
   return "";
 }
 
-function generatePipsPuzzle(seed, difficulty) {
-  // Step 1: grids
-  const grids = generateGrids(rng, difficulty);
-
-  // Step 2: count active cells
-  const activeCellCount = countActiveCells(grids);
-  const dominoCount = activeCellCount / 2;
-
-  // Step 3: choose domino pool
-  const dominoPool = chooseDominoPool(rng, dominoCount, difficulty);
-
-  // Step 4: generate tiling
-  let tiling = generateDominoTiling(grids, dominoPool, rng);
-
-  // Step 7: assign pip values to each domino
-  tiling = assignPipValues(tiling, dominoPool, rng);
-
-  // Step 5: generate regions
-  let regions = generateRegions(grids, tiling, rng, difficulty);
-
-  // Step 6: assign rules to regions
-  regions = assignRegionRules(regions, tiling, rng, difficulty);
-
-  // --- Step 8C: Attach regions to their grids ---
-  grids.forEach(grid => {
-    grid.regions = [];
-  });
-
-  regions.forEach(region => {
-    // All cells in a region belong to the same grid
-    const firstCell = region.cells[0];
-    const [gIndex] = firstCell.split(",").map(Number);
-    grids[gIndex].regions.push(region);
-  });
-
-  // Final puzzle object (matches your renderer)
-  return {
-    seed,
-    difficulty,
-    grids,        // each grid now has grid.regions
-    dominoPool,   // the tiles used
-    tiling        // for debugging or future features
-  };
-}
-
 // ---------------------------------------------------------
 // Choose a domino pool of size `count`
 // Difficulty affects weighting
@@ -555,82 +510,6 @@ function chooseDominoPool(rng, dominoCount, difficulty) {
   return pool;
 }
 
-function generateDominoTiling(grids, dominoPool, rng) {
-  const tiling = [];
-  const used = new Set();
-
-  // Collect all active cells across all grids
-  const cells = [];
-  grids.forEach((grid, gIndex) => {
-    grid.cells.forEach((row, r) => {
-      row.forEach((active, c) => {
-        if (active) cells.push({ gIndex, r, c });
-      });
-    });
-  });
-
-  // Shuffle cells with seeded RNG
-  for (let i = cells.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [cells[i], cells[j]] = [cells[j], cells[i]];
-  }
-
-  // Helper to check if a cell is used
-  const key = (g, r, c) => `${g},${r},${c}`;
-
-  // Try to pair cells
-  for (const cell of cells) {
-    const k = key(cell.gIndex, cell.r, cell.c);
-    if (used.has(k)) continue;
-
-    // Find neighbors
-    const neighbors = [
-      { g: cell.gIndex, r: cell.r - 1, c: cell.c },
-      { g: cell.gIndex, r: cell.r + 1, c: cell.c },
-      { g: cell.gIndex, r: cell.r,     c: cell.c - 1 },
-      { g: cell.gIndex, r: cell.r,     c: cell.c + 1 }
-    ];
-
-    // Shuffle neighbors
-    for (let i = neighbors.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [neighbors[i], neighbors[j]] = [neighbors[j], neighbors[i]];
-    }
-
-    // Try to pair with a neighbor
-    let paired = false;
-    for (const n of neighbors) {
-      const nk = key(n.g, n.r, n.c);
-
-      // Check bounds and active status
-      const grid = grids[n.g];
-      if (!grid) continue;
-      if (!grid.cells[n.r] || !grid.cells[n.r][n.c]) continue;
-
-      if (!used.has(nk)) {
-        // Pair them
-        tiling.push({
-          cells: [
-            { g: cell.gIndex, r: cell.r, c: cell.c },
-            { g: n.g,         r: n.r,    c: n.c }
-          ]
-        });
-        used.add(k);
-        used.add(nk);
-        paired = true;
-        break;
-      }
-    }
-
-    // If we couldn't pair this cell, restart tiling
-    if (!paired) {
-      return generateDominoTiling(grids, dominoPool, rng);
-    }
-  }
-
-  return tiling;
-}
- 
 function drawRegionPerimeter(region, cellSize, overlayEl) {
   const cellSet = new Set(region.cells);
 
@@ -1541,18 +1420,24 @@ function generateRegions(grids, tiling, rng, difficulty) {
       }
     }
 
-    // Flatten region cells
+    // Flatten region cells and record which grid they belong to
     const cells = [];
+    let gIndex = null;
+    
     region.forEach(dom => {
-      dom.cells.forEach(c => cells.push(`${c.g},${c.r},${c.c}`));
+      dom.cells.forEach(c => {
+        if (gIndex === null) gIndex = c.g;      // all cells in this region share the same g
+        cells.push(`${c.r},${c.c}`);           // store as "r,c"
+      });
     });
-
+    
     // Assign a random color
     const color = randomPastelColor(rng);
-
+    
     regions.push({
       color,
-      cells
+      cells,
+      gIndex
     });
   }
 
