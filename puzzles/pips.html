@@ -1204,13 +1204,22 @@ const HARD_GRIDS = [
 ];
 
 function generateGrids(rng, difficulty) {
+  let base;
+
   if (difficulty === "easy") {
-    return JSON.parse(JSON.stringify(EASY_GRIDS));
+    base = JSON.parse(JSON.stringify(EASY_GRIDS));
+  } else if (difficulty === "medium") {
+    base = JSON.parse(JSON.stringify(MEDIUM_GRIDS));
+  } else {
+    base = JSON.parse(JSON.stringify(HARD_GRIDS));
   }
-  if (difficulty === "medium") {
-    return JSON.parse(JSON.stringify(MEDIUM_GRIDS));
-  }
-  return JSON.parse(JSON.stringify(HARD_GRIDS));
+
+  // Ensure each grid has a regions array
+  base.forEach(grid => {
+    grid.regions = [];
+  });
+
+  return base;
 }
 
 function countActiveCells(grids) {
