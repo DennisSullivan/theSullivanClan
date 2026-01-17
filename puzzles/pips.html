@@ -181,20 +181,20 @@
       transform: translateY(-1px);
     }
     
-    /* Pip group alignment */
+    /* Pip group alignment (smaller interior box) */
     .pip-group {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
-      width: calc(var(--cell-size) - 12px);
-      height: calc(var(--cell-size) - 12px);
+      width: calc(var(--cell-size) - 18px);
+      height: calc(var(--cell-size) - 18px);
       place-items: center;
     }
     
-    /* Pip size */
+    /* Smaller pips */
     .pip {
-      width: 12px;
-      height: 12px;
+      width: 8px;
+      height: 8px;
       background: var(--line);
       border-radius: 50%;
     }
@@ -485,10 +485,15 @@
         e.preventDefault();
       
         activeDomino = e.currentTarget;
-        activeDomino.style.position = "absolute";
-        activeDomino.style.zIndex = 1000;
       
         const rect = activeDomino.getBoundingClientRect();
+      
+        // Convert current screen position into absolute coordinates
+        activeDomino.style.position = "absolute";
+        activeDomino.style.left = `${rect.left}px`;
+        activeDomino.style.top = `${rect.top}px`;
+        activeDomino.style.zIndex = 1000;
+      
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
@@ -497,7 +502,7 @@
       
         highlightPossibleCells(activeDomino);
       }
-      
+    
       /* ------------------------------
          DRAG MOVEMENT
          ------------------------------ */
@@ -535,38 +540,30 @@
       /* ============================================================
          PLACEMENT LOGIC
          ============================================================ */
-      
       function tryPlaceDomino(domino) {
-        const grid = document.getElementById("pips-grid");
-        const gridRect = grid.getBoundingClientRect();
         const domRect = domino.getBoundingClientRect();
       
-        const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-        const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-        const step = cellSize + cellGap;
-      
-        // Compute top-left cell index
-        // Find nearest cell by checking actual DOM positions
+        // Find nearest cell center
         let bestCell = null;
         let bestDist = Infinity;
-        
+      
         document.querySelectorAll(".pips-cell").forEach(cell => {
           const rect = cell.getBoundingClientRect();
           const cx = rect.left + rect.width / 2;
           const cy = rect.top + rect.height / 2;
-        
-          const dx = domRect.left + domRect.width / 2 - cx;
-          const dy = domRect.top + domRect.height / 2 - cy;
-          const dist = dx*dx + dy*dy;
-        
+      
+          const dx = (domRect.left + domRect.width / 2) - cx;
+          const dy = (domRect.top + domRect.height / 2) - cy;
+          const dist = dx * dx + dy * dy;
+      
           if (dist < bestDist) {
             bestDist = dist;
             bestCell = cell;
           }
         });
-        
+      
         if (!bestCell) return false;
-        
+      
         const row = parseInt(bestCell.dataset.row, 10);
         const col = parseInt(bestCell.dataset.col, 10);
       
@@ -576,24 +573,21 @@
           ? [ [row, col], [row + 1, col] ]
           : [ [row, col], [row, col + 1] ];
       
-        // Validate placement
-        if (!cells.every(([r, c]) => isValidCell(r, c))) {
+        if (!cells.every(([r, c]) => document.getElementById(`cell-${r}-${c}`))) {
           flashInvalid(domino);
           return false;
         }
       
-        // Snap into place
-        const [r0, c0] = cells[0];
-        const x = c0 * step;
-        const y = r0 * step;
+        // Snap to the actual cell’s pixel position
+        const targetRect = bestCell.getBoundingClientRect();
       
-        domino.style.left = `${gridRect.left + x}px`;
-        domino.style.top = `${gridRect.top + y}px`;
+        domino.style.left = `${targetRect.left}px`;
+        domino.style.top = `${targetRect.top}px`;
         domino.classList.add("domino-placed");
       
         return true;
       }
-      
+
       /* ------------------------------
          VALIDATION HELPERS
          ------------------------------ */
