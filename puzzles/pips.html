@@ -816,21 +816,20 @@ function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
    PIPS GAME CLASS
    --------------------------------------------------------- */
 class PipsGame {
-  constructor(puzzles) {
-    this.puzzles = puzzles;
+  constructor() {
     this.currentPuzzle = null;
     this.currentDifficulty = "easy";
-
+  
     this.cellAssignments = {};
     this.dominoUsed = [];
     this.selectedDominoIndex = null;
     this.pendingCell = null;
-
+  
     this.boardsContainer = document.getElementById("boards");
     this.poolDiv = document.getElementById("domino-pool");
     this.messageEl = document.getElementById("message");
     this.difficultySelect = document.getElementById("difficulty");
-
+  
     this.handleDominoClick = this.handleDominoClick.bind(this);
     this.handleCellClick = this.handleCellClick.bind(this);
   }
@@ -1662,8 +1661,7 @@ function checkPips() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // `puzzles` is assumed to be defined globally as before
-  pipsGame = new PipsGame(puzzles);
+  pipsGame = new PipsGame();
   pipsGame.newPuzzle();
 });
 </script>
