@@ -1420,25 +1420,26 @@ function generateRegions(grids, tiling, rng, difficulty) {
       }
     }
 
-// Flatten region cells and record which grid they belong to
-const cells = [];
-let gIndex = null;
-
-region.forEach(dom => {
-  dom.cells.forEach(c => {
-    if (gIndex === null) gIndex = c.g;   // all cells in region share same grid
-    cells.push(`${c.r},${c.c}`);         // store as "r,c"
-  });
-});
-
-// Assign a random color
-const color = randomPastelColor(rng);
-
-regions.push({
-  color,
-  cells,
-  gIndex
-});
+ // Flatten region cells and record which grid they belong to
+ const cells = [];
+ let gIndex = null;
+ 
+ region.forEach(dom => {
+   dom.cells.forEach(c => {
+     if (gIndex === null) gIndex = c.g;   // all cells in region share same grid
+     cells.push(`${c.r},${c.c}`);         // store as "r,c"
+   });
+ });
+ 
+ // Assign a random color
+ const color = randomPastelColor(rng);
+ 
+ regions.push({
+   color,
+   cells,
+   gIndex
+ });
+}
 
 // Helper for region colors
 function randomPastelColor(rng) {
