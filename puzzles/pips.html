@@ -1386,14 +1386,15 @@ function generateDominoTiling(grids, dominoPool, rng) {
   const used = new Set();
   const cells = [];
 
+  // Collect all active cells from all grids
   grids.forEach((grid, gIndex) => {
-    grid.cells.forEach((row, r) => {
-      row.forEach((active, c) => {
-        if (active) cells.push({ gIndex, r, c });
-      });
+    grid.activeCells.forEach(coord => {
+      const [r, c] = coord.split(",").map(Number);
+      cells.push({ gIndex, r, c });
     });
   });
 
+  // Shuffle cells
   for (let i = cells.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [cells[i], cells[j]] = [cells[j], cells[i]];
@@ -1412,17 +1413,22 @@ function generateDominoTiling(grids, dominoPool, rng) {
       { g: cell.gIndex, r: cell.r,     c: cell.c + 1 }
     ];
 
+    // Shuffle neighbors
     for (let i = neighbors.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
       [neighbors[i], neighbors[j]] = [neighbors[j], neighbors[i]];
     }
 
     let paired = false;
+
     for (const n of neighbors) {
       const nk = key(n.g, n.r, n.c);
       const grid = grids[n.g];
       if (!grid) continue;
-      if (!grid.cells[n.r] || !grid.cells[n.r][n.c]) continue;
+
+      // Check if neighbor is active
+      if (!grid.activeCells.includes(`${n.r},${n.c}`)) continue;
+
       if (!used.has(nk)) {
         tiling.push({
           cells: [
@@ -1438,6 +1444,7 @@ function generateDominoTiling(grids, dominoPool, rng) {
     }
 
     if (!paired) {
+      // Restart tiling if we get stuck
       return generateDominoTiling(grids, dominoPool, rng);
     }
   }
