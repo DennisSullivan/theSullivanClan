@@ -1329,8 +1329,8 @@ function generatePipsPuzzle(seed, difficulty) {
   regions = assignRegionRules(regions, tiling, rng, difficulty);
 
   // --- Step 8C: Attach regions to their grids ---
-  grids.forEach(grid => {
-    grid.regions = [];
+  regions.forEach(region => {
+    grids[region.gIndex].regions.push(region);
   });
 
   regions.forEach(region => {
@@ -1420,29 +1420,25 @@ function generateRegions(grids, tiling, rng, difficulty) {
       }
     }
 
-    // Flatten region cells and record which grid they belong to
-    const cells = [];
-    let gIndex = null;
-    
-    region.forEach(dom => {
-      dom.cells.forEach(c => {
-        if (gIndex === null) gIndex = c.g;      // all cells in this region share the same g
-        cells.push(`${c.r},${c.c}`);           // store as "r,c"
-      });
-    });
-    
-    // Assign a random color
-    const color = randomPastelColor(rng);
-    
-    regions.push({
-      color,
-      cells,
-      gIndex
-    });
-  }
+// Flatten region cells and record which grid they belong to
+const cells = [];
+let gIndex = null;
 
-  return regions;
-}
+region.forEach(dom => {
+  dom.cells.forEach(c => {
+    if (gIndex === null) gIndex = c.g;   // all cells in region share same grid
+    cells.push(`${c.r},${c.c}`);         // store as "r,c"
+  });
+});
+
+// Assign a random color
+const color = randomPastelColor(rng);
+
+regions.push({
+  color,
+  cells,
+  gIndex
+});
 
 // Helper for region colors
 function randomPastelColor(rng) {
