@@ -428,20 +428,25 @@ function computeRegionBoundingBoxes(grid, cellSize) {
 function regionRuleLabel(rule) {
   if (!rule) return "";
 
-  if (rule.type === "=" && rule.value !== undefined) {
-    return "=" + String(rule.value);
-  }
-  if (rule.type === "<" && rule.value !== undefined) {
-    return "<" + String(rule.value);
-  }
-  if (rule.type === ">" && rule.value !== undefined) {
-    return ">" + String(rule.value);
-  }
-  if (rule.type === "neq") {
-    return "≠";
-  }
+  switch (rule.type) {
+    case "sum":
+      return String(rule.value);
 
-  return "";
+    case "=":
+      return "=";
+
+    case "<":
+      return "<" + rule.value;
+
+    case ">":
+      return ">" + rule.value;
+
+    case "neq":
+      return "≠";
+
+    default:
+      return "";
+  }
 }
 
 // ---------------------------------------------------------
