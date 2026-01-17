@@ -1333,12 +1333,6 @@ function generatePipsPuzzle(seed, difficulty) {
     grids[region.gIndex].regions.push(region);
   });
 
-  regions.forEach(region => {
-    const firstCell = region.cells[0];
-    const [gIndex] = firstCell.split(",").map(Number);
-    grids[gIndex].regions.push(region);
-  });
-
   // Final puzzle object (matches your renderer)
   return {
     seed,
