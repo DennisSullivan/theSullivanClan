@@ -1,1620 +1,562 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pips • SullivanClan</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pips • SullivanClan</title>
 
-<style>
- .region-edge {
-   position: absolute;
-   background-color: black;
-   pointer-events: none;
- }
-
- .badge-layer {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 30;
-  }
-
-  .region-overlays {
-    position: absolute;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    z-index: 5;
-  }
-
-  .overlay-boundary {
-    position: absolute;
-    border: 3px solid var(--overlay-border-color);
-    border-radius: 6px;
-    pointer-events: none;
-    box-sizing: border-box;
-    z-index: 10;
-  }
-  
-  .region-outline {
-    position: absolute;
-    background: var(--outline-color);
-    pointer-events: none;
-    z-index: 12;
-  }
-
- body {
-    background: #fff8ec;
-    font-family: "Trebuchet MS", sans-serif;
-    margin: 0;
-    padding: 0;
-    text-align: center;
-  }
-
-  header {
-    background: linear-gradient(135deg, #ffb36b, #ff8a5c);
-    color: white;
-    padding: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
-  }
-
-  .container {
-    max-width: 900px;
-    margin: 16px auto 32px;
-    padding: 0 10px;
-  }
-
-  .controls {
-    margin-bottom: 16px;
-  }
-
-  select, button {
-    padding: 10px 14px;
-    font-size: 16px;
-    border-radius: 8px;
-    margin: 4px;
-  }
-
-  select {
-    border: 2px solid #ffb36b;
-    background: #fffdf7;
-  }
-
-  button {
-    background: #6bb8ff;
-    color: white;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
-    cursor: pointer;
-  }
-
-  button:hover {
-    background: #4aa6ff;
-    transform: scale(1.02);
-  }
-
-  .boards {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 12px;
-  }
-
-  .board-wrapper {
-    position: relative;
-    padding: 0;
-  }
-  
-  .board-outer {
-    background: #fffdf7;
-    padding: 8px;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-  }
-  
-  .board-title {
-    font-size: 14px;
-    margin-bottom: 4px;
-    color: #444;
-  }
-
-  .board {
-    position: relative;
-    display: grid;
-    border: 2px solid #5a3e2b;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  .cell {
-    position: relative;
-    border: 1px solid #c9b39b;
-    background: #fff8ec;
-    width: 40px;
-    height: 40px;
-    box-sizing: border-box;
-    font-size: 18px;
-    line-height: 40px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  .cell.inactive {
-    background: transparent;
-    border: none;
-    cursor: default;
-  }
-
-  .cell.selected {
-    outline: 2px solid #ffb36b;
-    outline-offset: -2px;
-  }
-
-  .region-label {
-    position: absolute;
-    bottom: 1px;
-    right: 2px;
-    font-size: 11px;
-    color: #5a3e2b;
-    background: rgba(255,248,236,0.8);
-    padding: 0 2px;
-    border-radius: 3px;
-    pointer-events: none;
-  }
-
-  .tray {
-    margin-top: 16px;
-    padding: 10px;
-    border-radius: 10px;
-    background: #fffdf7;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-  }
-
-  .tray-title {
-    font-weight: bold;
-    margin-bottom: 6px;
-  }
-
-  .domino-pool {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px;
-  }
-
-  .domino {
-    display: flex;
-    border: 2px solid #5a3e2b;
-    border-radius: 6px;
-    overflow: hidden;
-    width: 54px;
-    height: 26px;
-    box-sizing: border-box;
-    background: #fff8ec;
-    cursor: pointer;
-  }
-
-  .domino.disabled {
-    opacity: 0.25;
-    cursor: default;
-  }
-
-  .domino.selected {
-    box-shadow: 0 0 0 3px #ffb36b;
-  }
-
-  .domino-half {
-    flex: 1;
-    border-right: 1px solid #c9b39b;
-    text-align: center;
-    line-height: 26px;
-    font-size: 16px;
-    font-weight: bold;
-  }
-
-  .domino-half:last-child {
-    border-right: none;
-  }
-
-  #message {
-    margin-top: 12px;
-    font-size: 16px;
-  }
-
-  @media (max-width: 600px) {
-    .cell {
-      width: 34px;
-      height: 34px;
-      line-height: 34px;
-      font-size: 16px;
+  <!-- Your fresh Pips Engine CSS goes here -->
+  <style>
+    /* ============================================================
+       PIPS ENGINE — GLOBAL STYLESHEET
+       Clean, modern, mobile‑first foundation for region puzzles
+       ============================================================ */
+    
+    /* ------------------------------
+       CSS VARIABLES (THEME)
+       ------------------------------ */
+    :root {
+      --bg: #faf8f4;
+      --grid-bg: #ffffff;
+      --line: #333;
+      --region-outline: #444;
+      --region-fill: rgba(0, 0, 0, 0.04);
+      --cell-size: 48px;
+      --cell-gap: 2px;
+      --radius: 6px;
+    
+      --domino-bg: #fff;
+      --domino-border: #222;
+      --domino-shadow: rgba(0, 0, 0, 0.15);
+    
+      --accent: #7a4c24; /* warm SullivanClan brown */
     }
+    
+    /* Mobile scaling */
+    @media (max-width: 600px) {
+      :root {
+        --cell-size: 38px;
+      }
+    }
+    
+    /* ------------------------------
+       PAGE LAYOUT
+       ------------------------------ */
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      font-family: system-ui, sans-serif;
+      color: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    /* Optional header bar */
+    .pips-header {
+      width: 100%;
+      padding: 12px 20px;
+      background: var(--accent);
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+    
+    /* ------------------------------
+       GRID CONTAINER
+       ------------------------------ */
+    .pips-grid {
+      display: grid;
+      background: var(--grid-bg);
+      padding: 10px;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      gap: var(--cell-gap);
+      position: relative;
+      margin-top: 20px;
+    }
+    
+    /* The JS will set grid-template-columns dynamically */
+    .pips-cell {
+      width: var(--cell-size);
+      height: var(--cell-size);
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      position: relative;
+      box-sizing: border-box;
+    }
+    
+    /* ------------------------------
+       REGION OUTLINES
+       ------------------------------ */
+    
+    /* Base region class — JS will add region-A, region-B, etc. */
+    .region {
+      position: absolute;
+      border: 2px solid var(--region-outline);
+      background: var(--region-fill);
+      border-radius: var(--radius);
+      pointer-events: none; /* regions never block dominos */
+      box-sizing: border-box;
+    }
+    
+    /* Optional region labels */
+    .region-label {
+      position: absolute;
+      top: -14px;
+      left: 4px;
+      background: var(--accent);
+      color: white;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+    
+    /* ------------------------------
+       DOMINO TRAY + TILES
+       ------------------------------ */
+    .domino-tray {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    
     .domino {
-      width: 48px;
-      height: 24px;
+      width: calc(var(--cell-size) * 2 + var(--cell-gap));
+      height: var(--cell-size);
+      background: var(--domino-bg);
+      border: 2px solid var(--domino-border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+      box-shadow: 0 2px 4px var(--domino-shadow);
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s ease;
     }
-    .domino-half {
-      line-height: 24px;
+    
+    .domino:active {
+      cursor: grabbing;
+      transform: scale(1.05);
     }
-  }
-
-  /* Compact NYT-style region badge */
-.region-badge {
-  position: absolute;
-  padding: 1px 4px;
-  border-radius: 5px;
-  font-weight: 700;
-  font-size: 10px;
-  height: 14px !important;
-  line-height: 14px !important;
-  color: black;
-  background: var(--region-color);
-  box-shadow: 0 0 2px rgba(0,0,0,0.35);
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 20;
-}
-
-.badge-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 30;
-}
-  
-</style>
-
+    
+    /* Domino rotated vertically */
+    .domino.vertical {
+      width: var(--cell-size);
+      height: calc(var(--cell-size) * 2 + var(--cell-gap));
+      flex-direction: column;
+    }
+    
+    /* Pips inside dominos */
+    .pip {
+      width: 10px;
+      height: 10px;
+      background: var(--line);
+      border-radius: 50%;
+    }
+    
+    /* ------------------------------
+       PLACEMENT STATES
+       ------------------------------ */
+    .cell-highlight {
+      outline: 3px solid var(--accent);
+      outline-offset: -3px;
+    }
+    
+    .cell-invalid {
+      background: #f8d0d0;
+      border-color: #b33;
+    }
+    
+    /* When a domino is snapped into place */
+    .domino-placed {
+      box-shadow: none;
+      cursor: default;
+      opacity: 0.95;
+    }
+    
+    /* ------------------------------
+       UTILITY CLASSES
+       ------------------------------ */
+    .hidden {
+      display: none !important;
+    }
+    
+    .center {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
 </head>
 
 <body>
 
-<header>Pips</header>
-
-<div class="container">
-  <p>Place each domino exactly once so all grids are filled and every colored region obeys its rule.</p>
-
-  <div class="controls">
-    <select id="difficulty">
-      <option value="easy">Easy (one grid)</option>
-      <option value="medium">Medium</option>
-      <option value="hard">Hard</option>
-    </select>
-    <button onclick="newPipsPuzzle()">New Puzzle</button>
-    <button onclick="checkPips()">Check My Solution</button>
+  <!-- Header Bar -->
+  <div class="pips-header">
+    Pips Puzzle Engine
   </div>
 
-  <div id="boards" class="boards"></div>
+  <!-- Grid Wrapper -->
+  <div id="pips-wrapper" class="center">
 
-  <div class="tray">
-    <div class="tray-title">Domino Pool (each used exactly once):</div>
-    <div id="domino-pool" class="domino-pool"></div>
+    <!-- Region overlay layer (absolute positioned) -->
+    <div id="region-layer"></div>
+
+    <!-- The puzzle grid (JS will size it dynamically) -->
+    <div id="pips-grid" class="pips-grid"></div>
+
   </div>
 
-  <div id="message"></div>
-</div>
-
-<script>
-
-/* ---------------------------------------------------------
-   STATE
-   ---------------------------------------------------------
-let currentPuzzle = null;
-let currentDifficulty = "easy";
-
-// key: "gIndex:r:c" → { dominoIndex, halfIndex(0 or 1) }
-let cellAssignments = {};
-// domino usage: true if placed
-let dominoUsed = [];
-let selectedDominoIndex = null;
-let pendingCell = null; // first cell clicked when placing
-
-/* ---------------------------------------------------------
-   HELPERS (pure functions)
-   --------------------------------------------------------- */
-function drawRegionLine(overlay, x1, y1, x2, y2) {
-  const line = document.createElement("div");
-  line.className = "region-edge";
-
-  const left = Math.min(x1, x2);
-  const top = Math.min(y1, y2);
-  const width = Math.abs(x2 - x1) || 2;   // vertical line
-  const height = Math.abs(y2 - y1) || 2;  // horizontal line
-
-  line.style.left = `${left}px`;
-  line.style.top = `${top}px`;
-  line.style.width = `${width}px`;
-  line.style.height = `${height}px`;
-
-  overlay.appendChild(line);
-}
- 
-function drawRegionOutline(region, cellSize, overlay) {
-  const cellSet = new Set(region.cells); // "r,c" strings
-
-  region.cells.forEach(cell => {
-    const [r, c] = cell.split(",").map(Number);
-
-    const x = c * cellSize;
-    const y = r * cellSize;
-
-    const neighbors = {
-      top:    `${r-1},${c}`,
-      bottom: `${r+1},${c}`,
-      left:   `${r},${c-1}`,
-      right:  `${r},${c+1}`
-    };
-
-    // Top edge
-    if (!cellSet.has(neighbors.top)) {
-      drawRegionLine(overlay, x, y, x + cellSize, y);
-    }
-
-    // Bottom edge
-    if (!cellSet.has(neighbors.bottom)) {
-      drawRegionLine(overlay, x, y + cellSize, x + cellSize, y + cellSize);
-    }
-
-    // Left edge
-    if (!cellSet.has(neighbors.left)) {
-      drawRegionLine(overlay, x, y, x, y + cellSize);
-    }
-
-    // Right edge
-    if (!cellSet.has(neighbors.right)) {
-      drawRegionLine(overlay, x + cellSize, y, x + cellSize, y + cellSize);
-    }
-  });
-}
- 
-function cellKey(gIndex, r, c) {
-  return gIndex + ":" + r + ":" + c;
-}
-
-function parseCellKey(key) {
-  const [g, r, c] = key.split(":").map(Number);
-  return { gIndex: g, row: r, col: c };
-}
-
-function isAdjacent(cellA, cellB) {
-  return (
-    cellA.gIndex === cellB.gIndex &&
-    Math.abs(cellA.row - cellB.row) + Math.abs(cellA.col - cellB.col) === 1
-  );
-}
-
-/**
- * Darkens a CSS color string 
- */
-function darkenColor(rgbString, amount = 10) {
-  // rgbString is like "rgb(200,180,220)"
-  const match = rgbString.match(/rgb\((\d+),(\d+),(\d+)\)/);
-  if (!match) return rgbString;
-
-  let [_, r, g, b] = match.map(Number);
-
-  // darken by reducing each channel
-  r = Math.max(0, r - amount);
-  g = Math.max(0, g - amount);
-  b = Math.max(0, b - amount);
-
-  return `rgb(${r},${g},${b})`;
-}
-
-function computeRegionBoundingBoxes(grid, cellSize) {
-  grid.regions.forEach(region => {
-    let minRow = Infinity, maxRow = -Infinity;
-    let minCol = Infinity, maxCol = -Infinity;
-
-    region.cells.forEach(cell => {
-      const [r, c] = cell.split(",").map(Number);
-      minRow = Math.min(minRow, r);
-      maxRow = Math.max(maxRow, r);
-      minCol = Math.min(minCol, c);
-      maxCol = Math.max(maxCol, c);
-    });
-
-    region.boundingBox = {
-      x: minCol * cellSize,
-      y: minRow * cellSize,
-      width: (maxCol - minCol + 1) * cellSize,
-      height: (maxRow - minRow + 1) * cellSize
-    };
-  });
-}
-
-function regionRuleLabel(rule) {
-  if (!rule) return "";
-
-  switch (rule.type) {
-    case "sum":
-      return String(rule.value);
-
-    case "=":
-      return "=";
-
-    case "<":
-      return "<" + rule.value;
-
-    case ">":
-      return ">" + rule.value;
-
-    case "neq":
-      return "≠";
-
-    default:
-      return "";
-  }
-}
-
-// ---------------------------------------------------------
-// Choose a domino pool of size `count`
-// Difficulty affects weighting
-// ---------------------------------------------------------
-function chooseDominoPool(rng, dominoCount, difficulty) {
-  // Start from the full double-six set
-  let candidates = STANDARD_DOMINO_SET.slice();
-
-  // Difficulty filtering / weighting
-  if (difficulty === "easy") {
-    candidates = candidates.filter(([a, b]) => {
-      const high = Math.max(a, b);
-      return high <= 5; // allow up to 5
-    });
-  }
-
-  if (difficulty === "hard") {
-    // Weight toward high numbers and doubles
-    candidates = candidates.flatMap(tile => {
-      const [a, b] = tile;
-      const high = Math.max(a, b);
-      const weight = (high >= 5 ? 3 : 1) + (a === b ? 2 : 0);
-      return Array(weight).fill(tile);
-    });
-  }
-
-  // Shuffle with seeded RNG
-  for (let i = candidates.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-  }
-
-  // Select unique tiles until we reach dominoCount
-  const pool = [];
-  const used = new Set();
-
-  for (const tile of candidates) {
-    const key = tile.join(",");
-    if (!used.has(key)) {
-      pool.push(tile);
-      used.add(key);
-      if (pool.length === dominoCount) break;
-    }
-  }
-
-  // Fallback: if difficulty filtering removed too many tiles,
-  // fill remaining slots from the full set.
-  if (pool.length < dominoCount) {
-    const fallback = STANDARD_DOMINO_SET.slice();
-    for (let i = fallback.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [fallback[i], fallback[j]] = [fallback[j], fallback[i]];
-    }
-    for (const tile of fallback) {
-      const key = tile.join(",");
-      if (!used.has(key)) {
-        pool.push(tile);
-        used.add(key);
-        if (pool.length === dominoCount) break;
-      }
-    }
-  }
-
-  return pool;
-}
-
-function drawRegionPerimeter(region, cellSize, overlayEl) {
-  const cellSet = new Set(region.cells);
-
-  region.cells.forEach(cell => {
-    const [r, c] = cell.split(",").map(Number);
-    const x = c * cellSize;
-    const y = r * cellSize;
-
-    const color = darkenColor(region.color, 0.45);
-
-    // Top edge
-    if (!cellSet.has(`${r - 1},${c}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = x + "px";
-      edge.style.top = y + "px";
-      edge.style.width = cellSize + "px";
-      edge.style.height = "2px";
-      edge.style.setProperty("--outline-color", color);
-      overlayEl.appendChild(edge);
-    }
-
-    // Bottom edge
-    if (!cellSet.has(`${r + 1},${c}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = x + "px";
-      edge.style.top = (y + cellSize - 2) + "px";
-      edge.style.width = cellSize + "px";
-      edge.style.height = "2px";
-      edge.style.setProperty("--outline-color", color);
-      overlayEl.appendChild(edge);
-    }
-
-    // Left edge
-    if (!cellSet.has(`${r},${c - 1}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = x + "px";
-      edge.style.top = y + "px";
-      edge.style.width = "2px";
-      edge.style.height = cellSize + "px";
-      edge.style.setProperty("--outline-color", color);
-      overlayEl.appendChild(edge);
-    }
-
-    // Right edge
-    if (!cellSet.has(`${r},${c + 1}`)) {
-      const edge = document.createElement("div");
-      edge.className = "region-outline";
-      edge.style.left = (x + cellSize - 2) + "px";
-      edge.style.top = y + "px";
-      edge.style.width = "2px";
-      edge.style.height = cellSize + "px";
-      edge.style.setProperty("--outline-color", color);
-      overlayEl.appendChild(edge);
-    }
-  });
-}
-
-function placeRegionBadges(regions, cellSize, overlayEl) {
-  const placed = [];
-
-  regions.forEach(region => {
-console.log("Badge region:", region);
-console.log("Badge region.rule:", region.rule);
-    const box = region.boundingBox;
-
-    // Build candidate anchor cells: corners of the region that are REAL cells
-    const cellSet = new Set(region.cells);
-
-    // Compute min/max row/col from the region itself
-    let minRow = Infinity, maxRow = -Infinity;
-    let minCol = Infinity, maxCol = -Infinity;
-    region.cells.forEach(cell => {
-      const [r, c] = cell.split(",").map(Number);
-      minRow = Math.min(minRow, r);
-      maxRow = Math.max(maxRow, r);
-      minCol = Math.min(minCol, c);
-      maxCol = Math.max(maxCol, c);
-    });
-
-    const cornerCoords = [
-      { r: minRow, c: minCol }, // top-left
-      { r: minRow, c: maxCol }, // top-right
-      { r: maxRow, c: minCol }, // bottom-left
-      { r: maxRow, c: maxCol }  // bottom-right
-    ];
-
-    // Only keep corners that are actually part of the region
-    const anchorCells = cornerCoords.filter(cc =>
-      cellSet.has(`${cc.r},${cc.c}`)
-    );
-
-    // Fallback: if none of the corners are region cells (weird shape),
-    // just use the first cell in the region.
-    if (anchorCells.length === 0 && region.cells.length > 0) {
-      const [r, c] = region.cells[0].split(",").map(Number);
-      anchorCells.push({ r, c });
-    }
-
-    const candidates = anchorCells.map(cc => {
-      const x = cc.c * cellSize;
-      const y = cc.r * cellSize;
-      return { x, y };
-    });
-
-    let chosen = null;
-
-    for (const c of candidates) {
-      const badgeWidth = 28;
-      const badgeHeight = 18;
-
-      const bb = {
-        left:   c.x - 2,
-        top:    c.y - 2,
-        right:  c.x - 2 + badgeWidth,
-        bottom: c.y - 2 + badgeHeight
-      };
-
-      const overlaps = placed.some(p =>
-        !(bb.right < p.left ||
-          bb.left > p.right ||
-          bb.bottom < p.top ||
-          bb.top > p.bottom)
-      );
-
-      if (!overlaps) {
-        chosen = bb;
-        break;
-      }
-    }
-
-    // If all anchors overlapped, just tuck it near the bounding box
-    if (!chosen) {
-      chosen = {
-        left: box.x - 6,
-        top: box.y - 6,
-        right: box.x - 6 + 28,
-        bottom: box.y - 6 + 18
-      };
-    }
-
-    placed.push(chosen);
-
-    let label = regionRuleLabel(region.rule);
-    if (label == null || String(label).trim() === "") {
-      label = "??";
-    }
-
-    const badge = document.createElement("div");
-    badge.className = "region-badge";
-    badge.style.left = chosen.left + "px";
-    badge.style.top = chosen.top + "px";
-    badge.style.background = region.color;
-    badge.textContent = String(label);
-
-    overlayEl.appendChild(badge);
-  });
-}
-
-// No longer used.
-function renderRegionBadges(grid, gIndex, cellSize, overlayEl) {
-  overlayEl.innerHTML = "";
-
-  const boundary = document.createElement("div");
-  boundary.className = "overlay-boundary";
-
-  const baseColor = grid.regions[0].color;
-  boundary.style.setProperty("--overlay-border-color", darkenColor(baseColor, 0.45));
-
-  boundary.style.left = "0px";
-  boundary.style.top = "0px";
-  boundary.style.width = overlayEl.style.width;
-  boundary.style.height = overlayEl.style.height;
-
-  overlayEl.appendChild(boundary);
-
-  grid.regions.forEach(region => {
-    drawRegionPerimeter(region, cellSize, overlayEl);
-  });
-
-  const badgeLayer = document.querySelector(`.badge-layer[data-g-index="${gIndex}"]`);
-  if (badgeLayer) {
-    badgeLayer.innerHTML = "";
-    placeRegionBadges(grid.regions, cellSize, badgeLayer);
-  }
-}
-
-/* ---------------------------------------------------------
-   PIPS GAME CLASS
-   --------------------------------------------------------- */
-class PipsGame {
-  constructor() {
-    this.currentPuzzle = null;
-    this.currentDifficulty = "easy";
-  
-    this.cellAssignments = {};
-    this.dominoUsed = [];
-    this.selectedDominoIndex = null;
-    this.pendingCell = null;
-  
-    this.boardsContainer = document.getElementById("boards");
-    this.poolDiv = document.getElementById("domino-pool");
-    this.messageEl = document.getElementById("message");
-    this.difficultySelect = document.getElementById("difficulty");
-  
-    this.handleDominoClick = this.handleDominoClick.bind(this);
-    this.handleCellClick = this.handleCellClick.bind(this);
-  }
-
-  setMessage(msg, color) {
-    if (!this.messageEl) return;
-    this.messageEl.textContent = msg;
-    this.messageEl.style.color = color || "#444";
-  }
-
-  newPuzzle() {
-    const difficulty = this.difficultySelect.value;
-  
-    const seed = Date.now();  // or daily seed
-    const puzzle = generatePipsPuzzle(seed, difficulty);
-  
-    this.currentPuzzle = puzzle;
-console.log("Generated puzzle:", puzzle);
-    this.renderPuzzle();
-  }
-
-  renderPuzzle() {
-console.log("Rendering puzzle:", this.currentPuzzle);
-    if (!this.currentPuzzle) return;
-
-    this.boardsContainer.innerHTML = "";
-    this.cellAssignments = {};
-    this.dominoUsed = this.currentPuzzle.dominoPool.map(() => false);
-    this.selectedDominoIndex = null;
-    this.pendingCell = null;
-
-    const grids = this.currentPuzzle.grids;
-
-    const renderOneGrid = async (gIndex) => {
-      const grid = grids[gIndex];
-
-      const outer = document.createElement("div");
-      outer.className = "board-outer";
-
-      const wrapper = document.createElement("div");
-      wrapper.className = "board-wrapper";
-      outer.appendChild(wrapper);
-
-      const title = document.createElement("div");
-      title.className = "board-title";
-      title.textContent = grid.id;
-      wrapper.appendChild(title);
-
-      const board = document.createElement("div");
-      board.className = "board";
-      board.dataset.gIndex = gIndex;
-      board.style.gridTemplateRows = `repeat(${grid.rows}, 1fr)`;
-      board.style.gridTemplateColumns = `repeat(${grid.cols}, 1fr)`;
-
-      const activeSet = new Set(grid.activeCells);
-
-      const cellRegionMap = {};
-      grid.regions.forEach(region => {
-        region.cells.forEach(c => {
-          cellRegionMap[c] = region;
-        });
-      });
-
-      for (let r = 0; r < grid.rows; r++) {
-        for (let c = 0; c < grid.cols; c++) {
-          const cellCoord = `${r},${c}`;
+  <!-- Domino Tray -->
+  <div id="domino-tray" class="domino-tray"></div>
+
+  <!-- JS Engine (you will paste your logic here) -->
+  <script>
+    // Example placeholder to show where your engine will go
+    // -----------------------------------------------------
+
+    // 1. Initialize grid
+    // 2. Draw regions
+    // 3. Create dominos
+    // 4. Handle drag/drop + placement logic
+
+    console.log("Pips Engine ready for JS...");
+
+
+   
+    /* ============================================================
+       PIPS ENGINE — GRID BUILDER
+       Creates the puzzle grid dynamically
+       ============================================================ */
+    
+    function buildGrid(rows, cols) {
+      const grid = document.getElementById("pips-grid");
+      grid.innerHTML = ""; // clear any previous puzzle
+    
+      // Set CSS grid columns
+      grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
+    
+      // Create cells
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
           const cell = document.createElement("div");
-          cell.className = "cell";
-          cell.dataset.gIndex = gIndex;
+          cell.classList.add("pips-cell");
           cell.dataset.row = r;
           cell.dataset.col = c;
-
-          if (!activeSet.has(cellCoord)) {
-            cell.classList.add("inactive");
-          } else {
-            const region = cellRegionMap[cellCoord];
-            if (region) {
-              cell.classList.add("region");
-              cell.style.backgroundColor = region.color;
-            }
-            cell.addEventListener("click", this.handleCellClick);
-          }
-
-          board.appendChild(cell);
+          cell.id = `cell-${r}-${c}`;
+          grid.appendChild(cell);
         }
       }
+    
+      console.log(`Grid built: ${rows} × ${cols}`);
+    }
+    
+    /* ============================================================
+       INITIALIZE A TEST GRID
+       (You can change this to any puzzle size)
+       ============================================================ */
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      buildGrid(6, 6); // temporary test grid
+    });
 
-      wrapper.appendChild(board);
-      this.boardsContainer.appendChild(outer);
 
-      await new Promise(r => requestAnimationFrame(r));
-      await new Promise(r => requestAnimationFrame(r));
-
-      const rect = board.getBoundingClientRect();
-
-      const badgeLayer = document.createElement("div");
-      badgeLayer.className = "badge-layer";
-      badgeLayer.dataset.gIndex = gIndex;
-      badgeLayer.style.width = rect.width + "px";
-      badgeLayer.style.height = rect.height + "px";
-      badgeLayer.style.top = "0px";
-      badgeLayer.style.left = "0px";
-      board.appendChild(badgeLayer);
-
-      const overlay = document.createElement("div");
-      overlay.className = "region-overlays";
-      overlay.dataset.gIndex = gIndex;
-      overlay.style.width = rect.width + "px";
-      overlay.style.height = rect.height + "px";
-      overlay.style.top = "0px";
-      overlay.style.left = "0px";
-      board.appendChild(overlay);
-
-      const boardRect = board.getBoundingClientRect();
-      const border = 2; // .board { border: 2px solid ... }
-      const cellSize = (boardRect.width - border * 2) / grid.cols;
-     
-      computeRegionBoundingBoxes(grid, cellSize);
-      grid.regions.forEach(region => {
-        drawRegionOutline(region, cellSize, overlay);
+// 2
+    /* ============================================================
+       PIPS ENGINE — REGION RENDERER
+       Draws region shapes as overlays on top of the grid
+       ============================================================ */
+    
+    function drawRegions(regionList) {
+      const regionLayer = document.getElementById("region-layer");
+      regionLayer.innerHTML = ""; // clear previous regions
+    
+      regionList.forEach((region, index) => {
+        const regionDiv = document.createElement("div");
+        regionDiv.classList.add("region");
+    
+        // Compute bounding box of the region
+        const rows = region.map(c => c[0]);
+        const cols = region.map(c => c[1]);
+    
+        const minRow = Math.min(...rows);
+        const maxRow = Math.max(...rows);
+        const minCol = Math.min(...cols);
+        const maxCol = Math.max(...cols);
+    
+        // Convert grid coordinates to pixel positions
+        const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+        const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+    
+        const x = minCol * (cellSize + cellGap);
+        const y = minRow * (cellSize + cellGap);
+        const width = (maxCol - minCol + 1) * (cellSize + cellGap) - cellGap;
+        const height = (maxRow - minRow + 1) * (cellSize + cellGap) - cellGap;
+    
+        // Position the region overlay
+        regionDiv.style.left = `${x}px`;
+        regionDiv.style.top = `${y}px`;
+        regionDiv.style.width = `${width}px`;
+        regionDiv.style.height = `${height}px`;
+    
+        // Optional label
+        const label = document.createElement("div");
+        label.classList.add("region-label");
+        label.textContent = String.fromCharCode(65 + index); // A, B, C...
+        regionDiv.appendChild(label);
+    
+        regionLayer.appendChild(regionDiv);
       });
-      // Draw region badges
-      placeRegionBadges(grid.regions, cellSize, badgeLayer);
-    };
-
-    const tasks = [];
-    for (let gIndex = 0; gIndex < grids.length; gIndex++) {
-      tasks.push(renderOneGrid(gIndex));
+    
+      console.log("Regions drawn:", regionList.length);
     }
 
-    Promise.all(tasks).then(() => {
-      this.renderDominoPool();
-      this.setMessage("");
-    });
-  }
 
-  renderDominoPool() {
-    this.poolDiv.innerHTML = "";
-
-    this.currentPuzzle.dominoPool.forEach((domino, index) => {
-      const [a, b] = domino;
-      const dDiv = document.createElement("div");
-      dDiv.className = "domino";
-      dDiv.dataset.index = index;
-
-      if (this.dominoUsed[index]) dDiv.classList.add("disabled");
-      if (this.selectedDominoIndex === index) dDiv.classList.add("selected");
-
-      const half1 = document.createElement("div");
-      half1.className = "domino-half";
-      half1.textContent = a;
-
-      const half2 = document.createElement("div");
-      half2.className = "domino-half";
-      half2.textContent = b;
-
-      dDiv.appendChild(half1);
-      dDiv.appendChild(half2);
-
-      dDiv.addEventListener("click", () => this.handleDominoClick(index));
-
-      this.poolDiv.appendChild(dDiv);
-    });
-  }
-
-  handleDominoClick(index) {
-    if (this.dominoUsed[index]) return;
-    if (this.selectedDominoIndex === index) {
-      this.selectedDominoIndex = null;
-    } else {
-      this.selectedDominoIndex = index;
-    }
-    this.pendingCell = null;
-    this.renderDominoPool();
-  }
-
-  handleCellClick(evt) {
-    const cell = evt.currentTarget;
-    const gIndex = parseInt(cell.dataset.gIndex, 10);
-    const row = parseInt(cell.dataset.row, 10);
-    const col = parseInt(cell.dataset.col, 10);
-    const key = cellKey(gIndex, row, col);
-
-    const existing = this.cellAssignments[key];
-    if (existing) {
-      this.removeDomino(existing.dominoIndex);
-      return;
-    }
-
-    if (this.selectedDominoIndex === null) {
-      this.setMessage("Select a domino first, then click two adjacent cells.");
-      return;
-    }
-
-    if (!this.pendingCell) {
-      this.pendingCell = { gIndex, row, col };
-      this.highlightPendingCell(true);
-    } else {
-      const cell2 = { gIndex, row, col };
-      if (!isAdjacent(this.pendingCell, cell2)) {
-        this.setMessage("Cells must be adjacent in the same grid.");
-        this.highlightPendingCell(false);
-        this.pendingCell = null;
-        return;
-      }
-
-      const key1 = cellKey(this.pendingCell.gIndex, this.pendingCell.row, this.pendingCell.col);
-      const key2 = cellKey(cell2.gIndex, cell2.row, cell2.col);
-      if (this.cellAssignments[key1] || this.cellAssignments[key2]) {
-        this.setMessage("Those cells are not both free.");
-        this.highlightPendingCell(false);
-        this.pendingCell = null;
-        return;
-      }
-
-      this.placeDomino(this.selectedDominoIndex, key1, key2);
-      this.highlightPendingCell(false);
-      this.pendingCell = null;
-    }
-  }
-
-  highlightPendingCell(on) {
-    const cells = document.querySelectorAll(".cell");
-    cells.forEach(cell => cell.classList.remove("selected"));
-
-    if (on && this.pendingCell) {
-      const selector = `.cell[data-g-index="${this.pendingCell.gIndex}"][data-row="${this.pendingCell.row}"][data-col="${this.pendingCell.col}"]`;
-      const cell = document.querySelector(selector);
-      if (cell) cell.classList.add("selected");
-    }
-  }
-
-  placeDomino(dominoIndex, key1, key2) {
-    const [a, b] = this.currentPuzzle.dominoPool[dominoIndex];
-
-    this.cellAssignments[key1] = { dominoIndex, halfIndex: 0 };
-    this.cellAssignments[key2] = { dominoIndex, halfIndex: 1 };
-    this.dominoUsed[dominoIndex] = true;
-    this.selectedDominoIndex = null;
-
-    this.updateBoardValues();
-    this.updateCellDisplay(key1);
-    this.updateCellDisplay(key2);
-    this.renderDominoPool();
-  }
-
-  removeDomino(dominoIndex) {
-    const keysToClear = [];
-    Object.keys(this.cellAssignments).forEach(k => {
-      if (this.cellAssignments[k].dominoIndex === dominoIndex) {
-        keysToClear.push(k);
-      }
-    });
-
-    keysToClear.forEach(k => delete this.cellAssignments[k]);
-
-    this.dominoUsed[dominoIndex] = false;
-    this.selectedDominoIndex = null;
-    this.pendingCell = null;
-    this.highlightPendingCell(false);
-
-    this.updateBoardValues();
-    keysToClear.forEach(k => this.updateCellDisplay(k));
-
-    this.renderDominoPool();
-  }
-
-  assignmentHalfValue(assignment) {
-    const domino = this.currentPuzzle.dominoPool[assignment.dominoIndex];
-    return assignment.halfIndex === 0 ? domino[0] : domino[1];
-  }
-
-  updateCellDisplay(key) {
-    const { gIndex, row, col } = parseCellKey(key);
-    const selector = `.cell[data-g-index="${gIndex}"][data-row="${row}"][data-col="${col}"]`;
-    const cell = document.querySelector(selector);
-    if (!cell) return;
-
-    const label = cell.querySelector(".region-label");
-
-    cell.innerHTML = "";
-    if (label) cell.appendChild(label);
-
-    const assignment = this.cellAssignments[key];
-    if (assignment) {
-      const [a, b] = this.currentPuzzle.dominoPool[assignment.dominoIndex];
-      const half = assignment.halfIndex === 0 ? a : b;
-
-      const div = document.createElement("div");
-      div.className = "placed-domino";
-      div.textContent = half;
-      cell.appendChild(div);
-    }
-  }
-
-  updateBoardValues() {
-    const cells = document.querySelectorAll(".cell");
-
-    cells.forEach(cell => {
-      if (cell.classList.contains("inactive")) return;
-
-      const gIndex = parseInt(cell.dataset.gIndex, 10);
-      const row = parseInt(cell.dataset.row, 10);
-      const col = parseInt(cell.dataset.col, 10);
-      const key = cellKey(gIndex, row, col);
-      const assignment = this.cellAssignments[key];
-
-      const label = cell.querySelector(".region-label");
-      cell.innerHTML = "";
-      if (label) cell.appendChild(label);
-
-      if (assignment) {
-        const numSpan = document.createElement("span");
-        numSpan.textContent = this.assignmentHalfValue(assignment);
-        numSpan.style.position = "absolute";
-        numSpan.style.left = "50%";
-        numSpan.style.top = "50%";
-        numSpan.style.transform = "translate(-50%, -50%)";
-        numSpan.style.fontSize = "18px";
-        numSpan.style.fontWeight = "bold";
-        cell.appendChild(numSpan);
-      }
-    });
-  }
-
-  checkPips() {
-    if (!this.currentPuzzle) return;
-
-    // 1) Every active cell must be filled
-    for (let gIndex = 0; gIndex < this.currentPuzzle.grids.length; gIndex++) {
-      const grid = this.currentPuzzle.grids[gIndex];
-      const activeSet = new Set(grid.activeCells);
-      for (let r = 0; r < grid.rows; r++) {
-        for (let c = 0; c < grid.cols; c++) {
-          const coord = `${r},${c}`;
-          if (!activeSet.has(coord)) continue;
-          const key = cellKey(gIndex, r, c);
-          if (!this.cellAssignments[key]) {
-            this.setMessage("Some cells are still empty.");
-            return;
-          }
-        }
-      }
-    }
-
-    // 2) Every domino must be used exactly once
-    for (let i = 0; i < this.currentPuzzle.dominoPool.length; i++) {
-      if (!this.dominoUsed[i]) {
-        this.setMessage("Not all dominoes have been used.");
-        return;
-      }
-      let countCells = 0;
-      Object.values(this.cellAssignments).forEach(a => {
-        if (a.dominoIndex === i) countCells++;
-      });
-      if (countCells !== 2) {
-        this.setMessage("A domino is only partially placed.");
-        return;
-      }
-    }
-
-    // 3) Check region rules
-    for (let gIndex = 0; gIndex < this.currentPuzzle.grids.length; gIndex++) {
-      const grid = this.currentPuzzle.grids[gIndex];
-      for (const region of grid.regions) {
-        const pips = [];
-        for (const coord of region.cells) {
-          const [r, c] = coord.split(",").map(Number);
-          const key = cellKey(gIndex, r, c);
-          const assignment = this.cellAssignments[key];
-          if (!assignment) {
-            this.setMessage("Some region cells are unfilled.");
-            return;
-          }
-          pips.push(this.assignmentHalfValue(assignment));
-        }
-
-        if (!this.regionSatisfied(region.rule, pips)) {
-          this.setMessage(`A region rule is not satisfied (${region.id}).`);
-          return;
-        }
-      }
-    }
-
-    this.setMessage("Beautiful! All dominoes placed and all regions satisfied.", "#1f7a1f");
-  }
-
-  regionSatisfied(rule, pips) {
-    if (!rule) return false;
-
-    if (rule.type === "=") {
-      const total = pips.reduce((a, b) => a + b, 0);
-      return total === rule.value;
-    }
-
-    if (rule.type === "neq") {
-      const set = new Set(pips);
-      return set.size === pips.length;
-    }
-
-    if (rule.type === "<") {
-      return pips.every(v => v < rule.value);
-    }
-
-    if (rule.type === ">") {
-      return pips.every(v => v > rule.value);
-    }
-
-    return false;
-  }
-}  // End of PipsGame class
-
-/* ---------------------------------------------------------
-   Generator functions
-   --------------------------------------------------------- */
- // Seeded RNG from earlier
-function makeSeededRNG(seed) {
-  let t = seed >>> 0;
-  return function() {
-    t += 0x6D2B79F5;
-    let r = Math.imul(t ^ t >>> 15, t | 1);
-    r ^= r + Math.imul(r ^ r >>> 7, r | 61);
-    return ((r ^ r >>> 14) >>> 0) / 4294967296;
-  };
-}
-
-// Reconstructed grid layouts for all difficulties.
-// These match your original 6×6 Pips boards with full active cells.
-
-const EASY_GRIDS = [
-  {
-    id: "A",
-    rows: 6,
-    cols: 6,
-    activeCells: Array.from({ length: 6 }, (_, r) =>
-      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
-    ).flat(),
-    regions: []
-  }
-];
-
-const MEDIUM_GRIDS = [
-  {
-    id: "A",
-    rows: 6,
-    cols: 6,
-    activeCells: Array.from({ length: 6 }, (_, r) =>
-      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
-    ).flat(),
-    regions: []
-  },
-  {
-    id: "B",
-    rows: 6,
-    cols: 6,
-    activeCells: Array.from({ length: 6 }, (_, r) =>
-      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
-    ).flat(),
-    regions: []
-  }
-];
-
-const HARD_GRIDS = [
-  {
-    id: "A",
-    rows: 6,
-    cols: 6,
-    activeCells: Array.from({ length: 6 }, (_, r) =>
-      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
-    ).flat(),
-    regions: []
-  },
-  {
-    id: "B",
-    rows: 6,
-    cols: 6,
-    activeCells: Array.from({ length: 6 }, (_, r) =>
-      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
-    ).flat(),
-    regions: []
-  },
-  {
-    id: "C",
-    rows: 6,
-    cols: 6,
-    activeCells: Array.from({ length: 6 }, (_, r) =>
-      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
-    ).flat(),
-    regions: []
-  }
-];
-
-function generateGrids(rng, difficulty) {
-  let base;
-
-  if (difficulty === "easy") {
-    base = JSON.parse(JSON.stringify(EASY_GRIDS));
-  } else if (difficulty === "medium") {
-    base = JSON.parse(JSON.stringify(MEDIUM_GRIDS));
-  } else {
-    base = JSON.parse(JSON.stringify(HARD_GRIDS));
-  }
-
-  // Ensure each grid has a regions array
-  base.forEach(grid => {
-    grid.regions = [];
-  });
-
-  return base;
-}
-
-function countActiveCells(grids) {
-  let count = 0;
-  grids.forEach(grid => {
-    count += grid.activeCells.length;
-  });
-  return count;
-}
-
-// From earlier
-const STANDARD_DOMINO_SET = [
-  [0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],
-  [1,1],[1,2],[1,3],[1,4],[1,5],[1,6],
-  [2,2],[2,3],[2,4],[2,5],[2,6],
-  [3,3],[3,4],[3,5],[3,6],
-  [4,4],[4,5],[4,6],
-  [5,5],[5,6],
-  [6,6]
-];
-
-function generateDominoTiling(grids, dominoPool, rng) {
-  const tiling = [];
-  const used = new Set();
-  const cells = [];
-
-  // Collect all active cells from all grids
-  grids.forEach((grid, gIndex) => {
-    grid.activeCells.forEach(coord => {
-      const [r, c] = coord.split(",").map(Number);
-      cells.push({ gIndex, r, c });
-    });
-  });
-
-  // Shuffle cells
-  for (let i = cells.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [cells[i], cells[j]] = [cells[j], cells[i]];
-  }
-
-  const key = (g, r, c) => `${g},${r},${c}`;
-
-  for (const cell of cells) {
-    const k = key(cell.gIndex, cell.r, cell.c);
-    if (used.has(k)) continue;
-
-    const neighbors = [
-      { g: cell.gIndex, r: cell.r - 1, c: cell.c },
-      { g: cell.gIndex, r: cell.r + 1, c: cell.c },
-      { g: cell.gIndex, r: cell.r,     c: cell.c - 1 },
-      { g: cell.gIndex, r: cell.r,     c: cell.c + 1 }
-    ];
-
-    // Shuffle neighbors
-    for (let i = neighbors.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [neighbors[i], neighbors[j]] = [neighbors[j], neighbors[i]];
-    }
-
-    let paired = false;
-
-    for (const n of neighbors) {
-      const nk = key(n.g, n.r, n.c);
-      const grid = grids[n.g];
-      if (!grid) continue;
-
-      // Check if neighbor is active
-      if (!grid.activeCells.includes(`${n.r},${n.c}`)) continue;
-
-      if (!used.has(nk)) {
-        tiling.push({
-          cells: [
-            { g: cell.gIndex, r: cell.r, c: cell.c },
-            { g: n.g,         r: n.r,    c: n.c }
-          ]
+// 3
+    /* ============================================================
+       PIPS ENGINE — DOMINO GENERATOR
+       Creates domino tiles and places them in the tray
+       ============================================================ */
+    
+    /**
+     * dominoList format:
+     * [
+     *   [0,0], [0,1], [0,2], ...  // each pair is a domino
+     * ]
+     */
+    function buildDominoTray(dominoList) {
+      const tray = document.getElementById("domino-tray");
+      tray.innerHTML = ""; // clear previous puzzle
+    
+      dominoList.forEach((pair, index) => {
+        const [a, b] = pair;
+    
+        const domino = document.createElement("div");
+        domino.classList.add("domino");
+        domino.dataset.index = index;
+        domino.dataset.valueA = a;
+        domino.dataset.valueB = b;
+    
+        // Pip containers
+        const pipA = createPipGroup(a);
+        const pipB = createPipGroup(b);
+    
+        domino.appendChild(pipA);
+        domino.appendChild(pipB);
+    
+        // Rotation support
+        domino.addEventListener("dblclick", () => {
+          domino.classList.toggle("vertical");
         });
-        used.add(k);
-        used.add(nk);
-        paired = true;
-        break;
+    
+        tray.appendChild(domino);
+      });
+    
+      console.log("Domino tray built:", dominoList.length);
+    }
+    
+    /* ============================================================
+       PIP RENDERING
+       Creates a group of pips for a single number (0–6)
+       ============================================================ */
+    
+    function createPipGroup(value) {
+      const group = document.createElement("div");
+      group.classList.add("pip-group");
+    
+      // Pip layout patterns for 0–6
+      const pipPatterns = {
+        0: [],
+        1: [ [1,1] ],
+        2: [ [0,0], [2,2] ],
+        3: [ [0,0], [1,1], [2,2] ],
+        4: [ [0,0], [0,2], [2,0], [2,2] ],
+        5: [ [0,0], [0,2], [1,1], [2,0], [2,2] ],
+        6: [ [0,0], [0,2], [1,0], [1,2], [2,0], [2,2] ]
+      };
+    
+      const pattern = pipPatterns[value] || [];
+    
+      // Create a 3×3 pip grid
+      group.style.display = "grid";
+      group.style.gridTemplateColumns = "repeat(3, 1fr)";
+      group.style.gridTemplateRows = "repeat(3, 1fr)";
+      group.style.width = "100%";
+      group.style.height = "100%";
+    
+      pattern.forEach(([r, c]) => {
+        const pip = document.createElement("div");
+        pip.classList.add("pip");
+        pip.style.gridRow = r + 1;
+        pip.style.gridColumn = c + 1;
+        group.appendChild(pip);
+      });
+    
+      return group;
+    }
+
+
+// 4
+    /* ============================================================
+       PIPS ENGINE — DRAG & DROP + PLACEMENT LOGIC
+       ============================================================ */
+    
+    let activeDomino = null;
+    let offsetX = 0;
+    let offsetY = 0;
+    
+    function enableDominoInteractions() {
+      const tray = document.getElementById("domino-tray");
+    
+      tray.querySelectorAll(".domino").forEach(domino => {
+        domino.addEventListener("mousedown", startDrag);
+        domino.addEventListener("touchstart", startDrag, { passive: false });
+      });
+    
+      document.addEventListener("mousemove", drag);
+      document.addEventListener("touchmove", drag, { passive: false });
+    
+      document.addEventListener("mouseup", endDrag);
+      document.addEventListener("touchend", endDrag);
+    }
+    
+    /* ------------------------------
+       START DRAG
+       ------------------------------ */
+    function startDrag(e) {
+      e.preventDefault();
+    
+      activeDomino = e.currentTarget;
+      activeDomino.style.position = "absolute";
+      activeDomino.style.zIndex = 1000;
+    
+      const rect = activeDomino.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+      offsetX = clientX - rect.left;
+      offsetY = clientY - rect.top;
+    
+      highlightPossibleCells(activeDomino);
+    }
+    
+    /* ------------------------------
+       DRAG MOVEMENT
+       ------------------------------ */
+    function drag(e) {
+      if (!activeDomino) return;
+    
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+      activeDomino.style.left = `${clientX - offsetX}px`;
+      activeDomino.style.top = `${clientY - offsetY}px`;
+    }
+    
+    /* ------------------------------
+       END DRAG → TRY TO PLACE
+       ------------------------------ */
+    function endDrag() {
+      if (!activeDomino) return;
+    
+      const snapped = tryPlaceDomino(activeDomino);
+    
+      clearHighlights();
+    
+      if (!snapped) {
+        // Return to tray
+        activeDomino.style.position = "";
+        activeDomino.style.left = "";
+        activeDomino.style.top = "";
+        activeDomino.style.zIndex = "";
       }
+    
+      activeDomino = null;
     }
-
-    if (!paired) {
-      // Restart tiling if we get stuck
-      return generateDominoTiling(grids, dominoPool, rng);
-    }
-  }
-
-  return tiling;
-}
-
-function generatePipsPuzzle(seed, difficulty) {
-  const rng = makeSeededRNG(seed);
-
-  // Step 1: grids
-  const grids = generateGrids(rng, difficulty);
-
-  // Step 2: count active cells
-  const activeCellCount = countActiveCells(grids);
-  const dominoCount = activeCellCount / 2;
-
-  // Step 3: choose domino pool
-  const dominoPool = chooseDominoPool(rng, dominoCount, difficulty);
-
-  // Step 4: generate tiling
-  let tiling = generateDominoTiling(grids, dominoPool, rng);
-
-  // Step 7: assign pip values to each domino
-  tiling = assignPipValues(tiling, dominoPool, rng);
-
-  // Step 5: generate regions
-  let regions = generateRegions(grids, tiling, rng, difficulty);
-  
-  // Assign rules directly into the same region objects
-  assignRegionRules(regions, tiling, rng, difficulty);
-  
-  // NOW attach regions to grids
-  regions.forEach(region => {
-console.log("Attaching region to grid:", region);
-    grids[region.gIndex].regions.push(region);
-  });
-
-  // Final puzzle object (matches your renderer)
-  return {
-    seed,
-    difficulty,
-    grids,        // each grid now has grid.regions
-    dominoPool,   // the tiles used
-    tiling        // for debugging or future features
-  };
-}
-
-function generateRegions(grids, tiling, rng, difficulty) {
-  const regions = [];
-  const used = new Set();
-
-  // Build adjacency map: which dominoes touch which
-  const adjacency = new Map();
-
-  function dominoKey(dom) {
-    return dom.cells.map(c => `${c.g},${c.r},${c.c}`).join("|");
-  }
-
-  // Precompute adjacency
-  for (let i = 0; i < tiling.length; i++) {
-    const A = tiling[i];
-    const Akey = dominoKey(A);
-    adjacency.set(Akey, []);
-
-    for (let j = 0; j < tiling.length; j++) {
-      if (i === j) continue;
-      const B = tiling[j];
-
-      for (const a of A.cells) {
-        for (const b of B.cells) {
-          if (
-            a.g === b.g &&
-            Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1
-          ) {
-            adjacency.get(Akey).push(tiling[j]);
-          }
-        }
+    
+    /* ============================================================
+       PLACEMENT LOGIC
+       ============================================================ */
+    
+    function tryPlaceDomino(domino) {
+      const grid = document.getElementById("pips-grid");
+      const gridRect = grid.getBoundingClientRect();
+      const domRect = domino.getBoundingClientRect();
+    
+      const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+      const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+      const step = cellSize + cellGap;
+    
+      // Compute top-left cell index
+      const col = Math.round((domRect.left - gridRect.left) / step);
+      const row = Math.round((domRect.top - gridRect.top) / step);
+    
+      const vertical = domino.classList.contains("vertical");
+    
+      const cells = vertical
+        ? [ [row, col], [row + 1, col] ]
+        : [ [row, col], [row, col + 1] ];
+    
+      // Validate placement
+      if (!cells.every(([r, c]) => isValidCell(r, c))) {
+        flashInvalid(domino);
+        return false;
       }
+    
+      // Snap into place
+      const [r0, c0] = cells[0];
+      const x = c0 * step;
+      const y = r0 * step;
+    
+      domino.style.left = `${gridRect.left + x}px`;
+      domino.style.top = `${gridRect.top + y}px`;
+      domino.classList.add("domino-placed");
+    
+      return true;
     }
-  }
-
-  // Difficulty-based region size
-  function targetRegionSize() {
-    if (difficulty === "easy") return Math.floor(rng() * 2) + 1;   // 1–2
-    if (difficulty === "medium") return Math.floor(rng() * 2) + 2; // 2–3
-    return Math.floor(rng() * 3) + 3;                              // 3–5
-  }
-
-  // Shuffle dominoes
-  const dominos = tiling.slice();
-  for (let i = dominos.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [dominos[i], dominos[j]] = [dominos[j], dominos[i]];
-  }
-
-  // Build regions
-  for (const dom of dominos) {
-    const key = dominoKey(dom);
-    if (used.has(key)) continue;
-
-    const regionDominos = [];
-    const queue = [dom];
-    const maxSize = targetRegionSize();
-
-    while (queue.length > 0 && regionDominos.length < maxSize) {
-      const d = queue.shift();
-      const dkey = dominoKey(d);
-      if (used.has(dkey)) continue;
-
-      used.add(dkey);
-      regionDominos.push(d);
-
-      for (const n of adjacency.get(dkey)) {
-        const nkey = dominoKey(n);
-        if (!used.has(nkey)) queue.push(n);
-      }
+    
+    /* ------------------------------
+       VALIDATION HELPERS
+       ------------------------------ */
+    function isValidCell(r, c) {
+      const cell = document.getElementById(`cell-${r}-${c}`);
+      return cell !== null;
+    }
+    
+    function flashInvalid(domino) {
+      domino.classList.add("cell-invalid");
+      setTimeout(() => domino.classList.remove("cell-invalid"), 300);
+    }
+    
+    /* ============================================================
+       HIGHLIGHTING
+       ============================================================ */
+    
+    function highlightPossibleCells(domino) {
+      const grid = document.getElementById("pips-grid");
+      const cells = grid.querySelectorAll(".pips-cell");
+    
+      cells.forEach(cell => cell.classList.add("cell-highlight"));
+    }
+    
+    function clearHighlights() {
+      document.querySelectorAll(".cell-highlight").forEach(c =>
+        c.classList.remove("cell-highlight")
+      );
     }
 
-   // Skip empty regionDominos immediately
-   if (regionDominos.length === 0) {
-     continue;
-   }
    
-   // Flatten region cells and record grid index
-   const cells = [];
-   let gIndex = null;
    
-   regionDominos.forEach(dom => {
-     dom.cells.forEach(c => {
-       if (gIndex === null) gIndex = c.g;
-       cells.push(`${c.r},${c.c}`);
-     });
-   });
-   
-   // Skip invalid regions
-   if (cells.length === 0 || gIndex === null || !grids[gIndex]) {
-     continue;
-   }
+  </script>
 
-  const color = randomPastelColor(rng);
-  
-  regions.push({
-    color,
-    cells,
-    gIndex
-  });
- }   // closes the for-loop
- 
- return regions;
-
-}   // closes generateRegions
-
-// Helper for region colors
-function randomPastelColor(rng) {
-  const r = Math.floor(150 + rng() * 100);
-  const g = Math.floor(150 + rng() * 100);
-  const b = Math.floor(150 + rng() * 100);
-  return `rgb(${r},${g},${b})`;
-}
- 
-function assignRegionRules(regions, tiling, rng, difficulty) {
-  // Build pip map: key "g,r,c" -> [a, b]
-  const pipMap = new Map();
-  tiling.forEach(dom => {
-    const [a, b] = dom.pips;
-    dom.cells.forEach(c => {
-      pipMap.set(`${c.g},${c.r},${c.c}`, [a, b]);
-    });
-  });
-
-  // Helper: get all pip values in a region
-  function regionPips(region) {
-    const values = [];
-    region.cells.forEach(cell => {
-      // region.cells are "r,c" strings
-      const [r, c] = cell.split(",").map(Number);
-
-      // all cells in a region belong to the same grid
-      const g = region.gIndex;
-
-      const p = pipMap.get(`${g},${r},${c}`);
-      if (p) values.push(...p);
-    });
-    return values;
-  }
-
-  // Difficulty-based rule weighting
-  function chooseRuleType() {
-    const r = rng();
-
-    if (difficulty === "easy") {
-      if (r < 0.6) return "sum";
-      if (r < 0.9) return "=";
-      return "neq";
-    }
-
-    if (difficulty === "medium") {
-      if (r < 0.5) return "sum";
-      if (r < 0.7) return "=";
-      if (r < 0.85) return "<";
-      if (r < 0.95) return ">";
-      return "neq";
-    }
-
-    // hard
-    if (r < 0.4) return "sum";
-    if (r < 0.55) return "=";
-    if (r < 0.75) return "<";
-    if (r < 0.9) return ">";
-    return "neq";
-  }
-
-  // Assign rules
-  regions.forEach(region => {
-    const pips = regionPips(region);
-    const sum = pips.reduce((a, b) => a + b, 0);
-    const unique = new Set(pips).size === pips.length;
-
-    const ruleType = chooseRuleType();
-
-    if (ruleType === "sum") {
-      region.rule = { type: "sum", value: sum };
-    }
-
-    else if (ruleType === "=") {
-      const allSame = pips.length > 0 && pips.every(v => v === pips[0]);
-      region.rule = allSame ? { type: "=" } : { type: "sum", value: sum };
-    }
-
-    else if (ruleType === "<") {
-      const threshold = sum + Math.floor(rng() * 3) + 1;
-      region.rule = { type: "<", value: threshold };
-    }
-
-    else if (ruleType === ">") {
-      const threshold = Math.max(0, sum - (Math.floor(rng() * 3) + 1));
-      region.rule = { type: ">", value: threshold };
-    }
-
-    else if (ruleType === "neq") {
-      region.rule = unique ? { type: "neq" } : { type: "sum", value: sum };
-    }
-console.log("Assigned rule:", region);
-  });
-}
-
-function assignPipValues(tiling, dominoPool, rng) {
-  // Defensive: ensure pool size matches tiling size
-  if (dominoPool.length !== tiling.length) {
-    console.warn(
-      "assignPipValues: dominoPool and tiling length mismatch:",
-      dominoPool.length,
-      tiling.length
-    );
-  }
-
-  // Copy and shuffle the pool with seeded RNG
-  const pool = dominoPool.slice();
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-
-  // Assign pips to each domino in the tiling
-  tiling.forEach((dom, i) => {
-    dom.pips = pool[i % pool.length]; // safe even if mismatch
-  });
-
-  return tiling;
-}
-
-/* ---------------------------------------------------------
-   GLOBAL HOOKS / INIT
-   --------------------------------------------------------- */
-let pipsGame = null;
-
-function setMessage(msg, color) {
-  if (pipsGame) {
-    pipsGame.setMessage(msg, color);
-  }
-}
-
-function newPipsPuzzle() {
-  if (pipsGame) {
-    pipsGame.newPuzzle();
-  }
-}
-
-function checkPips() {
-  if (pipsGame) {
-    pipsGame.checkPips();
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  pipsGame = new PipsGame();
-  pipsGame.newPuzzle();
-});
-</script>
 </body>
 </html>
