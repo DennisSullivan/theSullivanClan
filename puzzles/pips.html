@@ -143,18 +143,29 @@
       transition: transform 0.15s ease;
     }
     
-    .domino:active {
-      cursor: grabbing;
-      transform: scale(1.05);
+    /* Domino matches puzzle cell size exactly */
+    .domino {
+      width: calc(var(--cell-size) * 2 + var(--cell-gap));
+      height: var(--cell-size);
+      background: var(--domino-bg);
+      border: 2px solid var(--domino-border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+      box-shadow: 0 2px 4px var(--domino-shadow);
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s ease;
     }
     
-    /* Domino rotated vertically */
+    /* Vertical domino = 2 cells tall */
     .domino.vertical {
       width: var(--cell-size);
       height: calc(var(--cell-size) * 2 + var(--cell-gap));
       flex-direction: column;
     }
-    
+      
     /* Pips inside dominos */
     .pip {
       width: 10px;
