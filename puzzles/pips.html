@@ -521,8 +521,29 @@
         const step = cellSize + cellGap;
       
         // Compute top-left cell index
-        const col = Math.round((domRect.left - gridRect.left) / step);
-        const row = Math.round((domRect.top - gridRect.top) / step);
+        // Find nearest cell by checking actual DOM positions
+        let bestCell = null;
+        let bestDist = Infinity;
+        
+        document.querySelectorAll(".pips-cell").forEach(cell => {
+          const rect = cell.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+        
+          const dx = domRect.left + domRect.width / 2 - cx;
+          const dy = domRect.top + domRect.height / 2 - cy;
+          const dist = dx*dx + dy*dy;
+        
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestCell = cell;
+          }
+        });
+        
+        if (!bestCell) return false;
+        
+        const row = parseInt(bestCell.dataset.row, 10);
+        const col = parseInt(bestCell.dataset.col, 10);
       
         const vertical = domino.classList.contains("vertical");
       
