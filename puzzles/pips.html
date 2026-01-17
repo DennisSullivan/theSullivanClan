@@ -1381,24 +1381,49 @@ function generateDominoTiling(grids, dominoPool, rng) {
   return tiling;
 }
 
-// The generator skeleton
-function (seed, difficulty) {
+function generatePipsPuzzle(seed, difficulty) {
   const rng = makeSeededRNG(seed);
 
+  // Step 1: grids
   const grids = generateGrids(rng, difficulty);
+
+  // Step 2: count active cells
   const activeCellCount = countActiveCells(grids);
   const dominoCount = activeCellCount / 2;
 
+  // Step 3: choose domino pool
   const dominoPool = chooseDominoPool(rng, dominoCount, difficulty);
-  const tiling = generateDominoTiling(grids, dominoPool, rng);
 
-  // TEMP: until we wire regions/rules, return something your renderer understands
+  // Step 4: generate tiling
+  let tiling = generateDominoTiling(grids, dominoPool, rng);
+
+  // Step 7: assign pip values to each domino
+  tiling = assignPipValues(tiling, dominoPool, rng);
+
+  // Step 5: generate regions
+  let regions = generateRegions(grids, tiling, rng, difficulty);
+
+  // Step 6: assign rules to regions
+  regions = assignRegionRules(regions, tiling, rng, difficulty);
+
+  // --- Step 8C: Attach regions to their grids ---
+  grids.forEach(grid => {
+    grid.regions = [];
+  });
+
+  regions.forEach(region => {
+    const firstCell = region.cells[0];
+    const [gIndex] = firstCell.split(",").map(Number);
+    grids[gIndex].regions.push(region);
+  });
+
+  // Final puzzle object (matches your renderer)
   return {
     seed,
     difficulty,
-    grids,
-    dominoPool,
-    tiling
+    grids,        // each grid now has grid.regions
+    dominoPool,   // the tiles used
+    tiling        // for debugging or future features
   };
 }
 
