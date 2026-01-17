@@ -1596,10 +1596,10 @@ function randomPastelColor(rng) {
 }
  
 function assignRegionRules(regions, tiling, rng, difficulty) {
-  // Build pip map: cell -> pip value
+  // Build pip map: key "g,r,c" -> [a, b]
   const pipMap = new Map();
   tiling.forEach(dom => {
-    const [a, b] = dom.pips; // Step 7 will assign these
+    const [a, b] = dom.pips;
     dom.cells.forEach(c => {
       pipMap.set(`${c.g},${c.r},${c.c}`, [a, b]);
     });
@@ -1609,7 +1609,13 @@ function assignRegionRules(regions, tiling, rng, difficulty) {
   function regionPips(region) {
     const values = [];
     region.cells.forEach(cell => {
-      const p = pipMap.get(cell);
+      // region.cells are "r,c" strings
+      const [r, c] = cell.split(",").map(Number);
+
+      // all cells in a region belong to the same grid
+      const g = region.gIndex;
+
+      const p = pipMap.get(`${g},${r},${c}`);
       if (p) values.push(...p);
     });
     return values;
@@ -1617,16 +1623,15 @@ function assignRegionRules(regions, tiling, rng, difficulty) {
 
   // Difficulty-based rule weighting
   function chooseRuleType() {
+    const r = rng();
+
     if (difficulty === "easy") {
-      // Mostly sum and =, avoid inequalities
-      const r = rng();
       if (r < 0.6) return "sum";
       if (r < 0.9) return "=";
       return "neq";
     }
 
     if (difficulty === "medium") {
-      const r = rng();
       if (r < 0.5) return "sum";
       if (r < 0.7) return "=";
       if (r < 0.85) return "<";
@@ -1635,7 +1640,6 @@ function assignRegionRules(regions, tiling, rng, difficulty) {
     }
 
     // hard
-    const r = rng();
     if (r < 0.4) return "sum";
     if (r < 0.55) return "=";
     if (r < 0.75) return "<";
@@ -1656,35 +1660,22 @@ function assignRegionRules(regions, tiling, rng, difficulty) {
     }
 
     else if (ruleType === "=") {
-      // Only valid if all pips identical
-      const allSame = pips.every(v => v === pips[0]);
-      if (allSame) {
-        region.rule = { type: "=" };
-      } else {
-        // fallback to sum
-        region.rule = { type: "sum", value: sum };
-      }
+      const allSame = pips.length > 0 && pips.every(v => v === pips[0]);
+      region.rule = allSame ? { type: "=" } : { type: "sum", value: sum };
     }
 
     else if (ruleType === "<") {
-      // Pick a threshold greater than sum
       const threshold = sum + Math.floor(rng() * 3) + 1;
       region.rule = { type: "<", value: threshold };
     }
 
     else if (ruleType === ">") {
-      // Pick a threshold less than sum
       const threshold = Math.max(0, sum - (Math.floor(rng() * 3) + 1));
       region.rule = { type: ">", value: threshold };
     }
 
     else if (ruleType === "neq") {
-      if (unique) {
-        region.rule = { type: "neq" };
-      } else {
-        // fallback to sum
-        region.rule = { type: "sum", value: sum };
-      }
+      region.rule = unique ? { type: "neq" } : { type: "sum", value: sum };
     }
   });
 
@@ -1692,10 +1683,17 @@ function assignRegionRules(regions, tiling, rng, difficulty) {
 }
 
 function assignPipValues(tiling, dominoPool, rng) {
-  // Make a copy of the pool so we can shuffle it
-  const pool = dominoPool.slice();
+  // Defensive: ensure pool size matches tiling size
+  if (dominoPool.length !== tiling.length) {
+    console.warn(
+      "assignPipValues: dominoPool and tiling length mismatch:",
+      dominoPool.length,
+      tiling.length
+    );
+  }
 
-  // Shuffle with seeded RNG
+  // Copy and shuffle the pool with seeded RNG
+  const pool = dominoPool.slice();
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -1703,7 +1701,7 @@ function assignPipValues(tiling, dominoPool, rng) {
 
   // Assign pips to each domino in the tiling
   tiling.forEach((dom, i) => {
-    dom.pips = pool[i];  // [a, b]
+    dom.pips = pool[i % pool.length]; // safe even if mismatch
   });
 
   return tiling;
