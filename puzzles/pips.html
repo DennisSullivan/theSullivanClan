@@ -1370,11 +1370,12 @@ function generateRegions(grids, tiling, rng, difficulty) {
       if (i === j) continue;
       const B = tiling[j];
 
-      // Check if any cell in A touches any cell in B
       for (const a of A.cells) {
         for (const b of B.cells) {
-          if (a.g === b.g &&
-              Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1) {
+          if (
+            a.g === b.g &&
+            Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1
+          ) {
             adjacency.get(Akey).push(tiling[j]);
           }
         }
@@ -1401,45 +1402,47 @@ function generateRegions(grids, tiling, rng, difficulty) {
     const key = dominoKey(dom);
     if (used.has(key)) continue;
 
-    const region = [];
+    const regionDominos = [];
     const queue = [dom];
     const maxSize = targetRegionSize();
 
-    while (queue.length > 0 && region.length < maxSize) {
+    while (queue.length > 0 && regionDominos.length < maxSize) {
       const d = queue.shift();
       const dkey = dominoKey(d);
       if (used.has(dkey)) continue;
 
       used.add(dkey);
-      region.push(d);
+      regionDominos.push(d);
 
-      // Add neighbors
       for (const n of adjacency.get(dkey)) {
         const nkey = dominoKey(n);
         if (!used.has(nkey)) queue.push(n);
       }
     }
 
-   // Flatten region cells and record which grid they belong to
-   const cells = [];
-   let gIndex = null;
-   
-   region.forEach(dom => {
-     dom.cells.forEach(c => {
-       if (gIndex === null) gIndex = c.g;   // all cells in region share same grid
-       cells.push(`${c.r},${c.c}`);         // store as "r,c"
-     });
-   });
-   
-   // Assign a random color
-   const color = randomPastelColor(rng);
-   
-   regions.push({
-     color,
-     cells,
-     gIndex
-   });
+    // Flatten region cells and record grid index
+    const cells = [];
+    let gIndex = null;
+
+    regionDominos.forEach(dom => {
+      dom.cells.forEach(c => {
+        if (gIndex === null) gIndex = c.g;
+        cells.push(`${c.r},${c.c}`);
+      });
+    });
+
+    // Skip empty or invalid regions
+    if (cells.length === 0 || gIndex === null) continue;
+
+    const color = randomPastelColor(rng);
+
+    regions.push({
+      color,
+      cells,
+      gIndex
+    });
   }
+
   return regions;
 }
 
