@@ -385,12 +385,6 @@ function darkenColor(color, factor) {
     return { h, s, l };
   }
 
-  const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-
-  // Slight darken, keep colorfulness
-  hsl.s = Math.min(1, hsl.s * (1 + factor * 1.5));
-  hsl.l = Math.max(0, hsl.l - factor * 0.25);
-
   function hslToRgb(h, s, l) {
     let r, g, b;
 
