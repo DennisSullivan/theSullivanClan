@@ -260,299 +260,312 @@
       console.log(`Grid built: ${rows} × ${cols}`);
     }
     
+      const standardDominos = [
+        [0,0], [0,1], [0,2], [0,3], [0,4], [0,5], [0,6],
+        [1,1], [1,2], [1,3], [1,4], [1,5], [1,6],
+        [2,2], [2,3], [2,4], [2,5], [2,6],
+        [3,3], [3,4], [3,5], [3,6],
+        [4,4], [4,5], [4,6],
+        [5,5], [5,6],
+        [6,6]
+      ];
+
     /* ============================================================
        INITIALIZE A TEST GRID
        (You can change this to any puzzle size)
        ============================================================ */
     
-    document.addEventListener("DOMContentLoaded", () => {
-      buildGrid(6, 6); // temporary test grid
-    });
+      document.addEventListener("DOMContentLoaded", () => {
+        buildGrid(6, 6);
+        drawRegions([]); // optional for now
+        buildDominoTray(standardDominos);
+        enableDominoInteractions();
+      });
 
 
 // 2
-    /* ============================================================
-       PIPS ENGINE — REGION RENDERER
-       Draws region shapes as overlays on top of the grid
-       ============================================================ */
-    
-    function drawRegions(regionList) {
-      const regionLayer = document.getElementById("region-layer");
-      regionLayer.innerHTML = ""; // clear previous regions
-    
-      regionList.forEach((region, index) => {
-        const regionDiv = document.createElement("div");
-        regionDiv.classList.add("region");
-    
-        // Compute bounding box of the region
-        const rows = region.map(c => c[0]);
-        const cols = region.map(c => c[1]);
-    
-        const minRow = Math.min(...rows);
-        const maxRow = Math.max(...rows);
-        const minCol = Math.min(...cols);
-        const maxCol = Math.max(...cols);
-    
-        // Convert grid coordinates to pixel positions
-        const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-        const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-    
-        const x = minCol * (cellSize + cellGap);
-        const y = minRow * (cellSize + cellGap);
-        const width = (maxCol - minCol + 1) * (cellSize + cellGap) - cellGap;
-        const height = (maxRow - minRow + 1) * (cellSize + cellGap) - cellGap;
-    
-        // Position the region overlay
-        regionDiv.style.left = `${x}px`;
-        regionDiv.style.top = `${y}px`;
-        regionDiv.style.width = `${width}px`;
-        regionDiv.style.height = `${height}px`;
-    
-        // Optional label
-        const label = document.createElement("div");
-        label.classList.add("region-label");
-        label.textContent = String.fromCharCode(65 + index); // A, B, C...
-        regionDiv.appendChild(label);
-    
-        regionLayer.appendChild(regionDiv);
-      });
-    
-      console.log("Regions drawn:", regionList.length);
-    }
+      /* ============================================================
+         PIPS ENGINE — REGION RENDERER
+         Draws region shapes as overlays on top of the grid
+         ============================================================ */
+      
+      function drawRegions(regionList) {
+        const regionLayer = document.getElementById("region-layer");
+        regionLayer.innerHTML = ""; // clear previous regions
+      
+        regionList.forEach((region, index) => {
+          const regionDiv = document.createElement("div");
+          regionDiv.classList.add("region");
+      
+          // Compute bounding box of the region
+          const rows = region.map(c => c[0]);
+          const cols = region.map(c => c[1]);
+      
+          const minRow = Math.min(...rows);
+          const maxRow = Math.max(...rows);
+          const minCol = Math.min(...cols);
+          const maxCol = Math.max(...cols);
+      
+          // Convert grid coordinates to pixel positions
+          const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+          const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+      
+          const x = minCol * (cellSize + cellGap);
+          const y = minRow * (cellSize + cellGap);
+          const width = (maxCol - minCol + 1) * (cellSize + cellGap) - cellGap;
+          const height = (maxRow - minRow + 1) * (cellSize + cellGap) - cellGap;
+      
+          // Position the region overlay
+          regionDiv.style.left = `${x}px`;
+          regionDiv.style.top = `${y}px`;
+          regionDiv.style.width = `${width}px`;
+          regionDiv.style.height = `${height}px`;
+      
+          // Optional label
+          const label = document.createElement("div");
+          label.classList.add("region-label");
+          label.textContent = String.fromCharCode(65 + index); // A, B, C...
+          regionDiv.appendChild(label);
+      
+          regionLayer.appendChild(regionDiv);
+        });
+      
+        console.log("Regions drawn:", regionList.length);
+      }
 
 
 // 3
-    /* ============================================================
-       PIPS ENGINE — DOMINO GENERATOR
-       Creates domino tiles and places them in the tray
-       ============================================================ */
-    
-    /**
-     * dominoList format:
-     * [
-     *   [0,0], [0,1], [0,2], ...  // each pair is a domino
-     * ]
-     */
-    function buildDominoTray(dominoList) {
-      const tray = document.getElementById("domino-tray");
-      tray.innerHTML = ""; // clear previous puzzle
-    
-      dominoList.forEach((pair, index) => {
-        const [a, b] = pair;
-    
-        const domino = document.createElement("div");
-        domino.classList.add("domino");
-        domino.dataset.index = index;
-        domino.dataset.valueA = a;
-        domino.dataset.valueB = b;
-    
-        // Pip containers
-        const pipA = createPipGroup(a);
-        const pipB = createPipGroup(b);
-    
-        domino.appendChild(pipA);
-        domino.appendChild(pipB);
-    
-        // Rotation support
-        domino.addEventListener("dblclick", () => {
-          domino.classList.toggle("vertical");
+      /* ============================================================
+         PIPS ENGINE — DOMINO GENERATOR
+         Creates domino tiles and places them in the tray
+         ============================================================ */
+      
+      /**
+       * dominoList format:
+       * [
+       *   [0,0], [0,1], [0,2], ...  // each pair is a domino
+       * ]
+       */
+      function buildDominoTray(dominoList) {
+        const tray = document.getElementById("domino-tray");
+        tray.innerHTML = ""; // clear previous puzzle
+      
+        dominoList.forEach((pair, index) => {
+          const [a, b] = pair;
+      
+          const domino = document.createElement("div");
+          domino.classList.add("domino");
+          domino.dataset.index = index;
+          domino.dataset.valueA = a;
+          domino.dataset.valueB = b;
+      
+          // Pip containers
+          const pipA = createPipGroup(a);
+          const pipB = createPipGroup(b);
+      
+          domino.appendChild(pipA);
+          domino.appendChild(pipB);
+      
+          // Rotation support
+          domino.addEventListener("dblclick", () => {
+            domino.classList.toggle("vertical");
+          });
+      
+          tray.appendChild(domino);
         });
-    
-        tray.appendChild(domino);
-      });
-    
-      console.log("Domino tray built:", dominoList.length);
-    }
-    
-    /* ============================================================
-       PIP RENDERING
-       Creates a group of pips for a single number (0–6)
-       ============================================================ */
-    
-    function createPipGroup(value) {
-      const group = document.createElement("div");
-      group.classList.add("pip-group");
-    
-      // Pip layout patterns for 0–6
-      const pipPatterns = {
-        0: [],
-        1: [ [1,1] ],
-        2: [ [0,0], [2,2] ],
-        3: [ [0,0], [1,1], [2,2] ],
-        4: [ [0,0], [0,2], [2,0], [2,2] ],
-        5: [ [0,0], [0,2], [1,1], [2,0], [2,2] ],
-        6: [ [0,0], [0,2], [1,0], [1,2], [2,0], [2,2] ]
-      };
-    
-      const pattern = pipPatterns[value] || [];
-    
-      // Create a 3×3 pip grid
-      group.style.display = "grid";
-      group.style.gridTemplateColumns = "repeat(3, 1fr)";
-      group.style.gridTemplateRows = "repeat(3, 1fr)";
-      group.style.width = "100%";
-      group.style.height = "100%";
-    
-      pattern.forEach(([r, c]) => {
-        const pip = document.createElement("div");
-        pip.classList.add("pip");
-        pip.style.gridRow = r + 1;
-        pip.style.gridColumn = c + 1;
-        group.appendChild(pip);
-      });
-    
-      return group;
-    }
-
-
-// 4
-    /* ============================================================
-       PIPS ENGINE — DRAG & DROP + PLACEMENT LOGIC
-       ============================================================ */
-    
-    let activeDomino = null;
-    let offsetX = 0;
-    let offsetY = 0;
-    
-    function enableDominoInteractions() {
-      const tray = document.getElementById("domino-tray");
-    
-      tray.querySelectorAll(".domino").forEach(domino => {
-        domino.addEventListener("mousedown", startDrag);
-        domino.addEventListener("touchstart", startDrag, { passive: false });
-      });
-    
-      document.addEventListener("mousemove", drag);
-      document.addEventListener("touchmove", drag, { passive: false });
-    
-      document.addEventListener("mouseup", endDrag);
-      document.addEventListener("touchend", endDrag);
-    }
-    
-    /* ------------------------------
-       START DRAG
-       ------------------------------ */
-    function startDrag(e) {
-      e.preventDefault();
-    
-      activeDomino = e.currentTarget;
-      activeDomino.style.position = "absolute";
-      activeDomino.style.zIndex = 1000;
-    
-      const rect = activeDomino.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-      offsetX = clientX - rect.left;
-      offsetY = clientY - rect.top;
-    
-      highlightPossibleCells(activeDomino);
-    }
-    
-    /* ------------------------------
-       DRAG MOVEMENT
-       ------------------------------ */
-    function drag(e) {
-      if (!activeDomino) return;
-    
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-      activeDomino.style.left = `${clientX - offsetX}px`;
-      activeDomino.style.top = `${clientY - offsetY}px`;
-    }
-    
-    /* ------------------------------
-       END DRAG → TRY TO PLACE
-       ------------------------------ */
-    function endDrag() {
-      if (!activeDomino) return;
-    
-      const snapped = tryPlaceDomino(activeDomino);
-    
-      clearHighlights();
-    
-      if (!snapped) {
-        // Return to tray
-        activeDomino.style.position = "";
-        activeDomino.style.left = "";
-        activeDomino.style.top = "";
-        activeDomino.style.zIndex = "";
+      
+        console.log("Domino tray built:", dominoList.length);
       }
-    
-      activeDomino = null;
-    }
-    
-    /* ============================================================
-       PLACEMENT LOGIC
-       ============================================================ */
-    
-    function tryPlaceDomino(domino) {
-      const grid = document.getElementById("pips-grid");
-      const gridRect = grid.getBoundingClientRect();
-      const domRect = domino.getBoundingClientRect();
-    
-      const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-      const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-      const step = cellSize + cellGap;
-    
-      // Compute top-left cell index
-      const col = Math.round((domRect.left - gridRect.left) / step);
-      const row = Math.round((domRect.top - gridRect.top) / step);
-    
-      const vertical = domino.classList.contains("vertical");
-    
-      const cells = vertical
-        ? [ [row, col], [row + 1, col] ]
-        : [ [row, col], [row, col + 1] ];
-    
-      // Validate placement
-      if (!cells.every(([r, c]) => isValidCell(r, c))) {
-        flashInvalid(domino);
-        return false;
+      
+      /* ============================================================
+         PIP RENDERING
+         Creates a group of pips for a single number (0–6)
+         ============================================================ */
+      
+      function createPipGroup(value) {
+        const group = document.createElement("div");
+        group.classList.add("pip-group");
+      
+        // Pip layout patterns for 0–6
+        const pipPatterns = {
+          0: [],
+          1: [ [1,1] ],
+          2: [ [0,0], [2,2] ],
+          3: [ [0,0], [1,1], [2,2] ],
+          4: [ [0,0], [0,2], [2,0], [2,2] ],
+          5: [ [0,0], [0,2], [1,1], [2,0], [2,2] ],
+          6: [ [0,0], [0,2], [1,0], [1,2], [2,0], [2,2] ]
+        };
+      
+        const pattern = pipPatterns[value] || [];
+      
+        // Create a 3×3 pip grid
+        group.style.display = "grid";
+        group.style.gridTemplateColumns = "repeat(3, 1fr)";
+        group.style.gridTemplateRows = "repeat(3, 1fr)";
+        group.style.width = "100%";
+        group.style.height = "100%";
+      
+        pattern.forEach(([r, c]) => {
+          const pip = document.createElement("div");
+          pip.classList.add("pip");
+          pip.style.gridRow = r + 1;
+          pip.style.gridColumn = c + 1;
+          group.appendChild(pip);
+        });
+      
+        return group;
       }
-    
-      // Snap into place
-      const [r0, c0] = cells[0];
-      const x = c0 * step;
-      const y = r0 * step;
-    
-      domino.style.left = `${gridRect.left + x}px`;
-      domino.style.top = `${gridRect.top + y}px`;
-      domino.classList.add("domino-placed");
-    
-      return true;
-    }
-    
-    /* ------------------------------
-       VALIDATION HELPERS
-       ------------------------------ */
-    function isValidCell(r, c) {
-      const cell = document.getElementById(`cell-${r}-${c}`);
-      return cell !== null;
-    }
-    
-    function flashInvalid(domino) {
-      domino.classList.add("cell-invalid");
-      setTimeout(() => domino.classList.remove("cell-invalid"), 300);
-    }
-    
-    /* ============================================================
-       HIGHLIGHTING
-       ============================================================ */
-    
-    function highlightPossibleCells(domino) {
-      const grid = document.getElementById("pips-grid");
-      const cells = grid.querySelectorAll(".pips-cell");
-    
-      cells.forEach(cell => cell.classList.add("cell-highlight"));
-    }
-    
-    function clearHighlights() {
-      document.querySelectorAll(".cell-highlight").forEach(c =>
-        c.classList.remove("cell-highlight")
-      );
-    }
+  
+  
+  // 4
+      /* ============================================================
+         PIPS ENGINE — DRAG & DROP + PLACEMENT LOGIC
+         ============================================================ */
+      
+      let activeDomino = null;
+      let offsetX = 0;
+      let offsetY = 0;
+      
+      function enableDominoInteractions() {
+        const tray = document.getElementById("domino-tray");
+      
+        tray.querySelectorAll(".domino").forEach(domino => {
+          domino.addEventListener("mousedown", startDrag);
+          domino.addEventListener("touchstart", startDrag, { passive: false });
+        });
+      
+        document.addEventListener("mousemove", drag);
+        document.addEventListener("touchmove", drag, { passive: false });
+      
+        document.addEventListener("mouseup", endDrag);
+        document.addEventListener("touchend", endDrag);
+      }
+      
+      /* ------------------------------
+         START DRAG
+         ------------------------------ */
+      function startDrag(e) {
+        e.preventDefault();
+      
+        activeDomino = e.currentTarget;
+        activeDomino.style.position = "absolute";
+        activeDomino.style.zIndex = 1000;
+      
+        const rect = activeDomino.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+        offsetX = clientX - rect.left;
+        offsetY = clientY - rect.top;
+      
+        highlightPossibleCells(activeDomino);
+      }
+      
+      /* ------------------------------
+         DRAG MOVEMENT
+         ------------------------------ */
+      function drag(e) {
+        if (!activeDomino) return;
+      
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+        activeDomino.style.left = `${clientX - offsetX}px`;
+        activeDomino.style.top = `${clientY - offsetY}px`;
+      }
+      
+      /* ------------------------------
+         END DRAG → TRY TO PLACE
+         ------------------------------ */
+      function endDrag() {
+        if (!activeDomino) return;
+      
+        const snapped = tryPlaceDomino(activeDomino);
+      
+        clearHighlights();
+      
+        if (!snapped) {
+          // Return to tray
+          activeDomino.style.position = "";
+          activeDomino.style.left = "";
+          activeDomino.style.top = "";
+          activeDomino.style.zIndex = "";
+        }
+      
+        activeDomino = null;
+      }
+      
+      /* ============================================================
+         PLACEMENT LOGIC
+         ============================================================ */
+      
+      function tryPlaceDomino(domino) {
+        const grid = document.getElementById("pips-grid");
+        const gridRect = grid.getBoundingClientRect();
+        const domRect = domino.getBoundingClientRect();
+      
+        const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+        const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+        const step = cellSize + cellGap;
+      
+        // Compute top-left cell index
+        const col = Math.round((domRect.left - gridRect.left) / step);
+        const row = Math.round((domRect.top - gridRect.top) / step);
+      
+        const vertical = domino.classList.contains("vertical");
+      
+        const cells = vertical
+          ? [ [row, col], [row + 1, col] ]
+          : [ [row, col], [row, col + 1] ];
+      
+        // Validate placement
+        if (!cells.every(([r, c]) => isValidCell(r, c))) {
+          flashInvalid(domino);
+          return false;
+        }
+      
+        // Snap into place
+        const [r0, c0] = cells[0];
+        const x = c0 * step;
+        const y = r0 * step;
+      
+        domino.style.left = `${gridRect.left + x}px`;
+        domino.style.top = `${gridRect.top + y}px`;
+        domino.classList.add("domino-placed");
+      
+        return true;
+      }
+      
+      /* ------------------------------
+         VALIDATION HELPERS
+         ------------------------------ */
+      function isValidCell(r, c) {
+        const cell = document.getElementById(`cell-${r}-${c}`);
+        return cell !== null;
+      }
+      
+      function flashInvalid(domino) {
+        domino.classList.add("cell-invalid");
+        setTimeout(() => domino.classList.remove("cell-invalid"), 300);
+      }
+      
+      /* ============================================================
+         HIGHLIGHTING
+         ============================================================ */
+      
+      function highlightPossibleCells(domino) {
+        const grid = document.getElementById("pips-grid");
+        const cells = grid.querySelectorAll(".pips-cell");
+      
+        cells.forEach(cell => cell.classList.add("cell-highlight"));
+      }
+      
+      function clearHighlights() {
+        document.querySelectorAll(".cell-highlight").forEach(c =>
+          c.classList.remove("cell-highlight")
+        );
+      }
 
    
    
