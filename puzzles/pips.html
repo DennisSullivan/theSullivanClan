@@ -1329,11 +1329,7 @@ function generateGrids(rng, difficulty) {
 function countActiveCells(grids) {
   let count = 0;
   grids.forEach(grid => {
-    grid.cells.forEach(row => {
-      row.forEach(active => {
-        if (active) count++;
-      });
-    });
+    count += grid.activeCells.length;
   });
   return count;
 }
