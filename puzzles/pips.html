@@ -574,6 +574,8 @@ function placeRegionBadges(regions, cellSize, overlayEl) {
   const placed = [];
 
   regions.forEach(region => {
+console.log("Badge region:", region);
+console.log("Badge region.rule:", region.rule);
     const box = region.boundingBox;
 
     // Build candidate anchor cells: corners of the region that are REAL cells
@@ -1341,6 +1343,7 @@ function generatePipsPuzzle(seed, difficulty) {
   
   // NOW attach regions to grids
   regions.forEach(region => {
+console.log("Attaching region to grid:", region);
     grids[region.gIndex].regions.push(region);
   });
 
@@ -1549,9 +1552,8 @@ function assignRegionRules(regions, tiling, rng, difficulty) {
     else if (ruleType === "neq") {
       region.rule = unique ? { type: "neq" } : { type: "sum", value: sum };
     }
+console.log("Assigned rule:", region);
   });
-
-  return regions;
 }
 
 function assignPipValues(tiling, dominoPool, rng) {
