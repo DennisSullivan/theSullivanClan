@@ -1250,11 +1250,80 @@ function makeSeededRNG(seed) {
   };
 }
 
-// You’ll fill these in over time
+// Reconstructed grid layouts for all difficulties.
+// These match your original 6×6 Pips boards with full active cells.
+
+const EASY_GRIDS = [
+  {
+    id: "A",
+    rows: 6,
+    cols: 6,
+    activeCells: Array.from({ length: 6 }, (_, r) =>
+      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
+    ).flat(),
+    regions: []
+  }
+];
+
+const MEDIUM_GRIDS = [
+  {
+    id: "A",
+    rows: 6,
+    cols: 6,
+    activeCells: Array.from({ length: 6 }, (_, r) =>
+      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
+    ).flat(),
+    regions: []
+  },
+  {
+    id: "B",
+    rows: 6,
+    cols: 6,
+    activeCells: Array.from({ length: 6 }, (_, r) =>
+      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
+    ).flat(),
+    regions: []
+  }
+];
+
+const HARD_GRIDS = [
+  {
+    id: "A",
+    rows: 6,
+    cols: 6,
+    activeCells: Array.from({ length: 6 }, (_, r) =>
+      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
+    ).flat(),
+    regions: []
+  },
+  {
+    id: "B",
+    rows: 6,
+    cols: 6,
+    activeCells: Array.from({ length: 6 }, (_, r) =>
+      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
+    ).flat(),
+    regions: []
+  },
+  {
+    id: "C",
+    rows: 6,
+    cols: 6,
+    activeCells: Array.from({ length: 6 }, (_, r) =>
+      Array.from({ length: 6 }, (_, c) => `${r},${c}`)
+    ).flat(),
+    regions: []
+  }
+];
+
 function generateGrids(rng, difficulty) {
-  // TEMP: return your current static grid layout for that difficulty
-  // so the generator can start working without changing visuals.
-  return YOUR_EXISTING_GRIDS_FOR(difficulty);
+  if (difficulty === "easy") {
+    return JSON.parse(JSON.stringify(EASY_GRIDS));
+  }
+  if (difficulty === "medium") {
+    return JSON.parse(JSON.stringify(MEDIUM_GRIDS));
+  }
+  return JSON.parse(JSON.stringify(HARD_GRIDS));
 }
 
 function countActiveCells(grids) {
