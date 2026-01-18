@@ -185,15 +185,12 @@
 
     /* Hard-sized pip cluster box — always centered, never expands */
     .pip-group {
+      width: 28px;
+      height: 28px;
+      margin: auto;        /* centers horizontally AND vertically */
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
-    
-      /* FIX: small, fixed-size box */
-      width: 28px;
-      height: 28px;
-    
-      margin: 0 auto;   /* centers horizontally */
       place-items: center;
     }
 
