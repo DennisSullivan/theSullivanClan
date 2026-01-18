@@ -131,77 +131,73 @@
     /* ============================================================
        DOMINO TILE — COMPLETE REPLACEMENT BLOCK
        ============================================================ */
-    
-    .domino {
-      position: relative; /* required for center line */
-      width: calc(var(--cell-size) * 2 + var(--cell-gap));
-      height: var(--cell-size);
-      background: var(--domino-bg);
-      border: 2px solid var(--domino-border);
-      border-radius: var(--radius);
-      display: flex;
-      align-items: center;
-      justify-content: space-evenly;
-      box-shadow: 0 2px 4px var(--domino-shadow);
-      cursor: grab;
-      user-select: none;
-      transition: transform 0.15s ease;
-    }
-    
-    /* Vertical domino = 2 cells tall */
-    .domino.vertical {
-      width: var(--cell-size);
-      height: calc(var(--cell-size) * 2 + var(--cell-gap));
-      flex-direction: column;
-    }
-    
-    /* Center dividing line */
-    .domino::after {
-      content: "";
-      position: absolute;
-      background: var(--domino-border);
-      opacity: 0.8;
-    }
-    
-    /* Horizontal dominos: vertical line */
-    .domino:not(.vertical)::after {
-      width: 2px;
-      height: 80%;
-      left: 50%;
-      top: 10%;
-      transform: translateX(-1px);
-    }
-    
-    /* Vertical dominos: horizontal line */
-    .domino.vertical::after {
-      height: 2px;
-      width: 80%;
-      top: 50%;
-      left: 10%;
-      transform: translateY(-1px);
-    }
-    
-    /* Tighter pip group — smaller box, centered */
-    .pip-group {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-    
-      /* Shrink the interior box so pips cluster inward */
-      width: calc(var(--cell-size) - 26px);
-      height: calc(var(--cell-size) - 26px);
-    
-      margin: auto; /* centers the pip group inside each half */
-      place-items: center;
-    }
-    
-    /* Smaller pips */
-    .pip {
-      width: 12px;
-      height: 12px;
-      background: var(--line);
-      border-radius: 50%;
-    }
+/* Domino halves: add inner padding so pips sit away from edges */
+.domino {
+  position: relative;
+  width: calc(var(--cell-size) * 2 + var(--cell-gap));
+  height: var(--cell-size);
+  background: var(--domino-bg);
+  border: 2px solid var(--domino-border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;  /* was space-evenly */
+  padding: 6px 10px;               /* NEW: inset content from edges */
+  box-shadow: 0 2px 4px var(--domino-shadow);
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+
+.domino.vertical {
+  width: var(--cell-size);
+  height: calc(var(--cell-size) * 2 + var(--cell-gap));
+  flex-direction: column;
+  padding: 10px 6px;               /* swap padding for vertical */
+}
+
+/* Center line unchanged */
+.domino::after {
+  content: "";
+  position: absolute;
+  background: var(--domino-border);
+  opacity: 0.8;
+}
+.domino:not(.vertical)::after {
+  width: 2px;
+  height: 80%;
+  left: 50%;
+  top: 10%;
+  transform: translateX(-1px);
+}
+.domino.vertical::after {
+  height: 2px;
+  width: 80%;
+  top: 50%;
+  left: 10%;
+  transform: translateY(-1px);
+}
+
+/* Tighter pip group inside each half */
+.pip-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+
+  width: calc(var(--cell-size) - 32px);  /* smaller interior box */
+  height: calc(var(--cell-size) - 32px);
+
+  margin: auto;
+  place-items: center;
+}
+
+/* Small, tight pips */
+.pip {
+  width: 10px;
+  height: 10px;
+  background: var(--line);
+  border-radius: 50%;
+}
     
     /* ------------------------------
        PLACEMENT STATES
