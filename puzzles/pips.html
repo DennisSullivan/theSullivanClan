@@ -183,23 +183,20 @@
       transform: translateY(-1px);
     }
 
-    /* Center pip clusters inside each half — no hugging the center line */
+    /* Hard-sized pip cluster box — always centered, never expands */
     .pip-group {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
     
-      /* Smaller interior box so pips cluster inward */
-      width: calc(var(--cell-size) - 32px);
-      height: calc(var(--cell-size) - 32px);
+      /* FIX: small, fixed-size box */
+      width: 28px;
+      height: 28px;
     
-      /* This is the key: equal inset on both sides */
-      margin-left: auto;
-      margin-right: auto;
-    
+      margin: 0 auto;   /* centers horizontally */
       place-items: center;
     }
-    
+
     /* Small, tight pips */
     .pip {
       width: 6px;
