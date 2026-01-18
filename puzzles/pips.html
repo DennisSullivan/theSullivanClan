@@ -557,23 +557,25 @@ console.log("USING CORRECT DRAG");
          PLACEMENT LOGIC
          ============================================================ */
       function tryPlaceDomino(domino) {
-console.log("=== DIAGNOSTIC START ===");
-
-const diagRoot = document.getElementById("pips-root");
-const diagGrid = document.getElementById("pips-grid");
-
-const diagRootRect = diagRoot.getBoundingClientRect();
-const diagGridRect = diagGrid.getBoundingClientRect();
-const diagDomRaw = domino.getBoundingClientRect();
-
-console.log("rootRect.left:", diagRootRect.left);
-console.log("gridRect.left:", diagGridRect.left);
-console.log("domRaw.left:", diagDomRaw.left);
-
-console.log("domRaw.left - rootRect.left:", diagDomRaw.left - diagRootRect.left);
-console.log("domRaw.left - gridRect.left:", diagDomRaw.left - diagGridRect.left);
-
-console.log("=== DIAGNOSTIC END ===");
+        console.log("=== DIAGNOSTIC START ===");
+      
+        const diagRoot = document.getElementById("pips-root");
+        const diagGrid = document.getElementById("pips-grid");
+      
+        const diagRootRect = diagRoot.getBoundingClientRect();
+        const diagGridRect = diagGrid.getBoundingClientRect();
+        const diagDomRaw = domino.getBoundingClientRect();
+      
+        console.log("rootRect.left:", diagRootRect.left);
+        console.log("gridRect.left:", diagGridRect.left);
+        console.log("domRaw.left:", diagDomRaw.left);
+      
+        console.log("domRaw.left - rootRect.left:", diagDomRaw.left - diagRootRect.left);
+        console.log("domRaw.left - gridRect.left:", diagDomRaw.left - diagGridRect.left);
+      
+        console.log("=== DIAGNOSTIC END ===");
+      
+        // SINGLE, REAL domRect DEFINITION
         const rootRect = document.getElementById("pips-root").getBoundingClientRect();
         const rawDom = domino.getBoundingClientRect();
         const domRect = {
@@ -584,19 +586,9 @@ console.log("=== DIAGNOSTIC END ===");
           width:  rawDom.width,
           height: rawDom.height
         };
-const rootRect = document.getElementById("pips-root").getBoundingClientRect();
-const rawDom = domino.getBoundingClientRect();
-const domRect = {
-  left:   rawDom.left   - rootRect.left,
-  right:  rawDom.right  - rootRect.left,
-  top:    rawDom.top    - rootRect.top,
-  bottom: rawDom.bottom - rootRect.top,
-  width:  rawDom.width,
-  height: rawDom.height
-};
-
-console.log("DOMINO width:", domRect.width);
-     
+      
+        console.log("DOMINO width:", domRect.width);
+      
         // Find cell with maximum overlap area
         let bestCell = null;
         let bestOverlap = 0;
@@ -612,9 +604,11 @@ console.log("DOMINO width:", domRect.width);
             width:  raw.width,
             height: raw.height
           };
-if (cell.dataset.row === "0" && cell.dataset.col === "0") {
-  console.log("CELL width:", rect.width);
-}
+      
+          if (cell.dataset.row === "0" && cell.dataset.col === "0") {
+            console.log("CELL width:", rect.width);
+          }
+      
           const overlapLeft   = Math.max(domRect.left, rect.left);
           const overlapRight  = Math.min(domRect.right, rect.right);
           const overlapTop    = Math.max(domRect.top, rect.top);
@@ -661,8 +655,7 @@ if (cell.dataset.row === "0" && cell.dataset.col === "0") {
         }
       
         const targetRect = bestCell.getBoundingClientRect();
-        // Already defined  const rootRect = document.getElementById("pips-root").getBoundingClientRect();
-
+        // reuse rootRect from above
         domino.style.left = `${targetRect.left - rootRect.left}px`;
         domino.style.top  = `${targetRect.top  - rootRect.top}px`;
         domino.classList.add("domino-placed");
