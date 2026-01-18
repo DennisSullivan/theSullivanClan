@@ -556,19 +556,19 @@
       function tryPlaceDomino(domino) {
 console.log("=== DIAGNOSTIC START ===");
 
-const root = document.getElementById("pips-root");
-const grid = document.getElementById("pips-grid");
+const diagRoot = document.getElementById("pips-root");
+const diagGrid = document.getElementById("pips-grid");
 
-const rootRect = root.getBoundingClientRect();
-const gridRect = grid.getBoundingClientRect();
-const domRaw = domino.getBoundingClientRect();
+const diagRootRect = diagRoot.getBoundingClientRect();
+const diagGridRect = diagGrid.getBoundingClientRect();
+const diagDomRaw = domino.getBoundingClientRect();
 
-console.log("rootRect.left:", rootRect.left);
-console.log("gridRect.left:", gridRect.left);
-console.log("domRaw.left:", domRaw.left);
+console.log("rootRect.left:", diagRootRect.left);
+console.log("gridRect.left:", diagGridRect.left);
+console.log("domRaw.left:", diagDomRaw.left);
 
-console.log("domRaw.left - rootRect.left:", domRaw.left - rootRect.left);
-console.log("domRaw.left - gridRect.left:", domRaw.left - gridRect.left);
+console.log("domRaw.left - rootRect.left:", diagDomRaw.left - diagRootRect.left);
+console.log("domRaw.left - gridRect.left:", diagDomRaw.left - diagGridRect.left);
 
 console.log("=== DIAGNOSTIC END ===");
         const rootRect = document.getElementById("pips-root").getBoundingClientRect();
