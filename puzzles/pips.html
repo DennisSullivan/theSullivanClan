@@ -545,8 +545,19 @@
          PLACEMENT LOGIC
          ============================================================ */
       function tryPlaceDomino(domino) {
-        const domRect = domino.getBoundingClientRect();
-      
+        const grid = document.getElementById("pips-grid");
+        const gridRect = grid.getBoundingClientRect();
+        const raw = domino.getBoundingClientRect();
+        
+        const domRect = {
+          left:   raw.left   - gridRect.left,
+          right:  raw.right  - gridRect.left,
+          top:    raw.top    - gridRect.top,
+          bottom: raw.bottom - gridRect.top,
+          width:  raw.width,
+          height: raw.height
+        };
+
         // Find cell with maximum overlap area
         let bestCell = null;
         let bestOverlap = 0;
