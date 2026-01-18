@@ -521,9 +521,10 @@
         if (!activeDomino) return;
       
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;   
-        const rootRect = document.getElementById("pips-root").getBoundingClientRect();;
-        
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+        const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+      
         activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
         activeDomino.style.top  = `${clientY - offsetY - rootRect.top}px`;
       }
