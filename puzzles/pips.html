@@ -123,6 +123,19 @@
     /* ------------------------------
        DOMINO TRAY + TILES
        ------------------------------ */
+    .tray-slot {
+      width: 50px;      /* match domino width */
+      height: 100px;    /* match domino height */
+      position: relative;
+      border: 1px solid transparent; /* invisible placeholder */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .tray-slot .domino {
+      position: relative; /* domino sits normally inside the slot */
+    }
     .domino-tray {
       margin-top: 24px;
       display: flex;
@@ -260,8 +273,37 @@
     </div>
   
     <!-- Domino Tray -->
-    <div id="domino-tray" class="domino-tray"></div>
-  
+      <div id="domino-tray">
+      <div class="tray-slot" id="slot-0"></div>
+      <div class="tray-slot" id="slot-1"></div>
+      <div class="tray-slot" id="slot-2"></div>
+      <div class="tray-slot" id="slot-3"></div>
+      <div class="tray-slot" id="slot-4"></div>
+      <div class="tray-slot" id="slot-5"></div>
+      <div class="tray-slot" id="slot-6"></div>
+      <div class="tray-slot" id="slot-7"></div>
+      <div class="tray-slot" id="slot-8"></div>
+      <div class="tray-slot" id="slot-9"></div>
+      <div class="tray-slot" id="slot-10"></div>
+      <div class="tray-slot" id="slot-11"></div>
+      <div class="tray-slot" id="slot-12"></div>
+      <div class="tray-slot" id="slot-13"></div>
+      <div class="tray-slot" id="slot-14"></div>
+      <div class="tray-slot" id="slot-15"></div>
+      <div class="tray-slot" id="slot-16"></div>
+      <div class="tray-slot" id="slot-17"></div>
+      <div class="tray-slot" id="slot-18"></div>
+      <div class="tray-slot" id="slot-19"></div>
+      <div class="tray-slot" id="slot-20"></div>
+      <div class="tray-slot" id="slot-21"></div>
+      <div class="tray-slot" id="slot-22"></div>
+      <div class="tray-slot" id="slot-23"></div>
+      <div class="tray-slot" id="slot-24"></div>
+      <div class="tray-slot" id="slot-25"></div>
+      <div class="tray-slot" id="slot-26"></div>
+      <div class="tray-slot" id="slot-27"></div>
+    </div>
+
   </div>
 
   <!-- JS Engine (you will paste your logic here) -->
@@ -461,8 +503,16 @@
       
         return group;
       }
-  
-  
+
+      const traySlots = document.querySelectorAll(".tray-slot");
+      
+      dominoes.forEach((domino, i) => {
+        const slot = traySlots[i];
+        domino.dataset.homeSlot = slot.id;   // remember home slot
+        slot.appendChild(domino);            // place domino in that slot
+      });
+
+    
   // 4
       /* ============================================================
          PIPS ENGINE — DRAG & DROP + PLACEMENT LOGIC
@@ -495,6 +545,14 @@
       
         activeDomino = e.currentTarget;
       
+        // Record whether the domino came from the tray or the board
+        const parent = activeDomino.parentElement;
+        if (parent.classList.contains("tray-slot")) {
+          activeDomino.dataset.origin = "tray";
+        } else {
+          activeDomino.dataset.origin = "board";
+        }
+      
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
@@ -509,10 +567,7 @@
         // Move into root
         root.appendChild(activeDomino);
       
-        // Measure AFTER append
-        const postRect = activeDomino.getBoundingClientRect();
-      
-        // Adjust so the cursor stays exactly where it was
+        // Position the domino under the cursor
         activeDomino.style.position = "absolute";
         activeDomino.style.zIndex = 1000;
         activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
@@ -543,24 +598,26 @@ console.log("USING CORRECT DRAG");
       function endDrag() {
         if (!activeDomino) return;
       
+        // Try to place the domino on the board
         const snapped = tryPlaceDomino(activeDomino);
       
         clearHighlights();
       
         if (!snapped) {
-          const tray = document.getElementById("domino-tray");
-          tray.appendChild(activeDomino);
-        
-          // Reset styling so it flows naturally in the tray
+          // Not placed on the board → return to home slot
+          const home = document.getElementById(activeDomino.dataset.homeSlot);
+          home.appendChild(activeDomino);
+      
+          // Reset styling so it flows normally in the tray slot
           activeDomino.style.position = "";
           activeDomino.style.left = "";
           activeDomino.style.top = "";
           activeDomino.style.zIndex = "";
         }
-
+      
         activeDomino = null;
       }
-      
+  
      /* ============================================================
          PLACEMENT LOGIC
          ============================================================ */
