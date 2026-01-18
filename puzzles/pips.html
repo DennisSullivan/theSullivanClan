@@ -425,16 +425,18 @@
         group.classList.add("pip-group");
       
         // Pip layout patterns for 0–6
-        const pipPatterns = {
+         const pipPatterns = {
           0: [],
           1: [ [1,1] ],
           2: [ [0,0], [2,2] ],
           3: [ [0,0], [1,1], [2,2] ],
           4: [ [0,0], [0,2], [2,0], [2,2] ],
           5: [ [0,0], [0,2], [1,1], [2,0], [2,2] ],
-          6: [ [0,0], [0,2], [1,0], [1,2], [2,0], [2,2] ]
+          6: [ [0,0], [0,1], [0,2],   // top row
+               [2,0], [2,1], [2,2]    // bottom row
+          ]
         };
-      
+     
         const pattern = pipPatterns[value] || [];
       
         // Create a 3×3 pip grid
