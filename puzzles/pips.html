@@ -548,13 +548,16 @@ console.log("USING CORRECT DRAG");
         clearHighlights();
       
         if (!snapped) {
-          // Return to tray
+          const tray = document.getElementById("domino-tray");
+          tray.appendChild(activeDomino);
+        
+          // Reset styling so it flows naturally in the tray
           activeDomino.style.position = "";
           activeDomino.style.left = "";
           activeDomino.style.top = "";
           activeDomino.style.zIndex = "";
         }
-      
+
         activeDomino = null;
       }
       
