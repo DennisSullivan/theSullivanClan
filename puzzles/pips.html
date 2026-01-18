@@ -499,9 +499,10 @@
         const root = document.getElementById("pips-root");
         root.appendChild(activeDomino);
       
+        const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+        activeDomino.style.left = `${rect.left - rootRect.left}px`;
+        activeDomino.style.top  = `${rect.top  - rootRect.top}px`;
         activeDomino.style.position = "absolute";
-        activeDomino.style.left = `${rect.left}px`;
-        activeDomino.style.top  = `${rect.top}px`;
         activeDomino.style.zIndex = 1000;
       
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -608,8 +609,10 @@
         }
       
         const targetRect = bestCell.getBoundingClientRect();
-        domino.style.left = `${targetRect.left}px`;
-        domino.style.top  = `${targetRect.top}px`;
+        const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+
+        domino.style.left = `${targetRect.left - rootRect.left}px`;
+        domino.style.top  = `${targetRect.top  - rootRect.top}px`;
         domino.classList.add("domino-placed");
       
         return true;
