@@ -509,14 +509,16 @@
          DRAG MOVEMENT
          ------------------------------ */
       function drag(e) {
+        const grid = document.getElementById("pips-grid");
+        const gridRect = grid.getBoundingClientRect();
         if (!activeDomino) return;
       
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
-        activeDomino.style.left = `${clientX - offsetX}px`;
-        activeDomino.style.top = `${clientY - offsetY}px`;
-      }
+        activeDomino.style.left = `${clientX - offsetX - gridRect.left}px`;
+        activeDomino.style.top  = `${clientY - offsetY - gridRect.top}px`;
+     }
       
       /* ------------------------------
          END DRAG → TRY TO PLACE
