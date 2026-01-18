@@ -517,9 +517,7 @@
          PIPS ENGINE — DRAG & DROP + PLACEMENT LOGIC
          ============================================================ */
       function enableDominoInteractions() {
-        const tray = document.getElementById("domino-tray");
-      
-        tray.querySelectorAll(".domino").forEach(domino => {
+        document.querySelectorAll(".domino").forEach(domino => {
           domino.addEventListener("mousedown", startDrag);
           domino.addEventListener("touchstart", startDrag, { passive: false });
         });
