@@ -131,7 +131,6 @@
     /* ============================================================
        DOMINO TILE — COMPLETE BLOCK
        ============================================================ */
-    
     .domino {
       position: relative;
       width: calc(var(--cell-size) * 2 + var(--cell-gap));
@@ -139,13 +138,11 @@
       background: var(--domino-bg);
       border: 2px solid var(--domino-border);
       border-radius: var(--radius);
-    
-      /* THIS IS THE PART YOU JUST ADDED */
       display: flex;
       justify-content: space-between;
       padding-left: 8px;
       padding-right: 8px;
-    
+      box-sizing: border-box;   /* <-- THIS FIXES THE WIDTH */
       box-shadow: 0 2px 4px var(--domino-shadow);
       cursor: grab;
       user-select: none;
@@ -155,14 +152,13 @@
     .domino.vertical {
       width: var(--cell-size);
       height: calc(var(--cell-size) * 2 + var(--cell-gap));
-    
-      /* THIS IS THE PART YOU JUST ADDED */
       flex-direction: column;
       justify-content: space-between;
       padding-top: 8px;
       padding-bottom: 8px;
+      box-sizing: border-box;   /* <-- SAME FIX HERE */
     }
-    
+  
     /* Center dividing line */
     .domino::after {
       content: "";
