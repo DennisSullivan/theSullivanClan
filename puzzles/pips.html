@@ -539,12 +539,27 @@
         activeDomino = null;
       }
       
-      /* ============================================================
+       function getTransformedRect(el) {
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        const matrix = new DOMMatrixReadOnly(style.transform);
+      
+        return {
+          left:   rect.left + matrix.m41,
+          right:  rect.right + matrix.m41,
+          top:    rect.top + matrix.m42,
+          bottom: rect.bottom + matrix.m42,
+          width:  rect.width,
+          height: rect.height
+        };
+      }
+    
+     /* ============================================================
          PLACEMENT LOGIC
          ============================================================ */
       function tryPlaceDomino(domino) {
-        const domRect = domino.getBoundingClientRect();
-      
+        const domRect = getTransformedRect(domino);
+
         // Find cell with maximum overlap area
         let bestCell = null;
         let bestOverlap = 0;
