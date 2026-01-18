@@ -507,7 +507,6 @@
       
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;      
-        const rootRect = document.getElementById("pips-root").getBoundingClientRect();
 
         offsetX = clientX - (rect.left - rootRect.left);
         offsetY = clientY - (rect.top  - rootRect.top);
