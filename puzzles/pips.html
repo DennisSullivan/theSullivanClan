@@ -495,23 +495,28 @@
       
         activeDomino = e.currentTarget;
       
-        const root = document.getElementById("pips-root");
-        root.appendChild(activeDomino);
-      
-        // IMPORTANT: get rect AFTER append
-        const rect = activeDomino.getBoundingClientRect();
-        const rootRect = root.getBoundingClientRect();
-      
-        activeDomino.style.left = `${rect.left - rootRect.left}px`;
-        activeDomino.style.top  = `${rect.top  - rootRect.top}px`;
-        activeDomino.style.position = "absolute";
-        activeDomino.style.zIndex = 1000;
-      
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
-        offsetX = clientX - rect.left;
-        offsetY = clientY - rect.top;
+        // Measure BEFORE append
+        const preRect = activeDomino.getBoundingClientRect();
+        offsetX = clientX - preRect.left;
+        offsetY = clientY - preRect.top;
+      
+        const root = document.getElementById("pips-root");
+        const rootRect = root.getBoundingClientRect();
+      
+        // Move into root
+        root.appendChild(activeDomino);
+      
+        // Measure AFTER append
+        const postRect = activeDomino.getBoundingClientRect();
+      
+        // Adjust so the cursor stays exactly where it was
+        activeDomino.style.position = "absolute";
+        activeDomino.style.zIndex = 1000;
+        activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
+        activeDomino.style.top  = `${clientY - offsetY - rootRect.top}px`;
       
         highlightPossibleCells(activeDomino);
       }
@@ -589,10 +594,18 @@ console.log("USING CORRECT DRAG");
       
         console.log("DOMINO width:", domRect.width);
       
-        // Find cell with maximum overlap area
+        // Find cell with maximum overlap area — LEFT HALF ONLY
         let bestCell = null;
         let bestOverlap = 0;
-      
+        
+        // Define left half of domino
+        const leftHalf = {
+          left: domRect.left,
+          right: domRect.left + domRect.width / 2,
+          top: domRect.top,
+          bottom: domRect.bottom
+        };
+        
         document.querySelectorAll(".pips-cell").forEach(cell => {
           const rootRect = document.getElementById("pips-root").getBoundingClientRect();
           const raw = cell.getBoundingClientRect();
@@ -600,36 +613,28 @@ console.log("USING CORRECT DRAG");
             left:   raw.left   - rootRect.left,
             right:  raw.right  - rootRect.left,
             top:    raw.top    - rootRect.top,
-            bottom: raw.bottom - rootRect.top,
-            width:  raw.width,
-            height: raw.height
+            bottom: raw.bottom - rootRect.top
           };
-      
-          if (cell.dataset.row === "0" && cell.dataset.col === "0") {
-            console.log("CELL width:", rect.width);
-          }
-      
-          const overlapLeft   = Math.max(domRect.left, rect.left);
-          const overlapRight  = Math.min(domRect.right, rect.right);
-          const overlapTop    = Math.max(domRect.top, rect.top);
-          const overlapBottom = Math.min(domRect.bottom, rect.bottom);
+        
+          // Compute overlap with LEFT HALF ONLY
+          const overlapLeft   = Math.max(leftHalf.left, rect.left);
+          const overlapRight  = Math.min(leftHalf.right, rect.right);
+          const overlapTop    = Math.max(leftHalf.top, rect.top);
+          const overlapBottom = Math.min(leftHalf.bottom, rect.bottom);
+        
           const overlapWidth  = overlapRight - overlapLeft;
           const overlapHeight = overlapBottom - overlapTop;
-      
+        
           if (overlapWidth > 0 && overlapHeight > 0) {
             const overlapArea = overlapWidth * overlapHeight;
-            console.log(
-              "cell", cell.dataset.row, cell.dataset.col,
-              "overlap:", overlapArea
-            );
-      
+        
             if (overlapArea > bestOverlap) {
               bestOverlap = overlapArea;
               bestCell = cell;
             }
           }
         });
-      
+
         if (!bestCell) return false;
       
         // Enforce “more than half” rule
