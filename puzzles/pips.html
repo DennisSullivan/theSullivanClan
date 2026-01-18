@@ -464,12 +464,21 @@
         // --- STEP B: Assign each domino a fixed home slot ---
         const traySlots = document.querySelectorAll(".tray-slot");
         const trayDominoes = tray.querySelectorAll(".domino");
-      
+        
+        console.log("SLOTS:", traySlots.length, "DOMINOES:", trayDominoes.length);
+        
         trayDominoes.forEach((domino, i) => {
           const slot = traySlots[i];
+        
+          if (!slot) {
+            console.warn("No tray slot for domino index", i, "domino:", domino);
+            return; // skip instead of crashing
+          }
+        
           domino.dataset.homeSlot = slot.id;   // remember home slot
           slot.appendChild(domino);            // move domino into its slot
         });
+
       }
 
     /* ============================================================
