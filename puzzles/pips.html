@@ -554,6 +554,23 @@
          PLACEMENT LOGIC
          ============================================================ */
       function tryPlaceDomino(domino) {
+console.log("=== DIAGNOSTIC START ===");
+
+const root = document.getElementById("pips-root");
+const grid = document.getElementById("pips-grid");
+
+const rootRect = root.getBoundingClientRect();
+const gridRect = grid.getBoundingClientRect();
+const domRaw = domino.getBoundingClientRect();
+
+console.log("rootRect.left:", rootRect.left);
+console.log("gridRect.left:", gridRect.left);
+console.log("domRaw.left:", domRaw.left);
+
+console.log("domRaw.left - rootRect.left:", domRaw.left - rootRect.left);
+console.log("domRaw.left - gridRect.left:", domRaw.left - gridRect.left);
+
+console.log("=== DIAGNOSTIC END ===");
         const rootRect = document.getElementById("pips-root").getBoundingClientRect();
         const rawDom = domino.getBoundingClientRect();
         const domRect = {
