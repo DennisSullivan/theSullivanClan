@@ -565,6 +565,8 @@ console.log("USING CORRECT DRAG");
          PLACEMENT LOGIC
          ============================================================ */
       function tryPlaceDomino(domino) {
+      
+        // === DIAGNOSTICS ===
         console.log("=== DIAGNOSTIC START ===");
       
         const diagRoot = document.getElementById("pips-root");
@@ -583,7 +585,7 @@ console.log("USING CORRECT DRAG");
       
         console.log("=== DIAGNOSTIC END ===");
       
-        // SINGLE, REAL domRect DEFINITION
+        // === NORMALIZED DOMINO RECT ===
         const rootRect = document.getElementById("pips-root").getBoundingClientRect();
         const rawDom = domino.getBoundingClientRect();
         const domRect = {
@@ -597,20 +599,20 @@ console.log("USING CORRECT DRAG");
       
         console.log("DOMINO width:", domRect.width);
       
-        // Find cell with maximum overlap area — LEFT HALF ONLY
-        let bestCell = null;
-        let bestOverlap = 0;
-        
-        // Define left half of domino
+        // === LEFT HALF OF DOMINO ===
         const leftHalf = {
           left: domRect.left,
           right: domRect.left + domRect.width / 2,
           top: domRect.top,
           bottom: domRect.bottom
         };
-        
+      
+        // === FIND BEST CELL(S) BASED ON LEFT HALF OVERLAP ===
+        let bestCells = [];
+        let bestOverlap = 0;
+      
         document.querySelectorAll(".pips-cell").forEach(cell => {
-          const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+      
           const raw = cell.getBoundingClientRect();
           const rect = {
             left:   raw.left   - rootRect.left,
@@ -618,35 +620,56 @@ console.log("USING CORRECT DRAG");
             top:    raw.top    - rootRect.top,
             bottom: raw.bottom - rootRect.top
           };
-        
-          // Compute overlap with LEFT HALF ONLY
+      
+          // Log width of cell 0,0 for diagnostics
+          if (cell.dataset.row === "0" && cell.dataset.col === "0") {
+            console.log("CELL width:", rect.right - rect.left);
+          }
+      
+          // Overlap with LEFT HALF ONLY
           const overlapLeft   = Math.max(leftHalf.left, rect.left);
           const overlapRight  = Math.min(leftHalf.right, rect.right);
           const overlapTop    = Math.max(leftHalf.top, rect.top);
           const overlapBottom = Math.min(leftHalf.bottom, rect.bottom);
-        
+      
           const overlapWidth  = overlapRight - overlapLeft;
           const overlapHeight = overlapBottom - overlapTop;
-        
+      
           if (overlapWidth > 0 && overlapHeight > 0) {
             const overlapArea = overlapWidth * overlapHeight;
-        
+      
+            console.log(
+              "cell", cell.dataset.row, cell.dataset.col,
+              "overlap:", overlapArea
+            );
+      
             if (overlapArea > bestOverlap) {
               bestOverlap = overlapArea;
-              bestCell = cell;
+              bestCells = [cell];
+            } else if (Math.abs(overlapArea - bestOverlap) < 0.001) {
+              // Tie — add this cell as equally valid
+              bestCells.push(cell);
             }
           }
         });
-
-        if (!bestCell) return false;
       
-        // Enforce “more than half” rule
-        const cellRect = bestCell.getBoundingClientRect();
-        const minArea = (cellRect.width * cellRect.height) / 2;
+        // === NO OVERLAP AT ALL → OFF THE BOARD ===
+        if (bestCells.length === 0) {
+          flashInvalid(domino);
+          return false;
+        }
+      
+        // === 25% MINIMUM OVERLAP RULE ===
+        const cellRect = bestCells[0].getBoundingClientRect();
+        const minArea = (cellRect.width * cellRect.height) * 0.25;
+      
         if (bestOverlap < minArea) {
           flashInvalid(domino);
           return false;
         }
+      
+        // === PICK ANY OF THE TIED CELLS ===
+        const bestCell = bestCells[0];
       
         const row = parseInt(bestCell.dataset.row, 10);
         const col = parseInt(bestCell.dataset.col, 10);
@@ -657,13 +680,15 @@ console.log("USING CORRECT DRAG");
           ? [ [row, col], [row + 1, col] ]
           : [ [row, col], [row, col + 1] ];
       
+        // === VALIDATE BOTH CELLS EXIST ===
         if (!cells.every(([r, c]) => document.getElementById(`cell-${r}-${c}`))) {
           flashInvalid(domino);
           return false;
         }
       
+        // === SNAP DOMINO TO BEST CELL ===
         const targetRect = bestCell.getBoundingClientRect();
-        // reuse rootRect from above
+      
         domino.style.left = `${targetRect.left - rootRect.left}px`;
         domino.style.top  = `${targetRect.top  - rootRect.top}px`;
         domino.classList.add("domino-placed");
