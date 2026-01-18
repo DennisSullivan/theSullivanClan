@@ -495,11 +495,13 @@
       
         activeDomino = e.currentTarget;
       
-        const rect = activeDomino.getBoundingClientRect();
         const root = document.getElementById("pips-root");
         root.appendChild(activeDomino);
       
-        const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+        // NOW get the rect — after append
+        const rect = activeDomino.getBoundingClientRect();
+        const rootRect = root.getBoundingClientRect();
+      
         activeDomino.style.left = `${rect.left - rootRect.left}px`;
         activeDomino.style.top  = `${rect.top  - rootRect.top}px`;
         activeDomino.style.position = "absolute";
