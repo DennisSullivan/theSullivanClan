@@ -625,7 +625,7 @@
         }
       
         const targetRect = bestCell.getBoundingClientRect();
-        const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+        // Already defined  const rootRect = document.getElementById("pips-root").getBoundingClientRect();
 
         domino.style.left = `${targetRect.left - rootRect.left}px`;
         domino.style.top  = `${targetRect.top  - rootRect.top}px`;
