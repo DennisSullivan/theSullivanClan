@@ -539,53 +539,46 @@
         activeDomino = null;
       }
       
-       function getTransformedRect(el) {
-        const rect = el.getBoundingClientRect();
-        const style = window.getComputedStyle(el);
-        const matrix = new DOMMatrixReadOnly(style.transform);
-      
-        return {
-          left:   rect.left + matrix.m41,
-          right:  rect.right + matrix.m41,
-          top:    rect.top + matrix.m42,
-          bottom: rect.bottom + matrix.m42,
-          width:  rect.width,
-          height: rect.height
-        };
-      }
-    
      /* ============================================================
          PLACEMENT LOGIC
          ============================================================ */
       function tryPlaceDomino(domino) {
-        const domRect = getTransformedRect(domino);
-
+        const domRect = domino.getBoundingClientRect();
+      
         // Find cell with maximum overlap area
         let bestCell = null;
         let bestOverlap = 0;
-        
+      
         document.querySelectorAll(".pips-cell").forEach(cell => {
           const rect = cell.getBoundingClientRect();
-        
+      
           const overlapLeft   = Math.max(domRect.left, rect.left);
           const overlapRight  = Math.min(domRect.right, rect.right);
           const overlapTop    = Math.max(domRect.top, rect.top);
           const overlapBottom = Math.min(domRect.bottom, rect.bottom);
-        
+      
           const overlapWidth  = overlapRight - overlapLeft;
           const overlapHeight = overlapBottom - overlapTop;
-        
+      
           if (overlapWidth > 0 && overlapHeight > 0) {
             const overlapArea = overlapWidth * overlapHeight;
-        
+      
             if (overlapArea > bestOverlap) {
               bestOverlap = overlapArea;
               bestCell = cell;
             }
           }
         });
-
+      
         if (!bestCell) return false;
+      
+        // NEW: enforce “more than half” rule
+        const cellRect = bestCell.getBoundingClientRect();
+        const minArea = (cellRect.width * cellRect.height) / 2;
+        if (bestOverlap < minArea) {
+          flashInvalid(domino);
+          return false;
+        }
       
         const row = parseInt(bestCell.dataset.row, 10);
         const col = parseInt(bestCell.dataset.col, 10);
@@ -601,12 +594,9 @@
           return false;
         }
       
-        // Snap to the actual cell’s pixel position
         const targetRect = bestCell.getBoundingClientRect();
-        
-        // Align the domino’s top-left corner to the cell’s top-left corner
         domino.style.left = `${targetRect.left}px`;
-        domino.style.top = `${targetRect.top}px`;
+        domino.style.top  = `${targetRect.top}px`;
         domino.classList.add("domino-placed");
       
         return true;
