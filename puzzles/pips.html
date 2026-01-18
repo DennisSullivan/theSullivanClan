@@ -473,7 +473,7 @@
           slot.appendChild(domino);            // move domino into its slot
         });
       }
-     
+ 
       /* ============================================================
          PIP RENDERING
          Creates a group of pips for a single number (0–6)
@@ -512,14 +512,6 @@
       
         return group;
       }
-
-      const traySlots = document.querySelectorAll(".tray-slot");
-      
-      dominoes.forEach((domino, i) => {
-        const slot = traySlots[i];
-        domino.dataset.homeSlot = slot.id;   // remember home slot
-        slot.appendChild(domino);            // place domino in that slot
-      });
 
     
   // 4
