@@ -498,7 +498,7 @@
         const root = document.getElementById("pips-root");
         root.appendChild(activeDomino);
       
-        // NOW get the rect — after append
+        // IMPORTANT: get rect AFTER append
         const rect = activeDomino.getBoundingClientRect();
         const rootRect = root.getBoundingClientRect();
       
