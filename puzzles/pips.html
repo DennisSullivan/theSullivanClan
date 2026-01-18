@@ -584,6 +584,18 @@ console.log("=== DIAGNOSTIC END ===");
           width:  rawDom.width,
           height: rawDom.height
         };
+const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+const rawDom = domino.getBoundingClientRect();
+const domRect = {
+  left:   rawDom.left   - rootRect.left,
+  right:  rawDom.right  - rootRect.left,
+  top:    rawDom.top    - rootRect.top,
+  bottom: rawDom.bottom - rootRect.top,
+  width:  rawDom.width,
+  height: rawDom.height
+};
+
+console.log("DOMINO width:", domRect.width);
      
         // Find cell with maximum overlap area
         let bestCell = null;
@@ -600,6 +612,9 @@ console.log("=== DIAGNOSTIC END ===");
             width:  raw.width,
             height: raw.height
           };
+if (cell.dataset.row === "0" && cell.dataset.col === "0") {
+  console.log("CELL width:", rect.width);
+}
           const overlapLeft   = Math.max(domRect.left, rect.left);
           const overlapRight  = Math.min(domRect.right, rect.right);
           const overlapTop    = Math.max(domRect.top, rect.top);
