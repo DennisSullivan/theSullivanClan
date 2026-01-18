@@ -518,6 +518,7 @@
          DRAG MOVEMENT
          ------------------------------ */
       function drag(e) {
+console.log("USING CORRECT DRAG");
         if (!activeDomino) return;
       
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
