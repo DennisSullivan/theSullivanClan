@@ -489,11 +489,13 @@
         activeDomino = e.currentTarget;
       
         const rect = activeDomino.getBoundingClientRect();
+        const grid = document.getElementById("pips-grid");
+        const gridRect = grid.getBoundingClientRect();
       
-        // Convert current screen position into absolute coordinates
+        // Convert current screen position into grid‑relative absolute coordinates
         activeDomino.style.position = "absolute";
-        activeDomino.style.left = `${rect.left}px`;
-        activeDomino.style.top = `${rect.top}px`;
+        activeDomino.style.left = `${rect.left - gridRect.left}px`;
+        activeDomino.style.top  = `${rect.top  - gridRect.top}px`;
         activeDomino.style.zIndex = 1000;
       
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -504,7 +506,7 @@
       
         highlightPossibleCells(activeDomino);
       }
-    
+
       /* ------------------------------
          DRAG MOVEMENT
          ------------------------------ */
@@ -547,23 +549,32 @@
       function tryPlaceDomino(domino) {
         const grid = document.getElementById("pips-grid");
         const gridRect = grid.getBoundingClientRect();
-        const raw = domino.getBoundingClientRect();
-        
+      
+        // Domino rect in grid‑relative coordinates
+        const rawDom = domino.getBoundingClientRect();
         const domRect = {
-          left:   raw.left   - gridRect.left,
-          right:  raw.right  - gridRect.left,
-          top:    raw.top    - gridRect.top,
-          bottom: raw.bottom - gridRect.top,
-          width:  raw.width,
-          height: raw.height
+          left:   rawDom.left   - gridRect.left,
+          right:  rawDom.right  - gridRect.left,
+          top:    rawDom.top    - gridRect.top,
+          bottom: rawDom.bottom - gridRect.top,
+          width:  rawDom.width,
+          height: rawDom.height
         };
-
-        // Find cell with maximum overlap area
+      
+        // Find cell with maximum overlap area (also grid‑relative)
         let bestCell = null;
         let bestOverlap = 0;
       
         document.querySelectorAll(".pips-cell").forEach(cell => {
-          const rect = cell.getBoundingClientRect();
+          const rawCell = cell.getBoundingClientRect();
+          const rect = {
+            left:   rawCell.left   - gridRect.left,
+            right:  rawCell.right  - gridRect.left,
+            top:    rawCell.top    - gridRect.top,
+            bottom: rawCell.bottom - gridRect.top,
+            width:  rawCell.width,
+            height: rawCell.height
+          };
       
           const overlapLeft   = Math.max(domRect.left, rect.left);
           const overlapRight  = Math.min(domRect.right, rect.right);
@@ -575,10 +586,10 @@
       
           if (overlapWidth > 0 && overlapHeight > 0) {
             const overlapArea = overlapWidth * overlapHeight;
-console.log(
-  "cell", cell.dataset.row, cell.dataset.col,
-  "overlap:", overlapArea
-);
+            console.log(
+              "cell", cell.dataset.row, cell.dataset.col,
+              "overlap:", overlapArea
+            );
       
             if (overlapArea > bestOverlap) {
               bestOverlap = overlapArea;
@@ -589,9 +600,10 @@ console.log(
       
         if (!bestCell) return false;
       
-        // NEW: enforce “more than half” rule
-        const cellRect = bestCell.getBoundingClientRect();
-        const minArea = (cellRect.width * cellRect.height) / 2;
+        // Enforce “more than half” rule
+        const bestRawCell = bestCell.getBoundingClientRect();
+        const cellArea = bestRawCell.width * bestRawCell.height;
+        const minArea = cellArea / 2;
         if (bestOverlap < minArea) {
           flashInvalid(domino);
           return false;
@@ -611,9 +623,10 @@ console.log(
           return false;
         }
       
-        const targetRect = bestCell.getBoundingClientRect();
-        domino.style.left = `${targetRect.left}px`;
-        domino.style.top  = `${targetRect.top}px`;
+        // Snap using grid‑relative coordinates
+        const targetRaw = bestCell.getBoundingClientRect();
+        domino.style.left = `${targetRaw.left - gridRect.left}px`;
+        domino.style.top  = `${targetRaw.top  - gridRect.top}px`;
         domino.classList.add("domino-placed");
       
         return true;
