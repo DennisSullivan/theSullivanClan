@@ -562,6 +562,10 @@
       
           if (overlapWidth > 0 && overlapHeight > 0) {
             const overlapArea = overlapWidth * overlapHeight;
+console.log(
+  "cell", cell.dataset.row, cell.dataset.col,
+  "overlap:", overlapArea
+);
       
             if (overlapArea > bestOverlap) {
               bestOverlap = overlapArea;
