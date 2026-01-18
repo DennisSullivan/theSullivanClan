@@ -506,11 +506,12 @@
         activeDomino.style.zIndex = 1000;
       
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      
-        offsetX = clientX - rect.left;
-        offsetY = clientY - rect.top;
-      
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;      
+        const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+
+        offsetX = clientX - (rect.left - rootRect.left);
+        offsetY = clientY - (rect.top  - rootRect.top);
+
         highlightPossibleCells(activeDomino);
       }
 
@@ -560,13 +561,20 @@
         let bestOverlap = 0;
       
         document.querySelectorAll(".pips-cell").forEach(cell => {
-          const rect = cell.getBoundingClientRect();
-      
+          const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+          const raw = cell.getBoundingClientRect();
+          const rect = {
+            left:   raw.left   - rootRect.left,
+            right:  raw.right  - rootRect.left,
+            top:    raw.top    - rootRect.top,
+            bottom: raw.bottom - rootRect.top,
+            width:  raw.width,
+            height: raw.height
+          };
           const overlapLeft   = Math.max(domRect.left, rect.left);
           const overlapRight  = Math.min(domRect.right, rect.right);
           const overlapTop    = Math.max(domRect.top, rect.top);
           const overlapBottom = Math.min(domRect.bottom, rect.bottom);
-      
           const overlapWidth  = overlapRight - overlapLeft;
           const overlapHeight = overlapBottom - overlapTop;
       
