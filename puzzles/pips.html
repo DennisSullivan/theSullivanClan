@@ -68,6 +68,9 @@
     /* ------------------------------
        GRID CONTAINER
        ------------------------------ */
+    #pips-root {
+      position: relative;
+    }
     .pips-grid {
       display: grid;
       background: var(--grid-bg);
@@ -243,19 +246,23 @@
     Pips Puzzle Engine
   </div>
 
-  <!-- Grid Wrapper -->
-  <div id="pips-wrapper" class="center">
-
-    <!-- Region overlay layer (absolute positioned) -->
-    <div id="region-layer"></div>
-
-    <!-- The puzzle grid (JS will size it dynamically) -->
-    <div id="pips-grid" class="pips-grid"></div>
-
+  <div id="pips-root">
+  
+    <!-- Grid Wrapper -->
+    <div id="pips-wrapper" class="center">
+  
+      <!-- Region overlay layer (absolute positioned) -->
+      <div id="region-layer"></div>
+  
+      <!-- The puzzle grid (JS will size it dynamically) -->
+      <div id="pips-grid" class="pips-grid"></div>
+  
+    </div>
+  
+    <!-- Domino Tray -->
+    <div id="domino-tray" class="domino-tray"></div>
+  
   </div>
-
-  <!-- Domino Tray -->
-  <div id="domino-tray" class="domino-tray"></div>
 
   <!-- JS Engine (you will paste your logic here) -->
   <script>
@@ -489,8 +496,9 @@
         activeDomino = e.currentTarget;
       
         const rect = activeDomino.getBoundingClientRect();
+        const root = document.getElementById("pips-root");
+        root.appendChild(activeDomino);
       
-        // Convert current screen position into absolute coordinates
         activeDomino.style.position = "absolute";
         activeDomino.style.left = `${rect.left}px`;
         activeDomino.style.top  = `${rect.top}px`;
@@ -504,6 +512,7 @@
       
         highlightPossibleCells(activeDomino);
       }
+
 
       /* ------------------------------
          DRAG MOVEMENT
