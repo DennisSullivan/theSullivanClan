@@ -129,9 +129,9 @@
     }
     
     /* ============================================================
-       DOMINO TILE — COMPLETE REPLACEMENT BLOCK
+       DOMINO TILE — COMPLETE BLOCK
        ============================================================ */
-    /* Domino halves: add inner padding so pips sit away from edges */
+    
     .domino {
       position: relative;
       width: calc(var(--cell-size) * 2 + var(--cell-gap));
@@ -139,10 +139,13 @@
       background: var(--domino-bg);
       border: 2px solid var(--domino-border);
       border-radius: var(--radius);
+    
+      /* THIS IS THE PART YOU JUST ADDED */
       display: flex;
-      align-items: center;
-      justify-content: space-between;  /* was space-evenly */
-      padding: 6px 10px;               /* NEW: inset content from edges */
+      justify-content: space-between;
+      padding-left: 8px;
+      padding-right: 8px;
+    
       box-shadow: 0 2px 4px var(--domino-shadow);
       cursor: grab;
       user-select: none;
@@ -152,17 +155,22 @@
     .domino.vertical {
       width: var(--cell-size);
       height: calc(var(--cell-size) * 2 + var(--cell-gap));
+    
+      /* THIS IS THE PART YOU JUST ADDED */
       flex-direction: column;
-      padding: 10px 6px;               /* swap padding for vertical */
+      justify-content: space-between;
+      padding-top: 8px;
+      padding-bottom: 8px;
     }
     
-    /* Center line unchanged */
+    /* Center dividing line */
     .domino::after {
       content: "";
       position: absolute;
       background: var(--domino-border);
       opacity: 0.8;
     }
+    
     .domino:not(.vertical)::after {
       width: 2px;
       height: 80%;
@@ -170,6 +178,7 @@
       top: 10%;
       transform: translateX(-1px);
     }
+    
     .domino.vertical::after {
       height: 2px;
       width: 80%;
@@ -177,7 +186,7 @@
       left: 10%;
       transform: translateY(-1px);
     }
-    
+
     /* Center pip clusters inside each half — no hugging the center line */
     .pip-group {
       display: grid;
