@@ -506,14 +506,13 @@
         activeDomino.style.zIndex = 1000;
       
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;      
-
-        offsetX = clientX - (rect.left - rootRect.left);
-        offsetY = clientY - (rect.top  - rootRect.top);
-
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+        offsetX = clientX - rect.left;
+        offsetY = clientY - rect.top;
+      
         highlightPossibleCells(activeDomino);
       }
-
 
       /* ------------------------------
          DRAG MOVEMENT
@@ -524,10 +523,12 @@
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
-        activeDomino.style.left = `${clientX - offsetX}px`;
-        activeDomino.style.top  = `${clientY - offsetY}px`;
+        const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+      
+        activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
+        activeDomino.style.top  = `${clientY - offsetY - rootRect.top}px`;
       }
-  
+
       /* ------------------------------
          END DRAG → TRY TO PLACE
          ------------------------------ */
