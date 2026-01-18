@@ -427,20 +427,15 @@
 
 // 3
       /* ============================================================
-         PIPS ENGINE — DOMINO GENERATOR
-         Creates domino tiles and places them in the tray
+         PIPS ENGINE — DOMINO GENERATOR (FINAL VERSION)
+         Creates domino tiles, then assigns each one a fixed home slot
          ============================================================ */
       
-      /**
-       * dominoList format:
-       * [
-       *   [0,0], [0,1], [0,2], ...  // each pair is a domino
-       * ]
-       */
       function buildDominoTray(dominoList) {
         const tray = document.getElementById("domino-tray");
         tray.innerHTML = ""; // clear previous puzzle
       
+        // --- STEP A: Create all domino elements ---
         dominoList.forEach((pair, index) => {
           const [a, b] = pair;
       
@@ -450,7 +445,7 @@
           domino.dataset.valueA = a;
           domino.dataset.valueB = b;
       
-          // Pip containers
+          // Pip groups
           const pipA = createPipGroup(a);
           const pipB = createPipGroup(b);
       
@@ -462,17 +457,27 @@
             domino.classList.toggle("vertical");
           });
       
+          // Temporarily append to tray (we will move it into slots next)
           tray.appendChild(domino);
         });
       
         console.log("Domino tray built:", dominoList.length);
-      }
       
+        // --- STEP B: Assign each domino a fixed home slot ---
+        const traySlots = document.querySelectorAll(".tray-slot");
+        const trayDominoes = tray.querySelectorAll(".domino");
+      
+        trayDominoes.forEach((domino, i) => {
+          const slot = traySlots[i];
+          domino.dataset.homeSlot = slot.id;   // remember home slot
+          slot.appendChild(domino);            // move domino into its slot
+        });
+      }
+     
       /* ============================================================
          PIP RENDERING
          Creates a group of pips for a single number (0–6)
          ============================================================ */
-      
       function createPipGroup(value) {
         const group = document.createElement("div");
         group.classList.add("pip-group");
