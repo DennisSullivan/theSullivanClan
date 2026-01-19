@@ -53,6 +53,25 @@
    ============================================================ */
 
 const PIPS_PUZZLES = {
+     // ------------------------------------------------------------
+  // Small, easy 6×6 beginner puzzle
+  // ------------------------------------------------------------
+  easy6x6: {
+    id: "easy6x6",
+    title: "Easy 6×6 Starter",
+    width: 6,
+    height: 6,
+
+    blocked: [],   // no blocked cells
+    regions: [],   // no regions
+
+    startingDominos: [
+      { index: 0, row: 0, col: 0, orientation: "horizontal" }, // 0–0
+      { index: 5, row: 2, col: 2, orientation: "vertical" },   // 0–5
+      { index: 12, row: 4, col: 1, orientation: "horizontal" } // 1–3
+    ]
+  },
+
   // Example placeholder puzzle
   sample: {
     id: "sample",
@@ -63,10 +82,6 @@ const PIPS_PUZZLES = {
     regions: [],
     startingDominos: []
   }
-
-  // Add more puzzles here...
-};
-
 
 /* ============================================================
    GET PUZZLE BY ID
