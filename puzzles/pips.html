@@ -755,6 +755,31 @@ function logBoardOccupancy() {
         return true;
       }
    
+      /* ------------------------------
+         VALIDATION HELPERS
+         ------------------------------ */
+      function flashInvalid(domino) {
+        domino.classList.add("cell-invalid");
+        setTimeout(() => domino.classList.remove("cell-invalid"), 300);
+      }
+      
+      /* ============================================================
+         HIGHLIGHTING
+         ============================================================ */
+      function highlightPossibleCells(domino) {
+        const grid = document.getElementById("pips-grid");
+        if (!grid) return;
+      
+        const cells = grid.querySelectorAll(".pips-cell");
+        cells.forEach(cell => cell.classList.add("cell-highlight"));
+      }
+      
+      function clearHighlights() {
+        document.querySelectorAll(".cell-highlight").forEach(c =>
+          c.classList.remove("cell-highlight")
+        );
+      }
+
   </script>
 
 </body>
