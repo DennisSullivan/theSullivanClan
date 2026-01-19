@@ -163,7 +163,7 @@ function endDrag(e) {
    ============================================================ */
 
 function highlightPossibleCells(domino) {
-  const grid = document.getElementById("pips-grid");
+  const grid = document.getElementById("pips-root");
   if (!grid) return;
 
   const cells = grid.querySelectorAll(".pips-cell");
