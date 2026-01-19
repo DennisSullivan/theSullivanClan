@@ -16,11 +16,32 @@ function enableDominoInteractions() {
     domino.addEventListener("touchstart", startDrag, { passive: false });
   });
 
-  document.addEventListener("mousemove", drag);
-  document.addEventListener("touchmove", drag, { passive: false });
+   document.addEventListener("mousemove", drag);
+   document.addEventListener("touchmove", drag, { passive: false });
 
-  document.addEventListener("mouseup", endDrag);
-  document.addEventListener("touchend", endDrag);
+   document.addEventListener("mouseup", endDrag);
+   document.addEventListener("touchend", endDrag);
+   document.addEventListener("DOMContentLoaded", () => {
+   
+     // 1. Build the standard domino set
+     const standardDominos = [
+       [0,0], [0,1], [0,2], [0,3], [0,4], [0,5], [0,6],
+       [1,1], [1,2], [1,3], [1,4], [1,5], [1,6],
+       [2,2], [2,3], [2,4], [2,5], [2,6],
+       [3,3], [3,4], [3,5], [3,6],
+       [4,4], [4,5], [4,6],
+       [5,5], [5,6],
+       [6,6]
+     ];
+     buildDominoTray(standardDominos);
+   
+     // 2. Load the puzzle
+     const puzzle = getPuzzle("easy6x6");
+     loadPuzzle(puzzle);
+   
+     // 3. Enable drag/drop
+     enableDominoInteractions();
+   });
 }
 
 
