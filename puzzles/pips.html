@@ -308,8 +308,9 @@
 
   <!-- JS Engine (you will paste your logic here) -->
   <script>
+    // Board occupancy: key "r,c" -> domino element
     const boardOccupancy = {};
-   
+
 function logBoardOccupancy() {
   console.log("=== BOARD OCCUPANCY ===");
   const entries = Object.entries(boardOccupancy);
@@ -317,11 +318,13 @@ function logBoardOccupancy() {
     console.log("  (empty)");
   } else {
     entries.forEach(([key, value]) => {
-      console.log(`  cell ${key} -> domino ${value}`);
+      const label = value.id ? value.id : "(no id)";
+      console.log(`  cell ${key} -> domino ${label}`);
     });
   }
   console.log("========================");
 }
+
 
     /* ============================================================
        PIPS ENGINE — GRID BUILDER
@@ -555,7 +558,6 @@ function logBoardOccupancy() {
       
         activeDomino = e.currentTarget;
       
-        // Record whether the domino came from the tray or the board
         const parent = activeDomino.parentElement;
         if (parent.classList.contains("tray-slot")) {
           activeDomino.dataset.origin = "tray";
@@ -563,23 +565,21 @@ function logBoardOccupancy() {
           activeDomino.dataset.origin = "board";
         }
       
-        // Store original parent and position for snap-back
         activeDomino.dataset.originalParent = parent.id;
         activeDomino.dataset.originalLeft = activeDomino.style.left || "";
         activeDomino.dataset.originalTop  = activeDomino.style.top  || "";
       
         // Clear any existing board occupancy for this domino
         Object.keys(boardOccupancy).forEach(key => {
-          if (boardOccupancy[key] === activeDomino.id) {
+          if (boardOccupancy[key] === activeDomino) {
             delete boardOccupancy[key];
           }
         });
- logBoardOccupancy();
-     
+        logBoardOccupancy();
+      
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
-        // Measure BEFORE append
         const preRect = activeDomino.getBoundingClientRect();
         offsetX = clientX - preRect.left;
         offsetY = clientY - preRect.top;
@@ -587,10 +587,8 @@ function logBoardOccupancy() {
         const root = document.getElementById("pips-root");
         const rootRect = root.getBoundingClientRect();
       
-        // Move into root
         root.appendChild(activeDomino);
       
-        // Position the domino under the cursor
         activeDomino.style.position = "absolute";
         activeDomino.style.zIndex = 1000;
         activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
@@ -734,7 +732,7 @@ function logBoardOccupancy() {
         // OVERLAP CHECK via boardOccupancy
         for (const [r, c] of cells) {
           const key = `${r},${c}`;
-          if (boardOccupancy[key] && boardOccupancy[key] !== domino.id) {
+          if (boardOccupancy[key] && boardOccupancy[key] !== domino) {
             flashInvalid(domino);
             return false;
           }
@@ -750,44 +748,12 @@ function logBoardOccupancy() {
         // WRITE OCCUPANCY
         cells.forEach(([r, c]) => {
           const key = `${r},${c}`;
-          boardOccupancy[key] = domino.id;
+          boardOccupancy[key] = domino;
         });
       
-logBoardOccupancy();
+        logBoardOccupancy();
         return true;
       }
-
-      /* ------------------------------
-         VALIDATION HELPERS
-         ------------------------------ */
-      function isValidCell(r, c) {
-        const cell = document.getElementById(`cell-${r}-${c}`);
-        return cell !== null;
-      }
-      
-      function flashInvalid(domino) {
-        domino.classList.add("cell-invalid");
-        setTimeout(() => domino.classList.remove("cell-invalid"), 300);
-      }
-      
-      /* ============================================================
-         HIGHLIGHTING
-         ============================================================ */
-      
-      function highlightPossibleCells(domino) {
-        const grid = document.getElementById("pips-grid");
-        const cells = grid.querySelectorAll(".pips-cell");
-      
-        cells.forEach(cell => cell.classList.add("cell-highlight"));
-      }
-      
-      function clearHighlights() {
-        document.querySelectorAll(".cell-highlight").forEach(c =>
-          c.classList.remove("cell-highlight")
-        );
-      }
-
-   
    
   </script>
 
