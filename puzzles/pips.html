@@ -564,17 +564,17 @@ function logBoardOccupancy() {
         // Track origin
         activeDomino.dataset.origin = cameFromBoard ? "board" : "tray";
       
-        // Save original board position if it came from the board
+        // Save previous board position if it came from the board
         if (activeDomino.dataset.origin === "board") {
-          activeDomino.dataset.prevRow = activeDomino.dataset.boardRow;
-          activeDomino.dataset.prevCol = activeDomino.dataset.boardCol;
-          activeDomino.dataset.prevOrientation = activeDomino.dataset.boardOrientation;
+          activeDomino.dataset.prevRow = activeDomino.dataset.boardRow || "";
+          activeDomino.dataset.prevCol = activeDomino.dataset.boardCol || "";
+          activeDomino.dataset.prevOrientation = activeDomino.dataset.boardOrientation || "";
         }
       
-        // Save original DOM position (for snap-back)
+        // Save original DOM position (for snap-back or tray return)
         activeDomino.dataset.originalLeft = activeDomino.style.left || "";
         activeDomino.dataset.originalTop = activeDomino.style.top || "";
-        activeDomino.dataset.originalParent = parent.id;
+        activeDomino.dataset.originalParent = parent.id || "";
       
         // Clear occupancy for this domino
         Object.keys(boardOccupancy).forEach(key => {
@@ -636,10 +636,10 @@ function logBoardOccupancy() {
           return;
         }
       
-        // Not placed — determine Case B or Case C
         const cameFromBoard = activeDomino.dataset.origin === "board";
+        const attempt = activeDomino.dataset.dropAttempt || "off-board";
       
-        if (cameFromBoard) {
+        if (attempt === "invalid-on-board" && cameFromBoard) {
           // CASE B — invalid board placement, snap back to previous board position
           const root = document.getElementById("pips-root");
           const rootRect = root.getBoundingClientRect();
@@ -654,7 +654,6 @@ function logBoardOccupancy() {
           activeDomino.style.left = `${anchorRect.left - rootRect.left}px`;
           activeDomino.style.top  = `${anchorRect.top  - rootRect.top}px`;
       
-          // Restore occupancy
           const cells = prevOrientation === "vertical"
             ? [ [prevRow, prevCol], [prevRow + 1, prevCol] ]
             : [ [prevRow, prevCol], [prevRow, prevCol + 1] ];
@@ -665,7 +664,7 @@ function logBoardOccupancy() {
       
           logBoardOccupancy();
         } else {
-          // CASE C — invalid placement from tray OR off-board → return to tray
+          // CASE C — off-board OR invalid from tray → return to tray
           const home = document.getElementById(activeDomino.dataset.homeSlot);
           home.appendChild(activeDomino);
       
@@ -673,6 +672,11 @@ function logBoardOccupancy() {
           activeDomino.style.left = "";
           activeDomino.style.top = "";
           activeDomino.style.zIndex = "";
+      
+          // Clear board position data
+          delete activeDomino.dataset.boardRow;
+          delete activeDomino.dataset.boardCol;
+          delete activeDomino.dataset.boardOrientation;
         }
       
         activeDomino = null;
@@ -734,15 +738,21 @@ function logBoardOccupancy() {
           }
         });
       
-        // CASE C — off the board (no anchor cell)
-        if (bestCells.length === 0) return false;
+        // OFF-BOARD: no anchor cell
+        if (bestCells.length === 0) {
+          domino.dataset.dropAttempt = "off-board";
+          return false;
+        }
       
         const anchor = bestCells[0];
         const anchorRect = anchor.getBoundingClientRect();
         const minArea = (anchorRect.width * anchorRect.height) * 0.25;
       
-        // CASE C — overlap too small
-        if (bestOverlap < minArea) return false;
+        // OFF-BOARD: overlap too small
+        if (bestOverlap < minArea) {
+          domino.dataset.dropAttempt = "off-board";
+          return false;
+        }
       
         const row = parseInt(anchor.dataset.row, 10);
         const col = parseInt(anchor.dataset.col, 10);
@@ -752,20 +762,24 @@ function logBoardOccupancy() {
           ? [ [row, col], [row + 1, col] ]
           : [ [row, col], [row, col + 1] ];
       
-        // CASE C — target cells off-grid
+        // OFF-BOARD: target cells off-grid
         for (const [r, c] of cells) {
-          if (!document.getElementById(`cell-${r}-${c}`)) return false;
-        }
-      
-        // CASE B — overlap with another domino
-        for (const [r, c] of cells) {
-          const key = `${r},${c}`;
-          if (boardOccupancy[key] && boardOccupancy[key] !== domino) {
+          if (!document.getElementById(`cell-${r}-${c}`)) {
+            domino.dataset.dropAttempt = "off-board";
             return false;
           }
         }
       
-        // CASE A — valid placement
+        // INVALID-ON-BOARD: overlap with another domino
+        for (const [r, c] of cells) {
+          const key = `${r},${c}`;
+          if (boardOccupancy[key] && boardOccupancy[key] !== domino) {
+            domino.dataset.dropAttempt = "invalid-on-board";
+            return false;
+          }
+        }
+      
+        // VALID PLACEMENT
         domino.style.left = `${anchorRect.left - rootRect.left}px`;
         domino.style.top  = `${anchorRect.top  - rootRect.top}px`;
       
@@ -777,6 +791,7 @@ function logBoardOccupancy() {
         domino.dataset.boardCol = col;
         domino.dataset.boardOrientation = vertical ? "vertical" : "horizontal";
       
+        domino.dataset.dropAttempt = "valid";
         logBoardOccupancy();
         return true;
       }
