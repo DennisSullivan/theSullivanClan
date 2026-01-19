@@ -3,35 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pips • SullivanClan</title>
+  <title>Pips Puzzle</title>
 
-  <style>
-    <link rel="stylesheet" href="css/pips.css">
-  </style>
+  <!-- Global Stylesheet -->
+  <link rel="stylesheet" href="css/pips.css" />
 </head>
 
 <body>
 
-  <!-- Header Bar -->
-  <div class="pips-header">
-    Pips Puzzle Engine
-  </div>
+  <!-- ============================================================
+       ROOT LAYOUT
+       ============================================================ -->
+  <div id="pips-container">
 
-  <div id="pips-root">
-  
-    <!-- Grid Wrapper -->
-    <div id="pips-wrapper" class="center">
-  
-      <!-- Region overlay layer (absolute positioned) -->
+    <!-- Puzzle Grid + Regions + Domino Layer -->
+    <div id="pips-root-wrapper">
       <div id="region-layer"></div>
-  
-      <!-- The puzzle grid (JS will size it dynamically) -->
-      <div id="pips-grid" class="pips-grid"></div>
-  
+      <div id="pips-root"></div>
+      <div id="pips-grid"></div>
     </div>
-  
+
     <!-- Domino Tray -->
-      <div id="domino-tray" class="domino-tray">
+    <div id="domino-tray">
+      <!-- 28 tray slots (standard double-six set) -->
       <div class="tray-slot" id="slot-0"></div>
       <div class="tray-slot" id="slot-1"></div>
       <div class="tray-slot" id="slot-2"></div>
@@ -64,57 +58,37 @@
 
   </div>
 
-  <!-- JS Engine (you will paste your logic here) -->
+
+  <!-- ============================================================
+       MODULE IMPORTS (ORDER MATTERS)
+       ============================================================ -->
+
+  <!-- 1. Engine: grid, dominos, pips, placement, occupancy -->
+  <script src="js/pips-engine.js"></script>
+
+  <!-- 2. UI: drag/drop, highlighting -->
+  <script src="js/pips-ui.js"></script>
+
+  <!-- 3. Puzzle loader: buildBoardFromPuzzle, applyRegions, etc. -->
+  <script src="js/pips-puzzle-loader.js"></script>
+
+  <!-- 4. Puzzle data: PIPS_PUZZLES, getPuzzle() -->
+  <script src="js/pips-puzzles.js"></script>
+
+
+  <!-- ============================================================
+       INITIALIZATION
+       ============================================================ -->
   <script>
-    // Board occupancy: key "r,c" -> domino element
-    const boardOccupancy = {};
+    document.addEventListener("DOMContentLoaded", () => {
+      // Build a default 6×6 grid (same as your original test)
+      buildGrid(6, 6);
 
-    function logBoardOccupancy() {
-      console.log("=== BOARD OCCUPANCY ===");
-      const entries = Object.entries(boardOccupancy);
-      if (entries.length === 0) {
-        console.log("  (empty)");
-      } else {
-        entries.forEach(([key, value]) => {
-          const label = value.id ? value.id : "(no id)";
-          console.log(`  cell ${key} -> domino ${label}`);
-        });
-      }
-      console.log("========================");
-    }
+      // Draw empty regions for now
+      drawRegions([]);
 
-
-    /* ============================================================
-       PIPS ENGINE — GRID BUILDER
-       Creates the puzzle grid dynamically
-       ============================================================ */
-    
-    function buildGrid(rows, cols) {
-      const grid = document.getElementById("pips-grid");
-      grid.innerHTML = ""; // clear any previous puzzle
-    
-      // Set CSS grid columns
-      grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
-    
-      // Create cells
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const cell = document.createElement("div");
-          cell.classList.add("pips-cell");
-          cell.dataset.row = r;
-          cell.dataset.col = c;
-          cell.id = `cell-${r}-${c}`;
-          grid.appendChild(cell);
-        }
-      }
-    
-    }
-    
-    let activeDomino = null;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    const standardDominos = [
+      // Build standard domino tray
+      const standardDominos = [
         [0,0], [0,1], [0,2], [0,3], [0,4], [0,5], [0,6],
         [1,1], [1,2], [1,3], [1,4], [1,5], [1,6],
         [2,2], [2,3], [2,4], [2,5], [2,6],
@@ -123,669 +97,13 @@
         [5,5], [5,6],
         [6,6]
       ];
+      buildDominoTray(standardDominos);
 
-    /* ============================================================
-       INITIALIZE A TEST GRID
-       (You can change this to any puzzle size)
-       ============================================================ */
-    
-      document.addEventListener("DOMContentLoaded", () => {
-        buildGrid(6, 6);
-        drawRegions([]); // optional for now
-        buildDominoTray(standardDominos);
-        enableDominoInteractions();
-      });
+      // Enable drag/drop
+      enableDominoInteractions();
 
-
-// 2
-      /* ============================================================
-         PIPS ENGINE — REGION RENDERER
-         Draws region shapes as overlays on top of the grid
-         ============================================================ */
-      
-      function drawRegions(regionList) {
-        const regionLayer = document.getElementById("region-layer");
-        regionLayer.innerHTML = ""; // clear previous regions
-      
-        regionList.forEach((region, index) => {
-          const regionDiv = document.createElement("div");
-          regionDiv.classList.add("region");
-      
-          // Compute bounding box of the region
-          const rows = region.map(c => c[0]);
-          const cols = region.map(c => c[1]);
-      
-          const minRow = Math.min(...rows);
-          const maxRow = Math.max(...rows);
-          const minCol = Math.min(...cols);
-          const maxCol = Math.max(...cols);
-      
-          // Convert grid coordinates to pixel positions
-          const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-          const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-      
-          const x = minCol * (cellSize + cellGap);
-          const y = minRow * (cellSize + cellGap);
-          const width = (maxCol - minCol + 1) * (cellSize + cellGap) - cellGap;
-          const height = (maxRow - minRow + 1) * (cellSize + cellGap) - cellGap;
-      
-          // Position the region overlay
-          regionDiv.style.left = `${x}px`;
-          regionDiv.style.top = `${y}px`;
-          regionDiv.style.width = `${width}px`;
-          regionDiv.style.height = `${height}px`;
-      
-          // Optional label
-          const label = document.createElement("div");
-          label.classList.add("region-label");
-          label.textContent = String.fromCharCode(65 + index); // A, B, C...
-          regionDiv.appendChild(label);
-      
-          regionLayer.appendChild(regionDiv);
-        });
-      
-        console.log("Regions drawn:", regionList.length);
-      }
-
-
-// 3
-      /* ============================================================
-         PIPS ENGINE — DOMINO GENERATOR (FINAL VERSION)
-         Creates domino tiles, then assigns each one a fixed home slot
-         ============================================================ */
-      function buildDominoTray(dominoList) {
-        const tray = document.getElementById("domino-tray");
-      
-        // ------------------------------------------------------------
-        // STEP 0 — KEEP the tray slots, but clear any old dominoes
-        // ------------------------------------------------------------
-        const traySlots = tray.querySelectorAll(".tray-slot");
-        traySlots.forEach(slot => {
-          slot.innerHTML = "";   // remove any domino previously inside
-        });
-      
-        // ------------------------------------------------------------
-        // STEP 1 — Create all domino elements (not attached yet)
-        // ------------------------------------------------------------
-        const newDominoes = [];
-      
-        dominoList.forEach((pair, index) => {
-          const [a, b] = pair;
-      
-          const domino = document.createElement("div");
-          domino.classList.add("domino");
-          domino.dataset.index = index;
-          domino.dataset.valueA = a;
-          domino.dataset.valueB = b;
-      
-          const pipA = createPipGroup(a);
-          const pipB = createPipGroup(b);
-      
-          domino.appendChild(pipA);
-          domino.appendChild(pipB);
-      
-          domino.addEventListener("dblclick", () => {
-            domino.classList.toggle("vertical");
-          });
-      
-          newDominoes.push(domino);
-        });
-      
-        console.log("Domino tray built:", newDominoes.length);
-      
-        // ------------------------------------------------------------
-        // STEP 2 — Assign each domino to its matching tray slot
-        // ------------------------------------------------------------
-        console.log("SLOTS:", traySlots.length, "DOMINOES:", newDominoes.length);
-      
-        newDominoes.forEach((domino, i) => {
-          const slot = traySlots[i];
-      
-          if (!slot) {
-            console.warn("No tray slot for domino index", i, domino);
-            return;
-          }
-      
-          domino.dataset.homeSlot = slot.id;
-          slot.appendChild(domino);
-        });
-      }
-
-    /* ============================================================
-         PIP RENDERING
-         Creates a group of pips for a single number (0–6)
-         ============================================================ */
-      function createPipGroup(value) {
-        const group = document.createElement("div");
-        group.classList.add("pip-group");
-      
-        // Pip layout patterns for 0–6
-         const pipPatterns = {
-          0: [],
-          1: [ [1,1] ],
-          2: [ [0,0], [2,2] ],
-          3: [ [0,0], [1,1], [2,2] ],
-          4: [ [0,0], [0,2], [2,0], [2,2] ],
-          5: [ [0,0], [0,2], [1,1], [2,0], [2,2] ],
-          6: [ [0,0], [0,1], [0,2],   // top row
-               [2,0], [2,1], [2,2]    // bottom row
-          ]
-        };
-     
-        const pattern = pipPatterns[value] || [];
-      
-        // Create a 3×3 pip grid
-        group.style.display = "grid";
-        group.style.gridTemplateColumns = "repeat(3, 1fr)";
-        group.style.gridTemplateRows = "repeat(3, 1fr)";
-
-        pattern.forEach(([r, c]) => {
-          const pip = document.createElement("div");
-          pip.classList.add("pip");
-          pip.style.gridRow = r + 1;
-          pip.style.gridColumn = c + 1;
-          group.appendChild(pip);
-        });
-      
-        return group;
-      }
-
-    
-  // 4
-      /* ============================================================
-         PIPS ENGINE — DRAG & DROP + PLACEMENT LOGIC
-         ============================================================ */
-      function enableDominoInteractions() {
-        document.querySelectorAll(".domino").forEach(domino => {
-          domino.addEventListener("mousedown", startDrag);
-          domino.addEventListener("touchstart", startDrag, { passive: false });
-        });
-      
-        document.addEventListener("mousemove", drag);
-        document.addEventListener("touchmove", drag, { passive: false });
-      
-        document.addEventListener("mouseup", endDrag);
-        document.addEventListener("touchend", endDrag);
-      }
-      
-      /* ------------------------------
-         START DRAG
-         ------------------------------ */
-      function startDrag(e) {
-        e.preventDefault();
-      
-        activeDomino = e.currentTarget;
-      
-        const parent = activeDomino.parentElement;
-        const cameFromBoard = parent.classList.contains("pips-cell") || parent.id === "pips-root";
-      
-        // Track origin
-        activeDomino.dataset.origin = cameFromBoard ? "board" : "tray";
-      
-        // Save previous board position if it came from the board
-        if (activeDomino.dataset.origin === "board") {
-          activeDomino.dataset.prevRow = activeDomino.dataset.boardRow || "";
-          activeDomino.dataset.prevCol = activeDomino.dataset.boardCol || "";
-          activeDomino.dataset.prevOrientation = activeDomino.dataset.boardOrientation || "";
-        }
-      
-        // Save original DOM position (for snap-back or tray return)
-        activeDomino.dataset.originalLeft = activeDomino.style.left || "";
-        activeDomino.dataset.originalTop = activeDomino.style.top || "";
-        activeDomino.dataset.originalParent = parent.id || "";
-      
-        // Clear occupancy for this domino
-        Object.keys(boardOccupancy).forEach(key => {
-          if (boardOccupancy[key] === activeDomino) {
-            delete boardOccupancy[key];
-          }
-        });
-        logBoardOccupancy();
-      
-        // Prepare drag offsets
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      
-        const preRect = activeDomino.getBoundingClientRect();
-        offsetX = clientX - preRect.left;
-        offsetY = clientY - preRect.top;
-      
-        const root = document.getElementById("pips-root");
-        const rootRect = root.getBoundingClientRect();
-      
-        root.appendChild(activeDomino);
-      
-        activeDomino.style.position = "absolute";
-        activeDomino.style.zIndex = 1000;
-        activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
-        activeDomino.style.top  = `${clientY - offsetY - rootRect.top}px`;
-      
-        highlightPossibleCells(activeDomino);
-      }
-
-      /* ------------------------------
-         DRAG MOVEMENT
-         ------------------------------ */
-      function drag(e) {
-        if (!activeDomino) return;
-      
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      
-        const rootRect = document.getElementById("pips-root").getBoundingClientRect();
-      
-        activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
-        activeDomino.style.top  = `${clientY - offsetY - rootRect.top}px`;
-      }
-
-      /* ------------------------------
-         END DRAG → TRY TO PLACE
-         ------------------------------ */
-      function endDrag(e) {
-        if (!activeDomino) return;
-      
-        clearHighlights();
-      
-        const placed = tryPlaceDomino(activeDomino);
-      
-        if (placed) {
-          // CASE A — valid placement
-          activeDomino = null;
-          return;
-        }
-      
-        const cameFromBoard = activeDomino.dataset.origin === "board";
-        const attempt = activeDomino.dataset.dropAttempt || "off-board";
-      
-        if (attempt === "invalid-on-board" && cameFromBoard) {
-          // CASE B — invalid board placement, snap back to previous board position
-          const root = document.getElementById("pips-root");
-          const rootRect = root.getBoundingClientRect();
-      
-          const prevRow = parseInt(activeDomino.dataset.prevRow, 10);
-          const prevCol = parseInt(activeDomino.dataset.prevCol, 10);
-          const prevOrientation = activeDomino.dataset.prevOrientation;
-      
-          const anchorCell = document.getElementById(`cell-${prevRow}-${prevCol}`);
-          const anchorRect = anchorCell.getBoundingClientRect();
-      
-          activeDomino.style.left = `${anchorRect.left - rootRect.left}px`;
-          activeDomino.style.top  = `${anchorRect.top  - rootRect.top}px`;
-      
-          const cells = prevOrientation === "vertical"
-            ? [ [prevRow, prevCol], [prevRow + 1, prevCol] ]
-            : [ [prevRow, prevCol], [prevRow, prevCol + 1] ];
-      
-          cells.forEach(([r, c]) => {
-            boardOccupancy[`${r},${c}`] = activeDomino;
-          });
-      
-          logBoardOccupancy();
-        } else {
-          // CASE C — off-board OR invalid from tray → return to tray
-          const home = document.getElementById(activeDomino.dataset.homeSlot);
-          home.appendChild(activeDomino);
-      
-          activeDomino.style.position = "";
-          activeDomino.style.left = "";
-          activeDomino.style.top = "";
-          activeDomino.style.zIndex = "";
-      
-          // Clear board position data
-          delete activeDomino.dataset.boardRow;
-          delete activeDomino.dataset.boardCol;
-          delete activeDomino.dataset.boardOrientation;
-        }
-      
-        activeDomino = null;
-      }
-
-      /* ============================================================
-         PLACEMENT LOGIC
-         ============================================================ */
-      function tryPlaceDomino(domino) {
-        const root = document.getElementById("pips-root");
-        const rootRect = root.getBoundingClientRect();
-      
-        const rawDom = domino.getBoundingClientRect();
-        const domRect = {
-          left:   rawDom.left   - rootRect.left,
-          right:  rawDom.right  - rootRect.left,
-          top:    rawDom.top    - rootRect.top,
-          bottom: rawDom.bottom - rootRect.top,
-          width:  rawDom.width,
-          height: rawDom.height
-        };
-      
-        const leftHalf = {
-          left: domRect.left,
-          right: domRect.left + domRect.width / 2,
-          top: domRect.top,
-          bottom: domRect.bottom
-        };
-      
-        let bestCells = [];
-        let bestOverlap = 0;
-      
-        document.querySelectorAll(".pips-cell").forEach(cell => {
-          const raw = cell.getBoundingClientRect();
-          const rect = {
-            left:   raw.left   - rootRect.left,
-            right:  raw.right  - rootRect.left,
-            top:    raw.top    - rootRect.top,
-            bottom: raw.bottom - rootRect.top
-          };
-      
-          const overlapLeft   = Math.max(leftHalf.left, rect.left);
-          const overlapRight  = Math.min(leftHalf.right, rect.right);
-          const overlapTop    = Math.max(leftHalf.top, rect.top);
-          const overlapBottom = Math.min(leftHalf.bottom, rect.bottom);
-      
-          const overlapWidth  = overlapRight - overlapLeft;
-          const overlapHeight = overlapBottom - overlapTop;
-      
-          if (overlapWidth > 0 && overlapHeight > 0) {
-            const area = overlapWidth * overlapHeight;
-      
-            if (area > bestOverlap) {
-              bestOverlap = area;
-              bestCells = [cell];
-            } else if (Math.abs(area - bestOverlap) < 0.001) {
-              bestCells.push(cell);
-            }
-          }
-        });
-      
-        // OFF-BOARD: no anchor cell
-        if (bestCells.length === 0) {
-          domino.dataset.dropAttempt = "off-board";
-          return false;
-        }
-      
-        const anchor = bestCells[0];
-        const anchorRect = anchor.getBoundingClientRect();
-        const minArea = (anchorRect.width * anchorRect.height) * 0.25;
-      
-        // OFF-BOARD: overlap too small
-        if (bestOverlap < minArea) {
-          domino.dataset.dropAttempt = "off-board";
-          return false;
-        }
-      
-        const row = parseInt(anchor.dataset.row, 10);
-        const col = parseInt(anchor.dataset.col, 10);
-        const vertical = domino.classList.contains("vertical");
-      
-        const cells = vertical
-          ? [ [row, col], [row + 1, col] ]
-          : [ [row, col], [row, col + 1] ];
-      
-        // OFF-BOARD: target cells off-grid
-        for (const [r, c] of cells) {
-          if (!document.getElementById(`cell-${r}-${c}`)) {
-            domino.dataset.dropAttempt = "off-board";
-            return false;
-          }
-        }
-      
-        // INVALID-ON-BOARD: overlap with another domino
-        for (const [r, c] of cells) {
-          const key = `${r},${c}`;
-          if (boardOccupancy[key] && boardOccupancy[key] !== domino) {
-            domino.dataset.dropAttempt = "invalid-on-board";
-            return false;
-          }
-        }
-      
-        // VALID PLACEMENT
-        domino.style.left = `${anchorRect.left - rootRect.left}px`;
-        domino.style.top  = `${anchorRect.top  - rootRect.top}px`;
-      
-        cells.forEach(([r, c]) => {
-          boardOccupancy[`${r},${c}`] = domino;
-        });
-      
-        domino.dataset.boardRow = row;
-        domino.dataset.boardCol = col;
-        domino.dataset.boardOrientation = vertical ? "vertical" : "horizontal";
-      
-        domino.dataset.dropAttempt = "valid";
-        logBoardOccupancy();
-        return true;
-      }
-    
-      /* ------------------------------
-         VALIDATION HELPERS
-         ------------------------------ */
-      function flashInvalid(domino) {
-        domino.classList.add("cell-invalid");
-        setTimeout(() => domino.classList.remove("cell-invalid"), 300);
-      }
-      
-      /* ============================================================
-         HIGHLIGHTING
-         ============================================================ */
-      function highlightPossibleCells(domino) {
-        const grid = document.getElementById("pips-grid");
-        if (!grid) return;
-      
-        const cells = grid.querySelectorAll(".pips-cell");
-        cells.forEach(cell => cell.classList.add("cell-highlight"));
-      }
-      
-      function clearHighlights() {
-        document.querySelectorAll(".cell-highlight").forEach(c =>
-          c.classList.remove("cell-highlight")
-        );
-      }
-  
-      function checkWin() {
-        // Count how many cells are occupied
-        const keys = Object.keys(boardOccupancy);
-      
-        // A full 7×8 board has 56 cells → 28 dominos × 2 cells each
-        if (keys.length !== 56) return false;
-      
-        // Ensure every cell is filled by a domino object
-        for (const key of keys) {
-          if (!boardOccupancy[key]) return false;
-        }
-      
-        // Ensure each domino occupies exactly two cells
-        const dominoCellCount = {};
-        for (const key of keys) {
-          const dom = boardOccupancy[key];
-          dominoCellCount[dom.dataset.index] =
-            (dominoCellCount[dom.dataset.index] || 0) + 1;
-        }
-      
-        for (const index in dominoCellCount) {
-          if (dominoCellCount[index] !== 2) return false;
-        }
-      
-        return true;
-      }
-
-      function serializeBoard() {
-        const state = [];
-      
-        document.querySelectorAll(".domino").forEach(dom => {
-          if (!dom.dataset.boardRow) return; // skip tray dominos
-      
-          state.push({
-            index: dom.dataset.index,
-            row: parseInt(dom.dataset.boardRow, 10),
-            col: parseInt(dom.dataset.boardCol, 10),
-            orientation: dom.dataset.boardOrientation
-          });
-        });
-      
-        return state;
-      }
-
-      function loadBoardState(state) {
-        // Clear occupancy
-        Object.keys(boardOccupancy).forEach(key => delete boardOccupancy[key]);
-      
-        // Reset all dominos to tray
-        document.querySelectorAll(".domino").forEach(dom => {
-          const home = document.getElementById(dom.dataset.homeSlot);
-          home.appendChild(dom);
-      
-          dom.style.position = "";
-          dom.style.left = "";
-          dom.style.top = "";
-          dom.style.zIndex = "";
-      
-          delete dom.dataset.boardRow;
-          delete dom.dataset.boardCol;
-          delete dom.dataset.boardOrientation;
-        });
-      
-        const root = document.getElementById("pips-root");
-        const rootRect = root.getBoundingClientRect();
-      
-        // Apply saved placements
-        state.forEach(entry => {
-          const dom = document.querySelector(`.domino[data-index="${entry.index}"]`);
-          const anchor = document.getElementById(`cell-${entry.row}-${entry.col}`);
-          const anchorRect = anchor.getBoundingClientRect();
-      
-          root.appendChild(dom);
-      
-          dom.style.position = "absolute";
-          dom.style.left = `${anchorRect.left - rootRect.left}px`;
-          dom.style.top  = `${anchorRect.top  - rootRect.top}px`;
-      
-          dom.dataset.boardRow = entry.row;
-          dom.dataset.boardCol = entry.col;
-          dom.dataset.boardOrientation = entry.orientation;
-      
-          const cells = entry.orientation === "vertical"
-            ? [ [entry.row, entry.col], [entry.row + 1, entry.col] ]
-            : [ [entry.row, entry.col], [entry.row, entry.col + 1] ];
-      
-          cells.forEach(([r, c]) => {
-            boardOccupancy[`${r},${c}`] = dom;
-          });
-        });
-      
-        logBoardOccupancy();
-      }
-
-      function loadPuzzle(puzzle) {
-        console.log(`Loading puzzle: ${puzzle.id} — ${puzzle.title}`);
-      
-        clearBoard();
-        buildBoardFromPuzzle(puzzle);
-        applyBlockedCells(puzzle);
-        applyRegions(puzzle);
-        applyStartingDominos(puzzle);
-      
-        logBoardOccupancy();
-      }
-
-      function clearBoard() {
-        // Clear occupancy
-        Object.keys(boardOccupancy).forEach(key => delete boardOccupancy[key]);
-      
-        // Remove all board cells
-        const root = document.getElementById("pips-root");
-        root.innerHTML = "";
-      
-        // Reset all dominos to tray
-        document.querySelectorAll(".domino").forEach(dom => {
-          const home = document.getElementById(dom.dataset.homeSlot);
-          home.appendChild(dom);
-      
-          dom.style.position = "";
-          dom.style.left = "";
-          dom.style.top = "";
-          dom.style.zIndex = "";
-      
-          delete dom.dataset.boardRow;
-          delete dom.dataset.boardCol;
-          delete dom.dataset.boardOrientation;
-        });
-      }
-
-      function buildBoardFromPuzzle(puzzle) {
-        const root = document.getElementById("pips-root");
-        root.style.setProperty("--rows", puzzle.height);
-        root.style.setProperty("--cols", puzzle.width);
-      
-        for (let r = 0; r < puzzle.height; r++) {
-          for (let c = 0; c < puzzle.width; c++) {
-            const cell = document.createElement("div");
-            cell.className = "pips-cell";
-            cell.id = `cell-${r}-${c}`;
-            cell.dataset.row = r;
-            cell.dataset.col = c;
-            root.appendChild(cell);
-          }
-        }
-      }
-
-      function applyBlockedCells(puzzle) {
-        if (!puzzle.blocked) return;
-      
-        puzzle.blocked.forEach(({ row, col }) => {
-          const cell = document.getElementById(`cell-${row}-${col}`);
-          if (cell) {
-            cell.classList.add("blocked");
-            cell.style.visibility = "hidden"; // or "opacity: 0" if you prefer
-          }
-        });
-      }
-
-      function applyRegions(puzzle) {
-        if (!puzzle.regions) return;
-      
-        puzzle.regions.forEach(region => {
-          region.cells.forEach(({ row, col }) => {
-            const cell = document.getElementById(`cell-${row}-${col}`);
-            if (cell) {
-              cell.dataset.region = region.id;
-              cell.classList.add(`region-${region.id}`);
-            }
-          });
-        });
-      }
-
-      function applyStartingDominos(puzzle) {
-        if (!puzzle.startingDominos) return;
-      
-        const root = document.getElementById("pips-root");
-        const rootRect = root.getBoundingClientRect();
-      
-        puzzle.startingDominos.forEach(entry => {
-          const dom = document.querySelector(`.domino[data-index="${entry.index}"]`);
-          const anchor = document.getElementById(`cell-${entry.row}-${entry.col}`);
-          const anchorRect = anchor.getBoundingClientRect();
-      
-          root.appendChild(dom);
-      
-          dom.style.position = "absolute";
-          dom.style.left = `${anchorRect.left - rootRect.left}px`;
-          dom.style.top  = `${anchorRect.top  - rootRect.top}px`;
-      
-          dom.dataset.boardRow = entry.row;
-          dom.dataset.boardCol = entry.col;
-          dom.dataset.boardOrientation = entry.orientation;
-      
-          const cells = entry.orientation === "vertical"
-            ? [ [entry.row, entry.col], [entry.row + 1, entry.col] ]
-            : [ [entry.row, entry.col], [entry.row, entry.col + 1] ];
-      
-          cells.forEach(([r, c]) => {
-            boardOccupancy[`${r},${c}`] = dom;
-          });
-        });
-      }
-
-
-    
-    
+      console.log("Pips initialized.");
+    });
   </script>
 
 </body>
