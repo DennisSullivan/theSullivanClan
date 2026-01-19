@@ -310,6 +310,19 @@
   <script>
     const boardOccupancy = {};
    
+function logBoardOccupancy() {
+  console.log("=== BOARD OCCUPANCY ===");
+  const entries = Object.entries(boardOccupancy);
+  if (entries.length === 0) {
+    console.log("  (empty)");
+  } else {
+    entries.forEach(([key, value]) => {
+      console.log(`  cell ${key} -> domino ${value}`);
+    });
+  }
+  console.log("========================");
+}
+
     /* ============================================================
        PIPS ENGINE — GRID BUILDER
        Creates the puzzle grid dynamically
@@ -561,7 +574,8 @@
             delete boardOccupancy[key];
           }
         });
-      
+ logBoardOccupancy();
+     
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
@@ -739,6 +753,7 @@
           boardOccupancy[key] = domino.id;
         });
       
+logBoardOccupancy();
         return true;
       }
 
