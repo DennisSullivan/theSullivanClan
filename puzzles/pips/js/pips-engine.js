@@ -1,8 +1,8 @@
-// ============================================================
-// PIPS ENGINE — CORE STATE + GRID + PIPS
-// ============================================================
+/* ============================================================
+   PIPS ENGINE — BOARD OCCUPANCY
+   Tracks which domino occupies which board cell
+   ============================================================ */
 
-// Board occupancy: key "r,c" -> domino element
 const boardOccupancy = {};
 
 function logBoardOccupancy() {
@@ -19,9 +19,16 @@ function logBoardOccupancy() {
   console.log("========================");
 }
 
+
+/* ============================================================
+   GRID BUILDER
+   Creates the puzzle grid dynamically
+   ============================================================ */
+
 function buildGrid(rows, cols) {
   const grid = document.getElementById("pips-grid");
   grid.innerHTML = "";
+
   grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
 
   for (let r = 0; r < rows; r++) {
@@ -36,19 +43,104 @@ function buildGrid(rows, cols) {
   }
 }
 
-let activeDomino = null;
-let offsetX = 0;
-let offsetY = 0;
 
-const standardDominos = [
-  [0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],
-  [1,1],[1,2],[1,3],[1,4],[1,5],[1,6],
-  [2,2],[2,3],[2,4],[2,5],[2,6],
-  [3,3],[3,4],[3,5],[3,6],
-  [4,4],[4,5],[4,6],
-  [5,5],[5,6],
-  [6,6]
-];
+/* ============================================================
+   REGION RENDERER
+   Draws region overlays on top of the grid
+   ============================================================ */
+
+function drawRegions(regionList) {
+  const regionLayer = document.getElementById("region-layer");
+  regionLayer.innerHTML = "";
+
+  regionList.forEach((region, index) => {
+    const regionDiv = document.createElement("div");
+    regionDiv.classList.add("region");
+
+    const rows = region.map(c => c[0]);
+    const cols = region.map(c => c[1]);
+
+    const minRow = Math.min(...rows);
+    const maxRow = Math.max(...rows);
+    const minCol = Math.min(...cols);
+    const maxCol = Math.max(...cols);
+
+    const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+    const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+
+    const x = minCol * (cellSize + cellGap);
+    const y = minRow * (cellSize + cellGap);
+    const width = (maxCol - minCol + 1) * (cellSize + cellGap) - cellGap;
+    const height = (maxRow - minRow + 1) * (cellSize + cellGap) - cellGap;
+
+    regionDiv.style.left = `${x}px`;
+    regionDiv.style.top = `${y}px`;
+    regionDiv.style.width = `${width}px`;
+    regionDiv.style.height = `${height}px`;
+
+    const label = document.createElement("div");
+    label.classList.add("region-label");
+    label.textContent = String.fromCharCode(65 + index);
+
+    regionDiv.appendChild(label);
+    regionLayer.appendChild(regionDiv);
+  });
+
+  console.log("Regions drawn:", regionList.length);
+}
+
+
+/* ============================================================
+   DOMINO GENERATOR
+   Creates domino tiles and assigns them to tray slots
+   ============================================================ */
+
+function buildDominoTray(dominoList) {
+  const tray = document.getElementById("domino-tray");
+
+  const traySlots = tray.querySelectorAll(".tray-slot");
+  traySlots.forEach(slot => slot.innerHTML = "");
+
+  const newDominoes = [];
+
+  dominoList.forEach((pair, index) => {
+    const [a, b] = pair;
+
+    const domino = document.createElement("div");
+    domino.classList.add("domino");
+    domino.dataset.index = index;
+    domino.dataset.valueA = a;
+    domino.dataset.valueB = b;
+
+    const pipA = createPipGroup(a);
+    const pipB = createPipGroup(b);
+
+    domino.appendChild(pipA);
+    domino.appendChild(pipB);
+
+    domino.addEventListener("dblclick", () => {
+      domino.classList.toggle("vertical");
+    });
+
+    newDominoes.push(domino);
+  });
+
+  newDominoes.forEach((domino, i) => {
+    const slot = traySlots[i];
+    if (!slot) {
+      console.warn("No tray slot for domino index", i, domino);
+      return;
+    }
+    domino.dataset.homeSlot = slot.id;
+    slot.appendChild(domino);
+  });
+}
+
+
+/* ============================================================
+   PIP RENDERING
+   Creates a group of pips for a single number (0–6)
+   ============================================================ */
 
 function createPipGroup(value) {
   const group = document.createElement("div");
@@ -56,12 +148,15 @@ function createPipGroup(value) {
 
   const pipPatterns = {
     0: [],
-    1: [[1,1]],
-    2: [[0,0],[2,2]],
-    3: [[0,0],[1,1],[2,2]],
-    4: [[0,0],[0,2],[2,0],[2,2]],
-    5: [[0,0],[0,2],[1,1],[2,0],[2,2]],
-    6: [[0,0],[0,1],[0,2],[2,0],[2,1],[2,2]]
+    1: [ [1,1] ],
+    2: [ [0,0], [2,2] ],
+    3: [ [0,0], [1,1], [2,2] ],
+    4: [ [0,0], [0,2], [2,0], [2,2] ],
+    5: [ [0,0], [0,2], [1,1], [2,0], [2,2] ],
+    6: [
+      [0,0], [0,1], [0,2],
+      [2,0], [2,1], [2,2]
+    ]
   };
 
   const pattern = pipPatterns[value] || [];
@@ -81,137 +176,10 @@ function createPipGroup(value) {
   return group;
 }
 
-// ============================================================
-// DRAG & DROP
-// ============================================================
 
-function enableDominoInteractions() {
-  document.querySelectorAll(".domino").forEach(domino => {
-    domino.addEventListener("mousedown", startDrag);
-    domino.addEventListener("touchstart", startDrag, { passive: false });
-  });
-
-  document.addEventListener("mousemove", drag);
-  document.addEventListener("touchmove", drag, { passive: false });
-
-  document.addEventListener("mouseup", endDrag);
-  document.addEventListener("touchend", endDrag);
-}
-
-function startDrag(e) {
-  e.preventDefault();
-  activeDomino = e.currentTarget;
-
-  const parent = activeDomino.parentElement;
-  const cameFromBoard = parent.classList.contains("pips-cell") || parent.id === "pips-root";
-
-  activeDomino.dataset.origin = cameFromBoard ? "board" : "tray";
-
-  if (cameFromBoard) {
-    activeDomino.dataset.prevRow = activeDomino.dataset.boardRow || "";
-    activeDomino.dataset.prevCol = activeDomino.dataset.boardCol || "";
-    activeDomino.dataset.prevOrientation = activeDomino.dataset.boardOrientation || "";
-  }
-
-  activeDomino.dataset.originalLeft = activeDomino.style.left || "";
-  activeDomino.dataset.originalTop = activeDomino.style.top || "";
-  activeDomino.dataset.originalParent = parent.id || "";
-
-  Object.keys(boardOccupancy).forEach(key => {
-    if (boardOccupancy[key] === activeDomino) delete boardOccupancy[key];
-  });
-  logBoardOccupancy();
-
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-  const preRect = activeDomino.getBoundingClientRect();
-  offsetX = clientX - preRect.left;
-  offsetY = clientY - preRect.top;
-
-  const root = document.getElementById("pips-root");
-  const rootRect = root.getBoundingClientRect();
-
-  root.appendChild(activeDomino);
-
-  activeDomino.style.position = "absolute";
-  activeDomino.style.zIndex = 1000;
-  activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
-  activeDomino.style.top  = `${clientY - offsetY - rootRect.top}px`;
-
-  highlightPossibleCells(activeDomino);
-}
-
-function drag(e) {
-  if (!activeDomino) return;
-
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-  const rootRect = document.getElementById("pips-root").getBoundingClientRect();
-
-  activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
-  activeDomino.style.top  = `${clientY - offsetY - rootRect.top}px`;
-}
-
-function endDrag(e) {
-  if (!activeDomino) return;
-
-  clearHighlights();
-
-  const placed = tryPlaceDomino(activeDomino);
-
-  if (placed) {
-    activeDomino = null;
-    return;
-  }
-
-  const cameFromBoard = activeDomino.dataset.origin === "board";
-  const attempt = activeDomino.dataset.dropAttempt || "off-board";
-
-  if (attempt === "invalid-on-board" && cameFromBoard) {
-    const root = document.getElementById("pips-root");
-    const rootRect = root.getBoundingClientRect();
-
-    const prevRow = parseInt(activeDomino.dataset.prevRow, 10);
-    const prevCol = parseInt(activeDomino.dataset.prevCol, 10);
-    const prevOrientation = activeDomino.dataset.prevOrientation;
-
-    const anchorCell = document.getElementById(`cell-${prevRow}-${prevCol}`);
-    const anchorRect = anchorCell.getBoundingClientRect();
-
-    activeDomino.style.left = `${anchorRect.left - rootRect.left}px`;
-    activeDomino.style.top  = `${anchorRect.top  - rootRect.top}px`;
-
-    const cells = prevOrientation === "vertical"
-      ? [[prevRow, prevCol], [prevRow + 1, prevCol]]
-      : [[prevRow, prevCol], [prevRow, prevCol + 1]];
-
-    cells.forEach(([r, c]) => {
-      boardOccupancy[`${r},${c}`] = activeDomino;
-    });
-
-    logBoardOccupancy();
-  } else {
-    const home = document.getElementById(activeDomino.dataset.homeSlot);
-    home.appendChild(activeDomino);
-
-    activeDomino.style.position = "";
-    activeDomino.style.left = "";
-    activeDomino.style.top = "";
-    activeDomino.style.zIndex = "";
-
-    delete activeDomino.dataset.boardRow;
-    delete activeDomino.dataset.boardCol;
-    delete activeDomino.dataset.boardOrientation;
-  }
-
-  activeDomino = null;
-}
-
-// ============================================================
-// PLACEMENT LOGIC
-// ============================================================
+/* ============================================================
+   PLACEMENT LOGIC
+   ============================================================ */
 
 function tryPlaceDomino(domino) {
   const root = document.getElementById("pips-root");
@@ -285,8 +253,8 @@ function tryPlaceDomino(domino) {
   const vertical = domino.classList.contains("vertical");
 
   const cells = vertical
-    ? [[row, col], [row + 1, col]]
-    : [[row, col], [row, col + 1]];
+    ? [ [row, col], [row + 1, col] ]
+    : [ [row, col], [row, col + 1] ];
 
   for (const [r, c] of cells) {
     if (!document.getElementById(`cell-${r}-${c}`)) {
@@ -304,7 +272,7 @@ function tryPlaceDomino(domino) {
   }
 
   domino.style.left = `${anchorRect.left - rootRect.left}px`;
-  domino.style.top  = `${anchorRect.top  - rootRect.top}px`;
+  domino.style.top = `${anchorRect.top - rootRect.top}px`;
 
   cells.forEach(([r, c]) => {
     boardOccupancy[`${r},${c}`] = domino;
@@ -319,93 +287,12 @@ function tryPlaceDomino(domino) {
   return true;
 }
 
-// ============================================================
-// ENGINE — WIN CHECK + SERIALIZATION
-// ============================================================
 
-function checkWin() {
-  const keys = Object.keys(boardOccupancy);
-  if (keys.length !== 56) return false;
+/* ============================================================
+   VALIDATION HELPERS
+   ============================================================ */
 
-  for (const key of keys) {
-    if (!boardOccupancy[key]) return false;
-  }
-
-  const dominoCellCount = {};
-  for (const key of keys) {
-    const dom = boardOccupancy[key];
-    dominoCellCount[dom.dataset.index] =
-      (dominoCellCount[dom.dataset.index] || 0) + 1;
-  }
-
-  for (const index in dominoCellCount) {
-    if (dominoCellCount[index] !== 2) return false;
-  }
-
-  return true;
+function flashInvalid(domino) {
+  domino.classList.add("cell-invalid");
+  setTimeout(() => domino.classList.remove("cell-invalid"), 300);
 }
-
-function serializeBoard() {
-  const state = [];
-
-  document.querySelectorAll(".domino").forEach(dom => {
-    if (!dom.dataset.boardRow) return;
-
-    state.push({
-      index: dom.dataset.index,
-      row: parseInt(dom.dataset.boardRow, 10),
-      col: parseInt(dom.dataset.boardCol, 10),
-      orientation: dom.dataset.boardOrientation
-    });
-  });
-
-  return state;
-}
-
-function loadBoardState(state) {
-  Object.keys(boardOccupancy).forEach(key => delete boardOccupancy[key]);
-
-  document.querySelectorAll(".domino").forEach(dom => {
-    const home = document.getElementById(dom.dataset.homeSlot);
-    home.appendChild(dom);
-
-    dom.style.position = "";
-    dom.style.left = "";
-    dom.style.top = "";
-    dom.style.zIndex = "";
-
-    delete dom.dataset.boardRow;
-    delete dom.dataset.boardCol;
-    delete dom.dataset.boardOrientation;
-  });
-
-  const root = document.getElementById("pips-root");
-  const rootRect = root.getBoundingClientRect();
-
-  state.forEach(entry => {
-    const dom = document.querySelector(`.domino[data-index="${entry.index}"]`);
-    const anchor = document.getElementById(`cell-${entry.row}-${entry.col}`);
-    const anchorRect = anchor.getBoundingClientRect();
-
-    root.appendChild(dom);
-
-    dom.style.position = "absolute";
-    dom.style.left = `${anchorRect.left - rootRect.left}px`;
-    dom.style.top  = `${anchorRect.top  - rootRect.top}px`;
-
-    dom.dataset.boardRow = entry.row;
-    dom.dataset.boardCol = entry.col;
-    dom.dataset.boardOrientation = entry.orientation;
-
-    const cells = entry.orientation === "vertical"
-      ? [[entry.row, entry.col], [entry.row + 1, entry.col]]
-      : [[entry.row, entry.col], [entry.row, entry.col + 1]];
-
-    cells.forEach(([r, c]) => {
-      boardOccupancy[`${r},${c}`] = dom;
-    });
-  });
-
-  logBoardOccupancy();
-}
-
