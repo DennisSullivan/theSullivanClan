@@ -430,12 +430,22 @@
          PIPS ENGINE — DOMINO GENERATOR (FINAL VERSION)
          Creates domino tiles, then assigns each one a fixed home slot
          ============================================================ */
-      
       function buildDominoTray(dominoList) {
         const tray = document.getElementById("domino-tray");
-        tray.innerHTML = ""; // clear previous puzzle
       
-        // --- STEP A: Create all domino elements ---
+        // ------------------------------------------------------------
+        // STEP 0 — KEEP the tray slots, but clear any old dominoes
+        // ------------------------------------------------------------
+        const traySlots = tray.querySelectorAll(".tray-slot");
+        traySlots.forEach(slot => {
+          slot.innerHTML = "";   // remove any domino previously inside
+        });
+      
+        // ------------------------------------------------------------
+        // STEP 1 — Create all domino elements (not attached yet)
+        // ------------------------------------------------------------
+        const newDominoes = [];
+      
         dominoList.forEach((pair, index) => {
           const [a, b] = pair;
       
@@ -455,30 +465,27 @@
             domino.classList.toggle("vertical");
           });
       
-          // Temporarily append to tray (we will move it into slots next)
-          tray.appendChild(domino);
+          newDominoes.push(domino);
         });
       
-        console.log("Domino tray built:", dominoList.length);
+        console.log("Domino tray built:", newDominoes.length);
       
-        // --- STEP B: Assign each domino a fixed home slot ---
-        const traySlots = document.querySelectorAll(".tray-slot");
-        const trayDominoes = tray.querySelectorAll(".domino");
-        
-        console.log("SLOTS:", traySlots.length, "DOMINOES:", trayDominoes.length);
-        
-        trayDominoes.forEach((domino, i) => {
+        // ------------------------------------------------------------
+        // STEP 2 — Assign each domino to its matching tray slot
+        // ------------------------------------------------------------
+        console.log("SLOTS:", traySlots.length, "DOMINOES:", newDominoes.length);
+      
+        newDominoes.forEach((domino, i) => {
           const slot = traySlots[i];
-        
+      
           if (!slot) {
-            console.warn("No tray slot for domino index", i, "domino:", domino);
-            return; // skip instead of crashing
+            console.warn("No tray slot for domino index", i, domino);
+            return;
           }
-        
-          domino.dataset.homeSlot = slot.id;   // remember home slot
-          slot.appendChild(domino);            // move domino into its slot
+      
+          domino.dataset.homeSlot = slot.id;
+          slot.appendChild(domino);
         });
-
       }
 
     /* ============================================================
