@@ -315,19 +315,19 @@
     // Board occupancy: key "r,c" -> domino element
     const boardOccupancy = {};
 
-function logBoardOccupancy() {
-  console.log("=== BOARD OCCUPANCY ===");
-  const entries = Object.entries(boardOccupancy);
-  if (entries.length === 0) {
-    console.log("  (empty)");
-  } else {
-    entries.forEach(([key, value]) => {
-      const label = value.id ? value.id : "(no id)";
-      console.log(`  cell ${key} -> domino ${label}`);
-    });
-  }
-  console.log("========================");
-}
+    function logBoardOccupancy() {
+      console.log("=== BOARD OCCUPANCY ===");
+      const entries = Object.entries(boardOccupancy);
+      if (entries.length === 0) {
+        console.log("  (empty)");
+      } else {
+        entries.forEach(([key, value]) => {
+          const label = value.id ? value.id : "(no id)";
+          console.log(`  cell ${key} -> domino ${label}`);
+        });
+      }
+      console.log("========================");
+    }
 
 
     /* ============================================================
