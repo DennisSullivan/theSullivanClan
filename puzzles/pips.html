@@ -561,6 +561,11 @@
           activeDomino.dataset.origin = "board";
         }
       
+        // Store original parent and position for snap-back
+        activeDomino.dataset.originalParent = parent.id;
+        activeDomino.dataset.originalLeft = activeDomino.style.left || "";
+        activeDomino.dataset.originalTop  = activeDomino.style.top  || "";
+      
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
@@ -606,49 +611,37 @@ console.log("USING CORRECT DRAG");
       function endDrag() {
         if (!activeDomino) return;
       
-        // Try to place the domino on the board
         const snapped = tryPlaceDomino(activeDomino);
       
         clearHighlights();
       
         if (!snapped) {
-          // Not placed on the board → return to home slot
-          const home = document.getElementById(activeDomino.dataset.homeSlot);
-          home.appendChild(activeDomino);
+          // Restore to original parent
+          const originalParent = document.getElementById(activeDomino.dataset.originalParent);
+          originalParent.appendChild(activeDomino);
       
-          // Reset styling so it flows normally in the tray slot
-          activeDomino.style.position = "";
-          activeDomino.style.left = "";
-          activeDomino.style.top = "";
+          // Restore original pixel position if it was on the board
+          if (activeDomino.dataset.origin === "board") {
+            activeDomino.style.position = "absolute";
+            activeDomino.style.left = activeDomino.dataset.originalLeft;
+            activeDomino.style.top  = activeDomino.dataset.originalTop;
+          } else {
+            // Tray pieces flow normally
+            activeDomino.style.position = "";
+            activeDomino.style.left = "";
+            activeDomino.style.top = "";
+          }
+      
           activeDomino.style.zIndex = "";
         }
       
         activeDomino = null;
       }
-  
-     /* ============================================================
+       
+      /* ============================================================
          PLACEMENT LOGIC
          ============================================================ */
       function tryPlaceDomino(domino) {
-      
-        // === DIAGNOSTICS ===
-        console.log("=== DIAGNOSTIC START ===");
-      
-        const diagRoot = document.getElementById("pips-root");
-        const diagGrid = document.getElementById("pips-grid");
-      
-        const diagRootRect = diagRoot.getBoundingClientRect();
-        const diagGridRect = diagGrid.getBoundingClientRect();
-        const diagDomRaw = domino.getBoundingClientRect();
-      
-        console.log("rootRect.left:", diagRootRect.left);
-        console.log("gridRect.left:", diagGridRect.left);
-        console.log("domRaw.left:", diagDomRaw.left);
-      
-        console.log("domRaw.left - rootRect.left:", diagDomRaw.left - diagRootRect.left);
-        console.log("domRaw.left - gridRect.left:", diagDomRaw.left - diagGridRect.left);
-      
-        console.log("=== DIAGNOSTIC END ===");
       
         // === NORMALIZED DOMINO RECT ===
         const rootRect = document.getElementById("pips-root").getBoundingClientRect();
@@ -661,8 +654,6 @@ console.log("USING CORRECT DRAG");
           width:  rawDom.width,
           height: rawDom.height
         };
-      
-        console.log("DOMINO width:", domRect.width);
       
         // === LEFT HALF OF DOMINO ===
         const leftHalf = {
@@ -677,7 +668,6 @@ console.log("USING CORRECT DRAG");
         let bestOverlap = 0;
       
         document.querySelectorAll(".pips-cell").forEach(cell => {
-      
           const raw = cell.getBoundingClientRect();
           const rect = {
             left:   raw.left   - rootRect.left,
@@ -686,12 +676,6 @@ console.log("USING CORRECT DRAG");
             bottom: raw.bottom - rootRect.top
           };
       
-          // Log width of cell 0,0 for diagnostics
-          if (cell.dataset.row === "0" && cell.dataset.col === "0") {
-            console.log("CELL width:", rect.right - rect.left);
-          }
-      
-          // Overlap with LEFT HALF ONLY
           const overlapLeft   = Math.max(leftHalf.left, rect.left);
           const overlapRight  = Math.min(leftHalf.right, rect.right);
           const overlapTop    = Math.max(leftHalf.top, rect.top);
@@ -703,16 +687,10 @@ console.log("USING CORRECT DRAG");
           if (overlapWidth > 0 && overlapHeight > 0) {
             const overlapArea = overlapWidth * overlapHeight;
       
-            console.log(
-              "cell", cell.dataset.row, cell.dataset.col,
-              "overlap:", overlapArea
-            );
-      
             if (overlapArea > bestOverlap) {
               bestOverlap = overlapArea;
               bestCells = [cell];
             } else if (Math.abs(overlapArea - bestOverlap) < 0.001) {
-              // Tie — add this cell as equally valid
               bestCells.push(cell);
             }
           }
@@ -746,9 +724,20 @@ console.log("USING CORRECT DRAG");
           : [ [row, col], [row, col + 1] ];
       
         // === VALIDATE BOTH CELLS EXIST ===
-        if (!cells.every(([r, c]) => document.getElementById(`cell-${r}-${c}`))) {
-          flashInvalid(domino);
-          return false;
+        for (const [r, c] of cells) {
+          if (!document.getElementById(`cell-${r}-${c}`)) {
+            flashInvalid(domino);
+            return false;
+          }
+        }
+      
+        // === OVERLAP CHECK ===
+        for (const [r, c] of cells) {
+          const cellEl = document.getElementById(`cell-${r}-${c}`);
+          if (cellEl.children.length > 0 && cellEl.children[0] !== domino) {
+            flashInvalid(domino);
+            return false;
+          }
         }
       
         // === SNAP DOMINO TO BEST CELL ===
