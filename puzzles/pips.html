@@ -124,8 +124,8 @@
        DOMINO TRAY + TILES
        ------------------------------ */
     .tray-slot {
-      width: 50px;      /* match domino width */
-      height: 100px;    /* match domino height */
+      width: calc(var(--cell-size) * 2 + var(--cell-gap));
+      height: var(--cell-size);
       position: relative;
       border: 1px solid transparent; /* invisible placeholder */
       display: flex;
