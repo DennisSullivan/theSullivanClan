@@ -820,6 +820,101 @@ function logBoardOccupancy() {
           c.classList.remove("cell-highlight")
         );
       }
+  
+      function checkWin() {
+        // Count how many cells are occupied
+        const keys = Object.keys(boardOccupancy);
+      
+        // A full 7×8 board has 56 cells → 28 dominos × 2 cells each
+        if (keys.length !== 56) return false;
+      
+        // Ensure every cell is filled by a domino object
+        for (const key of keys) {
+          if (!boardOccupancy[key]) return false;
+        }
+      
+        // Ensure each domino occupies exactly two cells
+        const dominoCellCount = {};
+        for (const key of keys) {
+          const dom = boardOccupancy[key];
+          dominoCellCount[dom.dataset.index] =
+            (dominoCellCount[dom.dataset.index] || 0) + 1;
+        }
+      
+        for (const index in dominoCellCount) {
+          if (dominoCellCount[index] !== 2) return false;
+        }
+      
+        return true;
+      }
+
+      function serializeBoard() {
+        const state = [];
+      
+        document.querySelectorAll(".domino").forEach(dom => {
+          if (!dom.dataset.boardRow) return; // skip tray dominos
+      
+          state.push({
+            index: dom.dataset.index,
+            row: parseInt(dom.dataset.boardRow, 10),
+            col: parseInt(dom.dataset.boardCol, 10),
+            orientation: dom.dataset.boardOrientation
+          });
+        });
+      
+        return state;
+      }
+
+      function loadBoardState(state) {
+        // Clear occupancy
+        Object.keys(boardOccupancy).forEach(key => delete boardOccupancy[key]);
+      
+        // Reset all dominos to tray
+        document.querySelectorAll(".domino").forEach(dom => {
+          const home = document.getElementById(dom.dataset.homeSlot);
+          home.appendChild(dom);
+      
+          dom.style.position = "";
+          dom.style.left = "";
+          dom.style.top = "";
+          dom.style.zIndex = "";
+      
+          delete dom.dataset.boardRow;
+          delete dom.dataset.boardCol;
+          delete dom.dataset.boardOrientation;
+        });
+      
+        const root = document.getElementById("pips-root");
+        const rootRect = root.getBoundingClientRect();
+      
+        // Apply saved placements
+        state.forEach(entry => {
+          const dom = document.querySelector(`.domino[data-index="${entry.index}"]`);
+          const anchor = document.getElementById(`cell-${entry.row}-${entry.col}`);
+          const anchorRect = anchor.getBoundingClientRect();
+      
+          root.appendChild(dom);
+      
+          dom.style.position = "absolute";
+          dom.style.left = `${anchorRect.left - rootRect.left}px`;
+          dom.style.top  = `${anchorRect.top  - rootRect.top}px`;
+      
+          dom.dataset.boardRow = entry.row;
+          dom.dataset.boardCol = entry.col;
+          dom.dataset.boardOrientation = entry.orientation;
+      
+          const cells = entry.orientation === "vertical"
+            ? [ [entry.row, entry.col], [entry.row + 1, entry.col] ]
+            : [ [entry.row, entry.col], [entry.row, entry.col + 1] ];
+      
+          cells.forEach(([r, c]) => {
+            boardOccupancy[`${r},${c}`] = dom;
+          });
+        });
+      
+        logBoardOccupancy();
+      }
+
 
   </script>
 
