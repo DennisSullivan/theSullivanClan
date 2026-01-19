@@ -74,24 +74,21 @@ body {
   z-index: 5;
 }
 
-/* Domino layer */
+/* Domino + grid layer */
 #pips-root {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   z-index: 10;
-}
 
-/* Grid layer */
-#pips-grid {
   display: grid;
   background: var(--grid-bg);
   padding: 10px;
   border-radius: var(--radius);
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   gap: var(--cell-gap);
-  position: relative;
-  z-index: 1;
+
+  /* JS sets --rows and --cols on #pips-root */
+  grid-template-columns: repeat(var(--cols), var(--cell-size));
+  grid-template-rows: repeat(var(--rows), var(--cell-size));
 }
 
 /* Cells */
