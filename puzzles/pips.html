@@ -308,17 +308,7 @@
 
   <!-- JS Engine (you will paste your logic here) -->
   <script>
-    // Example placeholder to show where your engine will go
-    // -----------------------------------------------------
-
-    // 1. Initialize grid
-    // 2. Draw regions
-    // 3. Create dominos
-    // 4. Handle drag/drop + placement logic
-
-    console.log("Pips Engine ready for JS...");
-
-
+    const boardOccupancy = {};
    
     /* ============================================================
        PIPS ENGINE — GRID BUILDER
@@ -344,7 +334,6 @@
         }
       }
     
-      console.log(`Grid built: ${rows} × ${cols}`);
     }
     
     let activeDomino = null;
@@ -566,6 +555,13 @@
         activeDomino.dataset.originalLeft = activeDomino.style.left || "";
         activeDomino.dataset.originalTop  = activeDomino.style.top  || "";
       
+        // Clear any existing board occupancy for this domino
+        Object.keys(boardOccupancy).forEach(key => {
+          if (boardOccupancy[key] === activeDomino.id) {
+            delete boardOccupancy[key];
+          }
+        });
+      
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       
@@ -593,7 +589,6 @@
          DRAG MOVEMENT
          ------------------------------ */
       function drag(e) {
-console.log("USING CORRECT DRAG");
         if (!activeDomino) return;
       
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -616,17 +611,14 @@ console.log("USING CORRECT DRAG");
         clearHighlights();
       
         if (!snapped) {
-          // Restore to original parent
           const originalParent = document.getElementById(activeDomino.dataset.originalParent);
           originalParent.appendChild(activeDomino);
       
-          // Restore original pixel position if it was on the board
           if (activeDomino.dataset.origin === "board") {
             activeDomino.style.position = "absolute";
             activeDomino.style.left = activeDomino.dataset.originalLeft;
             activeDomino.style.top  = activeDomino.dataset.originalTop;
           } else {
-            // Tray pieces flow normally
             activeDomino.style.position = "";
             activeDomino.style.left = "";
             activeDomino.style.top = "";
@@ -637,13 +629,12 @@ console.log("USING CORRECT DRAG");
       
         activeDomino = null;
       }
-       
+      
       /* ============================================================
          PLACEMENT LOGIC
          ============================================================ */
       function tryPlaceDomino(domino) {
       
-        // === NORMALIZED DOMINO RECT ===
         const rootRect = document.getElementById("pips-root").getBoundingClientRect();
         const rawDom = domino.getBoundingClientRect();
         const domRect = {
@@ -655,7 +646,6 @@ console.log("USING CORRECT DRAG");
           height: rawDom.height
         };
       
-        // === LEFT HALF OF DOMINO ===
         const leftHalf = {
           left: domRect.left,
           right: domRect.left + domRect.width / 2,
@@ -663,7 +653,6 @@ console.log("USING CORRECT DRAG");
           bottom: domRect.bottom
         };
       
-        // === FIND BEST CELL(S) BASED ON LEFT HALF OVERLAP ===
         let bestCells = [];
         let bestOverlap = 0;
       
@@ -696,13 +685,11 @@ console.log("USING CORRECT DRAG");
           }
         });
       
-        // === NO OVERLAP AT ALL → OFF THE BOARD ===
         if (bestCells.length === 0) {
           flashInvalid(domino);
           return false;
         }
       
-        // === 25% MINIMUM OVERLAP RULE ===
         const cellRect = bestCells[0].getBoundingClientRect();
         const minArea = (cellRect.width * cellRect.height) * 0.25;
       
@@ -711,7 +698,6 @@ console.log("USING CORRECT DRAG");
           return false;
         }
       
-        // === PICK ANY OF THE TIED CELLS ===
         const bestCell = bestCells[0];
       
         const row = parseInt(bestCell.dataset.row, 10);
@@ -723,7 +709,7 @@ console.log("USING CORRECT DRAG");
           ? [ [row, col], [row + 1, col] ]
           : [ [row, col], [row, col + 1] ];
       
-        // === VALIDATE BOTH CELLS EXIST ===
+        // Validate both cells exist
         for (const [r, c] of cells) {
           if (!document.getElementById(`cell-${r}-${c}`)) {
             flashInvalid(domino);
@@ -731,21 +717,27 @@ console.log("USING CORRECT DRAG");
           }
         }
       
-        // === OVERLAP CHECK ===
+        // OVERLAP CHECK via boardOccupancy
         for (const [r, c] of cells) {
-          const cellEl = document.getElementById(`cell-${r}-${c}`);
-          if (cellEl.children.length > 0 && cellEl.children[0] !== domino) {
+          const key = `${r},${c}`;
+          if (boardOccupancy[key] && boardOccupancy[key] !== domino.id) {
             flashInvalid(domino);
             return false;
           }
         }
       
-        // === SNAP DOMINO TO BEST CELL ===
+        // SNAP DOMINO TO BEST CELL
         const targetRect = bestCell.getBoundingClientRect();
       
         domino.style.left = `${targetRect.left - rootRect.left}px`;
         domino.style.top  = `${targetRect.top  - rootRect.top}px`;
         domino.classList.add("domino-placed");
+      
+        // WRITE OCCUPANCY
+        cells.forEach(([r, c]) => {
+          const key = `${r},${c}`;
+          boardOccupancy[key] = domino.id;
+        });
       
         return true;
       }
