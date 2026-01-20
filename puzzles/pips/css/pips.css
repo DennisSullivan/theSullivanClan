@@ -133,6 +133,52 @@ body {
   pointer-events: none;
 }
 
+/* ================================
+   SULLIVANCLAN REGION PALETTE
+   ================================ */
+
+/* Region A — Warm Honey */
+.region-A {
+  background: rgba(240, 200, 120, 0.22);
+  border-color: rgb(200, 150, 80);
+}
+
+/* Region B — Soft Clay */
+.region-B {
+  background: rgba(220, 170, 130, 0.22);
+  border-color: rgb(180, 130, 90);
+}
+
+/* Region C — Muted Sage */
+.region-C {
+  background: rgba(180, 200, 160, 0.22);
+  border-color: rgb(130, 150, 110);
+}
+
+/* Region D — Dusty Rose */
+.region-D {
+  background: rgba(220, 160, 160, 0.22);
+  border-color: rgb(180, 120, 120);
+}
+
+/* Region E — Antique Gold */
+.region-E {
+  background: rgba(230, 200, 140, 0.22);
+  border-color: rgb(190, 160, 110);
+}
+
+/* Region F — Weathered Teal */
+.region-F {
+  background: rgba(160, 190, 190, 0.22);
+  border-color: rgb(120, 150, 150);
+}
+
+/* Region G — Warm Wheat */
+.region-G {
+  background: rgba(240, 220, 180, 0.22);
+  border-color: rgb(200, 180, 140);
+}
+
 /* ------------------------------
    DOMINO TRAY
    ------------------------------ */
