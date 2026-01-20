@@ -7,15 +7,13 @@
    CSS VARIABLES (THEME)
    ------------------------------ */
 :root {
-  --region-fill: rgba(255, 200, 0, 0.15);
-  --region-outline: rgba(255, 150, 0, 0.8);
-}
-:root {
   --bg: #faf8f4;
   --grid-bg: #ffffff;
   --line: #333;
-  --region-outline: #444;
-  --region-fill: rgba(0, 0, 0, 0.04);
+
+  --region-outline: rgba(255, 150, 0, 0.8);
+  --region-fill: rgba(255, 200, 0, 0.15);
+
   --cell-size: 48px;
   --cell-gap: 2px;
   --radius: 6px;
@@ -67,27 +65,30 @@ body {
 #pips-root-wrapper {
   position: relative;
   margin-top: 20px;
+
+  /* The grid background belongs HERE */
+  background: var(--grid-bg);
+  padding: 10px;
+  border-radius: var(--radius);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 /* Region overlay layer */
 #region-layer {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 10px;   /* match wrapper padding */
+  left: 10px;
   pointer-events: none;
   z-index: 5;
 }
 
-/* Domino + grid layer */
+/* Domino + cell grid */
 #pips-root {
   position: relative;
   z-index: 10;
 
   display: grid;
-  background: var(--grid-bg);
-  padding: 10px;
-  border-radius: var(--radius);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  background: transparent;   /* MUST be transparent */
   gap: var(--cell-gap);
 
   /* JS sets --rows and --cols on #pips-root */
@@ -110,25 +111,15 @@ body {
    REGION OUTLINES
    ------------------------------ */
 
-/*
 .region {
   position: absolute;
-  border: 2px solid var(--region-outline);
   background: var(--region-fill);
-  border-radius: var(--radius);
+  border: 2px solid var(--region-outline);
+  border-radius: 4px;
+  z-index: 6; /* above grid, below dominos */
   pointer-events: none;
   box-sizing: border-box;
 }
-*/
-.region {
-  position: absolute;
-  background: rgba(255, 200, 0, 0.15);   /* light fill */
-  border: 2px solid rgba(255, 150, 0, 0.8); /* outline */
-  border-radius: 4px;
-  z-index: 3;
-  pointer-events: none;
-}
-
 
 .region-label {
   position: absolute;
