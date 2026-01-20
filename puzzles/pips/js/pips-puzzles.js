@@ -64,6 +64,74 @@ const PIPS_PUZZLES = {
 
     blocked: [],   // no blocked cells
     regions: [],   // no regions
+    regions: [
+     {
+       id: "A",
+       cells: [
+         { row: 0, col: 0 },
+         { row: 0, col: 1 },
+         { row: 1, col: 0 },
+         { row: 2, col: 0 }
+       ]
+     },
+     {
+       id: "B",
+       cells: [
+         { row: 0, col: 2 },
+         { row: 1, col: 1 },
+         { row: 1, col: 2 },
+         { row: 2, col: 1 }
+       ]
+     },
+     {
+       id: "C",
+       cells: [
+         { row: 0, col: 3 },
+         { row: 0, col: 4 },
+         { row: 1, col: 3 },
+         { row: 2, col: 3 }
+       ]
+     },
+     {
+       id: "D",
+       cells: [
+         { row: 0, col: 5 },
+         { row: 1, col: 4 },
+         { row: 1, col: 5 },
+         { row: 2, col: 5 },
+         { row: 3, col: 5 }
+       ]
+     },
+     {
+       id: "E",
+       cells: [
+         { row: 2, col: 2 },
+         { row: 3, col: 2 },
+         { row: 3, col: 1 },
+         { row: 4, col: 1 }
+       ]
+     },
+     {
+       id: "F",
+       cells: [
+         { row: 2, col: 4 },
+         { row: 3, col: 4 },
+         { row: 4, col: 4 },
+         { row: 4, col: 3 },
+         { row: 5, col: 3 }
+       ]
+     },
+     {
+       id: "G",
+       cells: [
+         { row: 3, col: 0 },
+         { row: 4, col: 0 },
+         { row: 5, col: 0 },
+         { row: 5, col: 1 },
+         { row: 5, col: 2 }
+       ]
+     }
+   ]
 
     startingDominos: [
       { index: 0, row: 0, col: 0, orientation: "horizontal" }, // 0–0
