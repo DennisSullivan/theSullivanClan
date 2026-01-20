@@ -75,6 +75,13 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
+/* Make overlay layers match the board size */
+#badge-layer,
+#region-layer {
+  width: 100%;
+  height: 100%;
+}
+
 /* TOP: Badge layer */
 #badge-layer {
   position: absolute;
