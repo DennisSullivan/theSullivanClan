@@ -130,7 +130,7 @@ const PIPS_PUZZLES = {
          { row: 5, col: 2 }
        ]
      }
-   ]
+   ],
 
     startingDominos: [
       { index: 0, row: 0, col: 0, orientation: "horizontal" }, // 0–0
