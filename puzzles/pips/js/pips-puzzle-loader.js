@@ -206,6 +206,44 @@ function applyRegions(puzzle) {
   });
 }
 
+function buildRegionOverlays(puzzle) {
+  const layer = document.getElementById("region-layer");
+  layer.innerHTML = "";
+
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+
+  puzzle.regions.forEach(region => {
+    // Compute bounding box
+    let minRow = Infinity, maxRow = -Infinity;
+    let minCol = Infinity, maxCol = -Infinity;
+
+    region.cells.forEach(({ row, col }) => {
+      minRow = Math.min(minRow, row);
+      maxRow = Math.max(maxRow, row);
+      minCol = Math.min(minCol, col);
+      maxCol = Math.max(maxCol, col);
+    });
+
+    // Create overlay div
+    const div = document.createElement("div");
+    div.className = `region region-${region.id}`;
+
+    // Position inside #pips-root-wrapper
+    const top  = 10 + minRow * (cellSize + cellGap);
+    const left = 10 + minCol * (cellSize + cellGap);
+
+    const height = (maxRow - minRow + 1) * cellSize + (maxRow - minRow) * cellGap;
+    const width  = (maxCol - minCol + 1) * cellSize + (maxCol - minCol) * cellGap;
+
+    div.style.top = `${top}px`;
+    div.style.left = `${left}px`;
+    div.style.width = `${width}px`;
+    div.style.height = `${height}px`;
+
+    layer.appendChild(div);
+  });
+}
 
 /* ------------------------------------------------------------
    APPLY STARTING DOMINOS
