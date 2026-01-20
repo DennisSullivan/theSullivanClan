@@ -196,6 +196,7 @@ function buildRegionOverlays(puzzle) {
   const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
 
   puzzle.regions.forEach(region => {
+console.log("Overlay builder running for region:", region.id);
     // Compute bounding box
     let minRow = Infinity, maxRow = -Infinity;
     let minCol = Infinity, maxCol = -Infinity;
@@ -228,6 +229,7 @@ function buildRegionOverlays(puzzle) {
       const badge = document.createElement("div");
       badge.className = "region-badge";
       badge.textContent = region.rule || "";
+console.log("Appending overlay:", div);
       div.appendChild(badge);
    }
 
