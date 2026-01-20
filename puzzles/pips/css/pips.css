@@ -141,7 +141,7 @@ body {
 .region {
   position: absolute;
   background: var(--region-fill);
-  border: 2px dashed var(--region-outline);
+  border: 1.5px dashed var(--region-outline);
   border-radius: 6px;
   box-sizing: border-box;
 }
