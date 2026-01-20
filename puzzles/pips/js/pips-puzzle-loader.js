@@ -197,22 +197,34 @@ function buildRegionOverlays(puzzle) {
   const regionLayer = document.getElementById("region-layer");
   regionLayer.innerHTML = "";
 
-  puzzle.regions.forEach(region => {
-   const div = document.createElement("div");
-   div.className = "region region-" + region.id;
-   div.classList.add(`region-${region.id}`);
-     
-   const wrapperPadding = 10;
-   
-   const top = wrapperPadding + minRow * (cellSize + cellGap);
-   const left = wrapperPadding + minCol * (cellSize + cellGap);
-    const minCol = Math.min(...region.cells.map(c => c.col));
-    const maxCol = Math.max(...region.cells.map(c => c.col));
+  // Read CSS variables
+  const rootStyles = getComputedStyle(document.documentElement);
+  const cellSize = parseInt(rootStyles.getPropertyValue("--cell-size"));
+  const cellGap = parseInt(rootStyles.getPropertyValue("--cell-gap"));
+  const wrapperPadding = 10; // matches #pips-root-wrapper padding
 
-    const top = minRow * (cellSize + cellGap);
-    const left = minCol * (cellSize + cellGap);
-    const width = (maxCol - minCol + 1) * (cellSize + cellGap) - cellGap;
-    const height = (maxRow - minRow + 1) * (cellSize + cellGap) - cellGap;
+  puzzle.regions.forEach(region => {
+    // Compute bounding box from region.cells
+    let minRow = Infinity, maxRow = -Infinity;
+    let minCol = Infinity, maxCol = -Infinity;
+
+    region.cells.forEach(({ row, col }) => {
+      minRow = Math.min(minRow, row);
+      maxRow = Math.max(maxRow, row);
+      minCol = Math.min(minCol, col);
+      maxCol = Math.max(maxCol, col);
+    });
+
+    // Convert to pixel geometry
+    const top = wrapperPadding + minRow * (cellSize + cellGap);
+    const left = wrapperPadding + minCol * (cellSize + cellGap);
+    const width = (maxCol - minCol + 1) * cellSize + (maxCol - minCol) * cellGap;
+    const height = (maxRow - minRow + 1) * cellSize + (maxRow - minRow) * cellGap;
+
+    // Create overlay div
+    const div = document.createElement("div");
+    div.className = "region";
+    div.classList.add(`region-${region.id}`);
 
     div.style.top = top + "px";
     div.style.left = left + "px";
