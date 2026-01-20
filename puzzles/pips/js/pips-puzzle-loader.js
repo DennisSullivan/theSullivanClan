@@ -220,21 +220,6 @@ function buildRegionOverlays(puzzle) {
   });
 }
 
-function buildRegionOverlays(puzzle) {
-  const regionLayer = document.getElementById("region-layer");
-  regionLayer.innerHTML = "";
-
-  puzzle.regions.forEach(region => {
-    const div = document.createElement("div");
-    div.className = "region";
-    div.style.top = region.top + "px";
-    div.style.left = region.left + "px";
-    div.style.width = region.width + "px";
-    div.style.height = region.height + "px";
-    regionLayer.appendChild(div);
-  });
-}
-
 /* ------------------------------------------------------------
    Building Badges
    ------------------------------------------------------------ */
@@ -242,16 +227,31 @@ function buildRegionBadges(puzzle) {
   const badgeLayer = document.getElementById("badge-layer");
   badgeLayer.innerHTML = "";
 
+  // Read CSS variables
+  const rootStyles = getComputedStyle(document.documentElement);
+  const cellSize = parseInt(rootStyles.getPropertyValue("--cell-size"));
+  const cellGap = parseInt(rootStyles.getPropertyValue("--cell-gap"));
+  const wrapperPadding = 10; // matches #pips-root-wrapper padding
+
   puzzle.regions.forEach(region => {
     const badge = document.createElement("div");
     badge.className = "region-badge";
     badge.textContent = region.rule || "";
 
+    // Find the top-left-most cell of the region
     const minRow = Math.min(...region.cells.map(c => c.row));
     const minCol = Math.min(...region.cells.map(c => c.col));
 
-    const top = minRow * (cellSize + cellGap) - 12;
-    const left = minCol * (cellSize + cellGap) - 12;
+    // Compute pixel position
+    const top =
+      wrapperPadding +
+      minRow * (cellSize + cellGap) -
+      12; // badge offset
+
+    const left =
+      wrapperPadding +
+      minCol * (cellSize + cellGap) -
+      12; // badge offset
 
     badge.style.top = top + "px";
     badge.style.left = left + "px";
