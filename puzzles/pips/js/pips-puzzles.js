@@ -53,61 +53,92 @@
    ============================================================ */
 
 const PIPS_PUZZLES = {
-  // ------------------------------------------------------------
-  // Small, easy 6×6 beginner puzzle
-  // ------------------------------------------------------------
-  easy6x6: {
-  id: "easy-6x6-starter",
-  name: "Easy 6×6 Starter",
-  rows: 6,
-  cols: 6,
-
-  // Three simple starter dominos
-  starters: [
-    { r: 0, c: 0, v1: 1, v2: 2, vertical: false },
-    { r: 2, c: 3, v1: 3, v2: 3, vertical: true },
-    { r: 4, c: 1, v1: 0, v2: 4, vertical: false }
-  ],
-
-  // Regions with rules
-  regions: [
-    {
-      id: "A",
-      rule: "=6",          // sum of pips must equal 6
-      cells: [ [0,0], [0,1], [1,0] ]
-    },
-    {
-      id: "B",
-      rule: "≠",           // two dominos must be different
-      cells: [ [0,2], [0,3], [1,2] ]
-    },
-    {
-      id: "C",
-      rule: "<",           // left < right or top < bottom
-      cells: [ [0,4], [0,5], [1,5] ]
-    },
-    {
-      id: "D",
-      rule: ">7",          // sum must be greater than 7
-      cells: [ [1,1], [2,1], [2,2], [3,2] ]
-    },
-    {
-      id: "E",
-      rule: "=4",          // sum must equal 4
-      cells: [ [1,3], [1,4], [2,4] ]
-    },
-    {
-      id: "F",
-      rule: "≠",           // inequality region
-      cells: [ [2,0], [3,0], [3,1] ]
-    },
-    {
-      id: "G",
-      rule: "<",           // comparison region
-      cells: [ [2,3], [3,3], [3,4], [4,4] ]
-    }
-  ]
-},
+   // ------------------------------------------------------------
+   // Small, easy 6×6 beginner puzzle
+   // ------------------------------------------------------------
+   easy6x6: {
+     id: "easy-6x6-starter",
+     title: "Easy 6×6 Starter",
+   
+     width: 6,
+     height: 6,
+   
+     blocked: [],
+   
+     regions: [
+       {
+         id: "A",
+         rule: "=6", // sum of pips must equal 6
+         cells: [
+           { row: 0, col: 0 },
+           { row: 0, col: 1 },
+           { row: 1, col: 0 }
+         ]
+       },
+       {
+         id: "B",
+         rule: "≠", // two dominos must be different
+         cells: [
+           { row: 0, col: 2 },
+           { row: 0, col: 3 },
+           { row: 1, col: 2 }
+         ]
+       },
+       {
+         id: "C",
+         rule: "<", // left < right or top < bottom
+         cells: [
+           { row: 0, col: 4 },
+           { row: 0, col: 5 },
+           { row: 1, col: 5 }
+         ]
+       },
+       {
+         id: "D",
+         rule: ">7", // sum must be greater than 7
+         cells: [
+           { row: 1, col: 1 },
+           { row: 2, col: 1 },
+           { row: 2, col: 2 },
+           { row: 3, col: 2 }
+         ]
+       },
+       {
+         id: "E",
+         rule: "=4", // sum must equal 4
+         cells: [
+           { row: 1, col: 3 },
+           { row: 1, col: 4 },
+           { row: 2, col: 4 }
+         ]
+       },
+       {
+         id: "F",
+         rule: "≠", // inequality region
+         cells: [
+           { row: 2, col: 0 },
+           { row: 3, col: 0 },
+           { row: 3, col: 1 }
+         ]
+       },
+       {
+         id: "G",
+         rule: "<", // comparison region
+         cells: [
+           { row: 2, col: 3 },
+           { row: 3, col: 3 },
+           { row: 3, col: 4 },
+           { row: 4, col: 4 }
+         ]
+       }
+     ],
+   
+     startingDominos: [
+       { index: 0, row: 0, col: 0, orientation: "horizontal" }, // 1–2
+       { index: 1, row: 2, col: 3, orientation: "vertical" },   // 3–3
+       { index: 2, row: 4, col: 1, orientation: "horizontal" }  // 0–4
+     ]
+   },
 
   // Example placeholder puzzle
   sample: {
