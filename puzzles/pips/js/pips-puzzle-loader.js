@@ -198,9 +198,10 @@ function buildRegionOverlays(puzzle) {
   regionLayer.innerHTML = "";
 
   puzzle.regions.forEach(region => {
-    const div = document.createElement("div");
-    div.className = "region region-" + region.id;
-
+   const div = document.createElement("div");
+   div.className = "region region-" + region.id;
+   div.classList.add(`region-${region.id}`);
+     
    const wrapperPadding = 10;
    
    const top = wrapperPadding + minRow * (cellSize + cellGap);
