@@ -76,8 +76,8 @@ body {
 /* Region overlay layer */
 #region-layer {
   position: absolute;
-  top: 10px;   /* match wrapper padding */
-  left: 10px;
+  top: 0px;   /* match wrapper padding */
+  left: 0px;
   pointer-events: none;
   z-index: 5;
 }
@@ -100,7 +100,7 @@ body {
 .pips-cell {
   width: var(--cell-size);
   height: var(--cell-size);
-  background: white;
+  background: transparent;
   border: 1px solid var(--line);
   border-radius: 4px;
   position: relative;
