@@ -179,6 +179,30 @@ body {
   border-color: rgb(214, 51, 132);
 }
 
+// Badges
+
+.region-badge {
+  position: absolute;
+  top: -10px;
+  left: -2px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 20;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+}
+
+.region-A .region-badge { background: rgb(102, 60, 147); }
+.region-B .region-badge { background: rgb(64, 138, 101); }
+.region-C .region-badge { background: rgb(229, 101, 74); }
+.region-D .region-badge { background: rgb(210, 151, 26); }
+.region-E .region-badge { background: rgb(221, 121, 22); }
+.region-F .region-badge { background: rgb(238, 94, 59); }
+.region-G .region-badge { background: rgb(214, 51, 132); }
+
 /* ------------------------------
    DOMINO TRAY
    ------------------------------ */
