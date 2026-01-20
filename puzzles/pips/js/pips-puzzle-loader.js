@@ -244,10 +244,10 @@ function buildRegionOverlays(puzzle) {
 
    // Create badge showing ONLY the rule
    if (region.rule && region.rule.trim() !== "") {
-       const badge = document.createElement("div");
-       badge.className = "region-badge";
-       badge.textContent = region.rule;
-       div.appendChild(badge);
+      const badge = document.createElement("div");
+      badge.className = "region-badge";
+      badge.textContent = region.rule || "";
+      div.appendChild(badge);
    }
 
      layer.appendChild(div);
