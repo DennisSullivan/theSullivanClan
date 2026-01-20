@@ -63,7 +63,6 @@ const PIPS_PUZZLES = {
     height: 6,
 
     blocked: [],   // no blocked cells
-    regions: [],   // no regions
     regions: [
      {
        id: "A",
