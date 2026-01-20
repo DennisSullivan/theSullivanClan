@@ -216,8 +216,8 @@ function buildRegionOverlays(puzzle) {
     });
 
     // Convert to pixel geometry
-    const top = wrapperPadding + minRow * (cellSize + cellGap);
-    const left = wrapperPadding + minCol * (cellSize + cellGap);
+    const top = minRow * (cellSize + cellGap);
+    const left = minCol * (cellSize + cellGap);
     const width = (maxCol - minCol + 1) * cellSize + (maxCol - minCol) * cellGap;
     const height = (maxRow - minRow + 1) * cellSize + (maxRow - minRow) * cellGap;
 
