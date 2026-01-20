@@ -195,11 +195,23 @@ function buildRegionOverlays(puzzle) {
 
   puzzle.regions.forEach(region => {
     const div = document.createElement("div");
-    div.className = "region";
-    div.style.top = region.top + "px";
-    div.style.left = region.left + "px";
-    div.style.width = region.width + "px";
-    div.style.height = region.height + "px";
+    div.className = "region region-" + region.id;
+
+    const minRow = Math.min(...region.cells.map(c => c.row));
+    const maxRow = Math.max(...region.cells.map(c => c.row));
+    const minCol = Math.min(...region.cells.map(c => c.col));
+    const maxCol = Math.max(...region.cells.map(c => c.col));
+
+    const top = minRow * (cellSize + cellGap);
+    const left = minCol * (cellSize + cellGap);
+    const width = (maxCol - minCol + 1) * (cellSize + cellGap) - cellGap;
+    const height = (maxRow - minRow + 1) * (cellSize + cellGap) - cellGap;
+
+    div.style.top = top + "px";
+    div.style.left = left + "px";
+    div.style.width = width + "px";
+    div.style.height = height + "px";
+
     regionLayer.appendChild(div);
   });
 }
