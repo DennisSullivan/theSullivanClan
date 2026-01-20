@@ -242,7 +242,15 @@ function buildRegionOverlays(puzzle) {
     div.style.width = `${width}px`;
     div.style.height = `${height}px`;
 
-    layer.appendChild(div);
+   // Create badge showing ONLY the rule
+   if (region.rule && region.rule.trim() !== "") {
+       const badge = document.createElement("div");
+       badge.className = "region-badge";
+       badge.textContent = region.rule;
+       div.appendChild(badge);
+   }
+
+     layer.appendChild(div);
   });
 }
 
