@@ -18,7 +18,7 @@
   --radius: 6px;
 
   --domino-bg: #fff;
-  --domino-border: #222;
+  --domino-border: #000;
   --domino-shadow: rgba(0, 0, 0, 0.15);
 
   --accent: #7a4c24; /* warm SullivanClan brown */
@@ -125,13 +125,13 @@ body {
    GRID CELLS
    ------------------------------ */
 .pips-cell {
-  width: var(--cell-size);
-  height: var(--cell-size);
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  position: relative;
-  box-sizing: border-box;
+   width: var(--cell-size);
+   height: var(--cell-size);
+   background: transparent;
+   border: 1px solid var(--cell-line);
+   border-radius: 4px;
+   position: relative;
+   box-sizing: border-box;
 }
 
 /* ------------------------------
@@ -207,7 +207,7 @@ body {
   width: calc(var(--cell-size) * 2 + var(--cell-gap));
   height: var(--cell-size);
   background: var(--domino-bg);
-  border: 2px solid var(--domino-border);
+  border: 3px solid var(--domino-border);
   border-radius: var(--radius);
   box-shadow: 0 2px 4px var(--domino-shadow);
   cursor: grab;
