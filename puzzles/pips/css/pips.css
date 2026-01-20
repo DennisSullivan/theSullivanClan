@@ -59,13 +59,12 @@ body {
    ROOT + LAYERS
    ------------------------------ */
 
-<div id="pips-container">
-  <div id="pips-root-wrapper">
-      <div id="badge-layer"></div>
-      <div id="region-layer"></div>
-      <div id="pips-root"></div>
-  </div>
-</div>
+#pips-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
 
 #pips-root-wrapper {
   position: relative;
@@ -81,7 +80,6 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  pointer-events: none;
   z-index: 300;
 }
 
@@ -90,8 +88,15 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  pointer-events: none;
   z-index: 200;
+}
+
+/* Make sure overlays never block dragging */
+#region-layer,
+#region-layer *,
+#badge-layer,
+#badge-layer * {
+  pointer-events: none;
 }
 
 /* BOTTOM: Grid + dominos */
@@ -130,7 +135,6 @@ body {
   border: 2px dashed var(--region-outline);
   border-radius: 6px;
   box-sizing: border-box;
-  pointer-events: none;
 }
 
 /* ------------------------------
@@ -152,7 +156,6 @@ body {
   line-height: 1;
 
   z-index: 999;
-  pointer-events: none;
 }
 
 /* ------------------------------
