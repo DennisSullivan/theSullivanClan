@@ -7,6 +7,10 @@
    CSS VARIABLES (THEME)
    ------------------------------ */
 :root {
+  --region-fill: rgba(255, 200, 0, 0.15);
+  --region-outline: rgba(255, 150, 0, 0.8);
+}
+:root {
   --bg: #faf8f4;
   --grid-bg: #ffffff;
   --line: #333;
