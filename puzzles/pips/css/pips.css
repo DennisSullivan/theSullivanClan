@@ -59,6 +59,14 @@ body {
    ROOT + LAYERS
    ------------------------------ */
 
+<div id="pips-container">
+  <div id="pips-root-wrapper">
+      <div id="badge-layer"></div>
+      <div id="region-layer"></div>
+      <div id="pips-root"></div>
+  </div>
+</div>
+
 #pips-root-wrapper {
   position: relative;
   margin-top: 20px;
