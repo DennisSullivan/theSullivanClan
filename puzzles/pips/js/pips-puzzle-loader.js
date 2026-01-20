@@ -3,6 +3,10 @@
    Puzzle lifecycle: build, load, restore, validate
    ============================================================ */
 
+// Read CSS variables for consistent sizing
+const rootStyles = getComputedStyle(document.documentElement);
+const cellSize = parseInt(rootStyles.getPropertyValue('--cell-size'));
+const cellGap = parseInt(rootStyles.getPropertyValue('--cell-gap'));
 
 /* ------------------------------------------------------------
    CHECK WIN CONDITION
