@@ -137,46 +137,46 @@ body {
    SULLIVANCLAN REGION PALETTE
    ================================ */
 
-/* Region A — Warm Honey */
+/* Region A — Vibrant Violet */
 .region-A {
-  background: rgba(240, 200, 120, 0.22);
-  border-color: rgb(200, 150, 80);
+  background: rgba(120, 81, 165, 0.22);
+  border-color: rgb(102, 60, 147);
 }
 
-/* Region B — Soft Clay */
+/* Region B — Dusty Indigo */
 .region-B {
-  background: rgba(220, 170, 130, 0.22);
-  border-color: rgb(180, 130, 90);
+  background: rgba(81, 153, 126, 0.22);
+  border-color: rgb(64, 138, 101);
 }
 
-/* Region C — Muted Sage */
+/* Region C — Spring Green */
 .region-C {
-  background: rgba(180, 200, 160, 0.22);
-  border-color: rgb(130, 150, 110);
+  background: rgba(236, 121, 88, 0.22);
+  border-color: rgb(229, 101, 74);
 }
 
-/* Region D — Dusty Rose */
+/* Region D — Golden Yellow */
 .region-D {
-  background: rgba(220, 160, 160, 0.22);
-  border-color: rgb(180, 120, 120);
+  background: rgba(255, 193, 48, 0.22);
+  border-color: rgb(210, 151, 26);
 }
 
-/* Region E — Antique Gold */
+/* Region E — Sunset Orange */
 .region-E {
-  background: rgba(230, 200, 140, 0.22);
-  border-color: rgb(190, 160, 110);
+  background: rgba(250, 153, 61, 0.22);
+  border-color: rgb(221, 121, 22);
 }
 
-/* Region F — Weathered Teal */
+/* Region F — Warm Coral */
 .region-F {
-  background: rgba(160, 190, 190, 0.22);
-  border-color: rgb(120, 150, 150);
+  background: rgba(247, 126, 96, 0.22);
+  border-color: rgb(238, 94, 59);
 }
 
-/* Region G — Warm Wheat */
+/* Region G — Soft Plum */
 .region-G {
-  background: rgba(240, 220, 180, 0.22);
-  border-color: rgb(200, 180, 140);
+  background: rgba(233, 90, 145, 0.22);
+  border-color: rgb(214, 51, 132);
 }
 
 /* ------------------------------
