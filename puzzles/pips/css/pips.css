@@ -1,6 +1,5 @@
 /* ============================================================
-   PIPS ENGINE — GLOBAL STYLESHEET
-   Clean, modern, mobile‑first foundation for region puzzles
+   PIPS ENGINE — GLOBAL STYLESHEET (NYT‑STYLE LAYER STACK)
    ============================================================ */
 
 /* ------------------------------
@@ -11,8 +10,8 @@
   --grid-bg: #ffffff;
   --line: #333;
 
-  --region-outline: rgba(255, 150, 0, 0.8);
-  --region-fill: rgba(255, 200, 0, 0.15);
+  --region-outline: rgba(0, 0, 0, 0.45);
+  --region-fill: rgba(0, 0, 0, 0.08);
 
   --cell-size: 48px;
   --cell-gap: 2px;
@@ -25,7 +24,6 @@
   --accent: #7a4c24; /* warm SullivanClan brown */
 }
 
-/* Mobile scaling */
 @media (max-width: 600px) {
   :root {
     --cell-size: 38px;
@@ -46,7 +44,6 @@ body {
   align-items: center;
 }
 
-/* Optional header bar */
 .pips-header {
   width: 100%;
   padding: 12px 20px;
@@ -59,44 +56,52 @@ body {
 }
 
 /* ------------------------------
-   ROOT + GRID LAYERS
+   ROOT + LAYERS
    ------------------------------ */
 
 #pips-root-wrapper {
   position: relative;
   margin-top: 20px;
-
-  /* The grid background belongs HERE */
   background: var(--grid-bg);
   padding: 10px;
   border-radius: var(--radius);
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
-/* Region overlay layer */
-#region-layer {
+/* TOP: Badge layer */
+#badge-layer {
   position: absolute;
-  top: 0px;   /* match wrapper padding */
-  left: 0px;
+  top: 0;
+  left: 0;
   pointer-events: none;
-  z-index: 5;
+  z-index: 300;
 }
 
-/* Domino + cell grid */
+/* MIDDLE: Region shading + outlines */
+#region-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 200;
+}
+
+/* BOTTOM: Grid + dominos */
 #pips-root {
   position: relative;
-  z-index: 10;
+  z-index: 100;
 
   display: grid;
-  background: transparent;   /* MUST be transparent */
+  background: transparent;
   gap: var(--cell-gap);
 
-  /* JS sets --rows and --cols on #pips-root */
   grid-template-columns: repeat(var(--cols), var(--cell-size));
   grid-template-rows: repeat(var(--rows), var(--cell-size));
 }
 
-/* Cells */
+/* ------------------------------
+   GRID CELLS
+   ------------------------------ */
 .pips-cell {
   width: var(--cell-size);
   height: var(--cell-size);
@@ -108,103 +113,39 @@ body {
 }
 
 /* ------------------------------
-   REGION OUTLINES
+   REGION OVERLAYS (NYT STYLE)
    ------------------------------ */
 
 .region {
   position: absolute;
   background: var(--region-fill);
-  border: 2px solid var(--region-outline);
-  border-radius: 4px;
-  z-index: 6; /* above grid, below dominos */
-  pointer-events: none;
+  border: 2px dashed var(--region-outline);
+  border-radius: 6px;
   box-sizing: border-box;
-}
-
-.region-label {
-  position: absolute;
-  top: -14px;
-  left: 4px;
-  background: var(--accent);
-  color: white;
-  padding: 2px 6px;
-  font-size: 0.7rem;
-  border-radius: 4px;
   pointer-events: none;
 }
 
-/* ================================
-   SULLIVANCLAN REGION PALETTE
-   ================================ */
-
-/* Region A — Vibrant Violet */
-.region-A {
-  background: rgba(120, 81, 165, 0.22);
-  border-color: rgb(102, 60, 147);
-}
-
-/* Region B — Dusty Indigo */
-.region-B {
-  background: rgba(81, 153, 126, 0.22);
-  border-color: rgb(64, 138, 101);
-}
-
-/* Region C — Spring Green */
-.region-C {
-  background: rgba(236, 121, 88, 0.22);
-  border-color: rgb(229, 101, 74);
-}
-
-/* Region D — Golden Yellow */
-.region-D {
-  background: rgba(255, 193, 48, 0.22);
-  border-color: rgb(210, 151, 26);
-}
-
-/* Region E — Sunset Orange */
-.region-E {
-  background: rgba(250, 153, 61, 0.22);
-  border-color: rgb(221, 121, 22);
-}
-
-/* Region F — Warm Coral */
-.region-F {
-  background: rgba(247, 126, 96, 0.22);
-  border-color: rgb(238, 94, 59);
-}
-
-/* Region G — Soft Plum */
-.region-G {
-  background: rgba(233, 90, 145, 0.22);
-  border-color: rgb(214, 51, 132);
-}
-
-// Badges
+/* ------------------------------
+   REGION BADGES (NYT STYLE)
+   ------------------------------ */
 
 .region-badge {
   position: absolute;
-  top: -10px;        /* nudge up */
-  left: -4px;        /* nudge left */
-  display: inline-block;
-  padding: 1px 4px;  /* smaller pill */
-  font-size: 0.6rem; /* smaller text */
-  line-height: 1.1;
-  border-radius: 4px;
-  pointer-events: none;
-  z-index: 20;
-  color: white;
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.25);
-  white-space: nowrap; /* keep it narrow */
-}
+  top: -12px;
+  left: -12px;
 
-.region-A .region-badge { background: rgb(102, 60, 147); }
-.region-B .region-badge { background: rgb(64, 138, 101); }
-.region-C .region-badge { background: rgb(229, 101, 74); }
-.region-D .region-badge { background: rgb(210, 151, 26); }
-.region-E .region-badge { background: rgb(221, 121, 22); }
-.region-F .region-badge { background: rgb(238, 94, 59); }
-.region-G .region-badge { background: rgb(214, 51, 132); }
+  background: white;
+  border: 2px solid rgba(0,0,0,0.45);
+  border-radius: 6px;
+
+  padding: 2px 6px;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+
+  z-index: 999;
+  pointer-events: none;
+}
 
 /* ------------------------------
    DOMINO TRAY
