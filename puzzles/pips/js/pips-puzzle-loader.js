@@ -189,24 +189,6 @@ function applyBlockedCells(puzzle) {
   });
 }
 
-
-/* ------------------------------------------------------------
-   APPLY REGIONS
-   ------------------------------------------------------------ */
-function applyRegions(puzzle) {
-  if (!puzzle.regions) return;
-
-  puzzle.regions.forEach(region => {
-    region.cells.forEach(({ row, col }) => {
-      const cell = document.getElementById(`cell-${row}-${col}`);
-      if (cell) {
-        cell.dataset.region = region.id;
-        cell.classList.add(`region-${region.id}`);
-      }
-    });
-  });
-}
-
 function buildRegionOverlays(puzzle) {
   const layer = document.getElementById("region-layer");
   layer.innerHTML = "";
@@ -228,7 +210,6 @@ function buildRegionOverlays(puzzle) {
 
     // Create overlay div
     const div = document.createElement("div");
-    div.className = `region region-${region.id}`;
 
     // Position inside #pips-root-wrapper
     const top  = 10 + minRow * (cellSize + cellGap);
