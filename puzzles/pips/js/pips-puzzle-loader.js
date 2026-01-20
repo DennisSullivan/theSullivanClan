@@ -120,8 +120,9 @@ function loadPuzzle(puzzle) {
   clearBoard();
   buildBoardFromPuzzle(puzzle);
   applyBlockedCells(puzzle);
-  applyRegions(puzzle);
-  applyStartingDominos(puzzle);
+   applyRegions(puzzle);
+   buildRegionOverlays(puzzle);
+   applyStartingDominos(puzzle);
 
   logBoardOccupancy();
 }
