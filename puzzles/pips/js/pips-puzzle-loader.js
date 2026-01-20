@@ -207,8 +207,9 @@ function buildRegionOverlays(puzzle) {
       maxCol = Math.max(maxCol, col);
     });
 
-    // Create overlay div
-    const div = document.createElement("div");
+   // Create overlay div
+   const div = document.createElement("div");
+   div.className = `region region-${region.id}`;
 
     // Position inside #pips-root-wrapper
     const top  = 10 + minRow * (cellSize + cellGap);
