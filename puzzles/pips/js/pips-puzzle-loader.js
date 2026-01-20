@@ -201,8 +201,10 @@ function buildRegionOverlays(puzzle) {
     const div = document.createElement("div");
     div.className = "region region-" + region.id;
 
-    const minRow = Math.min(...region.cells.map(c => c.row));
-    const maxRow = Math.max(...region.cells.map(c => c.row));
+   const wrapperPadding = 10;
+   
+   const top = wrapperPadding + minRow * (cellSize + cellGap);
+   const left = wrapperPadding + minCol * (cellSize + cellGap);
     const minCol = Math.min(...region.cells.map(c => c.col));
     const maxCol = Math.max(...region.cells.map(c => c.col));
 
