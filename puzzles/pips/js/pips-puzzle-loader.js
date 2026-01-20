@@ -232,6 +232,31 @@ function buildRegionOverlays(puzzle) {
 }
 
 /* ------------------------------------------------------------
+   Building Badges
+   ------------------------------------------------------------ */
+function buildRegionBadges(puzzle) {
+  const badgeLayer = document.getElementById("badge-layer");
+  badgeLayer.innerHTML = "";
+
+  puzzle.regions.forEach(region => {
+    const badge = document.createElement("div");
+    badge.className = "region-badge";
+    badge.textContent = region.rule || "";
+
+    const minRow = Math.min(...region.cells.map(c => c.row));
+    const minCol = Math.min(...region.cells.map(c => c.col));
+
+    const top = minRow * (cellSize + cellGap) - 12;
+    const left = minCol * (cellSize + cellGap) - 12;
+
+    badge.style.top = top + "px";
+    badge.style.left = left + "px";
+
+    badgeLayer.appendChild(badge);
+  });
+}
+
+/* ------------------------------------------------------------
    APPLY STARTING DOMINOS
    ------------------------------------------------------------ */
 function applyStartingDominos(puzzle) {
