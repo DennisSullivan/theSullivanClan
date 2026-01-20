@@ -231,8 +231,8 @@ function buildRegionOverlays(puzzle) {
     div.className = `region region-${region.id}`;
 
     // Position inside #pips-root-wrapper
-    const top  = minRow * (cellSize + cellGap);
-    const left = minCol * (cellSize + cellGap);
+    const top  = 10 + minRow * (cellSize + cellGap);
+    const left = 10 + minCol * (cellSize + cellGap);
 
     const height = (maxRow - minRow + 1) * cellSize + (maxRow - minRow) * cellGap;
     const width  = (maxCol - minCol + 1) * cellSize + (maxCol - minCol) * cellGap;
