@@ -22,6 +22,8 @@
   --domino-shadow: rgba(0, 0, 0, 0.15);
 
   --accent: #7a4c24; /* warm SullivanClan brown */
+  --board-bg: #f2e9d8;      /* warm parchment */
+  --cell-line: #d2c3a8;     /* soft beige outline */
 }
 
 @media (max-width: 600px) {
