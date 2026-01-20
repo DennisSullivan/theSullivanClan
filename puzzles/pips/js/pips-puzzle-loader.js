@@ -121,6 +121,7 @@ function loadPuzzle(puzzle) {
   buildBoardFromPuzzle(puzzle);
   applyBlockedCells(puzzle);
    buildRegionOverlays(puzzle);
+   buildRegionBadges(puzzle);
    applyStartingDominos(puzzle);
 
   logBoardOccupancy();
@@ -189,51 +190,32 @@ function applyBlockedCells(puzzle) {
 }
 
 function buildRegionOverlays(puzzle) {
-  const layer = document.getElementById("region-layer");
-  layer.innerHTML = "";
-
-  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-  const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+  const regionLayer = document.getElementById("region-layer");
+  regionLayer.innerHTML = "";
 
   puzzle.regions.forEach(region => {
-console.log("Overlay builder running for region:", region.id);
-    // Compute bounding box
-    let minRow = Infinity, maxRow = -Infinity;
-    let minCol = Infinity, maxCol = -Infinity;
+    const div = document.createElement("div");
+    div.className = "region";
+    div.style.top = region.top + "px";
+    div.style.left = region.left + "px";
+    div.style.width = region.width + "px";
+    div.style.height = region.height + "px";
+    regionLayer.appendChild(div);
+  });
+}
 
-    region.cells.forEach(({ row, col }) => {
-      minRow = Math.min(minRow, row);
-      maxRow = Math.max(maxRow, row);
-      minCol = Math.min(minCol, col);
-      maxCol = Math.max(maxCol, col);
-    });
+function buildRegionOverlays(puzzle) {
+  const regionLayer = document.getElementById("region-layer");
+  regionLayer.innerHTML = "";
 
-   // Create overlay div
-   const div = document.createElement("div");
-   div.className = `region region-${region.id}`;
-
-    // Position inside #pips-root-wrapper
-    const top  = 10 + minRow * (cellSize + cellGap);
-    const left = 10 + minCol * (cellSize + cellGap);
-
-    const height = (maxRow - minRow + 1) * cellSize + (maxRow - minRow) * cellGap;
-    const width  = (maxCol - minCol + 1) * cellSize + (maxCol - minCol) * cellGap;
-
-    div.style.top = `${top}px`;
-    div.style.left = `${left}px`;
-    div.style.width = `${width}px`;
-    div.style.height = `${height}px`;
-
-   // Create badge showing ONLY the rule
-   if (region.rule && region.rule.trim() !== "") {
-      const badge = document.createElement("div");
-      badge.className = "region-badge";
-      badge.textContent = region.rule || "";
-console.log("Appending overlay:", div);
-      div.appendChild(badge);
-   }
-
-     layer.appendChild(div);
+  puzzle.regions.forEach(region => {
+    const div = document.createElement("div");
+    div.className = "region";
+    div.style.top = region.top + "px";
+    div.style.left = region.left + "px";
+    div.style.width = region.width + "px";
+    div.style.height = region.height + "px";
+    regionLayer.appendChild(div);
   });
 }
 
