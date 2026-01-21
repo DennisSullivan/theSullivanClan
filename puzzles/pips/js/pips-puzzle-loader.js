@@ -198,41 +198,32 @@ function buildRegionOverlays(puzzle) {
   const regionLayer = document.getElementById("region-layer");
   regionLayer.innerHTML = "";
 
-  // Read CSS variables
-  const rootStyles = getComputedStyle(document.documentElement);
-  const cellSize = parseInt(rootStyles.getPropertyValue("--cell-size"));
-  const cellGap = parseInt(rootStyles.getPropertyValue("--cell-gap"));
-  const wrapperPadding = 10; // matches #pips-root-wrapper padding
-
   puzzle.regions.forEach(region => {
-    // Compute bounding box from region.cells
-    let minRow = Infinity, maxRow = -Infinity;
-    let minCol = Infinity, maxCol = -Infinity;
+    const cellSet = new Set(region.cells.map(c => `${c.row},${c.col}`));
 
-    region.cells.forEach(({ row, col }) => {
-      minRow = Math.min(minRow, row);
-      maxRow = Math.max(maxRow, row);
-      minCol = Math.min(minCol, col);
-      maxCol = Math.max(maxCol, col);
+    region.cells.forEach(cell => {
+      const key = `${cell.row},${cell.col}`;
+
+      const div = document.createElement("div");
+      div.classList.add("region-cell", `region-${region.id}`);
+
+      div.style.left = `${cell.col * (cellSize + cellGap)}px`;
+      div.style.top = `${cell.row * (cellSize + cellGap)}px`;
+      div.style.width = `${cellSize}px`;
+      div.style.height = `${cellSize}px`;
+
+      const topKey = `${cell.row - 1},${cell.col}`;
+      const bottomKey = `${cell.row + 1},${cell.col}`;
+      const leftKey = `${cell.row},${cell.col - 1}`;
+      const rightKey = `${cell.row},${cell.col + 1}`;
+
+      if (cellSet.has(topKey)) div.style.borderTop = "none";
+      if (cellSet.has(bottomKey)) div.style.borderBottom = "none";
+      if (cellSet.has(leftKey)) div.style.borderLeft = "none";
+      if (cellSet.has(rightKey)) div.style.borderRight = "none";
+
+      regionLayer.appendChild(div);
     });
-
-    // Convert to pixel geometry
-    const top = minRow * (cellSize + cellGap);
-    const left = minCol * (cellSize + cellGap);
-    const width = (maxCol - minCol + 1) * cellSize + (maxCol - minCol) * cellGap;
-    const height = (maxRow - minRow + 1) * cellSize + (maxRow - minRow) * cellGap;
-
-    // Create overlay div
-    const div = document.createElement("div");
-    div.className = "region";
-    div.classList.add(`region-${region.id}`);
-
-    div.style.top = top + "px";
-    div.style.left = left + "px";
-    div.style.width = width + "px";
-    div.style.height = height + "px";
-
-    regionLayer.appendChild(div);
   });
 }
 
@@ -244,9 +235,6 @@ function buildRegionBadges(puzzle) {
   badgeLayer.innerHTML = "";
 
   // Read CSS variables
-  const rootStyles = getComputedStyle(document.documentElement);
-  const cellSize = parseInt(rootStyles.getPropertyValue("--cell-size"));
-  const cellGap = parseInt(rootStyles.getPropertyValue("--cell-gap"));
   const wrapperPadding = 10; // matches #pips-root-wrapper padding
 
   puzzle.regions.forEach(region => {
