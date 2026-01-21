@@ -203,6 +203,14 @@ body {
 .region-badge.region-F { background: #6E9BC8; color: #fff; }
 .region-badge.region-G { background: #9A7BBE; color: #fff; }
 
+.region-cell.region-A { border: 1px solid #F4A88B; }
+.region-cell.region-B { border: 1px solid #F7C97E; }
+.region-cell.region-C { border: 1px solid #F2E29F; }
+.region-cell.region-D { border: 1px solid #C9D88F; }
+.region-cell.region-E { border: 1px solid #9EC9B1; }
+.region-cell.region-F { border: 1px solid #A7C4E2; }
+.region-cell.region-G { border: 1px solid #C7B0D9; }
+
 .region-badge.region-A,
 .region-badge.region-B,
 .region-badge.region-C,
