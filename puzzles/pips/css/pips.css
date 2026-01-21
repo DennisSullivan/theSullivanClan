@@ -203,6 +203,16 @@ body {
 .region-badge.region-F { background: #A7C4E2; }
 .region-badge.region-G { background: #C7B0D9; }
 
+.region-badge.region-A,
+.region-badge.region-B,
+.region-badge.region-C,
+.region-badge.region-D,
+.region-badge.region-E,
+.region-badge.region-F,
+.region-badge.region-G {
+  color: #fff;
+}
+
 /* ------------------------------
    DOMINO TRAY
    ------------------------------ */
