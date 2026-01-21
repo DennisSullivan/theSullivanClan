@@ -111,6 +111,7 @@ body {
 
 /* BOTTOM: Grid + dominos */
 #pips-root {
+  background: #fff;
   position: relative;
   z-index: 100;
 
