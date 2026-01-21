@@ -72,7 +72,6 @@ function startDrag(e) {
   activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
   activeDomino.style.top = `${clientY - offsetY - rootRect.top}px`;
 
-  highlightPossibleCells(activeDomino);
 }
 
 
@@ -97,8 +96,6 @@ function drag(e) {
    ------------------------------------------------------------ */
 function endDrag(e) {
   if (!activeDomino) return;
-
-  clearHighlights();
 
   const placed = tryPlaceDomino(activeDomino);
 
@@ -155,23 +152,4 @@ function endDrag(e) {
   }
 
   activeDomino = null;
-}
-
-
-/* ============================================================
-   HIGHLIGHTING
-   ============================================================ */
-
-function highlightPossibleCells(domino) {
-  const grid = document.getElementById("pips-root");
-  if (!grid) return;
-
-  const cells = grid.querySelectorAll(".pips-cell");
-  cells.forEach(cell => cell.classList.add("cell-highlight"));
-}
-
-function clearHighlights() {
-  document
-    .querySelectorAll(".cell-highlight")
-    .forEach(c => c.classList.remove("cell-highlight"));
 }
