@@ -239,7 +239,8 @@ function buildRegionBadges(puzzle) {
 
   puzzle.regions.forEach(region => {
     const badge = document.createElement("div");
-    badge.classList.add("region-badge", `region-${region.id}`);
+    const regionId = region.id.toString().trim().toUpperCase();
+    badge.classList.add("region-badge", `region-${regionId}`);
     badge.textContent = region.rule || "";
 
     // Find the top-left-most cell of the region
