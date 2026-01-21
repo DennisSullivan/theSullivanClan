@@ -156,15 +156,6 @@ body {
 .region-F { background: #A7C4E233; border-color: #A7C4E2; }
 .region-G { background: #C7B0D933; border-color: #C7B0D9; }
 
-/* Badge border colors match region identity */
-.region-badge.region-A { border: 1.5px solid #F4A88B; }
-.region-badge.region-B { border: 1.5px solid #F7C97E; }
-.region-badge.region-C { border: 1.5px solid #F2E29F; }
-.region-badge.region-D { border: 1.5px solid #C9D88F; }
-.region-badge.region-E { border: 1.5px solid #9EC9B1; }
-.region-badge.region-F { border: 1.5px solid #A7C4E2; }
-.region-badge.region-G { border: 1.5px solid #C7B0D9; }
-
 /* ------------------------------
    REGION BADGES (NYT STYLE)
    ------------------------------ */
@@ -188,6 +179,14 @@ body {
   z-index: 999;
 }
 
+/* Badge border colors match region identity */
+.region-badge.region-A { border: 1.5px solid #F4A88B; }
+.region-badge.region-B { border: 1.5px solid #F7C97E; }
+.region-badge.region-C { border: 1.5px solid #F2E29F; }
+.region-badge.region-D { border: 1.5px solid #C9D88F; }
+.region-badge.region-E { border: 1.5px solid #9EC9B1; }
+.region-badge.region-F { border: 1.5px solid #A7C4E2; }
+.region-badge.region-G { border: 1.5px solid #C7B0D9; }
 
 /* ------------------------------
    DOMINO TRAY
