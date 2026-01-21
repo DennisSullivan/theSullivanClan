@@ -196,7 +196,7 @@ function applyBlockedCells(puzzle) {
 
 function buildRegionOverlays(puzzle) {
 console.log("buildRegionOverlays");
-
+/*
   const regionLayer = document.getElementById("region-layer");
   regionLayer.innerHTML = "";
 
@@ -236,6 +236,7 @@ console.log("buildRegionOverlays");
 
     regionLayer.appendChild(div);
   });
+*/
 }
 
 /* ------------------------------------------------------------
