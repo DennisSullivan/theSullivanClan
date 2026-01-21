@@ -224,8 +224,7 @@ body {
   width: calc(var(--cell-size) * 2 + var(--cell-gap));
   height: var(--cell-size);
   background: var(--domino-bg);
-//  border: 3px solid var(--domino-border);
-  border: none;
+  border: 3px solid var(--domino-border);
   border-radius: var(--radius);
   box-shadow: 0 2px 4px var(--domino-shadow);
   cursor: grab;
@@ -292,8 +291,8 @@ body {
    ------------------------------ */
 
 .cell-highlight {
-  outline: 3px solid var(--accent);
-  outline-offset: -3px;
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
 }
 
 .cell-invalid {
