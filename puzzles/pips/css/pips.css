@@ -228,28 +228,28 @@ body {
   box-sizing: border-box;
 }
 
-/* Center dividing line */
+/* NYT‑style center dividing line */
 .domino::after {
   content: "";
   position: absolute;
-  background: var(--domino-border);
-  opacity: 0.8;
+  background: #000;
+  z-index: 2; /* above white background, below pips */
 }
 
+/* Horizontal domino: vertical center line */
 .domino:not(.vertical)::after {
-  width: 2px;
-  height: 80%;
-  left: 50%;
-  top: 10%;
-  transform: translateX(-1px);
+  width: 1px;
+  height: 100%;
+  left: calc(50% - 0.5px);
+  top: 0;
 }
 
+/* Vertical domino: horizontal center line */
 .domino.vertical::after {
-  height: 2px;
-  width: 80%;
-  top: 50%;
-  left: 10%;
-  transform: translateY(-1px);
+  height: 1px;
+  width: 100%;
+  top: calc(50% - 0.5px);
+  left: 0;
 }
 
 /* Pip cluster */
