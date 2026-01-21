@@ -139,14 +139,6 @@ body {
    REGION OVERLAYS (NYT STYLE)
    ------------------------------ */
 
-.region {
-  position: absolute;
-  background: var(--region-fill);
-  border: 1.5px dashed var(--region-outline);
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-
 /* Region-specific colors (SullivanClan palette) */
 .region-A { background: #F4A88B33; border-color: #F4A88B; }
 .region-B { background: #F7C97E33; border-color: #F7C97E; }
@@ -155,6 +147,14 @@ body {
 .region-E { background: #9EC9B133; border-color: #9EC9B1; }
 .region-F { background: #A7C4E233; border-color: #A7C4E2; }
 .region-G { background: #C7B0D933; border-color: #C7B0D9; }
+
+.region-cell {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1.5px solid var(--region-outline);
+  border-radius: 0; /* NYT keeps region cells square */
+  pointer-events: none;
+}
 
 /* ------------------------------
    REGION BADGES (NYT STYLE)
