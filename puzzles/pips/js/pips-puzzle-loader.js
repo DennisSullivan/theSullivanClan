@@ -250,12 +250,12 @@ function buildRegionBadges(puzzle) {
     const top =
       wrapperPadding +
       minRow * (cellSize + cellGap) -
-      24; // badge offset
+      12; // badge offset
 
     const left =
       wrapperPadding +
       minCol * (cellSize + cellGap) -
-      24; // badge offset
+      12; // badge offset
 
     badge.style.top = top + "px";
     badge.style.left = left + "px";
