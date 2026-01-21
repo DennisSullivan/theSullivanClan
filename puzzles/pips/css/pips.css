@@ -290,11 +290,6 @@ body {
    PLACEMENT STATES
    ------------------------------ */
 
-.cell-highlight {
-  outline: 1px solid var(--accent);
-  outline-offset: -1px;
-}
-
 .cell-invalid {
   background: #f8d0d0;
   border-color: #b33;
