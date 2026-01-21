@@ -164,6 +164,7 @@ body {
   position: absolute;
   top: -10px;
   left: -10px;
+  transform: translate(-5px, -5px);
 
   background: #fff;
   color: #000;
