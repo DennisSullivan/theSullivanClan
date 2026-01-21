@@ -116,7 +116,7 @@ body {
 
   display: grid;
   background: transparent;
-  gap: 0;
+  gap: var(--cell-gap);
 
   grid-template-columns: repeat(var(--cols), var(--cell-size));
   grid-template-rows: repeat(var(--rows), var(--cell-size));
