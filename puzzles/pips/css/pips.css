@@ -164,6 +164,8 @@ body {
   position: absolute;
   top: -18px;
   left: -18px;
+  badge.style.top = (cellTop - 12) + "px";
+  badge.style.left = (cellLeft - 12) + "px";
 
   background: #fff;
   color: #000;
