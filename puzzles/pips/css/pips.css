@@ -164,9 +164,13 @@ body {
   top: -10px;
   left: -10px;
 
-  background: #fff; /* NYT keeps badge background white */
-  color: #000;      /* NYT uses black text */
-  border: 1.5px solid rgba(0,0,0,0.35);
+  background: #fff;
+  color: #000;
+
+  border-width: 1.5px;
+  border-style: solid;
+  border-color: transparent;   /* ⭐ THIS IS THE KEY */
+
   border-radius: 5px;
 
   padding: 1px 5px;
