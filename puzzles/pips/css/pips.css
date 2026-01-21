@@ -156,26 +156,38 @@ body {
 .region-F { background: #A7C4E233; border-color: #A7C4E2; }
 .region-G { background: #C7B0D933; border-color: #C7B0D9; }
 
+/* Badge border colors match region identity */
+.region-badge.region-A { border-color: #F4A88B; }
+.region-badge.region-B { border-color: #F7C97E; }
+.region-badge.region-C { border-color: #F2E29F; }
+.region-badge.region-D { border-color: #C9D88F; }
+.region-badge.region-E { border-color: #9EC9B1; }
+.region-badge.region-F { border-color: #A7C4E2; }
+.region-badge.region-G { border-color: #C7B0D9; }
+
 /* ------------------------------
    REGION BADGES (NYT STYLE)
    ------------------------------ */
-
 .region-badge {
   position: absolute;
-  top: -12px;
-  left: -12px;
+  top: -10px;
+  left: -10px;
 
-  background: white;
-  border: 2px solid rgba(0,0,0,0.45);
-  border-radius: 6px;
+  background: #fff; /* NYT keeps badge background white */
+  color: #000;      /* NYT uses black text */
+  border: 1.5px solid rgba(0,0,0,0.35);
+  border-radius: 5px;
 
-  padding: 2px 6px;
-  font-size: 14px;
-  font-weight: bold;
+  padding: 1px 5px;
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1;
+
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 
   z-index: 999;
 }
+
 
 /* ------------------------------
    DOMINO TRAY
