@@ -224,7 +224,8 @@ body {
   width: calc(var(--cell-size) * 2 + var(--cell-gap));
   height: var(--cell-size);
   background: var(--domino-bg);
-  border: 3px solid var(--domino-border);
+//  border: 3px solid var(--domino-border);
+  border: none;
   border-radius: var(--radius);
   box-shadow: 0 2px 4px var(--domino-shadow);
   cursor: grab;
