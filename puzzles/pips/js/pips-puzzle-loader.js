@@ -194,6 +194,8 @@ function applyBlockedCells(puzzle) {
 }
 
 function buildRegionOverlays(puzzle) {
+console.log("buildRegionOverlays");
+
   const regionLayer = document.getElementById("region-layer");
   regionLayer.innerHTML = "";
 
@@ -239,6 +241,8 @@ function buildRegionOverlays(puzzle) {
    Building Badges
    ------------------------------------------------------------ */
 function buildRegionBadges(puzzle) {
+
+console.log("buildRegionBadges");
   const badgeLayer = document.getElementById("badge-layer");
   badgeLayer.innerHTML = "";
 
