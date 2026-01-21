@@ -195,13 +195,13 @@ body {
 .region-badge.region-F { border: 1.5px solid #A7C4E2; }
 .region-badge.region-G { border: 1.5px solid #C7B0D9; }
 
-.region-badge.region-A { background: #F4A88B; }
-.region-badge.region-B { background: #F7C97E; }
-.region-badge.region-C { background: #F2E29F; }
-.region-badge.region-D { background: #C9D88F; }
-.region-badge.region-E { background: #9EC9B1; }
-.region-badge.region-F { background: #A7C4E2; }
-.region-badge.region-G { background: #C7B0D9; }
+.region-badge.region-A { background: #E07A5C; color: #fff; }
+.region-badge.region-B { background: #E3A84F; color: #fff; }
+.region-badge.region-C { background: #D9C46A; color: #fff; }
+.region-badge.region-D { background: #A8C05A; color: #fff; }
+.region-badge.region-E { background: #6FAF96; color: #fff; }
+.region-badge.region-F { background: #6E9BC8; color: #fff; }
+.region-badge.region-G { background: #9A7BBE; color: #fff; }
 
 .region-badge.region-A,
 .region-badge.region-B,
