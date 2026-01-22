@@ -35,6 +35,7 @@ function enableDominoInteractions() {
        endRotationSession(currentDomino);
      }
    }
+}
 
 /* ------------------------------------------------------------
    START DRAG
