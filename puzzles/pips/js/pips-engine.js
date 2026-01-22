@@ -336,19 +336,6 @@ function revertDomino(domino) {
   }
 }
 
-onDominoDragStart(domino) {
-  endRotationSession(domino);
-}
-
-onDominoDrop(domino) {
-  endRotationSession(domino);
-}
-
-onDominoSelect(newDomino) {
-  if (currentDomino && currentDomino !== newDomino) {
-    endRotationSession(currentDomino);
-  }
-}
 
 /* ============================================================
    VALIDATION HELPERS
