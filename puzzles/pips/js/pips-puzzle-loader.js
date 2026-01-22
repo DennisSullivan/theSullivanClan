@@ -120,7 +120,6 @@ function loadBoardState(state) {
    ------------------------------------------------------------ */
 function loadPuzzle(puzzle) {
   console.log(`Loading puzzle: ${puzzle.id} — ${puzzle.title}`);
-   console.log("Give me a break!");
 
   clearBoard();
   buildBoardFromPuzzle(puzzle);
