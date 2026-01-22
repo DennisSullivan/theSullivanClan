@@ -17,13 +17,36 @@ function enableDominoInteractions() {
   document.querySelectorAll(".domino").forEach(domino => {
     domino.addEventListener("mousedown", startDrag);
     domino.addEventListener("touchstart", startDrag, { passive: false });
+
+    // ⭐ NEW: handle tap/click rotation
+    domino.addEventListener("click", onDominoClick);
   });
 
-   document.addEventListener("mousemove", drag);
-   document.addEventListener("touchmove", drag, { passive: false });
+  document.addEventListener("mousemove", drag);
+  document.addEventListener("touchmove", drag, { passive: false });
 
-   document.addEventListener("mouseup", endDrag);
-   document.addEventListener("touchend", endDrag);
+  document.addEventListener("mouseup", endDrag);
+  document.addEventListener("touchend", endDrag);
+}
+
+function onDominoClick(e) {
+  const domino = e.currentTarget;
+
+  // If no active session → start one
+  if (!rotationSession.active) {
+    startRotationSession(domino);
+    return;
+  }
+
+  // If same domino clicked again → rotate it
+  if (rotationSession.domino === domino) {
+    rotateDomino(domino);
+    return;
+  }
+
+  // If different domino clicked → switch sessions
+  endRotationSession(rotationSession.domino);
+  startRotationSession(domino);
 }
 
 function onDominoDragStart(domino) {
