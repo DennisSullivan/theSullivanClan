@@ -342,3 +342,9 @@ body {
   justify-content: center;
   align-items: center;
 }
+
+/* Allow clicks to pass through overlays */
+#region-layer,
+#badge-layer {
+  pointer-events: none;
+}
