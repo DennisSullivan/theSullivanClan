@@ -11,11 +11,14 @@ let offsetY = 0;
    ENABLE DOMINO INTERACTIONS
    ------------------------------------------------------------ */
 function enableDominoInteractions() {
+  console.log("enableDominoInteractions CALLED");
+
   document.querySelectorAll(".domino").forEach(domino => {
+    console.log("Attaching listeners to", domino);
+
     domino.addEventListener("mousedown", startDrag);
     domino.addEventListener("touchstart", startDrag, { passive: false });
 
-    // ⭐ NEW: handle tap/click rotation
     domino.addEventListener("click", onDominoClick);
   });
 
@@ -29,19 +32,22 @@ function enableDominoInteractions() {
 function onDominoClick(e) {
   const domino = e.currentTarget;
 
-  // If no active session → start one
+  console.log("CLICK FIRED", {
+    active: rotationSession.active,
+    sessionDomino: rotationSession.domino,
+    clickedIndex: domino.dataset.index
+  });
+
   if (!rotationSession.active) {
     startRotationSession(domino);
     return;
   }
 
-  // If same domino clicked again → rotate it
   if (rotationSession.domino === domino) {
     rotateDomino(domino);
     return;
   }
 
-  // If different domino clicked → switch sessions
   endRotationSession(rotationSession.domino);
   startRotationSession(domino);
 }
