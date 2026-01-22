@@ -21,6 +21,20 @@ function enableDominoInteractions() {
 
    document.addEventListener("mouseup", endDrag);
    document.addEventListener("touchend", endDrag);
+
+   onDominoDragStart(domino) {
+     endRotationSession(domino);
+   }
+   
+   onDominoDrop(domino) {
+     endRotationSession(domino);
+   }
+   
+   onDominoSelect(newDomino) {
+     if (currentDomino && currentDomino !== newDomino) {
+       endRotationSession(currentDomino);
+     }
+   }
 }
 
 /* ------------------------------------------------------------
