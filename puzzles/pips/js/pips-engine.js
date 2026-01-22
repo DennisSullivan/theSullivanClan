@@ -194,8 +194,6 @@ if (simulate) {
   console.log("SIMULATING placement for rotation:", domino);
 }
    
-  const simulate = options.simulate === true;
-
   const root = document.getElementById("pips-root");
   const rootRect = root.getBoundingClientRect();
 
