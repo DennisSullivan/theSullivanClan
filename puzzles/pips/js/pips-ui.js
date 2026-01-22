@@ -22,6 +22,9 @@ function enableDominoInteractions() {
    document.addEventListener("mouseup", endDrag);
    document.addEventListener("touchend", endDrag);
 
+  
+}
+
    onDominoDragStart(domino) {
      endRotationSession(domino);
    }
@@ -35,7 +38,6 @@ function enableDominoInteractions() {
        endRotationSession(currentDomino);
      }
    }
-}
 
 /* ------------------------------------------------------------
    START DRAG
