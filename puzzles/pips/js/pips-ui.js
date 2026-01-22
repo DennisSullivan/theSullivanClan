@@ -76,9 +76,6 @@ function startDrag(e) {
   // ⭐ SELECT THIS DOMINO
   activeDomino = domino;
 
-  // ⭐ BEGIN ROTATION SESSION
-  startRotationSession(domino);
-
   const parent = activeDomino.parentElement;
   const cameFromBoard =
     parent.classList.contains("pips-cell") || parent.id === "pips-root";
