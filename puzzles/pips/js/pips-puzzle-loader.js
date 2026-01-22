@@ -278,6 +278,7 @@ function applyStartingDominos(puzzle) {
     const anchor = document.getElementById(`cell-${entry.row}-${entry.col}`);
     const anchorRect = anchor.getBoundingClientRect();
 
+console.log("Placing starting domino:", d.index, "→", domino);
     root.appendChild(dom);
 
     dom.style.position = "absolute";
