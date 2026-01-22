@@ -29,7 +29,18 @@ function enableDominoInteractions() {
 function startDrag(e) {
   e.preventDefault();
 
-  activeDomino = e.currentTarget;
+  const domino = e.currentTarget;
+
+  // ⭐ END rotation session on previously active domino
+  if (activeDomino && activeDomino !== domino) {
+    endRotationSession(activeDomino);
+  }
+
+  // ⭐ SELECT THIS DOMINO
+  activeDomino = domino;
+
+  // ⭐ BEGIN ROTATION SESSION
+  startRotationSession(domino);
 
   const parent = activeDomino.parentElement;
   const cameFromBoard =
@@ -71,7 +82,6 @@ function startDrag(e) {
   activeDomino.style.zIndex = 1000;
   activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
   activeDomino.style.top = `${clientY - offsetY - rootRect.top}px`;
-
 }
 
 
