@@ -3,6 +3,9 @@
    Tracks which domino occupies which board cell
    ============================================================ */
 
+// Tracks the currently active rotation session
+let rotationSession = null;
+
 const boardOccupancy = {};
 
 function logBoardOccupancy() {
@@ -122,6 +125,10 @@ function buildDominoTray(dominoList) {
       domino.classList.toggle("vertical");
     });
 
+   domino.addEventListener("click", () => {
+     handleDominoTap(domino);
+   });
+     
     newDominoes.push(domino);
   });
 
@@ -181,7 +188,9 @@ function createPipGroup(value) {
    PLACEMENT LOGIC
    ============================================================ */
 
-function tryPlaceDomino(domino) {
+function tryPlaceDomino(domino, options = {}) {
+  const simulate = options.simulate === true;
+
   const root = document.getElementById("pips-root");
   const rootRect = root.getBoundingClientRect();
 
@@ -235,7 +244,9 @@ function tryPlaceDomino(domino) {
   });
 
   if (bestCells.length === 0) {
-    domino.dataset.dropAttempt = "off-board";
+    if (!simulate) {
+      domino.dataset.dropAttempt = "off-board";
+    }
     return false;
   }
 
@@ -244,7 +255,9 @@ function tryPlaceDomino(domino) {
   const minArea = (anchorRect.width * anchorRect.height) * 0.25;
 
   if (bestOverlap < minArea) {
-    domino.dataset.dropAttempt = "off-board";
+    if (!simulate) {
+      domino.dataset.dropAttempt = "off-board";
+    }
     return false;
   }
 
@@ -258,7 +271,9 @@ function tryPlaceDomino(domino) {
 
   for (const [r, c] of cells) {
     if (!document.getElementById(`cell-${r}-${c}`)) {
-      domino.dataset.dropAttempt = "off-board";
+      if (!simulate) {
+        domino.dataset.dropAttempt = "off-board";
+      }
       return false;
     }
   }
@@ -266,24 +281,30 @@ function tryPlaceDomino(domino) {
   for (const [r, c] of cells) {
     const key = `${r},${c}`;
     if (boardOccupancy[key] && boardOccupancy[key] !== domino) {
-      domino.dataset.dropAttempt = "invalid-on-board";
+      if (!simulate) {
+        domino.dataset.dropAttempt = "invalid-on-board";
+      }
       return false;
     }
   }
 
-  domino.style.left = `${anchorRect.left - rootRect.left}px`;
-  domino.style.top = `${anchorRect.top - rootRect.top}px`;
+  // From here down: only commit if NOT simulating
+  if (!simulate) {
+    domino.style.left = `${anchorRect.left - rootRect.left}px`;
+    domino.style.top = `${anchorRect.top - rootRect.top}px`;
 
-  cells.forEach(([r, c]) => {
-    boardOccupancy[`${r},${c}`] = domino;
-  });
+    cells.forEach(([r, c]) => {
+      boardOccupancy[`${r},${c}`] = domino;
+    });
 
-  domino.dataset.boardRow = row;
-  domino.dataset.boardCol = col;
-  domino.dataset.boardOrientation = vertical ? "vertical" : "horizontal";
+    domino.dataset.boardRow = row;
+    domino.dataset.boardCol = col;
+    domino.dataset.boardOrientation = vertical ? "vertical" : "horizontal";
 
-  domino.dataset.dropAttempt = "valid";
-  logBoardOccupancy();
+    domino.dataset.dropAttempt = "valid";
+    logBoardOccupancy();
+  }
+
   return true;
 }
 
