@@ -287,6 +287,68 @@ function tryPlaceDomino(domino) {
   return true;
 }
 
+/* ============================================================
+   ROTATION
+   ============================================================ */
+
+function startRotationSession(domino) {
+  domino._inRotationSession = true;
+
+  domino._originalLeft = domino.style.left;
+  domino._originalTop = domino.style.top;
+  domino._originalVertical = domino.classList.contains("vertical");
+}
+
+function handleDominoTap(domino) {
+  // If this is the first tap, begin a rotation session
+  if (!domino._inRotationSession) {
+    startRotationSession(domino);
+  }
+
+  // Toggle orientation (no validation yet)
+  domino.classList.toggle("vertical");
+}
+
+function endRotationSession(domino) {
+  if (!domino._inRotationSession) return;
+
+  domino._inRotationSession = false;
+
+  // Validate final placement
+  if (!isDominoPlacementValid(domino)) {
+    revertDomino(domino);
+  }
+}
+
+function isDominoPlacementValid(domino) {
+  // Use your existing placement logic here
+  return tryPlaceDomino(domino, { simulate: true });
+}
+
+function revertDomino(domino) {
+  domino.style.left = domino._originalLeft;
+  domino.style.top = domino._originalTop;
+
+  if (domino._originalVertical) {
+    domino.classList.add("vertical");
+  } else {
+    domino.classList.remove("vertical");
+  }
+}
+
+onDominoDragStart(domino) {
+  endRotationSession(domino);
+}
+
+onDominoDrop(domino) {
+  endRotationSession(domino);
+}
+
+onDominoSelect(newDomino) {
+  if (currentDomino && currentDomino !== newDomino) {
+    endRotationSession(currentDomino);
+  }
+}
 
 /* ============================================================
    VALIDATION HELPERS
