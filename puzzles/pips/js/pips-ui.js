@@ -70,8 +70,6 @@ function onDominoSelect(newDomino) {
    START DRAG
    ------------------------------------------------------------ */
 function startDrag(e) {
-  e.preventDefault();
-
   const domino = e.currentTarget;
 
   // ⭐ END rotation session on previously active domino
