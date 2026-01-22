@@ -314,53 +314,82 @@ if (simulate) {
 }
 
 /* ============================================================
-   ROTATION
+   ROTATION — NYT‑STYLE SESSION SYSTEM
    ============================================================ */
 
-function startRotationSession(domino) {
-  domino._inRotationSession = true;
+let rotationSession = {
+  active: false,
+  domino: null,
+  originalLeft: null,
+  originalTop: null,
+  originalOrientation: null
+};
 
-  domino._originalLeft = domino.style.left;
-  domino._originalTop = domino.style.top;
-  domino._originalVertical = domino.classList.contains("vertical");
+function startRotationSession(domino) {
+  rotationSession.active = true;
+  rotationSession.domino = domino;
+
+  rotationSession.originalLeft = domino.style.left;
+  rotationSession.originalTop = domino.style.top;
+  rotationSession.originalOrientation =
+    domino.classList.contains("vertical") ? "vertical" : "horizontal";
+
+  console.log("Rotation session started for", domino.dataset.index);
 }
 
-function handleDominoTap(domino) {
-  // If this is the first tap, begin a rotation session
-  if (!domino._inRotationSession) {
-    startRotationSession(domino);
+function rotateDomino(domino) {
+  if (!rotationSession.active || rotationSession.domino !== domino) {
+    console.warn("rotateDomino called with no active session");
+    return;
   }
 
-  // Toggle orientation (no validation yet)
-  domino.classList.toggle("vertical");
-}
+  const current = domino.classList.contains("vertical")
+    ? "vertical"
+    : "horizontal";
 
-function endRotationSession(domino) {
-  if (!domino._inRotationSession) return;
+  const next = current === "vertical" ? "horizontal" : "vertical";
 
-  domino._inRotationSession = false;
+  domino.classList.toggle("vertical", next === "vertical");
+  domino.classList.toggle("horizontal", next === "horizontal");
 
-  // Validate final placement
-  if (!isDominoPlacementValid(domino)) {
+  console.log(
+    `Rotating domino ${domino.dataset.index} from ${current} to ${next}`
+  );
+
+  // Flash to show rotation happened
+  domino.classList.add("rotate-flash");
+  setTimeout(() => domino.classList.remove("rotate-flash"), 150);
+
+  // Validate rotation
+  const valid = tryPlaceDomino(domino, { simulate: true });
+
+  if (!valid) {
+    console.log("Rotation invalid — reverting");
     flashInvalid(domino);
     revertDomino(domino);
   }
 }
 
-function isDominoPlacementValid(domino) {
-  // Use your existing placement logic here
-  return tryPlaceDomino(domino, { simulate: true });
+function endRotationSession(domino) {
+  if (!rotationSession.active) return;
+
+  console.log("Ending rotation session for", domino.dataset.index);
+
+  rotationSession.active = false;
+  rotationSession.domino = null;
+  rotationSession.originalLeft = null;
+  rotationSession.originalTop = null;
+  rotationSession.originalOrientation = null;
 }
 
 function revertDomino(domino) {
-  domino.style.left = domino._originalLeft;
-  domino.style.top = domino._originalTop;
+  domino.style.left = rotationSession.originalLeft;
+  domino.style.top = rotationSession.originalTop;
 
-  if (domino._originalVertical) {
-    domino.classList.add("vertical");
-  } else {
-    domino.classList.remove("vertical");
-  }
+  const wasVertical = rotationSession.originalOrientation === "vertical";
+
+  domino.classList.toggle("vertical", wasVertical);
+  domino.classList.toggle("horizontal", !wasVertical);
 }
 
 
