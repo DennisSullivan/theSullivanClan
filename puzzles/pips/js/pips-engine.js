@@ -1,4 +1,4 @@
-/* ============================================================
++/* ============================================================
    PIPS ENGINE — BOARD OCCUPANCY
    Tracks which domino occupies which board cell
    ============================================================ */
@@ -16,7 +16,7 @@ function logBoardOccupancy() {
       console.log(`  cell ${key} -> domino ${label}`);
     });
   }
-  console.log("========================");
+  console.log("=============+===========");
 }
 
 
