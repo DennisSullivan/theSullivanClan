@@ -340,8 +340,8 @@ function endRotationSession(domino) {
 
   // Validate final placement
   if (!isDominoPlacementValid(domino)) {
-     flashInvalid(domino);
-     revertDomino(domino);isdomi
+    flashInvalid(domino);
+    revertDomino(domino);
   }
 }
 
