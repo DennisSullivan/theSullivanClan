@@ -190,6 +190,11 @@ function createPipGroup(value) {
 
 function tryPlaceDomino(domino, options = {}) {
   const simulate = options.simulate === true;
+if (simulate) {
+  console.log("SIMULATING placement for rotation:", domino);
+}
+   
+  const simulate = options.simulate === true;
 
   const root = document.getElementById("pips-root");
   const rootRect = root.getBoundingClientRect();
@@ -337,7 +342,8 @@ function endRotationSession(domino) {
 
   // Validate final placement
   if (!isDominoPlacementValid(domino)) {
-    revertDomino(domino);
+     flashInvalid(domino);
+     revertDomino(domino);isdomi
   }
 }
 
