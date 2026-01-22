@@ -1,5 +1,5 @@
 /* ============================================================
-   PIPS UI — DRAG & DROP INTERACTIONS
+   PIPS UI — DRAG & DROP INTERACTIONS 
    Purely visual / interaction layer
    ============================================================ */
 
