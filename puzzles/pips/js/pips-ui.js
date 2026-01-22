@@ -23,15 +23,15 @@ function enableDominoInteractions() {
    document.addEventListener("touchend", endDrag);
 }
 
-onDominoDragStart(domino) {
+function onDominoDragStart(domino) {
   endRotationSession(domino);
 }
 
-onDominoDrop(domino) {
+function onDominoDrop(domino) {
   endRotationSession(domino);
 }
 
-onDominoSelect(newDomino) {
+function onDominoSelect(newDomino) {
   if (currentDomino && currentDomino !== newDomino) {
     endRotationSession(currentDomino);
   }
