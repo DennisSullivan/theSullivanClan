@@ -384,83 +384,105 @@ function rotateDomino(domino, clickX, clickY) {
   console.log("NYT ROTATION ENGINE ACTIVE");
   clearDominoFromBoard(domino);
 
-  const index = domino.dataset.index;
-  const row = parseInt(domino.dataset.boardRow);
-  const col = parseInt(domino.dataset.boardCol);
+  const row = parseInt(domino.dataset.boardRow, 10);
+  const col = parseInt(domino.dataset.boardCol, 10);
   const orientation = domino.dataset.boardOrientation; // "horizontal" or "vertical"
 
-  // Determine which half was clicked
   const rect = domino.getBoundingClientRect();
   const localX = clickX - rect.left;
   const localY = clickY - rect.top;
-console.log(
-  "CLICK DEBUG:",
-  {
+
+  console.log("CLICK DEBUG:", {
     clickX,
     clickY,
     rectLeft: rect.left,
+    rectTop: rect.top,
     rectWidth: rect.width,
+    rectHeight: rect.height,
     localX,
-    half: rect.width / 2
-  }
-);
+    localY
+  });
 
-  const clickedHalf = "A";
-
-  // Compute pivot cell
-  let pivotRow = row;
-  let pivotCol = col;
+  // Determine which cell was clicked: A or B
+  let clickedCell; // "A" or "B"
 
   if (orientation === "horizontal") {
-    if (clickedHalf === "B") pivotCol = col + 1;
+    // A = left, B = right
+    clickedCell = (localX < rect.width / 2) ? "A" : "B";
   } else {
-    if (clickedHalf === "B") pivotRow = row + 1;
+    // vertical: A = top, B = bottom
+    clickedCell = (localY < rect.height / 2) ? "A" : "B";
   }
 
-  // Compute new orientation
+  // Current cell coordinates for A and B
+  let Arow, Acol, Brow, Bcol;
+
+  if (orientation === "horizontal") {
+    Arow = row;       Acol = col;
+    Brow = row;       Bcol = col + 1;
+  } else {
+    Arow = row;       Acol = col;
+    Brow = row + 1;   Bcol = col;
+  }
+
+  // The pivot is the clicked cell; its coordinates must not change.
+  let pivotRow = (clickedCell === "A") ? Arow : Brow;
+  let pivotCol = (clickedCell === "A") ? Acol : Bcol;
+
+  // Compute new orientation (always clockwise)
   const newOrientation = (orientation === "horizontal") ? "vertical" : "horizontal";
 
-  // Compute new anchor cell after clockwise rotation
-  let newRow = pivotRow;
-  let newCol = pivotCol;
+  // Compute new positions for A and B after clockwise rotation
+  let newArow, newAcol, newBrow, newBcol;
 
   if (orientation === "horizontal") {
     // Horizontal → Vertical
-    if (clickedHalf === "A") {
-      newRow = pivotRow;
-      newCol = pivotCol;
+    if (clickedCell === "A") {
+      // A is pivot, B moves from right → bottom
+      newArow = pivotRow;
+      newAcol = pivotCol;
+      newBrow = pivotRow + 1;
+      newBcol = pivotCol;
     } else {
-      newRow = pivotRow - 1;
-      newCol = pivotCol;
+      // B is pivot, A moves from left → top
+      newBrow = pivotRow;
+      newBcol = pivotCol;
+      newArow = pivotRow - 1;
+      newAcol = pivotCol;
     }
   } else {
     // Vertical → Horizontal
-    if (clickedHalf === "A") {
-      newRow = pivotRow;
-      newCol = pivotCol;
+    if (clickedCell === "A") {
+      // A is pivot, B moves from bottom → left
+      newArow = pivotRow;
+      newAcol = pivotCol;
+      newBrow = pivotRow;
+      newBcol = pivotCol - 1;
     } else {
-      newRow = pivotRow;
-      newCol = pivotCol - 1;
+      // B is pivot, A moves from top → right
+      newBrow = pivotRow;
+      newBcol = pivotCol;
+      newArow = pivotRow;
+      newAcol = pivotCol + 1;
     }
   }
 
+  // New anchor is always the top-left of the two cells
+  const newRow = Math.min(newArow, newBrow);
+  const newCol = Math.min(newAcol, newBcol);
+
   // Build a simulated domino for validation
   const sim = domino.cloneNode(true);
-
-  // IMPORTANT: give the sim the correct orientation class
   sim.classList.remove("horizontal", "vertical");
   sim.classList.add(newOrientation);
-
-  // IMPORTANT: give the sim the correct dataset
   sim.dataset.boardRow = newRow;
   sim.dataset.boardCol = newCol;
   sim.dataset.boardOrientation = newOrientation;
 
-  // Validate using pure grid math
   const valid = validateGridPlacement(newRow, newCol, newOrientation, sim, { simulate: true });
 
   if (!valid) {
-    console.warn("Rotation invalid for domino", index);
+    console.warn("Rotation invalid for domino", domino.dataset.index);
     return false;
   }
 
@@ -472,7 +494,6 @@ console.log(
   domino.classList.remove("horizontal", "vertical");
   domino.classList.add(newOrientation);
 
-  // Snap to grid
   const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
   const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
 
