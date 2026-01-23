@@ -19,7 +19,10 @@ function enableDominoInteractions() {
     domino.addEventListener("mousedown", startDrag);
     domino.addEventListener("touchstart", startDrag, { passive: false });
 
+    // NYT: single-click does NOT rotate
     domino.addEventListener("click", onDominoClick);
+
+    // NYT: double-click rotates
     domino.addEventListener("dblclick", onDominoDoubleClick);
   });
 
@@ -30,27 +33,23 @@ function enableDominoInteractions() {
   document.addEventListener("touchend", endDrag);
 }
 
+/* ------------------------------------------------------------
+   SINGLE CLICK — NYT DOES NOT ROTATE
+   ------------------------------------------------------------ */
 function onDominoClick(e) {
-// NYT: single-click does NOT rotate.
-// Keep diagnostics, keep selection, keep drag interaction.
-// Remove rotation logic entirely.
-console.log("Single-click: no rotation (NYT mode)");
+  const domino = e.currentTarget;
+
+  console.log("Single-click: no rotation (NYT mode)");
+  console.log("DOMINO PARENT:", domino.parentElement);
+  console.log("PARENT CLASSES:", domino.parentElement ? domino.parentElement.className : null);
+  console.log("BOARD ROW:", domino.dataset.boardRow);
+  console.log("BOARD COL:", domino.dataset.boardCol);
+  console.log("ORIGIN:", domino.dataset.origin);
 }
 
-function onDominoDragStart(domino) {
-  endRotationSession(domino);
-}
-
-function onDominoDrop(domino) {
-  endRotationSession(domino);
-}
-
-function onDominoSelect(newDomino) {
-  if (currentDomino && currentDomino !== newDomino) {
-    endRotationSession(currentDomino);
-  }
-}
-
+/* ------------------------------------------------------------
+   DOUBLE CLICK — ROTATE (NYT STYLE)
+   ------------------------------------------------------------ */
 function onDominoDoubleClick(e) {
   const domino = e.currentTarget;
   const clickX = e.clientX;
@@ -62,7 +61,7 @@ function onDominoDoubleClick(e) {
 }
 
 /* ------------------------------------------------------------
-   START DRAG (but do NOT kill rotation session yet)
+   START DRAG
    ------------------------------------------------------------ */
 let dragState = null;
 
@@ -81,7 +80,7 @@ function startDrag(e) {
 }
 
 /* ------------------------------------------------------------
-   DRAG MOVEMENT — detect real drag before ending rotation
+   DRAG MOVEMENT
    ------------------------------------------------------------ */
 function drag(e) {
   if (!dragState) return;
@@ -95,8 +94,6 @@ function drag(e) {
   // Only start dragging after a small threshold
   if (!dragState.dragging && Math.abs(dx) + Math.abs(dy) > 3) {
     dragState.dragging = true;
-
-    endRotationSession(dragState.domino);
 
     activeDomino = dragState.domino;
 
@@ -118,7 +115,6 @@ function drag(e) {
   activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
   activeDomino.style.top = `${clientY - offsetY - rootRect.top}px`;
 }
-
 
 /* ------------------------------------------------------------
    END DRAG → TRY TO PLACE
