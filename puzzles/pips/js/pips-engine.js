@@ -381,7 +381,8 @@ function startRotationSession(domino) {
 //  Drop‑in replacement for your existing rotateDomino()
 // ============================================================
 function rotateDomino(domino, clickX, clickY) {
-   console.log("NYT ROTATION ENGINE ACTIVE");
+  console.log("NYT ROTATION ENGINE ACTIVE");
+
   const index = domino.dataset.index;
   const row = parseInt(domino.dataset.boardRow);
   const col = parseInt(domino.dataset.boardCol);
@@ -396,7 +397,7 @@ function rotateDomino(domino, clickX, clickY) {
     ? (localX < rect.width / 2 ? "A" : "B")
     : (localY < rect.height / 2 ? "A" : "B");
 
-  // Compute pivot cell (the cell that stays fixed)
+  // Compute pivot cell
   let pivotRow = row;
   let pivotCol = col;
 
@@ -416,22 +417,18 @@ function rotateDomino(domino, clickX, clickY) {
   if (orientation === "horizontal") {
     // Horizontal → Vertical
     if (clickedHalf === "A") {
-      // A stays, B goes below A
       newRow = pivotRow;
       newCol = pivotCol;
     } else {
-      // B stays, A goes above B
       newRow = pivotRow - 1;
       newCol = pivotCol;
     }
   } else {
     // Vertical → Horizontal
     if (clickedHalf === "A") {
-      // A stays, B goes right of A
       newRow = pivotRow;
       newCol = pivotCol;
     } else {
-      // B stays, A goes left of B
       newRow = pivotRow;
       newCol = pivotCol - 1;
     }
@@ -439,11 +436,18 @@ function rotateDomino(domino, clickX, clickY) {
 
   // Build a simulated domino for validation
   const sim = domino.cloneNode(true);
+
+  // IMPORTANT: give the sim the correct orientation class
+  sim.classList.remove("horizontal", "vertical");
+  sim.classList.add(newOrientation);
+
+  // IMPORTANT: give the sim the correct dataset
   sim.dataset.boardRow = newRow;
   sim.dataset.boardCol = newCol;
   sim.dataset.boardOrientation = newOrientation;
 
-  const valid = tryPlaceDomino(sim, { simulate: true });
+  // Validate using pure grid math
+  const valid = validateGridPlacement(newRow, newCol, newOrientation, sim, { simulate: true });
 
   if (!valid) {
     console.warn("Rotation invalid for domino", index);
@@ -458,7 +462,7 @@ function rotateDomino(domino, clickX, clickY) {
   domino.classList.remove("horizontal", "vertical");
   domino.classList.add(newOrientation);
 
-  // Snap to grid using your existing math
+  // Snap to grid
   const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
   const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
 
