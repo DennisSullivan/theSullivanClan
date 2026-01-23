@@ -397,6 +397,20 @@ function rotateDomino(domino, clickX, clickY) {
   const rect = domino.getBoundingClientRect();
   const localX = clickX - rect.left;
   const localY = clickY - rect.top;
+const rect = domino.getBoundingClientRect();
+const localX = clickX - rect.left;
+const localY = clickY - rect.top;
+console.log(
+  "CLICK DEBUG:",
+  {
+    clickX,
+    clickY,
+    rectLeft: rect.left,
+    rectWidth: rect.width,
+    localX,
+    half: rect.width / 2
+  }
+);
 
   const clickedHalf = (orientation === "horizontal")
     ? (localX < rect.width / 2 ? "A" : "B")
