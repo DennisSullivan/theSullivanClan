@@ -330,6 +330,16 @@ body {
   opacity: 0.95;
 }
 
+.domino.horizontal {
+  display: flex;
+  flex-direction: row;
+}
+
+.domino.vertical {
+  display: flex;
+  flex-direction: column;
+}
+
 /* ------------------------------
    UTILITIES
    ------------------------------ */
