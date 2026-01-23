@@ -91,7 +91,6 @@ function startDrag(e) {
    ------------------------------------------------------------ */
 function drag(e) {
   if (!dragState) return;
-  if (!activeDomino) return;
 
   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -103,10 +102,8 @@ function drag(e) {
   if (!dragState.dragging && Math.abs(dx) + Math.abs(dy) > 3) {
     dragState.dragging = true;
 
-    // NOW end rotation session — user is dragging, not clicking
     endRotationSession(dragState.domino);
 
-    // Promote to activeDomino and begin actual drag
     activeDomino = dragState.domino;
 
     const preRect = activeDomino.getBoundingClientRect();
