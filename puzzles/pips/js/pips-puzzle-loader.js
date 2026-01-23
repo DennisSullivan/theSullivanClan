@@ -278,30 +278,21 @@ function applyStartingDominos(puzzle) {
     const anchor = document.getElementById(`cell-${entry.row}-${entry.col}`);
     const anchorRect = anchor.getBoundingClientRect();
 
-//console.log("Placing starting domino:", d.index, "→", domino);
+    // Temporarily place the domino at the anchor cell
     root.appendChild(dom);
-
     dom.style.position = "absolute";
     dom.style.left = `${anchorRect.left - rootRect.left}px`;
     dom.style.top = `${anchorRect.top - rootRect.top}px`;
 
-    dom.dataset.boardRow = entry.row;
-    dom.dataset.boardCol = entry.col;
-    dom.dataset.boardOrientation = entry.orientation;
+    // Apply orientation classes
+    dom.classList.toggle("vertical", entry.orientation === "vertical");
+    dom.classList.toggle("horizontal", entry.orientation === "horizontal");
 
-    const cells =
-      entry.orientation === "vertical"
-        ? [
-            [entry.row, entry.col],
-            [entry.row + 1, entry.col]
-          ]
-        : [
-            [entry.row, entry.col],
-            [entry.row, entry.col + 1]
-          ];
+    // Snap using the real placement engine
+    const ok = tryPlaceDomino(dom, { simulate: false });
 
-    cells.forEach(([r, c]) => {
-      boardOccupancy[`${r},${c}`] = dom;
-    });
+    if (!ok) {
+      console.warn("Starting domino failed placement:", entry, dom);
+    }
   });
 }
