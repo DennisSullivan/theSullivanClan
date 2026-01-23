@@ -117,10 +117,6 @@ function buildDominoTray(dominoList) {
 
     domino.appendChild(pipA);
     domino.appendChild(pipB);
-
-    domino.addEventListener("dblclick", () => {
-      domino.classList.toggle("vertical");
-    });
   
     newDominoes.push(domino);
   });
