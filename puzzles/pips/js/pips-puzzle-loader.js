@@ -288,7 +288,10 @@ function applyStartingDominos(puzzle) {
     dom.classList.toggle("vertical", entry.orientation === "vertical");
     dom.classList.toggle("horizontal", entry.orientation === "horizontal");
 
-    // Snap using the real placement engine
+   // Apply orientation classes
+   dom.classList.remove("vertical", "horizontal");
+   dom.classList.add(entry.orientation);
+   // Snap using the real placement engine
     const ok = tryPlaceDomino(dom, { simulate: false });
 
     if (!ok) {
