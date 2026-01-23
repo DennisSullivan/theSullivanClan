@@ -50,10 +50,12 @@ function onDominoClick(e) {
     return;
   }
 
-  if (rotationSession.domino === domino) {
-    rotateDomino(domino);
+if (rotationSession.domino === domino) {
+    const clickX = e.clientX;
+    const clickY = e.clientY;
+    rotateDomino(domino, clickX, clickY);
     return;
-  }
+}
 
   endRotationSession(rotationSession.domino);
   startRotationSession(domino);
