@@ -121,11 +121,7 @@ function buildDominoTray(dominoList) {
     domino.addEventListener("dblclick", () => {
       domino.classList.toggle("vertical");
     });
-
-   domino.addEventListener("click", () => {
-     handleDominoTap(domino);
-   });
-     
+  
     newDominoes.push(domino);
   });
 
