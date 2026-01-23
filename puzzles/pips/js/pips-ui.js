@@ -20,6 +20,7 @@ function enableDominoInteractions() {
     domino.addEventListener("touchstart", startDrag, { passive: false });
 
     domino.addEventListener("click", onDominoClick);
+    domino.addEventListener("dblclick", onDominoDoubleClick);
   });
 
   document.addEventListener("mousemove", drag);
@@ -30,35 +31,10 @@ function enableDominoInteractions() {
 }
 
 function onDominoClick(e) {
-  const domino = e.currentTarget;
-
-  console.log("CLICK FIRED", {
-    active: rotationSession.active,
-    sessionDomino: rotationSession.domino,
-    clickedIndex: domino.dataset.index
-  });
-
-  // Diagnostics
-  console.log("DOMINO PARENT:", domino.parentElement);
-  console.log("PARENT CLASSES:", domino.parentElement ? domino.parentElement.className : null);
-  console.log("BOARD ROW:", domino.dataset.boardRow);
-  console.log("BOARD COL:", domino.dataset.boardCol);
-  console.log("ORIGIN:", domino.dataset.origin);
-
-  if (!rotationSession.active) {
-    startRotationSession(domino);
-    return;
-  }
-
-if (rotationSession.domino === domino) {
-    const clickX = e.clientX;
-    const clickY = e.clientY;
-    rotateDomino(domino, clickX, clickY);
-    return;
-}
-
-  endRotationSession(rotationSession.domino);
-  startRotationSession(domino);
+// NYT: single-click does NOT rotate.
+// Keep diagnostics, keep selection, keep drag interaction.
+// Remove rotation logic entirely.
+console.log("Single-click: no rotation (NYT mode)");
 }
 
 function onDominoDragStart(domino) {
@@ -75,6 +51,15 @@ function onDominoSelect(newDomino) {
   }
 }
 
+function onDominoDoubleClick(e) {
+  const domino = e.currentTarget;
+  const clickX = e.clientX;
+  const clickY = e.clientY;
+
+  console.log("DOUBLE CLICK ROTATE", domino.dataset.index);
+
+  rotateDomino(domino, clickX, clickY);
+}
 
 /* ------------------------------------------------------------
    START DRAG (but do NOT kill rotation session yet)
