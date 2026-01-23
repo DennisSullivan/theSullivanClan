@@ -132,41 +132,73 @@ function drag(e) {
 /* ------------------------------------------------------------
    END DRAG → TRY TO PLACE
    ------------------------------------------------------------ */
-function drag(e) {
+function endDrag(e) {
+  // If no drag was ever started, do nothing
   if (!dragState) return;
+
+  // If user clicked but never dragged, this was a click, not a drag
+  if (!dragState.dragging) {
+    dragState = null;
+    return;
+  }
+
   if (!activeDomino) return;
 
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const placed = tryPlaceDomino(activeDomino);
 
-  const dx = clientX - dragState.startX;
-  const dy = clientY - dragState.startY;
+  if (placed) {
+    dragState = null;
+    activeDomino = null;
+    return;
+  }
 
-  // Only start dragging after a small threshold
-  if (!dragState.dragging && Math.abs(dx) + Math.abs(dy) > 3) {
-    dragState.dragging = true;
+  const cameFromBoard = activeDomino.dataset.origin === "board";
+  const attempt = activeDomino.dataset.dropAttempt || "off-board";
 
-    // NOW end rotation session — user is dragging, not clicking
-    endRotationSession(dragState.domino);
-
-    // Promote to activeDomino and begin actual drag
-    activeDomino = dragState.domino;
-
-    const preRect = activeDomino.getBoundingClientRect();
-    offsetX = dragState.startX - preRect.left;
-    offsetY = dragState.startY - preRect.top;
-
+  if (attempt === "invalid-on-board" && cameFromBoard) {
     const root = document.getElementById("pips-root");
     const rootRect = root.getBoundingClientRect();
 
-    root.appendChild(activeDomino);
-    activeDomino.style.position = "absolute";
-    activeDomino.style.zIndex = 1000;
+    const prevRow = parseInt(activeDomino.dataset.prevRow, 10);
+    const prevCol = parseInt(activeDomino.dataset.prevCol, 10);
+    const prevOrientation = activeDomino.dataset.prevOrientation;
+
+    const anchorCell = document.getElementById(`cell-${prevRow}-${prevCol}`);
+    const anchorRect = anchorCell.getBoundingClientRect();
+
+    activeDomino.style.left = `${anchorRect.left - rootRect.left}px`;
+    activeDomino.style.top = `${anchorRect.top - rootRect.top}px`;
+
+    const cells =
+      prevOrientation === "vertical"
+        ? [
+            [prevRow, prevCol],
+            [prevRow + 1, prevCol]
+          ]
+        : [
+            [prevRow, prevCol],
+            [prevRow, prevCol + 1]
+          ];
+
+    cells.forEach(([r, c]) => {
+      boardOccupancy[`${r},${c}`] = activeDomino;
+    });
+
+    logBoardOccupancy();
+  } else {
+    const home = document.getElementById(activeDomino.dataset.homeSlot);
+    home.appendChild(activeDomino);
+
+    activeDomino.style.position = "";
+    activeDomino.style.left = "";
+    activeDomino.style.top = "";
+    activeDomino.style.zIndex = "";
+
+    delete activeDomino.dataset.boardRow;
+    delete activeDomino.dataset.boardCol;
+    delete activeDomino.dataset.boardOrientation;
   }
 
-  if (!dragState.dragging) return;
-
-  const rootRect = document.getElementById("pips-root").getBoundingClientRect();
-  activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
-  activeDomino.style.top = `${clientY - offsetY - rootRect.top}px`;
+  dragState = null;
+  activeDomino = null;
 }
