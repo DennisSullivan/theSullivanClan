@@ -346,6 +346,7 @@ function startRotationSession(domino) {
 //  Drop‑in replacement for your existing rotateDomino()
 // ============================================================
 function rotateDomino(domino, clickX, clickY) {
+   console.log("NYT ROTATION ENGINE ACTIVE");
   const index = domino.dataset.index;
   const row = parseInt(domino.dataset.boardRow);
   const col = parseInt(domino.dataset.boardCol);
