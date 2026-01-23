@@ -397,9 +397,6 @@ function rotateDomino(domino, clickX, clickY) {
   const rect = domino.getBoundingClientRect();
   const localX = clickX - rect.left;
   const localY = clickY - rect.top;
-const rect = domino.getBoundingClientRect();
-const localX = clickX - rect.left;
-const localY = clickY - rect.top;
 console.log(
   "CLICK DEBUG:",
   {
