@@ -378,10 +378,33 @@ function startRotationSession(domino) {
 
 // ============================================================
 //  NYT‑STYLE CLOCKWISE ROTATION AROUND CLICKED CELL
-//  Drop‑in replacement for your existing rotateDomino()
 // ============================================================
 function rotateDomino(domino, clickX, clickY) {
   console.log("NYT ROTATION ENGINE ACTIVE");
+
+  // ------------------------------------------------------------
+  // 1. TRAY ROTATION — ALWAYS ALLOWED (NYT BEHAVIOR)
+  // ------------------------------------------------------------
+  const isOnBoard =
+    domino.dataset.boardRow !== undefined &&
+    domino.dataset.boardCol !== undefined;
+
+  if (!isOnBoard) {
+    console.log("TRAY ROTATION: always allowed (NYT style)");
+
+    const newOrientation = domino.classList.contains("horizontal")
+      ? "vertical"
+      : "horizontal";
+
+    domino.classList.remove("horizontal", "vertical");
+    domino.classList.add(newOrientation);
+
+    return true;
+  }
+
+  // ------------------------------------------------------------
+  // 2. BOARD ROTATION — FULL NYT LOGIC
+  // ------------------------------------------------------------
   clearDominoFromBoard(domino);
 
   const row = parseInt(domino.dataset.boardRow, 10);
@@ -404,13 +427,11 @@ function rotateDomino(domino, clickX, clickY) {
   });
 
   // Determine which cell was clicked: A or B
-  let clickedCell; // "A" or "B"
+  let clickedCell;
 
   if (orientation === "horizontal") {
-    // A = left, B = right
     clickedCell = (localX < rect.width / 2) ? "A" : "B";
   } else {
-    // vertical: A = top, B = bottom
     clickedCell = (localY < rect.height / 2) ? "A" : "B";
   }
 
@@ -425,26 +446,24 @@ function rotateDomino(domino, clickX, clickY) {
     Brow = row + 1;   Bcol = col;
   }
 
-  // The pivot is the clicked cell; its coordinates must not change.
+  // Pivot cell stays fixed
   let pivotRow = (clickedCell === "A") ? Arow : Brow;
   let pivotCol = (clickedCell === "A") ? Acol : Bcol;
 
-  // Compute new orientation (always clockwise)
+  // New orientation
   const newOrientation = (orientation === "horizontal") ? "vertical" : "horizontal";
 
-  // Compute new positions for A and B after clockwise rotation
+  // Compute new A/B positions after clockwise rotation
   let newArow, newAcol, newBrow, newBcol;
 
   if (orientation === "horizontal") {
     // Horizontal → Vertical
     if (clickedCell === "A") {
-      // A is pivot, B moves from right → bottom
       newArow = pivotRow;
       newAcol = pivotCol;
       newBrow = pivotRow + 1;
       newBcol = pivotCol;
     } else {
-      // B is pivot, A moves from left → top
       newBrow = pivotRow;
       newBcol = pivotCol;
       newArow = pivotRow - 1;
@@ -453,13 +472,11 @@ function rotateDomino(domino, clickX, clickY) {
   } else {
     // Vertical → Horizontal
     if (clickedCell === "A") {
-      // A is pivot, B moves from bottom → left
       newArow = pivotRow;
       newAcol = pivotCol;
       newBrow = pivotRow;
       newBcol = pivotCol - 1;
     } else {
-      // B is pivot, A moves from top → right
       newBrow = pivotRow;
       newBcol = pivotCol;
       newArow = pivotRow;
@@ -467,11 +484,24 @@ function rotateDomino(domino, clickX, clickY) {
     }
   }
 
-  // New anchor is always the top-left of the two cells
+  // ------------------------------------------------------------
+  // 3. NYT RULE: Both final cells must be on-board
+  // ------------------------------------------------------------
+  const cellA = document.getElementById(`cell-${newArow}-${newAcol}`);
+  const cellB = document.getElementById(`cell-${newBrow}-${newBcol}`);
+
+  if (!cellA || !cellB) {
+    console.warn("Rotation invalid: off-board final position");
+    return false;
+  }
+
+  // Anchor = top-left of the two valid cells
   const newRow = Math.min(newArow, newBrow);
   const newCol = Math.min(newAcol, newBcol);
 
-  // Build a simulated domino for validation
+  // ------------------------------------------------------------
+  // 4. Validate placement using simulated domino
+  // ------------------------------------------------------------
   const sim = domino.cloneNode(true);
   sim.classList.remove("horizontal", "vertical");
   sim.classList.add(newOrientation);
@@ -486,7 +516,9 @@ function rotateDomino(domino, clickX, clickY) {
     return false;
   }
 
-  // Commit rotation
+  // ------------------------------------------------------------
+  // 5. Commit rotation
+  // ------------------------------------------------------------
   domino.dataset.boardRow = newRow;
   domino.dataset.boardCol = newCol;
   domino.dataset.boardOrientation = newOrientation;
@@ -502,6 +534,7 @@ function rotateDomino(domino, clickX, clickY) {
 
   return true;
 }
+
 
 function endRotationSession(domino) {
   if (!rotationSession.active) return;
