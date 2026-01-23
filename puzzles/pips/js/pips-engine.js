@@ -341,37 +341,95 @@ function startRotationSession(domino) {
   console.log("Rotation session started for", domino.dataset.index);
 }
 
-function rotateDomino(domino) {
-  if (!rotationSession.active || rotationSession.domino !== domino) {
-    console.warn("rotateDomino called with no active session");
-    return;
+// ============================================================
+//  NYT‑STYLE CLOCKWISE ROTATION AROUND CLICKED CELL
+//  Drop‑in replacement for your existing rotateDomino()
+// ============================================================
+function rotateDomino(domino, clickX, clickY) {
+  const index = domino.dataset.index;
+  const row = parseInt(domino.dataset.boardRow);
+  const col = parseInt(domino.dataset.boardCol);
+  const orientation = domino.dataset.boardOrientation; // "horizontal" or "vertical"
+
+  // Determine which half was clicked
+  const rect = domino.getBoundingClientRect();
+  const localX = clickX - rect.left;
+  const localY = clickY - rect.top;
+
+  const clickedHalf = (orientation === "horizontal")
+    ? (localX < rect.width / 2 ? "A" : "B")
+    : (localY < rect.height / 2 ? "A" : "B");
+
+  // Compute pivot cell (the cell that stays fixed)
+  let pivotRow = row;
+  let pivotCol = col;
+
+  if (orientation === "horizontal") {
+    if (clickedHalf === "B") pivotCol = col + 1;
+  } else {
+    if (clickedHalf === "B") pivotRow = row + 1;
   }
 
-  const current = domino.classList.contains("vertical")
-    ? "vertical"
-    : "horizontal";
+  // Compute new orientation
+  const newOrientation = (orientation === "horizontal") ? "vertical" : "horizontal";
 
-  const next = current === "vertical" ? "horizontal" : "vertical";
+  // Compute new anchor cell after clockwise rotation
+  let newRow = pivotRow;
+  let newCol = pivotCol;
 
-  domino.classList.toggle("vertical", next === "vertical");
-  domino.classList.toggle("horizontal", next === "horizontal");
+  if (orientation === "horizontal") {
+    // Horizontal → Vertical
+    if (clickedHalf === "A") {
+      // A stays, B goes below A
+      newRow = pivotRow;
+      newCol = pivotCol;
+    } else {
+      // B stays, A goes above B
+      newRow = pivotRow - 1;
+      newCol = pivotCol;
+    }
+  } else {
+    // Vertical → Horizontal
+    if (clickedHalf === "A") {
+      // A stays, B goes right of A
+      newRow = pivotRow;
+      newCol = pivotCol;
+    } else {
+      // B stays, A goes left of B
+      newRow = pivotRow;
+      newCol = pivotCol - 1;
+    }
+  }
 
-  console.log(
-    `Rotating domino ${domino.dataset.index} from ${current} to ${next}`
-  );
+  // Build a simulated domino for validation
+  const sim = domino.cloneNode(true);
+  sim.dataset.boardRow = newRow;
+  sim.dataset.boardCol = newCol;
+  sim.dataset.boardOrientation = newOrientation;
 
-  // Flash to show rotation happened
-  domino.classList.add("rotate-flash");
-  setTimeout(() => domino.classList.remove("rotate-flash"), 150);
-
-  // Validate rotation
-  const valid = tryPlaceDomino(domino, { simulate: true });
+  const valid = tryPlaceDomino(sim, { simulate: true });
 
   if (!valid) {
-    console.log("Rotation invalid — reverting");
-    flashInvalid(domino);
-    revertDomino(domino);
+    console.warn("Rotation invalid for domino", index);
+    return false;
   }
+
+  // Commit rotation
+  domino.dataset.boardRow = newRow;
+  domino.dataset.boardCol = newCol;
+  domino.dataset.boardOrientation = newOrientation;
+
+  domino.classList.remove("horizontal", "vertical");
+  domino.classList.add(newOrientation);
+
+  // Snap to grid using your existing math
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+
+  domino.style.left = `${newCol * (cellSize + cellGap)}px`;
+  domino.style.top = `${newRow * (cellSize + cellGap)}px`;
+
+  return true;
 }
 
 function endRotationSession(domino) {
