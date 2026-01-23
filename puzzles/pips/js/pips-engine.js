@@ -386,6 +386,7 @@ function startRotationSession(domino) {
 // ============================================================
 function rotateDomino(domino, clickX, clickY) {
   console.log("NYT ROTATION ENGINE ACTIVE");
+  clearDominoFromBoard(domino);
 
   const index = domino.dataset.index;
   const row = parseInt(domino.dataset.boardRow);
@@ -507,3 +508,12 @@ function flashInvalid(domino) {
   domino.classList.add("cell-invalid");
   setTimeout(() => domino.classList.remove("cell-invalid"), 300);
 }
+
+function clearDominoFromBoard(domino) {
+  for (const key in boardOccupancy) {
+    if (boardOccupancy[key] === domino) {
+      delete boardOccupancy[key];
+    }
+  }
+}
+
