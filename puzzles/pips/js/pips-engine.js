@@ -178,15 +178,90 @@ function createPipGroup(value) {
 
 
 /* ============================================================
-   PLACEMENT LOGIC
+   NYT-STYLE GRID VALIDATOR
+   Shared by drag placement and rotation
+   ============================================================ */
+
+function validateGridPlacement(row, col, orientation, domino, options = {}) {
+  const simulate = options.simulate === true;
+
+  const vertical = (orientation === "vertical");
+
+  const cells = vertical
+    ? [ [row, col], [row + 1, col] ]
+    : [ [row, col], [row, col + 1] ];
+
+  // 1) Bounds check
+  for (const [r, c] of cells) {
+    const cellEl = document.getElementById(`cell-${r}-${c}`);
+    if (!cellEl) {
+      if (!simulate) {
+        domino.dataset.dropAttempt = "off-board";
+      }
+      return false;
+    }
+  }
+
+  // 2) Occupancy check
+  for (const [r, c] of cells) {
+    const key = `${r},${c}`;
+    if (boardOccupancy[key] && boardOccupancy[key] !== domino) {
+      if (!simulate) {
+        domino.dataset.dropAttempt = "invalid-on-board";
+      }
+      return false;
+    }
+  }
+
+  // 3) Commit only if NOT simulating
+  if (!simulate) {
+    const root = document.getElementById("pips-root");
+    const rootRect = root.getBoundingClientRect();
+    const anchorCell = document.getElementById(`cell-${row}-${col}`);
+    const anchorRect = anchorCell.getBoundingClientRect();
+
+    const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+    const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+
+    // Snap to grid
+    domino.style.left = `${col * (cellSize + cellGap)}px`;
+    domino.style.top = `${row * (cellSize + cellGap)}px`;
+
+    // Update occupancy
+    cells.forEach(([r, c]) => {
+      boardOccupancy[`${r},${c}`] = domino;
+    });
+
+    domino.dataset.boardRow = row;
+    domino.dataset.boardCol = col;
+    domino.dataset.boardOrientation = vertical ? "vertical" : "horizontal";
+    domino.dataset.dropAttempt = "valid";
+
+    logBoardOccupancy();
+  }
+
+  return true;
+}
+
+/* ============================================================
+   DRAG PLACEMENT — USES OVERLAP ONLY TO PICK CELL,
+   THEN NYT GRID VALIDATOR TO APPROVE/REJECT
    ============================================================ */
 
 function tryPlaceDomino(domino, options = {}) {
   const simulate = options.simulate === true;
-if (simulate) {
-  console.log("SIMULATING placement for rotation:", domino);
-}
-   
+
+  // If we're simulating (rotation), we EXPECT boardRow/Col/Orientation
+  if (simulate && domino.dataset.boardRow != null && domino.dataset.boardCol != null && domino.dataset.boardOrientation) {
+    const row = parseInt(domino.dataset.boardRow, 10);
+    const col = parseInt(domino.dataset.boardCol, 10);
+    const orientation = domino.dataset.boardOrientation;
+    return validateGridPlacement(row, col, orientation, domino, { simulate: true });
+  }
+
+  // Otherwise, this is a drag placement: use geometry to choose anchor cell,
+  // then validate via grid math.
+
   const root = document.getElementById("pips-root");
   const rootRect = root.getBoundingClientRect();
 
@@ -200,25 +275,25 @@ if (simulate) {
     height: rawDom.height
   };
 
-let anchorProbe;
+  let anchorProbe;
 
-if (domino.classList.contains("vertical")) {
-  // Use top half for vertical dominos
-  anchorProbe = {
-    left: domRect.left,
-    right: domRect.right,
-    top: domRect.top,
-    bottom: domRect.top + domRect.height / 2
-  };
-} else {
-  // Use left half for horizontal dominos
-  anchorProbe = {
-    left: domRect.left,
-    right: domRect.left + domRect.width / 2,
-    top: domRect.top,
-    bottom: domRect.bottom
-  };
-}
+  if (domino.classList.contains("vertical")) {
+    // Use top half for vertical dominos
+    anchorProbe = {
+      left: domRect.left,
+      right: domRect.right,
+      top: domRect.top,
+      bottom: domRect.top + domRect.height / 2
+    };
+  } else {
+    // Use left half for horizontal dominos
+    anchorProbe = {
+      left: domRect.left,
+      right: domRect.left + domRect.width / 2,
+      top: domRect.top,
+      bottom: domRect.bottom
+    };
+  }
 
   let bestCells = [];
   let bestOverlap = 0;
@@ -272,49 +347,9 @@ if (domino.classList.contains("vertical")) {
 
   const row = parseInt(anchor.dataset.row, 10);
   const col = parseInt(anchor.dataset.col, 10);
-  const vertical = domino.classList.contains("vertical");
+  const orientation = domino.classList.contains("vertical") ? "vertical" : "horizontal";
 
-  const cells = vertical
-    ? [ [row, col], [row + 1, col] ]
-    : [ [row, col], [row, col + 1] ];
-
-  for (const [r, c] of cells) {
-    if (!document.getElementById(`cell-${r}-${c}`)) {
-      if (!simulate) {
-        domino.dataset.dropAttempt = "off-board";
-      }
-      return false;
-    }
-  }
-
-  for (const [r, c] of cells) {
-    const key = `${r},${c}`;
-    if (boardOccupancy[key] && boardOccupancy[key] !== domino) {
-      if (!simulate) {
-        domino.dataset.dropAttempt = "invalid-on-board";
-      }
-      return false;
-    }
-  }
-
-  // From here down: only commit if NOT simulating
-  if (!simulate) {
-    domino.style.left = `${anchorRect.left - rootRect.left}px`;
-    domino.style.top = `${anchorRect.top - rootRect.top}px`;
-
-    cells.forEach(([r, c]) => {
-      boardOccupancy[`${r},${c}`] = domino;
-    });
-
-    domino.dataset.boardRow = row;
-    domino.dataset.boardCol = col;
-    domino.dataset.boardOrientation = vertical ? "vertical" : "horizontal";
-
-    domino.dataset.dropAttempt = "valid";
-    logBoardOccupancy();
-  }
-
-  return true;
+  return validateGridPlacement(row, col, orientation, domino, { simulate });
 }
 
 /* ============================================================
