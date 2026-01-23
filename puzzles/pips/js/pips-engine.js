@@ -405,9 +405,7 @@ console.log(
   }
 );
 
-  const clickedHalf = (orientation === "horizontal")
-    ? (localX < rect.width / 2 ? "A" : "B")
-    : (localY < rect.height / 2 ? "A" : "B");
+  const clickedHalf = "A";
 
   // Compute pivot cell
   let pivotRow = row;
