@@ -200,12 +200,25 @@ if (simulate) {
     height: rawDom.height
   };
 
-  const leftHalf = {
+let anchorProbe;
+
+if (domino.classList.contains("vertical")) {
+  // Use top half for vertical dominos
+  anchorProbe = {
+    left: domRect.left,
+    right: domRect.right,
+    top: domRect.top,
+    bottom: domRect.top + domRect.height / 2
+  };
+} else {
+  // Use left half for horizontal dominos
+  anchorProbe = {
     left: domRect.left,
     right: domRect.left + domRect.width / 2,
     top: domRect.top,
     bottom: domRect.bottom
   };
+}
 
   let bestCells = [];
   let bestOverlap = 0;
@@ -219,10 +232,10 @@ if (simulate) {
       bottom: raw.bottom - rootRect.top
     };
 
-    const overlapLeft = Math.max(leftHalf.left, rect.left);
-    const overlapRight = Math.min(leftHalf.right, rect.right);
-    const overlapTop = Math.max(leftHalf.top, rect.top);
-    const overlapBottom = Math.min(leftHalf.bottom, rect.bottom);
+    const overlapLeft = Math.max(anchorProbe.left, rect.left);
+    const overlapRight = Math.min(anchorProbe.right, rect.right);
+    const overlapTop = Math.max(anchorProbe.top, rect.top);
+    const overlapBottom = Math.min(anchorProbe.bottom, rect.bottom);
 
     const overlapWidth = overlapRight - overlapLeft;
     const overlapHeight = overlapBottom - overlapTop;
