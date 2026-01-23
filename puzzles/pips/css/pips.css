@@ -1,29 +1,32 @@
 /* ============================================================
-   PIPS ENGINE — GLOBAL STYLESHEET (NYT‑STYLE LAYER STACK)
+   FULL NYT‑STYLE PIPS CSS — DROP‑IN REPLACEMENT
    ============================================================ */
 
 /* ------------------------------
-   CSS VARIABLES (THEME)
+   CSS VARIABLES (NYT THEME)
    ------------------------------ */
 :root {
-  --bg: #faf8f4;
-  --grid-bg: #ffffff;
-  --line: #333;
-
-  --region-outline: rgba(0, 0, 0, 0.45);
-  --region-fill: rgba(0, 0, 0, 0.08);
+  --bg: #f7f7f7;
+  --board-bg: #ffffff;
+  --cell-line: #d0d0d0;
 
   --cell-size: 48px;
   --cell-gap: 2px;
   --radius: 6px;
 
-  --domino-bg: #fff;
-  --domino-border: #000;
-  --domino-shadow: rgba(0, 0, 0, 0.15);
+  --domino-bg: #ffffff;
+  --domino-border: #000000;
+  --domino-shadow: rgba(0, 0, 0, 0.18);
 
-  --accent: #7a4c24; /* warm SullivanClan brown */
-  --board-bg: #f2e9d8;      /* warm parchment */
-  --cell-line: #d2c3a8;     /* soft beige outline */
+  --pip-size: 7px;
+  --pip-color: #000;
+
+  --badge-bg: #fff;
+  --badge-text: #000;
+  --badge-border: #000;
+
+  --region-outline: rgba(0, 0, 0, 0.45);
+  --region-fill: rgba(0, 0, 0, 0.08);
 }
 
 @media (max-width: 600px) {
@@ -46,17 +49,6 @@ body {
   align-items: center;
 }
 
-.pips-header {
-  width: 100%;
-  padding: 12px 20px;
-  background: var(--accent);
-  color: white;
-  font-size: 1.2rem;
-  font-weight: 600;
-  text-align: center;
-  letter-spacing: 0.5px;
-}
-
 /* ------------------------------
    ROOT + LAYERS
    ------------------------------ */
@@ -71,154 +63,78 @@ body {
 #pips-root-wrapper {
   position: relative;
   margin-top: 20px;
-  background: var(--grid-bg);
+  background: var(--board-bg);
   padding: 0;
-  margin: 10px;
   border-radius: var(--radius);
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
-/* Make overlay layers match the board size */
+/* Overlay layers */
 #badge-layer,
 #region-layer {
   width: 100%;
   height: 100%;
-}
-
-/* TOP: Badge layer */
-#badge-layer {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 300;
-}
-
-/* MIDDLE: Region shading + outlines */
-#region-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 200;
-}
-
-/* Make sure overlays never block dragging */
-#region-layer,
-#region-layer *,
-#badge-layer,
-#badge-layer * {
   pointer-events: none;
 }
 
-/* BOTTOM: Grid + dominos */
-#pips-root {
-  background: #fff;
-  position: relative;
-  z-index: 100;
-
-  display: grid;
-  background: transparent;
-  gap: var(--cell-gap);
-
-  grid-template-columns: repeat(var(--cols), var(--cell-size));
-  grid-template-rows: repeat(var(--rows), var(--cell-size));
-}
+#badge-layer { z-index: 300; }
+#region-layer { z-index: 200; }
 
 /* ------------------------------
-   GRID CELLS
+   GRID
    ------------------------------ */
+
+#pips-root {
+  position: relative;
+  z-index: 100;
+  display: grid;
+  gap: var(--cell-gap);
+  grid-template-columns: repeat(var(--cols), var(--cell-size));
+  grid-template-rows: repeat(var(--rows), var(--cell-size));
+  background: transparent;
+}
+
 .pips-cell {
-   width: var(--cell-size);
-   height: var(--cell-size);
-   background: #fff;
-   border: 1px solid var(--cell-line);
-   border-radius: 4px;
-   position: relative;
-   box-sizing: border-box;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  background: #fff;
+  border: 1px solid var(--cell-line);
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 
 /* ------------------------------
    REGION OVERLAYS (NYT STYLE)
    ------------------------------ */
 
-/* Region-specific colors (SullivanClan palette) */
-.region-A { background: #F4A88B33; border-color: #F4A88B; }
-.region-B { background: #F7C97E33; border-color: #F7C97E; }
-.region-C { background: #F2E29F33; border-color: #F2E29F; }
-.region-D { background: #C9D88F33; border-color: #C9D88F; }
-.region-E { background: #9EC9B133; border-color: #9EC9B1; }
-.region-F { background: #A7C4E233; border-color: #A7C4E2; }
-.region-G { background: #C7B0D933; border-color: #C7B0D9; }
-
 .region-cell {
   position: absolute;
   box-sizing: border-box;
   border: 1.5px solid var(--region-outline);
-  border-radius: 0; /* NYT keeps region cells square */
+  background: var(--region-fill);
+  border-radius: 0;
   pointer-events: none;
 }
 
 /* ------------------------------
    REGION BADGES (NYT STYLE)
    ------------------------------ */
+
 .region-badge {
   position: absolute;
-  top: -18px;
-  left: -18px;
-  badge.style.top = (cellTop - 12) + "px";
-  badge.style.left = (cellLeft - 12) + "px";
-
-  background: #fff;
-  color: #000;
-
-  border-width: 1.5px;
-  border-style: solid;
-  border-color: transparent;   /* ⭐ THIS IS THE KEY */
-
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  border: 1.5px solid var(--badge-border);
   border-radius: 5px;
-
   padding: 1px 5px;
   font-size: 13px;
   font-weight: 600;
   line-height: 1;
-
   box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-
   z-index: 999;
-}
-
-/* Badge border colors match region identity */
-.region-badge.region-A { border: 1.5px solid #F4A88B; }
-.region-badge.region-B { border: 1.5px solid #F7C97E; }
-.region-badge.region-C { border: 1.5px solid #F2E29F; }
-.region-badge.region-D { border: 1.5px solid #C9D88F; }
-.region-badge.region-E { border: 1.5px solid #9EC9B1; }
-.region-badge.region-F { border: 1.5px solid #A7C4E2; }
-.region-badge.region-G { border: 1.5px solid #C7B0D9; }
-
-.region-badge.region-A { background: #E07A5C; color: #fff; }
-.region-badge.region-B { background: #E3A84F; color: #fff; }
-.region-badge.region-C { background: #D9C46A; color: #fff; }
-.region-badge.region-D { background: #A8C05A; color: #fff; }
-.region-badge.region-E { background: #6FAF96; color: #fff; }
-.region-badge.region-F { background: #6E9BC8; color: #fff; }
-.region-badge.region-G { background: #9A7BBE; color: #fff; }
-
-.region-cell.region-A { border: 2px solid #F4A88B; }
-.region-cell.region-B { border: 2px solid #F7C97E; }
-.region-cell.region-C { border: 2px solid #F2E29F; }
-.region-cell.region-D { border: 2px solid #C9D88F; }
-.region-cell.region-E { border: 2px solid #9EC9B1; }
-.region-cell.region-F { border: 2px solid #A7C4E2; }
-.region-cell.region-G { border: 2px solid #C7B0D9; }
-
-.region-badge.region-A,
-.region-badge.region-B,
-.region-badge.region-C,
-.region-badge.region-D,
-.region-badge.region-E,
-.region-badge.region-F,
-.region-badge.region-G {
-  color: #fff;
 }
 
 /* ------------------------------
@@ -236,19 +152,17 @@ body {
 .tray-slot {
   width: calc(var(--cell-size) * 2 + var(--cell-gap));
   height: var(--cell-size);
-  position: relative;
-  border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 /* ------------------------------
-   DOMINO TILE
+   DOMINO TILE (NYT STYLE)
    ------------------------------ */
 
 .domino {
-  position: relative;
+  position: absolute;
   width: calc(var(--cell-size) * 2 + var(--cell-gap));
   height: var(--cell-size);
   background: var(--domino-bg);
@@ -258,29 +172,27 @@ body {
   cursor: grab;
   user-select: none;
   transition: transform 0.15s ease;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  place-items: center;
-  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
 }
 
+/* Vertical orientation */
 .domino.vertical {
   width: var(--cell-size);
   height: calc(var(--cell-size) * 2 + var(--cell-gap));
-  padding-top: 8px;
-  padding-bottom: 8px;
-  box-sizing: border-box;
+  flex-direction: column;
 }
 
-/* NYT‑style center dividing line */
+/* NYT center dividing line */
 .domino::after {
   content: "";
   position: absolute;
   background: #000;
-  z-index: 2; /* above white background, below pips */
+  z-index: 2;
 }
 
-/* Horizontal domino: vertical center line */
 .domino:not(.vertical)::after {
   width: 1px;
   height: 100%;
@@ -288,7 +200,6 @@ body {
   top: 0;
 }
 
-/* Vertical domino: horizontal center line */
 .domino.vertical::after {
   height: 1px;
   width: 100%;
@@ -296,11 +207,13 @@ body {
   left: 0;
 }
 
-/* Pip cluster */
+/* ------------------------------
+   PIP CLUSTERS (NYT STYLE)
+   ------------------------------ */
+
 .pip-group {
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  height: auto;
+  width: 28px;
+  height: 28px;
   margin: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -309,9 +222,9 @@ body {
 }
 
 .pip {
-  width: 8px;
-  height: 8px;
-  background: var(--line);
+  width: var(--pip-size);
+  height: var(--pip-size);
+  background: var(--pip-color);
   border-radius: 50%;
 }
 
@@ -330,32 +243,9 @@ body {
   opacity: 0.95;
 }
 
-.domino.horizontal {
-  display: flex;
-  flex-direction: row;
-}
-
-.domino.vertical {
-  display: flex;
-  flex-direction: column;
-}
-
 /* ------------------------------
    UTILITIES
    ------------------------------ */
 
-.hidden {
-  display: none !important;
-}
-
-.center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Allow clicks to pass through overlays */
-#region-layer,
-#badge-layer {
-  pointer-events: none;
-}
+.hidden { display: none !important; }
+.center { display: flex; justify-content: center; align-items: center; }
