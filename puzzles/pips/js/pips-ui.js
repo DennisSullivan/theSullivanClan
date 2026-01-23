@@ -127,3 +127,66 @@ function drag(e) {
   activeDomino.style.top = `${clientY - offsetY - rootRect.top}px`;
 }
 
+
+/* ------------------------------------------------------------
+   END DRAG → TRY TO PLACE
+   ------------------------------------------------------------ */
+function endDrag(e) {
+  if (!activeDomino) return;
+
+  const placed = tryPlaceDomino(activeDomino);
+
+  if (placed) {
+    activeDomino = null;
+    return;
+  }
+
+  const cameFromBoard = activeDomino.dataset.origin === "board";
+  const attempt = activeDomino.dataset.dropAttempt || "off-board";
+
+  if (attempt === "invalid-on-board" && cameFromBoard) {
+    const root = document.getElementById("pips-root");
+    const rootRect = root.getBoundingClientRect();
+
+    const prevRow = parseInt(activeDomino.dataset.prevRow, 10);
+    const prevCol = parseInt(activeDomino.dataset.prevCol, 10);
+    const prevOrientation = activeDomino.dataset.prevOrientation;
+
+    const anchorCell = document.getElementById(`cell-${prevRow}-${prevCol}`);
+    const anchorRect = anchorCell.getBoundingClientRect();
+
+    activeDomino.style.left = `${anchorRect.left - rootRect.left}px`;
+    activeDomino.style.top = `${anchorRect.top - rootRect.top}px`;
+
+    const cells =
+      prevOrientation === "vertical"
+        ? [
+            [prevRow, prevCol],
+            [prevRow + 1, prevCol]
+          ]
+        : [
+            [prevRow, prevCol],
+            [prevRow, prevCol + 1]
+          ];
+
+    cells.forEach(([r, c]) => {
+      boardOccupancy[`${r},${c}`] = activeDomino;
+    });
+
+    logBoardOccupancy();
+  } else {
+    const home = document.getElementById(activeDomino.dataset.homeSlot);
+    home.appendChild(activeDomino);
+
+    activeDomino.style.position = "";
+    activeDomino.style.left = "";
+    activeDomino.style.top = "";
+    activeDomino.style.zIndex = "";
+
+    delete activeDomino.dataset.boardRow;
+    delete activeDomino.dataset.boardCol;
+    delete activeDomino.dataset.boardOrientation;
+  }
+
+  activeDomino = null;
+}
