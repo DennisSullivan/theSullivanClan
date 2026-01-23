@@ -271,27 +271,29 @@ function applyStartingDominos(puzzle) {
   if (!puzzle.startingDominos) return;
 
   const root = document.getElementById("pips-root");
-  const rootRect = root.getBoundingClientRect();
+
+  // Read CSS variables (same ones used to build the grid)
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
 
   puzzle.startingDominos.forEach(entry => {
     const dom = document.querySelector(`.domino[data-index="${entry.index}"]`);
-    const anchor = document.getElementById(`cell-${entry.row}-${entry.col}`);
-    const anchorRect = anchor.getBoundingClientRect();
 
-    // Temporarily place the domino at the anchor cell
+    // Snap to exact grid coordinates (NO bounding boxes)
+    const snapLeft = entry.col * (cellSize + cellGap);
+    const snapTop  = entry.row * (cellSize + cellGap);
+
     root.appendChild(dom);
+
     dom.style.position = "absolute";
-    dom.style.left = `${anchorRect.left - rootRect.left}px`;
-    dom.style.top = `${anchorRect.top - rootRect.top}px`;
+    dom.style.left = `${snapLeft}px`;
+    dom.style.top  = `${snapTop}px`;
 
-    // Apply orientation classes
-    dom.classList.toggle("vertical", entry.orientation === "vertical");
-    dom.classList.toggle("horizontal", entry.orientation === "horizontal");
+    // Apply orientation classes cleanly
+    dom.classList.remove("vertical", "horizontal");
+    dom.classList.add(entry.orientation);
 
-   // Apply orientation classes
-   dom.classList.remove("vertical", "horizontal");
-   dom.classList.add(entry.orientation);
-   // Snap using the real placement engine
+    // Let the engine commit the placement
     const ok = tryPlaceDomino(dom, { simulate: false });
 
     if (!ok) {
@@ -299,3 +301,4 @@ function applyStartingDominos(puzzle) {
     }
   });
 }
+
