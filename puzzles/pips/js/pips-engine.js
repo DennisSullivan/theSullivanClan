@@ -184,6 +184,8 @@ function createPipGroup(value) {
 
 function validateGridPlacement(row, col, orientation, domino, options = {}) {
    console.log("++++++++++++++ validateGridPlacement called +++++++++++++");
+   console.log(row, col, orientation);
+   logBoardOccupancy();
   const simulate = options.simulate === true;
 
   const vertical = (orientation === "vertical");
