@@ -33,15 +33,15 @@ function onDominoClick(e) {
   const domino = e.currentTarget;
 
 console.log("CLICK FIRED", {
+    active: rotationSession.active,
+    sessionDomino: rotationSession.domino,
+    clickedIndex: domino.dataset.index
+  });
 console.log("DOMINO PARENT:", domino.parentElement);
 console.log("PARENT CLASSES:", domino.parentElement?.className);
 console.log("BOARD ROW:", domino.dataset.boardRow);
 console.log("BOARD COL:", domino.dataset.boardCol);
 console.log("ORIGIN:", domino.dataset.origin);
-    active: rotationSession.active,
-    sessionDomino: rotationSession.domino,
-    clickedIndex: domino.dataset.index
-  });
 
   if (!rotationSession.active) {
     startRotationSession(domino);
