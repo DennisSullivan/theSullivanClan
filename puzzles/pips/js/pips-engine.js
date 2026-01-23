@@ -249,7 +249,7 @@ function validateGridPlacement(row, col, orientation, domino, options = {}) {
    ============================================================ */
 
 function tryPlaceDomino(domino, options = {}) {
-  console.log("===tryPlaceDomino(domino v40 ===");
+  console.log("===tryPlaceDomino v40 ===");
   const simulate = options.simulate === true;
 
   // If we're simulating (rotation), we EXPECT boardRow/Col/Orientation
