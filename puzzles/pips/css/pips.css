@@ -106,6 +106,16 @@ body {
   box-sizing: border-box;
 }
 
+.cell-highlight-valid {
+  outline: 3px solid #4caf50; /* green */
+  outline-offset: -3px;
+}
+
+.cell-highlight-invalid {
+  outline: 3px solid #e53935; /* red */
+  outline-offset: -3px;
+}
+
 /* ------------------------------
    REGION OVERLAYS (NYT STYLE)
    ------------------------------ */
