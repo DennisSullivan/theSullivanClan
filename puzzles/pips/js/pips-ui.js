@@ -7,6 +7,26 @@ let activeDomino = null;
 let offsetX = 0;
 let offsetY = 0;
 
+let highlightedCells = [];
+
+function clearHighlights() {
+  highlightedCells.forEach(cell => {
+    cell.classList.remove("cell-highlight-valid", "cell-highlight-invalid");
+  });
+  highlightedCells = [];
+}
+
+function highlightCells(cells, isValid) {
+  clearHighlights();
+  cells.forEach(([r, c]) => {
+    const cell = document.getElementById(`cell-${r}-${c}`);
+    if (cell) {
+      cell.classList.add(isValid ? "cell-highlight-valid" : "cell-highlight-invalid");
+      highlightedCells.push(cell);
+    }
+  });
+}
+
 /* ------------------------------------------------------------
    ENABLE DOMINO INTERACTIONS
    ------------------------------------------------------------ */
@@ -91,7 +111,6 @@ function drag(e) {
   const dx = clientX - dragState.startX;
   const dy = clientY - dragState.startY;
 
-  // Only start dragging after a small threshold
   if (!dragState.dragging && Math.abs(dx) + Math.abs(dy) > 3) {
     dragState.dragging = true;
 
@@ -102,8 +121,6 @@ function drag(e) {
     offsetY = dragState.startY - preRect.top;
 
     const root = document.getElementById("pips-root");
-    const rootRect = root.getBoundingClientRect();
-
     root.appendChild(activeDomino);
     activeDomino.style.position = "absolute";
     activeDomino.style.zIndex = 1000;
@@ -111,15 +128,51 @@ function drag(e) {
 
   if (!dragState.dragging) return;
 
-  const rootRect = document.getElementById("pips-root").getBoundingClientRect();
+  const root = document.getElementById("pips-root");
+  const rootRect = root.getBoundingClientRect();
+
   activeDomino.style.left = `${clientX - offsetX - rootRect.left}px`;
   activeDomino.style.top = `${clientY - offsetY - rootRect.top}px`;
+
+  const rect = activeDomino.getBoundingClientRect();
+  const boardX = rect.left - rootRect.left;
+  const boardY = rect.top - rootRect.top;
+
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+  const step = cellSize + cellGap;
+
+  const col = Math.round(boardX / step);
+  const row = Math.round(boardY / step);
+
+  const orientation = activeDomino.classList.contains("vertical") ? "vertical" : "horizontal";
+
+  const cells =
+    orientation === "vertical"
+      ? [
+          [row, col],
+          [row + 1, col]
+        ]
+      : [
+          [row, col],
+          [row, col + 1]
+        ];
+
+  const sim = activeDomino.cloneNode(true);
+  sim.dataset.boardRow = row;
+  sim.dataset.boardCol = col;
+  sim.dataset.boardOrientation = orientation;
+
+  const valid = validateGridPlacement(row, col, orientation, sim, { simulate: true });
+
+  highlightCells(cells, valid);
 }
 
 /* ------------------------------------------------------------
    END DRAG → TRY TO PLACE
    ------------------------------------------------------------ */
 function endDrag(e) {
+   clearHighlights();
   if (!dragState) return;
 
   if (!dragState.dragging) {
