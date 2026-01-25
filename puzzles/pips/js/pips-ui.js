@@ -120,10 +120,8 @@ function drag(e) {
    END DRAG → TRY TO PLACE
    ------------------------------------------------------------ */
 function endDrag(e) {
-  // If no drag was ever started, do nothing
   if (!dragState) return;
 
-  // If user clicked but never dragged, this was a click, not a drag
   if (!dragState.dragging) {
     dragState = null;
     return;
@@ -173,6 +171,8 @@ function endDrag(e) {
 
     logBoardOccupancy();
   } else {
+    clearDominoFromBoard(activeDomino);
+
     const home = document.getElementById(activeDomino.dataset.homeSlot);
     home.appendChild(activeDomino);
 
@@ -184,6 +184,9 @@ function endDrag(e) {
     delete activeDomino.dataset.boardRow;
     delete activeDomino.dataset.boardCol;
     delete activeDomino.dataset.boardOrientation;
+
+    activeDomino.classList.remove("horizontal", "vertical");
+    activeDomino.classList.add("horizontal");
   }
 
   dragState = null;
