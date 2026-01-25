@@ -27,6 +27,23 @@ function highlightCells(cells, isValid) {
   });
 }
 
+let selectedDomino = null;
+
+function selectDomino(domino) {
+  if (selectedDomino && selectedDomino !== domino) {
+    selectedDomino.classList.remove("domino-selected");
+  }
+  selectedDomino = domino;
+  selectedDomino.classList.add("domino-selected");
+}
+
+function clearSelection() {
+  if (selectedDomino) {
+    selectedDomino.classList.remove("domino-selected");
+    selectedDomino = null;
+  }
+}
+
 /* ------------------------------------------------------------
    ENABLE DOMINO INTERACTIONS
    ------------------------------------------------------------ */
@@ -87,6 +104,7 @@ let dragState = null;
 
 function startDrag(e) {
   const domino = e.currentTarget;
+  selectDomino(domino);
 
   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -245,6 +263,7 @@ function endDrag(e) {
      delete activeDomino.dataset.boardOrientation;
   }
 
+  clearSelection();
   dragState = null;
   activeDomino = null;
 }
