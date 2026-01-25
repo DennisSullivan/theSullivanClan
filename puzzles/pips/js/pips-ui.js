@@ -171,22 +171,25 @@ function endDrag(e) {
 
     logBoardOccupancy();
   } else {
-    clearDominoFromBoard(activeDomino);
-
-    const home = document.getElementById(activeDomino.dataset.homeSlot);
-    home.appendChild(activeDomino);
-
-    activeDomino.style.position = "";
-    activeDomino.style.left = "";
-    activeDomino.style.top = "";
-    activeDomino.style.zIndex = "";
-
-    delete activeDomino.dataset.boardRow;
-    delete activeDomino.dataset.boardCol;
-    delete activeDomino.dataset.boardOrientation;
-
-    activeDomino.classList.remove("horizontal", "vertical");
-    activeDomino.classList.add("horizontal");
+     clearDominoFromBoard(activeDomino);
+   
+     const home = document.getElementById(activeDomino.dataset.homeSlot);
+     home.appendChild(activeDomino);
+   
+     // Reset positioning so flexbox can center it
+     activeDomino.style.position = "";
+     activeDomino.style.left = "";
+     activeDomino.style.top = "";
+     activeDomino.style.zIndex = "";
+     activeDomino.style.margin = "auto";
+   
+     // Reset orientation for tray consistency
+     activeDomino.classList.remove("horizontal", "vertical");
+     activeDomino.classList.add("horizontal");
+   
+     delete activeDomino.dataset.boardRow;
+     delete activeDomino.dataset.boardCol;
+     delete activeDomino.dataset.boardOrientation;
   }
 
   dragState = null;
