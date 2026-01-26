@@ -493,6 +493,14 @@ function rotateDomino(domino, clickX, clickY) {
       otherCol = cell1Col;
     }
   }
+   // Reorder pip groups so the pivot cell is always the first child
+   const firstGroup = domino.children[0];
+   const secondGroup = domino.children[1];
+   
+   // If pivot is currently the second cell, swap them
+   if (pivotRow === cell2Row && pivotCol === cell2Col) {
+       domino.insertBefore(secondGroup, firstGroup);
+   }
 
    // Vector from pivot to the other cell
    const dRow = otherRow - pivotRow;
