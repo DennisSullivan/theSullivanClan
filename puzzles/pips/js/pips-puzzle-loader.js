@@ -196,7 +196,7 @@ function buildRegionOverlays(puzzle) {
   const regionLayer = document.getElementById("region-layer");
   regionLayer.innerHTML = "";
 
-  puzzle.regions.forEach(region => {
+  puzzle.regions.forEach((region, index) => {
     const cellSet = new Set(region.cells.map(c => `${c.row},${c.col}`));
 
     // Find top-left cell for badge placement
@@ -204,11 +204,11 @@ function buildRegionOverlays(puzzle) {
     const minCol = Math.min(...region.cells.map(c => c.col));
 
     region.cells.forEach(cell => {
-      const key = `${cell.row},${cell.col}`;
-
       const div = document.createElement("div");
       div.classList.add("region-cell");
-      div.dataset.region = region.id;
+
+      // ⭐ Option 1: numeric region IDs
+      div.dataset.region = index;
 
       div.style.left = `${cell.col * (cellSize + cellGap)}px`;
       div.style.top = `${cell.row * (cellSize + cellGap)}px`;
@@ -225,7 +225,7 @@ function buildRegionOverlays(puzzle) {
       if (cell.row === minRow && cell.col === minCol) {
         const badge = document.createElement("div");
         badge.classList.add("region-badge");
-        badge.textContent = region.rule || String.fromCharCode(65 + region.id);
+        badge.textContent = region.rule || String.fromCharCode(65 + index);
         div.appendChild(badge);
       }
 
