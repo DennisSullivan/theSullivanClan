@@ -204,7 +204,8 @@ function buildRegionOverlays(puzzle) {
       const key = `${cell.row},${cell.col}`;
 
       const div = document.createElement("div");
-      div.classList.add("region-cell", `region-${region.id}`);
+      div.classList.add("region-cell");
+      div.dataset.region = region.id;
 
       div.style.left = `${cell.col * (cellSize + cellGap)}px`;
       div.style.top = `${cell.row * (cellSize + cellGap)}px`;
@@ -229,6 +230,7 @@ function buildRegionOverlays(puzzle) {
 /* ------------------------------------------------------------
    Building Badges
    ------------------------------------------------------------ */
+/*
 function buildRegionBadges(puzzle) {
   const badgeLayer = document.getElementById("badge-layer");
   badgeLayer.innerHTML = "";
@@ -263,6 +265,7 @@ function buildRegionBadges(puzzle) {
     badgeLayer.appendChild(badge);
   });
 }
+ */
 
 /* ------------------------------------------------------------
    APPLY STARTING DOMINOS
