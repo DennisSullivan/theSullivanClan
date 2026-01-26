@@ -26,10 +26,11 @@ function logBoardOccupancy() {
    ============================================================ */
 
 function buildGrid(rows, cols) {
-  const grid = document.getElementById("pips-grid");
+  const grid = document.getElementById("pips-root");
   grid.innerHTML = "";
 
   grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
+  grid.style.gridTemplateRows = `repeat(${rows}, var(--cell-size))`;
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -55,7 +56,7 @@ function drawRegions(regionList) {
 
   regionList.forEach((region, index) => {
     const regionDiv = document.createElement("div");
-    regionDiv.classList.add("region");
+    regionDiv.classList.add("region-cell");
 
     const rows = region.map(c => c[0]);
     const cols = region.map(c => c[1]);
@@ -79,7 +80,7 @@ function drawRegions(regionList) {
     regionDiv.style.height = `${height}px`;
 
     const label = document.createElement("div");
-    label.classList.add("region-label");
+    label.classList.add("region-badge");
     label.textContent = String.fromCharCode(65 + index);
 
     regionDiv.appendChild(label);
