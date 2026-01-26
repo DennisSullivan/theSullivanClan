@@ -493,14 +493,6 @@ function rotateDomino(domino, clickX, clickY) {
       otherCol = cell1Col;
     }
   }
-   // Reorder pip groups so the pivot cell is always the first child
-   const firstGroup = domino.children[0];
-   const secondGroup = domino.children[1];
-   
-   // If pivot is currently the second cell, swap them
-   if (pivotRow === cell2Row && pivotCol === cell2Col) {
-       domino.insertBefore(secondGroup, firstGroup);
-   }
 
    // Vector from pivot to the other cell
    const dRow = otherRow - pivotRow;
@@ -552,6 +544,25 @@ function rotateDomino(domino, clickX, clickY) {
 
   // Commit new placement
   validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: false });
+   // ------------------------------------------------------------
+   // Ensure pip-groups match the final top-left / bottom-right order
+   // ------------------------------------------------------------
+   const g1 = domino.children[0];
+   const g2 = domino.children[1];
+   
+   // Final two cells after rotation
+   const final1 = { row: newCell1Row, col: newCell1Col };
+   const final2 = { row: newCell2Row, col: newCell2Col };
+   
+   // Determine which cell is top-left
+   const firstIsTopLeft =
+     final1.row < final2.row ||
+     (final1.row === final2.row && final1.col < final2.col);
+   
+   // If g1 is NOT the top-left cell, swap them
+   if (!firstIsTopLeft) {
+     domino.insertBefore(g2, g1);
+   }
 
   domino.classList.remove("horizontal", "vertical");
   domino.classList.add(newOrientation);
