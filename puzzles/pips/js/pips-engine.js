@@ -1,10 +1,14 @@
 /* ============================================================
    PIPS ENGINE — BOARD OCCUPANCY
-   Tracks which domino occupies which board cell
+   Tracks which domino occupies which board cell.
+   This is the authoritative source of truth for placement.
    ============================================================ */
 
 const boardOccupancy = {};
 
+/**
+ * Debug helper: prints which domino occupies which cell.
+ */
 function logBoardOccupancy() {
   console.log("=== BOARD OCCUPANCY ===");
   const entries = Object.entries(boardOccupancy);
@@ -13,7 +17,7 @@ function logBoardOccupancy() {
   } else {
     entries.forEach(([key, value]) => {
       const label = value.id ? value.id : "(no id)";
-//      console.log(`  cell ${key} -> domino ${label}`);
+      // console.log(`  cell ${key} -> domino ${label}`);
     });
   }
   console.log("=============+===========");
@@ -22,17 +26,19 @@ function logBoardOccupancy() {
 
 /* ============================================================
    GRID BUILDER
-   Creates the puzzle grid dynamically
+   Creates the puzzle grid dynamically based on rows/cols.
+   Each cell gets a unique ID and row/col dataset attributes.
    ============================================================ */
 
 function buildGrid(rows, cols) {
   const grid = document.getElementById("pips-root");
   grid.innerHTML = "";
 
-  // Set CSS variables for grid dimensions
+  // Expose dimensions to CSS Grid
   grid.style.setProperty("--rows", rows);
   grid.style.setProperty("--cols", cols);
 
+  // Create each cell
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const cell = document.createElement("div");
@@ -48,7 +54,8 @@ function buildGrid(rows, cols) {
 
 /* ============================================================
    REGION RENDERER
-   Draws region overlays on top of the grid
+   Draws NYT-style region overlays on top of the grid.
+   Each region is a bounding rectangle with a badge.
    ============================================================ */
 
 function drawRegions(regionList) {
@@ -58,16 +65,19 @@ function drawRegions(regionList) {
   regionList.forEach((region, index) => {
     const regionDiv = document.createElement("div");
     regionDiv.classList.add("region-cell");
-    regionDiv.dataset.region = index;
+    regionDiv.dataset.region = index;   // Enables CSS coloring
 
+    // Extract row/col lists
     const rows = region.map(c => c[0]);
     const cols = region.map(c => c[1]);
 
+    // Compute bounding rectangle
     const minRow = Math.min(...rows);
     const maxRow = Math.max(...rows);
     const minCol = Math.min(...cols);
     const maxCol = Math.max(...cols);
 
+    // Convert grid coords → pixel coords
     const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
     const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
 
@@ -76,11 +86,13 @@ function drawRegions(regionList) {
     const width = (maxCol - minCol + 1) * (cellSize + cellGap) - cellGap;
     const height = (maxRow - minRow + 1) * (cellSize + cellGap) - cellGap;
 
+    // Apply geometry
     regionDiv.style.left = `${x}px`;
     regionDiv.style.top = `${y}px`;
     regionDiv.style.width = `${width}px`;
     regionDiv.style.height = `${height}px`;
 
+    // Add region badge (A, B, C…)
     const label = document.createElement("div");
     label.classList.add("region-badge");
     label.textContent = String.fromCharCode(65 + index);
@@ -95,17 +107,19 @@ function drawRegions(regionList) {
 
 /* ============================================================
    DOMINO GENERATOR
-   Creates domino tiles and assigns them to tray slots
+   Creates all domino tiles and assigns them to tray slots.
    ============================================================ */
 
 function buildDominoTray(dominoList) {
   const tray = document.getElementById("domino-tray");
 
+  // Clear existing tray slots
   const traySlots = tray.querySelectorAll(".tray-slot");
   traySlots.forEach(slot => slot.innerHTML = "");
 
   const newDominoes = [];
 
+  // Build each domino tile
   dominoList.forEach((pair, index) => {
     const [a, b] = pair;
 
@@ -115,15 +129,14 @@ function buildDominoTray(dominoList) {
     domino.dataset.valueA = a;
     domino.dataset.valueB = b;
 
-    const pipA = createPipGroup(a);
-    const pipB = createPipGroup(b);
+    // Add pip groups
+    domino.appendChild(createPipGroup(a));
+    domino.appendChild(createPipGroup(b));
 
-    domino.appendChild(pipA);
-    domino.appendChild(pipB);
-  
     newDominoes.push(domino);
   });
 
+  // Place dominos into tray slots
   newDominoes.forEach((domino, i) => {
     const slot = traySlots[i];
     if (!slot) {
@@ -138,13 +151,14 @@ function buildDominoTray(dominoList) {
 
 /* ============================================================
    PIP RENDERING
-   Creates a group of pips for a single number (0–6)
+   Creates a 3×3 pip grid for a single number (0–6).
    ============================================================ */
 
 function createPipGroup(value) {
   const group = document.createElement("div");
   group.classList.add("pip-group");
 
+  // Pip patterns for each number
   const pipPatterns = {
     0: [],
     1: [ [1,1] ],
@@ -160,10 +174,12 @@ function createPipGroup(value) {
 
   const pattern = pipPatterns[value] || [];
 
+  // 3×3 grid
   group.style.display = "grid";
   group.style.gridTemplateColumns = "repeat(3, 1fr)";
   group.style.gridTemplateRows = "repeat(3, 1fr)";
 
+  // Add pips
   pattern.forEach(([r, c]) => {
     const pip = document.createElement("div");
     pip.classList.add("pip");
@@ -178,17 +194,22 @@ function createPipGroup(value) {
 
 /* ============================================================
    NYT-STYLE GRID VALIDATOR
-   Shared by drag placement and rotation
+   Shared by drag placement and rotation.
+   Ensures:
+   - Domino stays on board
+   - Domino does not overlap another
+   - Occupancy is updated when committed
    ============================================================ */
 
 function validateGridPlacement(row, col, orientation, domino, options = {}) {
-   console.log("++++++++++++++ validateGridPlacement called +++++++++++++");
-   console.log(row, col, orientation);
-   logBoardOccupancy();
-  const simulate = options.simulate === true;
+  console.log("++++++++++++++ validateGridPlacement called +++++++++++++");
+  console.log(row, col, orientation);
+  logBoardOccupancy();
 
+  const simulate = options.simulate === true;
   const vertical = (orientation === "vertical");
 
+  // Compute the two cells the domino would occupy
   const cells = vertical
     ? [ [row, col], [row + 1, col] ]
     : [ [row, col], [row, col + 1] ];
@@ -197,9 +218,7 @@ function validateGridPlacement(row, col, orientation, domino, options = {}) {
   for (const [r, c] of cells) {
     const cellEl = document.getElementById(`cell-${r}-${c}`);
     if (!cellEl) {
-      if (!simulate) {
-        domino.dataset.dropAttempt = "off-board";
-      }
+      if (!simulate) domino.dataset.dropAttempt = "off-board";
       return false;
     }
   }
@@ -208,32 +227,26 @@ function validateGridPlacement(row, col, orientation, domino, options = {}) {
   for (const [r, c] of cells) {
     const key = `${r},${c}`;
     if (boardOccupancy[key] && boardOccupancy[key] !== domino) {
-      if (!simulate) {
-        domino.dataset.dropAttempt = "invalid-on-board";
-      }
+      if (!simulate) domino.dataset.dropAttempt = "invalid-on-board";
       return false;
     }
   }
 
-  // 3) Commit only if NOT simulating
+  // 3) Commit placement (only if NOT simulating)
   if (!simulate) {
-    const root = document.getElementById("pips-root");
-    const rootRect = root.getBoundingClientRect();
-    const anchorCell = document.getElementById(`cell-${row}-${col}`);
-    const anchorRect = anchorCell.getBoundingClientRect();
-
     const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
     const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
 
-    // Snap to grid
+    // Snap domino to grid
     domino.style.left = `${col * (cellSize + cellGap)}px`;
     domino.style.top = `${row * (cellSize + cellGap)}px`;
 
-    // Update occupancy
+    // Update occupancy map
     cells.forEach(([r, c]) => {
       boardOccupancy[`${r},${c}`] = domino;
     });
 
+    // Store board metadata
     domino.dataset.boardRow = row;
     domino.dataset.boardCol = col;
     domino.dataset.boardOrientation = vertical ? "vertical" : "horizontal";
@@ -245,29 +258,30 @@ function validateGridPlacement(row, col, orientation, domino, options = {}) {
   return true;
 }
 
+
 /* ============================================================
-   DRAG PLACEMENT — USES OVERLAP ONLY TO PICK CELL,
-   THEN NYT GRID VALIDATOR TO APPROVE/REJECT
+   DRAG PLACEMENT
+   Uses overlap geometry to determine the anchor cell.
+   Then calls validateGridPlacement() to approve/reject.
    ============================================================ */
 
 function tryPlaceDomino(domino, options = {}) {
   console.log("===tryPlaceDomino v40 ===");
   const simulate = options.simulate === true;
 
-  // If we're simulating (rotation), we EXPECT boardRow/Col/Orientation
-  if (simulate && domino.dataset.boardRow != null && domino.dataset.boardCol != null && domino.dataset.boardOrientation) {
+  // Rotation simulation path
+  if (simulate && domino.dataset.boardRow != null) {
     const row = parseInt(domino.dataset.boardRow, 10);
     const col = parseInt(domino.dataset.boardCol, 10);
     const orientation = domino.dataset.boardOrientation;
     return validateGridPlacement(row, col, orientation, domino, { simulate: true });
   }
 
-  // Otherwise, this is a drag placement: use geometry to choose anchor cell,
-  // then validate via grid math.
-
+  // Drag placement path
   const root = document.getElementById("pips-root");
   const rootRect = root.getBoundingClientRect();
 
+  // Domino geometry relative to grid
   const rawDom = domino.getBoundingClientRect();
   const domRect = {
     left: rawDom.left - rootRect.left,
@@ -278,10 +292,9 @@ function tryPlaceDomino(domino, options = {}) {
     height: rawDom.height
   };
 
+  // Probe rectangle: top half (vertical) or left half (horizontal)
   let anchorProbe;
-
   if (domino.classList.contains("vertical")) {
-    // Use top half for vertical dominos
     anchorProbe = {
       left: domRect.left,
       right: domRect.right,
@@ -289,7 +302,6 @@ function tryPlaceDomino(domino, options = {}) {
       bottom: domRect.top + domRect.height / 2
     };
   } else {
-    // Use left half for horizontal dominos
     anchorProbe = {
       left: domRect.left,
       right: domRect.left + domRect.width / 2,
@@ -298,6 +310,7 @@ function tryPlaceDomino(domino, options = {}) {
     };
   }
 
+  // Find best-overlap cell(s)
   let bestCells = [];
   let bestOverlap = 0;
 
@@ -330,24 +343,23 @@ function tryPlaceDomino(domino, options = {}) {
     }
   });
 
+  // No valid overlap
   if (bestCells.length === 0) {
-    if (!simulate) {
-      domino.dataset.dropAttempt = "off-board";
-    }
+    if (!simulate) domino.dataset.dropAttempt = "off-board";
     return false;
   }
 
+  // Require at least 25% overlap
   const anchor = bestCells[0];
   const anchorRect = anchor.getBoundingClientRect();
   const minArea = (anchorRect.width * anchorRect.height) * 0.25;
 
   if (bestOverlap < minArea) {
-    if (!simulate) {
-      domino.dataset.dropAttempt = "off-board";
-    }
+    if (!simulate) domino.dataset.dropAttempt = "off-board";
     return false;
   }
 
+  // Convert anchor cell → grid coords
   const row = parseInt(anchor.dataset.row, 10);
   const col = parseInt(anchor.dataset.col, 10);
   const orientation = domino.classList.contains("vertical") ? "vertical" : "horizontal";
@@ -355,8 +367,10 @@ function tryPlaceDomino(domino, options = {}) {
   return validateGridPlacement(row, col, orientation, domino, { simulate });
 }
 
+
 /* ============================================================
    ROTATION — NYT‑STYLE SESSION SYSTEM
+   Tracks original position so invalid rotations can revert.
    ============================================================ */
 
 let rotationSession = {
@@ -379,14 +393,24 @@ function startRotationSession(domino) {
   console.log("Rotation session started for", domino.dataset.index);
 }
 
-// ============================================================
-//  NYT‑STYLE CLOCKWISE ROTATION AROUND CLICKED CELL
-// ============================================================
+
+/* ============================================================
+   NYT‑STYLE CLOCKWISE ROTATION AROUND CLICKED CELL
+   This is the most complex part of the engine.
+   Steps:
+   1. Determine clicked half (A or B)
+   2. Compute pivot cell
+   3. Compute new orientation
+   4. Compute new A/B cell positions
+   5. Validate via simulate mode
+   6. Commit if valid
+   ============================================================ */
+
 function rotateDomino(domino, clickX, clickY) {
   console.log("NYT ROTATION ENGINE ACTIVE");
 
   // ------------------------------------------------------------
-  // TRAY ROTATION — ALWAYS ALLOWED (NYT BEHAVIOR)
+  // TRAY ROTATION — always allowed
   // ------------------------------------------------------------
   const isOnBoard =
     domino.dataset.boardRow !== undefined &&
@@ -395,7 +419,7 @@ function rotateDomino(domino, clickX, clickY) {
   if (!isOnBoard) {
     console.log("TRAY ROTATION: always allowed (NYT style)");
 
-    // Ensure a known starting orientation so FIRST rotation is visible
+    // Ensure known starting orientation
     if (
       !domino.classList.contains("horizontal") &&
       !domino.classList.contains("vertical")
@@ -403,6 +427,7 @@ function rotateDomino(domino, clickX, clickY) {
       domino.classList.add("horizontal");
     }
 
+    // Toggle orientation
     const newOrientation = domino.classList.contains("horizontal")
       ? "vertical"
       : "horizontal";
@@ -414,7 +439,7 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   // ------------------------------------------------------------
-  // BOARD ROTATION — FULL NYT LOGIC
+  // BOARD ROTATION — full NYT logic
   // ------------------------------------------------------------
   clearDominoFromBoard(domino);
 
@@ -422,6 +447,7 @@ function rotateDomino(domino, clickX, clickY) {
   const col = parseInt(domino.dataset.boardCol, 10);
   const orientation = domino.dataset.boardOrientation;
 
+  // Compute click position relative to domino
   const rect = domino.getBoundingClientRect();
   const localX = clickX - rect.left;
   const localY = clickY - rect.top;
@@ -437,16 +463,16 @@ function rotateDomino(domino, clickX, clickY) {
     localY
   });
 
+  // Determine clicked half (A or B)
   let clickedCell;
-
   if (orientation === "horizontal") {
     clickedCell = (localX < rect.width / 2) ? "A" : "B";
   } else {
     clickedCell = (localY < rect.height / 2) ? "A" : "B";
   }
 
+  // Compute current A/B cell coordinates
   let Arow, Acol, Brow, Bcol;
-
   if (orientation === "horizontal") {
     Arow = row;       Acol = col;
     Brow = row;       Bcol = col + 1;
@@ -455,11 +481,14 @@ function rotateDomino(domino, clickX, clickY) {
     Brow = row + 1;   Bcol = col;
   }
 
+  // Pivot = clicked half
   let pivotRow = (clickedCell === "A") ? Arow : Brow;
   let pivotCol = (clickedCell === "A") ? Acol : Bcol;
 
+  // New orientation
   const newOrientation = (orientation === "horizontal") ? "vertical" : "horizontal";
 
+  // Compute new A/B positions after rotation
   let newArow, newAcol, newBrow, newBcol;
 
   if (orientation === "horizontal") {
@@ -489,7 +518,7 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   // ------------------------------------------------------------
-  // NYT RULE: Both final cells must be on-board
+  // NYT RULE: both final cells must be on-board
   // ------------------------------------------------------------
   const cellA = document.getElementById(`cell-${newArow}-${newAcol}`);
   const cellB = document.getElementById(`cell-${newBrow}-${newBcol}`);
@@ -499,6 +528,7 @@ function rotateDomino(domino, clickX, clickY) {
     return false;
   }
 
+  // Anchor = top-left of the two cells
   const newRow = Math.min(newArow, newBrow);
   const newCol = Math.min(newAcol, newBcol);
 
@@ -508,72 +538,4 @@ function rotateDomino(domino, clickX, clickY) {
   const sim = domino.cloneNode(true);
   sim.classList.remove("horizontal", "vertical");
   sim.classList.add(newOrientation);
-  sim.dataset.boardRow = newRow;
-  sim.dataset.boardCol = newCol;
-  sim.dataset.boardOrientation = newOrientation;
-
-  const valid = validateGridPlacement(newRow, newCol, newOrientation, sim, { simulate: true });
-
-  if (!valid) {
-    console.warn("Rotation invalid for domino", domino.dataset.index);
-    return false;
-  }
-
-  // ------------------------------------------------------------
-  // Commit rotation
-  // ------------------------------------------------------------
-  domino.dataset.boardRow = newRow;
-  domino.dataset.boardCol = newCol;
-  domino.dataset.boardOrientation = newOrientation;
-
-  domino.classList.remove("horizontal", "vertical");
-  domino.classList.add(newOrientation);
-
-  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-  const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-
-  domino.style.left = `${newCol * (cellSize + cellGap)}px`;
-  domino.style.top = `${newRow * (cellSize + cellGap)}px`;
-
-  return true;
-}
-
-function endRotationSession(domino) {
-  if (!rotationSession.active) return;
-
-  console.log("Ending rotation session for", domino.dataset.index);
-
-  rotationSession.active = false;
-  rotationSession.domino = null;
-  rotationSession.originalLeft = null;
-  rotationSession.originalTop = null;
-  rotationSession.originalOrientation = null;
-}
-
-function revertDomino(domino) {
-  domino.style.left = rotationSession.originalLeft;
-  domino.style.top = rotationSession.originalTop;
-
-  const wasVertical = rotationSession.originalOrientation === "vertical";
-
-  domino.classList.toggle("vertical", wasVertical);
-  domino.classList.toggle("horizontal", !wasVertical);
-}
-
-
-/* ============================================================
-   VALIDATION HELPERS
-   ============================================================ */
-
-function flashInvalid(domino) {
-  domino.classList.add("cell-invalid");
-  setTimeout(() => domino.classList.remove("cell-invalid"), 300);
-}
-
-function clearDominoFromBoard(domino) {
-  for (const key in boardOccupancy) {
-    if (boardOccupancy[key] === domino) {
-      delete boardOccupancy[key];
-    }
-  }
-}
+  sim.dataset.boardRow
