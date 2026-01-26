@@ -57,7 +57,7 @@ function buildGrid(rows, cols) {
    Draws NYT-style region overlays on top of the grid.
    Each region is a bounding rectangle with a badge.
    ============================================================ */
-
+/*
 function drawRegions(regionList) {
   const regionLayer = document.getElementById("region-layer");
   regionLayer.innerHTML = "";
@@ -103,7 +103,7 @@ function drawRegions(regionList) {
 
   console.log("Regions drawn:", regionList.length);
 }
-
+ */
 
 /* ============================================================
    DOMINO GENERATOR
