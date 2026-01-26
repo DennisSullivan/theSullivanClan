@@ -152,15 +152,18 @@ body {
 
 .region-badge {
   position: absolute;
-  background: var(--badge-bg);
-  color: var(--badge-text);
-  border: 1.5px solid var(--badge-border);
-  border-radius: 5px;
-  padding: 1px 5px;
-  font-size: 13px;
+  top: -10px;      /* move badge upward */
+  left: -10px;     /* move badge leftward */
+  padding: 2px 6px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  border: 1.5px solid var(--badge-border);
+  color: var(--badge-text);
   box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  pointer-events: none;
   z-index: 999;
 }
 
@@ -342,20 +345,6 @@ body {
   transform: scale(1.06);
   box-shadow: 0 4px 10px rgba(0,0,0,0.25);
   transition: transform 120ms ease, box-shadow 120ms ease;
-}
-
-/* NYT-style badge offset */
-.region-badge {
-  position: absolute;
-  top: -10px;     /* move badge upward */
-  left: -10px;    /* move badge leftward */
-  padding: 2px 6px;
-  font-size: 12px;
-  border-radius: 999px;
-  background: var(--badge-bg);
-  border: 1px solid var(--badge-border);
-  color: var(--badge-text);
-  pointer-events: none;
 }
 
 
