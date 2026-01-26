@@ -545,22 +545,19 @@ function rotateDomino(domino, clickX, clickY) {
   // Commit new placement
   validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: false });
    // ------------------------------------------------------------
-   // Ensure pip-groups match the final top-left / bottom-right order
+   // Ensure pip-groups keep the clicked cell's value in place
+   // Rule: the pip in the pivot cell must not jump to the other cell.
    // ------------------------------------------------------------
    const g1 = domino.children[0];
    const g2 = domino.children[1];
    
-   // Final two cells after rotation
-   const final1 = { row: newCell1Row, col: newCell1Col };
-   const final2 = { row: newCell2Row, col: newCell2Col };
+   // Before rotation, cell1 is (cell1Row, cell1Col), cell2 is (cell2Row, cell2Col).
+   // The pivot cell is (pivotRow, pivotCol).
+   const pivotIsCell1 = (pivotRow === cell1Row && pivotCol === cell1Col);
    
-   // Determine which cell is top-left
-   const firstIsTopLeft =
-     final1.row < final2.row ||
-     (final1.row === final2.row && final1.col < final2.col);
-   
-   // If g1 is NOT the top-left cell, swap them
-   if (!firstIsTopLeft) {
+   // If the pivot was cell2, swap groups so that the pivot's value
+   // stays with the pivot cell through the rotation.
+   if (!pivotIsCell1) {
      domino.insertBefore(g2, g1);
    }
 
