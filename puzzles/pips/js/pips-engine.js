@@ -58,6 +58,7 @@ function drawRegions(regionList) {
   regionList.forEach((region, index) => {
     const regionDiv = document.createElement("div");
     regionDiv.classList.add("region-cell");
+    regionDiv.dataset.region = index;
 
     const rows = region.map(c => c[0]);
     const cols = region.map(c => c[1]);
