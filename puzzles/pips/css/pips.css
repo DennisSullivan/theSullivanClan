@@ -83,6 +83,22 @@ body {
 #badge-layer { z-index: 300; }
 #region-layer { z-index: 200; }
 
+/* ============================================================
+   LAYERING FIX — GRID, REGIONS, BADGES, DOMINOS
+   ============================================================ */
+
+#region-layer,
+#badge-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Ensure dominos always sit above regions and grid */
+.domino {
+  z-index: 400;
+}
+
 /* ------------------------------
    GRID
    ------------------------------ */
