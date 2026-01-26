@@ -124,9 +124,8 @@ function loadPuzzle(puzzle) {
   clearBoard();
   buildBoardFromPuzzle(puzzle);
   applyBlockedCells(puzzle);
-   buildRegionOverlays(puzzle);
-   buildRegionBadges(puzzle);
-   applyStartingDominos(puzzle);
+  buildRegionOverlays(puzzle);
+  applyStartingDominos(puzzle);
 
   logBoardOccupancy();
 }
