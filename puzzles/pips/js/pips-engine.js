@@ -494,15 +494,15 @@ function rotateDomino(domino, clickX, clickY) {
     }
   }
 
-  // Vector from pivot to the other cell
-  const dRow = otherRow - pivotRow;
-  const dCol = otherCol - pivotCol;
+   // Vector from pivot to the other cell
+   const dRow = otherRow - pivotRow;
+   const dCol = otherCol - pivotCol;
+   
+   // Clockwise rotation in row-down, col-right grid: (dr, dc) -> (dc, -dr)
+   const newOtherRow = pivotRow + dCol;
+   const newOtherCol = pivotCol - dRow;
 
-  // Clockwise rotation of that vector: (dr, dc) -> (-dc, dr)
-  const newOtherRow = pivotRow - dCol;
-  const newOtherCol = pivotCol + dRow;
-
-  // New two cells after rotation
+   // New two cells after rotation
   const newCell1Row = pivotRow;
   const newCell1Col = pivotCol;
   const newCell2Row = newOtherRow;
