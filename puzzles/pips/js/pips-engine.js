@@ -439,59 +439,57 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   // ------------------------------------------------------------
-  // BOARD ROTATION — full NYT logic
+  // BOARD ROTATION — remove old occupancy first
   // ------------------------------------------------------------
-  clearDominoFromBoard(domino);
+  const oldRow = parseInt(domino.dataset.boardRow, 10);
+  const oldCol = parseInt(domino.dataset.boardCol, 10);
+  const oldOrientation = domino.dataset.boardOrientation;
 
-  const row = parseInt(domino.dataset.boardRow, 10);
-  const col = parseInt(domino.dataset.boardCol, 10);
-  const orientation = domino.dataset.boardOrientation;
+  // Remove old occupancy (replacement for clearDominoFromBoard)
+  if (oldOrientation === "horizontal") {
+    delete boardOccupancy[`${oldRow},${oldCol}`];
+    delete boardOccupancy[`${oldRow},${oldCol + 1}`];
+  } else {
+    delete boardOccupancy[`${oldRow},${oldCol}`];
+    delete boardOccupancy[`${oldRow + 1},${oldCol}`];
+  }
 
+  // ------------------------------------------------------------
   // Compute click position relative to domino
+  // ------------------------------------------------------------
   const rect = domino.getBoundingClientRect();
   const localX = clickX - rect.left;
   const localY = clickY - rect.top;
 
-  console.log("CLICK DEBUG:", {
-    clickX,
-    clickY,
-    rectLeft: rect.left,
-    rectTop: rect.top,
-    rectWidth: rect.width,
-    rectHeight: rect.height,
-    localX,
-    localY
-  });
-
   // Determine clicked half (A or B)
   let clickedCell;
-  if (orientation === "horizontal") {
+  if (oldOrientation === "horizontal") {
     clickedCell = (localX < rect.width / 2) ? "A" : "B";
   } else {
     clickedCell = (localY < rect.height / 2) ? "A" : "B";
   }
 
-  // Compute current A/B cell coordinates
+  // Current A/B cell coordinates
   let Arow, Acol, Brow, Bcol;
-  if (orientation === "horizontal") {
-    Arow = row;       Acol = col;
-    Brow = row;       Bcol = col + 1;
+  if (oldOrientation === "horizontal") {
+    Arow = oldRow;     Acol = oldCol;
+    Brow = oldRow;     Bcol = oldCol + 1;
   } else {
-    Arow = row;       Acol = col;
-    Brow = row + 1;   Bcol = col;
+    Arow = oldRow;     Acol = oldCol;
+    Brow = oldRow + 1; Bcol = oldCol;
   }
 
   // Pivot = clicked half
-  let pivotRow = (clickedCell === "A") ? Arow : Brow;
-  let pivotCol = (clickedCell === "A") ? Acol : Bcol;
+  const pivotRow = (clickedCell === "A") ? Arow : Brow;
+  const pivotCol = (clickedCell === "A") ? Acol : Bcol;
 
   // New orientation
-  const newOrientation = (orientation === "horizontal") ? "vertical" : "horizontal";
+  const newOrientation = (oldOrientation === "horizontal") ? "vertical" : "horizontal";
 
-  // Compute new A/B positions after rotation
+  // Compute new A/B positions
   let newArow, newAcol, newBrow, newBcol;
 
-  if (orientation === "horizontal") {
+  if (oldOrientation === "horizontal") {
     if (clickedCell === "A") {
       newArow = pivotRow;
       newAcol = pivotCol;
@@ -517,14 +515,14 @@ function rotateDomino(domino, clickX, clickY) {
     }
   }
 
-  // ------------------------------------------------------------
-  // NYT RULE: both final cells must be on-board
-  // ------------------------------------------------------------
+  // On-board check
   const cellA = document.getElementById(`cell-${newArow}-${newAcol}`);
   const cellB = document.getElementById(`cell-${newBrow}-${newBcol}`);
 
   if (!cellA || !cellB) {
     console.warn("Rotation invalid: off-board final position");
+    // restore old occupancy
+    validateGridPlacement(oldRow, oldCol, oldOrientation, domino, { simulate: false });
     return false;
   }
 
@@ -532,37 +530,21 @@ function rotateDomino(domino, clickX, clickY) {
   const newRow = Math.min(newArow, newBrow);
   const newCol = Math.min(newAcol, newBcol);
 
-  // ------------------------------------------------------------
-  // Validate placement using simulated domino
-  // ------------------------------------------------------------
-  const sim = domino.cloneNode(true);
-  sim.classList.remove("horizontal", "vertical");
-  sim.classList.add(newOrientation);
-  sim.dataset.boardRow
-  sim.dataset.boardRow = newRow;
-  sim.dataset.boardCol = newCol;
-  sim.dataset.boardOrientation = newOrientation;
-
-  const valid = validateGridPlacement(newRow, newCol, newOrientation, sim, { simulate: true });
+  // Simulate placement
+  const valid = validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: true });
 
   if (!valid) {
     console.warn("Rotation invalid for domino", domino.dataset.index);
+    // restore old occupancy
+    validateGridPlacement(oldRow, oldCol, oldOrientation, domino, { simulate: false });
     return false;
   }
 
   // Commit rotation
-  domino.dataset.boardRow = newRow;
-  domino.dataset.boardCol = newCol;
-  domino.dataset.boardOrientation = newOrientation;
+  validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: false });
 
   domino.classList.remove("horizontal", "vertical");
   domino.classList.add(newOrientation);
-
-  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-  const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-
-  domino.style.left = `${newCol * (cellSize + cellGap)}px`;
-  domino.style.top = `${newRow * (cellSize + cellGap)}px`;
 
   return true;
 }
