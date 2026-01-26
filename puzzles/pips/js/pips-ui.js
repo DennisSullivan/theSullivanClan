@@ -190,7 +190,8 @@ function drag(e) {
    END DRAG → TRY TO PLACE
    ------------------------------------------------------------ */
 function endDrag(e) {
-   clearHighlights();
+  clearHighlights();
+  clearSelection();
   if (!dragState) return;
 
   if (!dragState.dragging) {
@@ -263,7 +264,6 @@ function endDrag(e) {
      delete activeDomino.dataset.boardOrientation;
   }
 
-  clearSelection();
   dragState = null;
   activeDomino = null;
 }
