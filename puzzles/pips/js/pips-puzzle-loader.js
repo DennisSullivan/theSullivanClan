@@ -200,6 +200,10 @@ function buildRegionOverlays(puzzle) {
   puzzle.regions.forEach(region => {
     const cellSet = new Set(region.cells.map(c => `${c.row},${c.col}`));
 
+    // Find top-left cell for badge placement
+    const minRow = Math.min(...region.cells.map(c => c.row));
+    const minCol = Math.min(...region.cells.map(c => c.col));
+
     region.cells.forEach(cell => {
       const key = `${cell.row},${cell.col}`;
 
@@ -212,20 +216,25 @@ function buildRegionOverlays(puzzle) {
       div.style.width = `${cellSize}px`;
       div.style.height = `${cellSize}px`;
 
-      const topKey = `${cell.row - 1},${cell.col}`;
-      const bottomKey = `${cell.row + 1},${cell.col}`;
-      const leftKey = `${cell.row},${cell.col - 1}`;
-      const rightKey = `${cell.row},${cell.col + 1}`;
+      // Merge borders with neighbors
+      if (cellSet.has(`${cell.row - 1},${cell.col}`)) div.style.borderTop = "none";
+      if (cellSet.has(`${cell.row + 1},${cell.col}`)) div.style.borderBottom = "none";
+      if (cellSet.has(`${cell.row},${cell.col - 1}`)) div.style.borderLeft = "none";
+      if (cellSet.has(`${cell.row},${cell.col + 1}`)) div.style.borderRight = "none";
 
-      if (cellSet.has(topKey)) div.style.borderTop = "none";
-      if (cellSet.has(bottomKey)) div.style.borderBottom = "none";
-      if (cellSet.has(leftKey)) div.style.borderLeft = "none";
-      if (cellSet.has(rightKey)) div.style.borderRight = "none";
+      // Add badge only to top-left cell
+      if (cell.row === minRow && cell.col === minCol) {
+        const badge = document.createElement("div");
+        badge.classList.add("region-badge");
+        badge.textContent = region.rule || String.fromCharCode(65 + region.id);
+        div.appendChild(badge);
+      }
 
       regionLayer.appendChild(div);
     });
   });
 }
+
 
 /* ------------------------------------------------------------
    Building Badges
