@@ -539,3 +539,30 @@ function rotateDomino(domino, clickX, clickY) {
   sim.classList.remove("horizontal", "vertical");
   sim.classList.add(newOrientation);
   sim.dataset.boardRow
+  sim.dataset.boardRow = newRow;
+  sim.dataset.boardCol = newCol;
+  sim.dataset.boardOrientation = newOrientation;
+
+  const valid = validateGridPlacement(newRow, newCol, newOrientation, sim, { simulate: true });
+
+  if (!valid) {
+    console.warn("Rotation invalid for domino", domino.dataset.index);
+    return false;
+  }
+
+  // Commit rotation
+  domino.dataset.boardRow = newRow;
+  domino.dataset.boardCol = newCol;
+  domino.dataset.boardOrientation = newOrientation;
+
+  domino.classList.remove("horizontal", "vertical");
+  domino.classList.add(newOrientation);
+
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+
+  domino.style.left = `${newCol * (cellSize + cellGap)}px`;
+  domino.style.top = `${newRow * (cellSize + cellGap)}px`;
+
+  return true;
+}
