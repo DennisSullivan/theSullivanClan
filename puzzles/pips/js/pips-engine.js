@@ -380,35 +380,51 @@ function startRotationSession(domino) {
 //  NYT‑STYLE CLOCKWISE ROTATION AROUND CLICKED CELL
 // ============================================================
 function rotateDomino(domino, clickX, clickY) {
-  console.log("NYT ROTATION ENGINE ACTIVE");
+  const rect = domino.getBoundingClientRect();
+  const localX = clickX - rect.left;
+  const localY = clickY - rect.top;
 
-  // ------------------------------------------------------------
-  // TRAY ROTATION — ALWAYS ALLOWED (NYT BEHAVIOR)
-  // ------------------------------------------------------------
-  const isOnBoard =
-    domino.dataset.boardRow !== undefined &&
-    domino.dataset.boardCol !== undefined;
+  const isVertical = domino.classList.contains("vertical");
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
 
-  if (!isOnBoard) {
-    console.log("TRAY ROTATION: always allowed (NYT style)");
+  const half = isVertical
+    ? (localY < cellSize ? "top" : "bottom")
+    : (localX < cellSize ? "left" : "right");
 
-    // Ensure a known starting orientation so FIRST rotation is visible
-    if (
-      !domino.classList.contains("horizontal") &&
-      !domino.classList.contains("vertical")
-    ) {
-      domino.classList.add("horizontal");
+  const pivotOffset = (() => {
+    if (isVertical) {
+      return half === "top"
+        ? { dx: 0, dy: 0 }
+        : { dx: 0, dy: -(cellSize + gap) };
+    } else {
+      return half === "left"
+        ? { dx: 0, dy: 0 }
+        : { dx: -(cellSize + gap), dy: 0 };
     }
+  })();
 
-    const newOrientation = domino.classList.contains("horizontal")
-      ? "vertical"
-      : "horizontal";
+  const root = document.getElementById("pips-root");
+  const rootRect = root.getBoundingClientRect();
 
-    domino.classList.remove("horizontal", "vertical");
-    domino.classList.add(newOrientation);
+  const oldLeft = rect.left - rootRect.left;
+  const oldTop = rect.top - rootRect.top;
 
-    return true;
+  const newLeft = oldLeft + pivotOffset.dx;
+  const newTop = oldTop + pivotOffset.dy;
+
+  if (isVertical) {
+    domino.classList.remove("vertical");
+    domino.classList.add("horizontal");
+  } else {
+    domino.classList.remove("horizontal");
+    domino.classList.add("vertical");
   }
+
+  domino.style.left = `${newLeft}px`;
+  domino.style.top = `${newTop}px`;
+}
+
 
   // ------------------------------------------------------------
   // BOARD ROTATION — FULL NYT LOGIC
