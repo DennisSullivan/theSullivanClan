@@ -372,7 +372,7 @@ function tryPlaceDomino(domino, options = {}) {
    ROTATION — NYT‑STYLE SESSION SYSTEM
    Tracks original position so invalid rotations can revert.
    ============================================================ */
-
+/*
 let rotationSession = {
   active: false,
   domino: null,
@@ -392,7 +392,7 @@ function startRotationSession(domino) {
 
   console.log("Rotation session started for", domino.dataset.index);
 }
-
+ */
 
 /* ============================================================
    NYT‑STYLE CLOCKWISE ROTATION AROUND CLICKED CELL
