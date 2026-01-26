@@ -26,11 +26,10 @@ function logBoardOccupancy() {
    ============================================================ */
 
 function buildGrid(rows, cols) {
-  const grid = document.getElementById("pips-root");
+  const grid = document.getElementById("pips-grid");
   grid.innerHTML = "";
 
   grid.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
-  grid.style.gridTemplateRows = `repeat(${rows}, var(--cell-size))`;
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -56,7 +55,7 @@ function drawRegions(regionList) {
 
   regionList.forEach((region, index) => {
     const regionDiv = document.createElement("div");
-    regionDiv.classList.add("region-cell");
+    regionDiv.classList.add("region");
 
     const rows = region.map(c => c[0]);
     const cols = region.map(c => c[1]);
@@ -80,7 +79,7 @@ function drawRegions(regionList) {
     regionDiv.style.height = `${height}px`;
 
     const label = document.createElement("div");
-    label.classList.add("region-badge");
+    label.classList.add("region-label");
     label.textContent = String.fromCharCode(65 + index);
 
     regionDiv.appendChild(label);
@@ -381,58 +380,59 @@ function startRotationSession(domino) {
 //  NYT‑STYLE CLOCKWISE ROTATION AROUND CLICKED CELL
 // ============================================================
 function rotateDomino(domino, clickX, clickY) {
-  const rect = domino.getBoundingClientRect();
-  const localX = clickX - rect.left;
-  const localY = clickY - rect.top;
+  console.log("NYT ROTATION ENGINE ACTIVE");
 
-  const isVertical = domino.classList.contains("vertical");
-  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-  const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-
-  const half = isVertical
-    ? (localY < cellSize ? "A" : "B")
-    : (localX < cellSize ? "A" : "B");
-
-  const pivotOffset = (() => {
-    if (isVertical) {
-      return half === "A"
-        ? { dx: 0, dy: 0 }
-        : { dx: 0, dy: -(cellSize + gap) };
-    } else {
-      return half === "A"
-        ? { dx: 0, dy: 0 }
-        : { dx: -(cellSize + gap), dy: 0 };
-    }
-  })();
-
-  const root = document.getElementById("pips-root");
-  const rootRect = root.getBoundingClientRect();
-
-  const oldLeft = rect.left - rootRect.left;
-  const oldTop = rect.top - rootRect.top;
-
-  const newLeft = oldLeft + pivotOffset.dx;
-  const newTop = oldTop + pivotOffset.dy;
-
+  // ------------------------------------------------------------
+  // TRAY ROTATION — ALWAYS ALLOWED (NYT BEHAVIOR)
+  // ------------------------------------------------------------
   const isOnBoard =
     domino.dataset.boardRow !== undefined &&
     domino.dataset.boardCol !== undefined;
 
   if (!isOnBoard) {
-    domino.classList.toggle("horizontal");
-    domino.classList.toggle("vertical");
+    console.log("TRAY ROTATION: always allowed (NYT style)");
 
-    domino.style.left = `${newLeft}px`;
-    domino.style.top = `${newTop}px`;
+    // Ensure a known starting orientation so FIRST rotation is visible
+    if (
+      !domino.classList.contains("horizontal") &&
+      !domino.classList.contains("vertical")
+    ) {
+      domino.classList.add("horizontal");
+    }
+
+    const newOrientation = domino.classList.contains("horizontal")
+      ? "vertical"
+      : "horizontal";
+
+    domino.classList.remove("horizontal", "vertical");
+    domino.classList.add(newOrientation);
 
     return true;
   }
 
+  // ------------------------------------------------------------
+  // BOARD ROTATION — FULL NYT LOGIC
+  // ------------------------------------------------------------
   clearDominoFromBoard(domino);
 
   const row = parseInt(domino.dataset.boardRow, 10);
   const col = parseInt(domino.dataset.boardCol, 10);
   const orientation = domino.dataset.boardOrientation;
+
+  const rect = domino.getBoundingClientRect();
+  const localX = clickX - rect.left;
+  const localY = clickY - rect.top;
+
+  console.log("CLICK DEBUG:", {
+    clickX,
+    clickY,
+    rectLeft: rect.left,
+    rectTop: rect.top,
+    rectWidth: rect.width,
+    rectHeight: rect.height,
+    localX,
+    localY
+  });
 
   let clickedCell;
 
@@ -485,16 +485,23 @@ function rotateDomino(domino, clickX, clickY) {
     }
   }
 
+  // ------------------------------------------------------------
+  // NYT RULE: Both final cells must be on-board
+  // ------------------------------------------------------------
   const cellA = document.getElementById(`cell-${newArow}-${newAcol}`);
   const cellB = document.getElementById(`cell-${newBrow}-${newBcol}`);
 
   if (!cellA || !cellB) {
+    console.warn("Rotation invalid: off-board final position");
     return false;
   }
 
   const newRow = Math.min(newArow, newBrow);
   const newCol = Math.min(newAcol, newBcol);
 
+  // ------------------------------------------------------------
+  // Validate placement using simulated domino
+  // ------------------------------------------------------------
   const sim = domino.cloneNode(true);
   sim.classList.remove("horizontal", "vertical");
   sim.classList.add(newOrientation);
@@ -505,9 +512,13 @@ function rotateDomino(domino, clickX, clickY) {
   const valid = validateGridPlacement(newRow, newCol, newOrientation, sim, { simulate: true });
 
   if (!valid) {
+    console.warn("Rotation invalid for domino", domino.dataset.index);
     return false;
   }
 
+  // ------------------------------------------------------------
+  // Commit rotation
+  // ------------------------------------------------------------
   domino.dataset.boardRow = newRow;
   domino.dataset.boardCol = newCol;
   domino.dataset.boardOrientation = newOrientation;
@@ -515,12 +526,14 @@ function rotateDomino(domino, clickX, clickY) {
   domino.classList.remove("horizontal", "vertical");
   domino.classList.add(newOrientation);
 
-  domino.style.left = `${newCol * (cellSize + gap)}px`;
-  domino.style.top = `${newRow * (cellSize + gap)}px`;
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+
+  domino.style.left = `${newCol * (cellSize + cellGap)}px`;
+  domino.style.top = `${newRow * (cellSize + cellGap)}px`;
 
   return true;
 }
-
 
 function endRotationSession(domino) {
   if (!rotationSession.active) return;
@@ -561,4 +574,3 @@ function clearDominoFromBoard(domino) {
     }
   }
 }
-
