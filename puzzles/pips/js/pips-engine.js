@@ -389,16 +389,16 @@ function rotateDomino(domino, clickX, clickY) {
   const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
 
   const half = isVertical
-    ? (localY < cellSize ? "top" : "bottom")
-    : (localX < cellSize ? "left" : "right");
+    ? (localY < cellSize ? "A" : "B")
+    : (localX < cellSize ? "A" : "B");
 
   const pivotOffset = (() => {
     if (isVertical) {
-      return half === "top"
+      return half === "A"
         ? { dx: 0, dy: 0 }
         : { dx: 0, dy: -(cellSize + gap) };
     } else {
-      return half === "left"
+      return half === "A"
         ? { dx: 0, dy: 0 }
         : { dx: -(cellSize + gap), dy: 0 };
     }
@@ -413,18 +413,112 @@ function rotateDomino(domino, clickX, clickY) {
   const newLeft = oldLeft + pivotOffset.dx;
   const newTop = oldTop + pivotOffset.dy;
 
-  if (isVertical) {
-    domino.classList.remove("vertical");
-    domino.classList.add("horizontal");
-  } else {
-    domino.classList.remove("horizontal");
-    domino.classList.add("vertical");
+  const isOnBoard =
+    domino.dataset.boardRow !== undefined &&
+    domino.dataset.boardCol !== undefined;
+
+  if (!isOnBoard) {
+    domino.classList.toggle("horizontal");
+    domino.classList.toggle("vertical");
+
+    domino.style.left = `${newLeft}px`;
+    domino.style.top = `${newTop}px`;
+
+    return true;
   }
 
-  domino.style.left = `${newLeft}px`;
-  domino.style.top = `${newTop}px`;
-}
+  clearDominoFromBoard(domino);
 
+  const row = parseInt(domino.dataset.boardRow, 10);
+  const col = parseInt(domino.dataset.boardCol, 10);
+  const orientation = domino.dataset.boardOrientation;
+
+  let clickedCell;
+
+  if (orientation === "horizontal") {
+    clickedCell = (localX < rect.width / 2) ? "A" : "B";
+  } else {
+    clickedCell = (localY < rect.height / 2) ? "A" : "B";
+  }
+
+  let Arow, Acol, Brow, Bcol;
+
+  if (orientation === "horizontal") {
+    Arow = row;       Acol = col;
+    Brow = row;       Bcol = col + 1;
+  } else {
+    Arow = row;       Acol = col;
+    Brow = row + 1;   Bcol = col;
+  }
+
+  let pivotRow = (clickedCell === "A") ? Arow : Brow;
+  let pivotCol = (clickedCell === "A") ? Acol : Bcol;
+
+  const newOrientation = (orientation === "horizontal") ? "vertical" : "horizontal";
+
+  let newArow, newAcol, newBrow, newBcol;
+
+  if (orientation === "horizontal") {
+    if (clickedCell === "A") {
+      newArow = pivotRow;
+      newAcol = pivotCol;
+      newBrow = pivotRow + 1;
+      newBcol = pivotCol;
+    } else {
+      newBrow = pivotRow;
+      newBcol = pivotCol;
+      newArow = pivotRow - 1;
+      newAcol = pivotCol;
+    }
+  } else {
+    if (clickedCell === "A") {
+      newArow = pivotRow;
+      newAcol = pivotCol;
+      newBrow = pivotRow;
+      newBcol = pivotCol - 1;
+    } else {
+      newBrow = pivotRow;
+      newBcol = pivotCol;
+      newArow = pivotRow;
+      newAcol = pivotCol + 1;
+    }
+  }
+
+  const cellA = document.getElementById(`cell-${newArow}-${newAcol}`);
+  const cellB = document.getElementById(`cell-${newBrow}-${newBcol}`);
+
+  if (!cellA || !cellB) {
+    return false;
+  }
+
+  const newRow = Math.min(newArow, newBrow);
+  const newCol = Math.min(newAcol, newBcol);
+
+  const sim = domino.cloneNode(true);
+  sim.classList.remove("horizontal", "vertical");
+  sim.classList.add(newOrientation);
+  sim.dataset.boardRow = newRow;
+  sim.dataset.boardCol = newCol;
+  sim.dataset.boardOrientation = newOrientation;
+
+  const valid = validateGridPlacement(newRow, newCol, newOrientation, sim, { simulate: true });
+
+  if (!valid) {
+    return false;
+  }
+
+  domino.dataset.boardRow = newRow;
+  domino.dataset.boardCol = newCol;
+  domino.dataset.boardOrientation = newOrientation;
+
+  domino.classList.remove("horizontal", "vertical");
+  domino.classList.add(newOrientation);
+
+  domino.style.left = `${newCol * (cellSize + gap)}px`;
+  domino.style.top = `${newRow * (cellSize + gap)}px`;
+
+  return true;
+}
 
   // ------------------------------------------------------------
   // BOARD ROTATION — FULL NYT LOGIC
