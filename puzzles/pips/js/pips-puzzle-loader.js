@@ -124,9 +124,8 @@ function loadPuzzle(puzzle) {
   clearBoard();
   buildBoardFromPuzzle(puzzle);
   applyBlockedCells(puzzle);
-   buildRegionOverlays(puzzle);
-   buildRegionBadges(puzzle);
-   applyStartingDominos(puzzle);
+  drawRegions(puzzle.regions.map(r => r.cells.map(c => [c.row, c.col])));
+  applyStartingDominos(puzzle);
 
   logBoardOccupancy();
 }
@@ -193,76 +192,6 @@ function applyBlockedCells(puzzle) {
   });
 }
 
-function buildRegionOverlays(puzzle) {
-  const regionLayer = document.getElementById("region-layer");
-  regionLayer.innerHTML = "";
-
-  puzzle.regions.forEach(region => {
-    const cellSet = new Set(region.cells.map(c => `${c.row},${c.col}`));
-
-    region.cells.forEach(cell => {
-      const key = `${cell.row},${cell.col}`;
-
-      const div = document.createElement("div");
-      div.classList.add("region-cell", `region-${region.id}`);
-
-      div.style.left = `${cell.col * (cellSize + cellGap)}px`;
-      div.style.top = `${cell.row * (cellSize + cellGap)}px`;
-      div.style.width = `${cellSize}px`;
-      div.style.height = `${cellSize}px`;
-
-      const topKey = `${cell.row - 1},${cell.col}`;
-      const bottomKey = `${cell.row + 1},${cell.col}`;
-      const leftKey = `${cell.row},${cell.col - 1}`;
-      const rightKey = `${cell.row},${cell.col + 1}`;
-
-      if (cellSet.has(topKey)) div.style.borderTop = "none";
-      if (cellSet.has(bottomKey)) div.style.borderBottom = "none";
-      if (cellSet.has(leftKey)) div.style.borderLeft = "none";
-      if (cellSet.has(rightKey)) div.style.borderRight = "none";
-
-      regionLayer.appendChild(div);
-    });
-  });
-}
-
-/* ------------------------------------------------------------
-   Building Badges
-   ------------------------------------------------------------ */
-function buildRegionBadges(puzzle) {
-  const badgeLayer = document.getElementById("badge-layer");
-  badgeLayer.innerHTML = "";
-
-  // Read CSS variables
-  const wrapperPadding = 10; // matches #pips-root-wrapper padding
-
-  puzzle.regions.forEach(region => {
-    const badge = document.createElement("div");
-    const regionId = region.id.toString().trim().toUpperCase();
-    badge.classList.add("region-badge", `region-${regionId}`);
-    badge.textContent = region.rule || "";
-
-    // Find the top-left-most cell of the region
-    const minRow = Math.min(...region.cells.map(c => c.row));
-    const minCol = Math.min(...region.cells.map(c => c.col));
-
-    // Compute pixel position
-    const top =
-      wrapperPadding +
-      minRow * (cellSize + cellGap) -
-      18; // badge offset
-
-    const left =
-      wrapperPadding +
-      minCol * (cellSize + cellGap) -
-      18; // badge offset
-
-    badge.style.top = top + "px";
-    badge.style.left = left + "px";
-
-    badgeLayer.appendChild(badge);
-  });
-}
 
 /* ------------------------------------------------------------
    APPLY STARTING DOMINOS
