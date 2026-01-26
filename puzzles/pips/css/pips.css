@@ -145,6 +145,25 @@ body {
   pointer-events: none;
 }
 
+
+/* ------------------------------
+   REGION BADGES (NYT STYLE)
+   ------------------------------ */
+
+.region-badge {
+  position: absolute;
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  border: 1.5px solid var(--badge-border);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  z-index: 999;
+}
+
 /* NYT-style region colors */
 .region-cell[data-region="0"] { 
   background: rgba(255, 200, 0, 0.25);
@@ -211,24 +230,6 @@ body {
   background: #fff4e6;
   border-color: rgba(255, 180, 80, 0.8);
   color: #000;
-}
-
-/* ------------------------------
-   REGION BADGES (NYT STYLE)
-   ------------------------------ */
-
-.region-badge {
-  position: absolute;
-  background: var(--badge-bg);
-  color: var(--badge-text);
-  border: 1.5px solid var(--badge-border);
-  border-radius: 5px;
-  padding: 1px 5px;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-  z-index: 999;
 }
 
 /* ------------------------------
