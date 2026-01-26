@@ -395,31 +395,29 @@ function startRotationSession(domino) {
  */
 
 /* ============================================================
-   NYT‑STYLE CLOCKWISE ROTATION AROUND CLICKED CELL
-   This is the most complex part of the engine.
-   Steps:
-   1. Determine clicked half (A or B)
-   2. Compute pivot cell
-   3. Compute new orientation
-   4. Compute new A/B cell positions
-   5. Validate via simulate mode
-   6. Commit if valid
+   ROTATION — NYT-STYLE AROUND CLICKED CELL
+   Rule:
+   - A domino always occupies exactly two grid cells.
+   - When you double-click on a domino on the board:
+       • The clicked cell becomes the pivot and stays fixed.
+       • The other cell rotates one step clockwise around the pivot.
+   - Rotation is allowed only if the final two cells:
+       • are on the board, and
+       • do not overlap another domino.
+   - Tray dominos simply toggle orientation with no grid logic.
    ============================================================ */
 
 function rotateDomino(domino, clickX, clickY) {
   console.log("NYT ROTATION ENGINE ACTIVE");
 
   // ------------------------------------------------------------
-  // TRAY ROTATION — always allowed
+  // TRAY ROTATION — always allowed, no grid constraints
   // ------------------------------------------------------------
   const isOnBoard =
     domino.dataset.boardRow !== undefined &&
     domino.dataset.boardCol !== undefined;
 
   if (!isOnBoard) {
-    console.log("TRAY ROTATION: always allowed (NYT style)");
-
-    // Ensure known starting orientation
     if (
       !domino.classList.contains("horizontal") &&
       !domino.classList.contains("vertical")
@@ -427,120 +425,124 @@ function rotateDomino(domino, clickX, clickY) {
       domino.classList.add("horizontal");
     }
 
-    // Toggle orientation
     const newOrientation = domino.classList.contains("horizontal")
       ? "vertical"
       : "horizontal";
 
     domino.classList.remove("horizontal", "vertical");
     domino.classList.add(newOrientation);
-
     return true;
   }
 
   // ------------------------------------------------------------
-  // BOARD ROTATION — remove old occupancy first
+  // BOARD ROTATION — clicked cell stays fixed, other rotates CW
   // ------------------------------------------------------------
+
   const oldRow = parseInt(domino.dataset.boardRow, 10);
   const oldCol = parseInt(domino.dataset.boardCol, 10);
   const oldOrientation = domino.dataset.boardOrientation;
 
-  // Remove old occupancy (replacement for clearDominoFromBoard)
+  // Current two occupied cells
+  let cell1Row = oldRow;
+  let cell1Col = oldCol;
+  let cell2Row, cell2Col;
+
   if (oldOrientation === "horizontal") {
-    delete boardOccupancy[`${oldRow},${oldCol}`];
-    delete boardOccupancy[`${oldRow},${oldCol + 1}`];
+    cell2Row = oldRow;
+    cell2Col = oldCol + 1;
   } else {
-    delete boardOccupancy[`${oldRow},${oldCol}`];
-    delete boardOccupancy[`${oldRow + 1},${oldCol}`];
+    cell2Row = oldRow + 1;
+    cell2Col = oldCol;
   }
 
-  // ------------------------------------------------------------
-  // Compute click position relative to domino
-  // ------------------------------------------------------------
+  // Determine which of the two cells was clicked (pivot)
   const rect = domino.getBoundingClientRect();
   const localX = clickX - rect.left;
   const localY = clickY - rect.top;
 
-  // Determine clicked half (A or B)
-  let clickedCell;
-  if (oldOrientation === "horizontal") {
-    clickedCell = (localX < rect.width / 2) ? "A" : "B";
-  } else {
-    clickedCell = (localY < rect.height / 2) ? "A" : "B";
-  }
-
-  // Current A/B cell coordinates
-  let Arow, Acol, Brow, Bcol;
-  if (oldOrientation === "horizontal") {
-    Arow = oldRow;     Acol = oldCol;
-    Brow = oldRow;     Bcol = oldCol + 1;
-  } else {
-    Arow = oldRow;     Acol = oldCol;
-    Brow = oldRow + 1; Bcol = oldCol;
-  }
-
-  // Pivot = clicked half
-  const pivotRow = (clickedCell === "A") ? Arow : Brow;
-  const pivotCol = (clickedCell === "A") ? Acol : Bcol;
-
-  // New orientation
-  const newOrientation = (oldOrientation === "horizontal") ? "vertical" : "horizontal";
-
-  // Compute new A/B positions
-  let newArow, newAcol, newBrow, newBcol;
+  let pivotRow, pivotCol, otherRow, otherCol;
 
   if (oldOrientation === "horizontal") {
-    if (clickedCell === "A") {
-      newArow = pivotRow;
-      newAcol = pivotCol;
-      newBrow = pivotRow + 1;
-      newBcol = pivotCol;
+    const midX = rect.width / 2;
+    if (localX < midX) {
+      // clicked left cell
+      pivotRow = cell1Row;
+      pivotCol = cell1Col;
+      otherRow = cell2Row;
+      otherCol = cell2Col;
     } else {
-      newBrow = pivotRow;
-      newBcol = pivotCol;
-      newArow = pivotRow - 1;
-      newAcol = pivotCol;
+      // clicked right cell
+      pivotRow = cell2Row;
+      pivotCol = cell2Col;
+      otherRow = cell1Row;
+      otherCol = cell1Col;
     }
   } else {
-    if (clickedCell === "A") {
-      newArow = pivotRow;
-      newAcol = pivotCol;
-      newBrow = pivotRow;
-      newBcol = pivotCol - 1;
+    const midY = rect.height / 2;
+    if (localY < midY) {
+      // clicked top cell
+      pivotRow = cell1Row;
+      pivotCol = cell1Col;
+      otherRow = cell2Row;
+      otherCol = cell2Col;
     } else {
-      newBrow = pivotRow;
-      newBcol = pivotCol;
-      newArow = pivotRow;
-      newAcol = pivotCol + 1;
+      // clicked bottom cell
+      pivotRow = cell2Row;
+      pivotCol = cell2Col;
+      otherRow = cell1Row;
+      otherCol = cell1Col;
     }
   }
+
+  // Vector from pivot to the other cell
+  const dRow = otherRow - pivotRow;
+  const dCol = otherCol - pivotCol;
+
+  // Clockwise rotation of that vector: (dr, dc) -> (-dc, dr)
+  const newOtherRow = pivotRow - dCol;
+  const newOtherCol = pivotCol + dRow;
+
+  // New two cells after rotation
+  const newCell1Row = pivotRow;
+  const newCell1Col = pivotCol;
+  const newCell2Row = newOtherRow;
+  const newCell2Col = newOtherCol;
 
   // On-board check
-  const cellA = document.getElementById(`cell-${newArow}-${newAcol}`);
-  const cellB = document.getElementById(`cell-${newBrow}-${newBcol}`);
-
+  const cellA = document.getElementById(`cell-${newCell1Row}-${newCell1Col}`);
+  const cellB = document.getElementById(`cell-${newCell2Row}-${newCell2Col}`);
   if (!cellA || !cellB) {
     console.warn("Rotation invalid: off-board final position");
-    // restore old occupancy
-    validateGridPlacement(oldRow, oldCol, oldOrientation, domino, { simulate: false });
     return false;
   }
 
-  // Anchor = top-left of the two cells
-  const newRow = Math.min(newArow, newBrow);
-  const newCol = Math.min(newAcol, newBcol);
+  // New anchor = top-left of the two cells
+  const newRow = Math.min(newCell1Row, newCell2Row);
+  const newCol = Math.min(newCell1Col, newCell2Col);
+  const newOrientation =
+    oldOrientation === "horizontal" ? "vertical" : "horizontal";
 
-  // Simulate placement
-  const valid = validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: true });
+  // Temporarily clear old occupancy
+  delete boardOccupancy[`${cell1Row},${cell1Col}`];
+  delete boardOccupancy[`${cell2Row},${cell2Col}`];
+
+  // Simulate new placement
+  const valid = validateGridPlacement(
+    newRow,
+    newCol,
+    newOrientation,
+    domino,
+    { simulate: true }
+  );
 
   if (!valid) {
     console.warn("Rotation invalid for domino", domino.dataset.index);
-    // restore old occupancy
+    // restore old placement
     validateGridPlacement(oldRow, oldCol, oldOrientation, domino, { simulate: false });
     return false;
   }
 
-  // Commit rotation
+  // Commit new placement
   validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: false });
 
   domino.classList.remove("horizontal", "vertical");
