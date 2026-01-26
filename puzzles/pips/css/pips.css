@@ -145,6 +145,74 @@ body {
   pointer-events: none;
 }
 
+/* NYT-style region colors */
+.region-cell[data-region="0"] { 
+  background: rgba(255, 200, 0, 0.25);
+  border-color: rgba(255, 200, 0, 0.6);
+}
+
+.region-cell[data-region="1"] { 
+  background: rgba(0, 180, 255, 0.25);
+  border-color: rgba(0, 180, 255, 0.6);
+}
+
+.region-cell[data-region="2"] { 
+  background: rgba(255, 120, 120, 0.25);
+  border-color: rgba(255, 120, 120, 0.6);
+}
+
+.region-cell[data-region="3"] { 
+  background: rgba(120, 255, 160, 0.25);
+  border-color: rgba(120, 255, 160, 0.6);
+}
+
+.region-cell[data-region="4"] { 
+  background: rgba(200, 160, 255, 0.25);
+  border-color: rgba(200, 160, 255, 0.6);
+}
+
+.region-cell[data-region="5"] { 
+  background: rgba(255, 180, 80, 0.25);
+  border-color: rgba(255, 180, 80, 0.6);
+}
+
+/* NYT-style badge colors per region */
+.region-cell[data-region="0"] .region-badge {
+  background: #fffbe6;
+  border-color: rgba(255, 200, 0, 0.8);
+  color: #000;
+}
+
+.region-cell[data-region="1"] .region-badge {
+  background: #e6f6ff;
+  border-color: rgba(0, 180, 255, 0.8);
+  color: #000;
+}
+
+.region-cell[data-region="2"] .region-badge {
+  background: #ffeaea;
+  border-color: rgba(255, 120, 120, 0.8);
+  color: #000;
+}
+
+.region-cell[data-region="3"] .region-badge {
+  background: #e9ffef;
+  border-color: rgba(120, 255, 160, 0.8);
+  color: #000;
+}
+
+.region-cell[data-region="4"] .region-badge {
+  background: #f3ecff;
+  border-color: rgba(200, 160, 255, 0.8);
+  color: #000;
+}
+
+.region-cell[data-region="5"] .region-badge {
+  background: #fff4e6;
+  border-color: rgba(255, 180, 80, 0.8);
+  color: #000;
+}
+
 /* ------------------------------
    REGION BADGES (NYT STYLE)
    ------------------------------ */
