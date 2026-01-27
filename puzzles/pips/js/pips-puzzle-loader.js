@@ -279,7 +279,12 @@ function applyStartingDominos(puzzle) {
     dom.style.top  = `${snapTop}px`;
 
     // Commit placement to boardOccupancy
-    const ok = tryPlaceDomino(dom, { simulate: false });
+    const ok = tryPlaceDomino(dom, {
+                 simulate: false,
+                 anchorRow,
+                 anchorCol
+               });
+
     if (!ok) {
       console.warn("Starting domino failed placement:", entry, dom);
     }
