@@ -170,6 +170,24 @@ function drag(e) {
   highlightCells(cells, valid);
 }
 
+function clearDominoFromBoard(domino) {
+  const row = parseInt(domino.dataset.boardRow, 10);
+  const col = parseInt(domino.dataset.boardCol, 10);
+  const facing = domino.dataset.facing;
+
+  if (Number.isNaN(row) || Number.isNaN(col) || !facing) {
+    return; // nothing to clear
+  }
+
+  const [r1, c1, r2, c2] = cellsFromFacing(row, col, facing);
+
+  delete boardOccupancy[`${r1},${c1}`];
+  delete boardOccupancy[`${r2},${c2}`];
+
+  delete domino.dataset.boardRow;
+  delete domino.dataset.boardCol;
+}
+
 /* ------------------------------------------------------------
    END DRAG → TRY TO PLACE
    ------------------------------------------------------------ */
