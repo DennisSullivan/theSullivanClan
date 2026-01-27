@@ -411,11 +411,12 @@ function rotateDomino(domino, clickX, clickY) {
   console.log("NYT ROTATION ENGINE ACTIVE");
 
   // ------------------------------------------------------------
-  // TRAY ROTATION — always allowed
+  // TRAY ROTATION — always allowed, just toggle class
   // ------------------------------------------------------------
-  const isOnBoard =
-    domino.dataset.boardRow !== undefined &&
-    domino.dataset.boardCol !== undefined;
+  const hasBoardRow = domino.dataset.boardRow;
+  const hasBoardCol = domino.dataset.boardCol;
+  const isOnBoard = hasBoardRow !== undefined && hasBoardRow !== null &&
+                    hasBoardCol !== undefined && hasBoardCol !== null;
 
   if (!isOnBoard) {
     if (
@@ -440,78 +441,77 @@ function rotateDomino(domino, clickX, clickY) {
 
   const oldRow = parseInt(domino.dataset.boardRow, 10);
   const oldCol = parseInt(domino.dataset.boardCol, 10);
-  const oldOrientation = domino.dataset.boardOrientation;
+  const oldOrientation = domino.dataset.boardOrientation; // "horizontal" or "vertical"
 
-  // Current two occupied cells
+  // Current two occupied cells in grid coordinates
   let cell1Row = oldRow;
   let cell1Col = oldCol;
   let cell2Row, cell2Col;
 
   if (oldOrientation === "horizontal") {
+    // [cell1][cell2]
     cell2Row = oldRow;
     cell2Col = oldCol + 1;
   } else {
+    // cell1 above cell2
     cell2Row = oldRow + 1;
     cell2Col = oldCol;
   }
 
-   // ------------------------------------------------------------
-   // PIVOT DETECTION — DOM HALF (STABLE) 
-   // ------------------------------------------------------------
-   const rect = domino.getBoundingClientRect();
-   const localX = clickX - rect.left;
-   const localY = clickY - rect.top;
-   
-   let pivotIsCell1;
-   if (oldOrientation === "horizontal") {
-     const midX = rect.width / 2;
-     pivotIsCell1 = (localX < midX);   // left half → cell1, right half → cell2
-   } else {
-     const midY = rect.height / 2;
-     pivotIsCell1 = (localY < midY);   // top half → cell1, bottom half → cell2
-   }
+  // ------------------------------------------------------------
+  // TRUE PIVOT: which grid cell contains the click?
+  // ------------------------------------------------------------
+  function pointInCell(px, py, row, col) {
+    const cell = document.getElementById(`cell-${row}-${col}`);
+    if (!cell) return false;
+    const r = cell.getBoundingClientRect();
+    return px >= r.left && px <= r.right && py >= r.top && py <= r.bottom;
+  }
+
+  let pivotRow, pivotCol, otherRow, otherCol;
+
+  if (pointInCell(clickX, clickY, cell1Row, cell1Col)) {
+    pivotRow = cell1Row;
+    pivotCol = cell1Col;
+    otherRow = cell2Row;
+    otherCol = cell2Col;
+  } else if (pointInCell(clickX, clickY, cell2Row, cell2Col)) {
+    pivotRow = cell2Row;
+    pivotCol = cell2Col;
+    otherRow = cell1Row;
+    otherCol = cell1Col;
+  } else {
+    // Fallback: if click somehow misses both, default to cell1 as pivot
+    pivotRow = cell1Row;
+    pivotCol = cell1Col;
+    otherRow = cell2Row;
+    otherCol = cell2Col;
+  }
 
   // ------------------------------------------------------------
-  // NYT CLOCKWISE ROTATION — EXPLICIT CASES
+  // ALWAYS CLOCKWISE ROTATION (rows down, cols right)
   // ------------------------------------------------------------
-  let newCell1Row, newCell1Col;
-  let newCell2Row, newCell2Col;
+  // Vector from pivot to other
+  const dr = otherRow - pivotRow;
+  const dc = otherCol - pivotCol;
+
+  // Clockwise 90°: (dr, dc) -> (dc, -dr)
+  const newOtherRow = pivotRow + dc;
+  const newOtherCol = pivotCol - dr;
+
+  // New two cells after rotation
+  const newCell1Row = pivotRow;
+  const newCell1Col = pivotCol;
+  const newCell2Row = newOtherRow;
+  const newCell2Col = newOtherCol;
+
+  // Determine new orientation from the two cells
   let newOrientation;
-
-   if (oldOrientation === "vertical") {
-     newOrientation = "horizontal";
-   
-     if (pivotIsCell1) {
-       // pivot = top cell
-       newCell1Row = cell1Row;
-       newCell1Col = cell1Col;
-       newCell2Row = cell1Row;
-       newCell2Col = cell1Col + 1;
-     } else {
-       // pivot = bottom cell
-       newCell1Row = cell2Row;
-       newCell1Col = cell2Col;
-       newCell2Row = cell2Row;
-       newCell2Col = cell2Col - 1;
-     }
-   
-   } else {
-     newOrientation = "vertical";
-   
-     if (pivotIsCell1) {
-       // pivot = left cell
-       newCell1Row = cell1Row;
-       newCell1Col = cell1Col;
-       newCell2Row = cell1Row + 1;
-       newCell2Col = cell1Col;
-     } else {
-       // pivot = right cell
-       newCell1Row = cell2Row;
-       newCell1Col = cell2Col;
-       newCell2Row = cell2Row - 1;
-       newCell2Col = cell2Col;
-     }
-   }
+  if (newCell1Row === newCell2Row) {
+    newOrientation = "horizontal";
+  } else {
+    newOrientation = "vertical";
+  }
 
   // ------------------------------------------------------------
   // VALIDATION
@@ -519,16 +519,19 @@ function rotateDomino(domino, clickX, clickY) {
   const cellA = document.getElementById(`cell-${newCell1Row}-${newCell1Col}`);
   const cellB = document.getElementById(`cell-${newCell2Row}-${newCell2Col}`);
   if (!cellA || !cellB) {
-    console.warn("Rotation invalid: off-board");
+    console.warn("Rotation invalid: off-board final position");
     return false;
   }
 
+  // Anchor is top-left of the two new cells
   const newRow = Math.min(newCell1Row, newCell2Row);
   const newCol = Math.min(newCell1Col, newCell2Col);
 
+  // Clear old occupancy
   delete boardOccupancy[`${cell1Row},${cell1Col}`];
   delete boardOccupancy[`${cell2Row},${cell2Col}`];
 
+  // Simulate new placement
   const valid = validateGridPlacement(
     newRow,
     newCol,
@@ -538,19 +541,21 @@ function rotateDomino(domino, clickX, clickY) {
   );
 
   if (!valid) {
-    console.warn("Rotation invalid");
+    console.warn("Rotation invalid for domino", domino.dataset.index);
+    // restore old placement
     validateGridPlacement(oldRow, oldCol, oldOrientation, domino, { simulate: false });
     return false;
   }
 
-  // Commit
+  // Commit new placement
   validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: false });
 
+  // Update orientation classes
   domino.classList.remove("horizontal", "vertical");
   domino.classList.add(newOrientation);
 
-  // ⭐ NO pip swapping. Ever.
-  // The two halves keep their pip groups.
+  // Pips: we do NOT reorder pip-groups.
+  // The two halves keep their pip groups; rotation just moves them on the grid.
 
   return true;
 }
