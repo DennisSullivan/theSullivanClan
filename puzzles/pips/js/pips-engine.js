@@ -279,7 +279,7 @@ function validateGridPlacementCells(
    Then calls validateGridPlacement() to approve/reject.
    ============================================================ */
 
-functionfunction tryPlaceDomino(domino, options = {}) {
+function tryPlaceDomino(domino, options = {}) {
   console.log("=== tryPlaceDomino (no H/V) ===");
   const simulate = options.simulate === true;
 
