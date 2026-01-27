@@ -259,6 +259,11 @@ function validateGridPlacementCells(
     // Mark new occupancy
     boardOccupancy[keyA] = domino;
     boardOccupancy[keyB] = domino;
+
+    // Compute anchor (top-left of the two cells)
+    const anchorRow = Math.min(cell1Row, cell2Row);
+    const anchorCol = Math.min(cell1Col, cell2Col);
+
       console.log(
         "%c[VALIDATE] COMMIT",
         "color: #c00",
@@ -266,11 +271,7 @@ function validateGridPlacementCells(
         "occupancy keys:", keyA, keyB
       );
 
-    // Compute anchor (top-left of the two cells)
-    const anchorRow = Math.min(cell1Row, cell2Row);
-    const anchorCol = Math.min(cell1Col, cell2Col);
-
-    // Snap domino to anchor
+     // Snap domino to anchor
     const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
     const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
     const stride = cellSize + cellGap;
