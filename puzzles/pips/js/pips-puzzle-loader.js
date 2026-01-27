@@ -7,6 +7,7 @@
 const rootStyles = getComputedStyle(document.documentElement);
 const cellSize = parseInt(rootStyles.getPropertyValue('--cell-size'));
 const cellGap = parseInt(rootStyles.getPropertyValue('--cell-gap'));
+const stride = cellSize + cellGap;
 
 /* ------------------------------------------------------------
    CHECK WIN CONDITION
@@ -14,7 +15,6 @@ const cellGap = parseInt(rootStyles.getPropertyValue('--cell-gap'));
 function checkWin() {
   const keys = Object.keys(boardOccupancy);
 
-  // Full 7×8 board = 56 cells = 28 dominos × 2
   if (keys.length !== 56) return false;
 
   for (const key of keys) {
@@ -49,7 +49,7 @@ function serializeBoard() {
       index: dom.dataset.index,
       row: parseInt(dom.dataset.boardRow, 10),
       col: parseInt(dom.dataset.boardCol, 10),
-      orientation: dom.dataset.boardOrientation
+      facing: dom.dataset.facing
     });
   });
 
@@ -74,7 +74,7 @@ function loadBoardState(state) {
 
     delete dom.dataset.boardRow;
     delete dom.dataset.boardCol;
-    delete dom.dataset.boardOrientation;
+    delete dom.dataset.facing;
   });
 
   const root = document.getElementById("pips-root");
@@ -93,22 +93,16 @@ function loadBoardState(state) {
 
     dom.dataset.boardRow = entry.row;
     dom.dataset.boardCol = entry.col;
-    dom.dataset.boardOrientation = entry.orientation;
+    dom.dataset.facing = entry.facing;
 
-    const cells =
-      entry.orientation === "vertical"
-        ? [
-            [entry.row, entry.col],
-            [entry.row + 1, entry.col]
-          ]
-        : [
-            [entry.row, entry.col],
-            [entry.row, entry.col + 1]
-          ];
+    reorderPipGroups(dom);
+    applyFacingClass(dom);
 
-    cells.forEach(([r, c]) => {
-      boardOccupancy[`${r},${c}`] = dom;
-    });
+    const [r1, c1, r2, c2] =
+      cellsFromFacing(entry.row, entry.col, entry.facing);
+
+    boardOccupancy[`${r1},${c1}`] = dom;
+    boardOccupancy[`${r2},${c2}`] = dom;
   });
 
   logBoardOccupancy();
@@ -151,7 +145,7 @@ function clearBoard() {
 
     delete dom.dataset.boardRow;
     delete dom.dataset.boardCol;
-    delete dom.dataset.boardOrientation;
+    delete dom.dataset.facing;
   });
 }
 
@@ -192,6 +186,10 @@ function applyBlockedCells(puzzle) {
   });
 }
 
+
+/* ------------------------------------------------------------
+   REGION OVERLAYS
+   ------------------------------------------------------------ */
 function buildRegionOverlays(puzzle) {
   const regionLayer = document.getElementById("region-layer");
   regionLayer.innerHTML = "";
@@ -199,29 +197,24 @@ function buildRegionOverlays(puzzle) {
   puzzle.regions.forEach((region, index) => {
     const cellSet = new Set(region.cells.map(c => `${c.row},${c.col}`));
 
-    // Find top-left cell for badge placement
     const minRow = Math.min(...region.cells.map(c => c.row));
     const minCol = Math.min(...region.cells.map(c => c.col));
 
     region.cells.forEach(cell => {
       const div = document.createElement("div");
       div.classList.add("region-cell");
-
-      // ⭐ Option 1: numeric region IDs
       div.dataset.region = index;
 
-      div.style.left = `${cell.col * (cellSize + cellGap)}px`;
-      div.style.top = `${cell.row * (cellSize + cellGap)}px`;
+      div.style.left = `${cell.col * stride}px`;
+      div.style.top = `${cell.row * stride}px`;
       div.style.width = `${cellSize}px`;
       div.style.height = `${cellSize}px`;
 
-      // Merge borders with neighbors
       if (cellSet.has(`${cell.row - 1},${cell.col}`)) div.style.borderTop = "none";
       if (cellSet.has(`${cell.row + 1},${cell.col}`)) div.style.borderBottom = "none";
       if (cellSet.has(`${cell.row},${cell.col - 1}`)) div.style.borderLeft = "none";
       if (cellSet.has(`${cell.row},${cell.col + 1}`)) div.style.borderRight = "none";
 
-      // Add badge only to top-left cell
       if (cell.row === minRow && cell.col === minCol) {
         const badge = document.createElement("div");
         badge.classList.add("region-badge");
@@ -236,46 +229,6 @@ function buildRegionOverlays(puzzle) {
 
 
 /* ------------------------------------------------------------
-   Building Badges
-   ------------------------------------------------------------ */
-/*
-function buildRegionBadges(puzzle) {
-  const badgeLayer = document.getElementById("badge-layer");
-  badgeLayer.innerHTML = "";
-
-  // Read CSS variables
-  const wrapperPadding = 10; // matches #pips-root-wrapper padding
-
-  puzzle.regions.forEach(region => {
-    const badge = document.createElement("div");
-    const regionId = region.id.toString().trim().toUpperCase();
-    badge.classList.add("region-badge", `region-${regionId}`);
-    badge.textContent = region.rule || "";
-
-    // Find the top-left-most cell of the region
-    const minRow = Math.min(...region.cells.map(c => c.row));
-    const minCol = Math.min(...region.cells.map(c => c.col));
-
-    // Compute pixel position
-    const top =
-      wrapperPadding +
-      minRow * (cellSize + cellGap) -
-      18; // badge offset
-
-    const left =
-      wrapperPadding +
-      minCol * (cellSize + cellGap) -
-      18; // badge offset
-
-    badge.style.top = top + "px";
-    badge.style.left = left + "px";
-
-    badgeLayer.appendChild(badge);
-  });
-}
- */
-
-/* ------------------------------------------------------------
    APPLY STARTING DOMINOS
    ------------------------------------------------------------ */
 function applyStartingDominos(puzzle) {
@@ -283,16 +236,11 @@ function applyStartingDominos(puzzle) {
 
   const root = document.getElementById("pips-root");
 
-  // Read CSS variables (same ones used to build the grid)
-  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-  const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-
   puzzle.startingDominos.forEach(entry => {
     const dom = document.querySelector(`.domino[data-index="${entry.index}"]`);
 
-    // Snap to exact grid coordinates (NO bounding boxes)
-    const snapLeft = entry.col * (cellSize + cellGap);
-    const snapTop  = entry.row * (cellSize + cellGap);
+    const snapLeft = entry.col * stride;
+    const snapTop  = entry.row * stride;
 
     root.appendChild(dom);
 
@@ -300,11 +248,18 @@ function applyStartingDominos(puzzle) {
     dom.style.left = `${snapLeft}px`;
     dom.style.top  = `${snapTop}px`;
 
-    // Apply orientation classes cleanly
-    dom.classList.remove("vertical", "horizontal");
-    dom.classList.add(entry.orientation);
+    // Convert puzzle orientation → facing
+    let facing;
+    if (entry.orientation === "horizontal") {
+      facing = entry.aIsFirst ? "A-left" : "A-right";
+    } else {
+      facing = entry.aIsFirst ? "A-top" : "A-bottom";
+    }
 
-    // Let the engine commit the placement
+    dom.dataset.facing = facing;
+    reorderPipGroups(dom);
+    applyFacingClass(dom);
+
     const ok = tryPlaceDomino(dom, { simulate: false });
 
     if (!ok) {
