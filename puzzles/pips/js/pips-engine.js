@@ -201,58 +201,72 @@ function createPipGroup(value) {
    - Occupancy is updated when committed
    ============================================================ */
 
-function validateGridPlacement(row, col, orientation, domino, options = {}) {
-  console.log("++++++++++++++ validateGridPlacement called +++++++++++++");
-  console.log(row, col, orientation);
-  logBoardOccupancy();
-
+function validateGridPlacementCells(
+  cell1Row, cell1Col,
+  cell2Row, cell2Col,
+  domino,
+  options = {}
+) {
   const simulate = options.simulate === true;
-  const vertical = (orientation === "vertical");
 
-  // Compute the two cells the domino would occupy
-  const cells = vertical
-    ? [ [row, col], [row + 1, col] ]
-    : [ [row, col], [row, col + 1] ];
+  // ------------------------------------------------------------
+  // 1. Bounds check
+  // ------------------------------------------------------------
+  const cellA = document.getElementById(`cell-${cell1Row}-${cell1Col}`);
+  const cellB = document.getElementById(`cell-${cell2Row}-${cell2Col}`);
 
-  // 1) Bounds check
-  for (const [r, c] of cells) {
-    const cellEl = document.getElementById(`cell-${r}-${c}`);
-    if (!cellEl) {
-      if (!simulate) domino.dataset.dropAttempt = "off-board";
-      return false;
-    }
+  if (!cellA || !cellB) {
+    if (!simulate) domino.dataset.dropAttempt = "off-board";
+    return false;
   }
 
-  // 2) Occupancy check
-  for (const [r, c] of cells) {
-    const key = `${r},${c}`;
-    if (boardOccupancy[key] && boardOccupancy[key] !== domino) {
-      if (!simulate) domino.dataset.dropAttempt = "invalid-on-board";
-      return false;
-    }
+  // ------------------------------------------------------------
+  // 2. Occupancy check
+  // ------------------------------------------------------------
+  const keyA = `${cell1Row},${cell1Col}`;
+  const keyB = `${cell2Row},${cell2Col}`;
+
+  if (boardOccupancy[keyA] && boardOccupancy[keyA] !== domino) {
+    if (!simulate) domino.dataset.dropAttempt = "invalid-on-board";
+    return false;
   }
 
-  // 3) Commit placement (only if NOT simulating)
+  if (boardOccupancy[keyB] && boardOccupancy[keyB] !== domino) {
+    if (!simulate) domino.dataset.dropAttempt = "invalid-on-board";
+    return false;
+  }
+
+  // ------------------------------------------------------------
+  // 3. Commit placement (only if NOT simulating)
+  // ------------------------------------------------------------
   if (!simulate) {
+    // Clear old occupancy
+    for (const key in boardOccupancy) {
+      if (boardOccupancy[key] === domino) {
+        delete boardOccupancy[key];
+      }
+    }
+
+    // Mark new occupancy
+    boardOccupancy[keyA] = domino;
+    boardOccupancy[keyB] = domino;
+
+    // Compute anchor (top-left of the two cells)
+    const anchorRow = Math.min(cell1Row, cell2Row);
+    const anchorCol = Math.min(cell1Col, cell2Col);
+
+    // Snap domino to anchor
     const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
     const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+    const stride = cellSize + cellGap;
 
-    // Snap domino to grid
-    domino.style.left = `${col * (cellSize + cellGap)}px`;
-    domino.style.top = `${row * (cellSize + cellGap)}px`;
-
-    // Update occupancy map
-    cells.forEach(([r, c]) => {
-      boardOccupancy[`${r},${c}`] = domino;
-    });
+    domino.style.left = `${anchorCol * stride}px`;
+    domino.style.top = `${anchorRow * stride}px`;
 
     // Store board metadata
-    domino.dataset.boardRow = row;
-    domino.dataset.boardCol = col;
-    domino.dataset.boardOrientation = vertical ? "vertical" : "horizontal";
+    domino.dataset.boardRow = anchorRow;
+    domino.dataset.boardCol = anchorCol;
     domino.dataset.dropAttempt = "valid";
-
-    logBoardOccupancy();
   }
 
   return true;
@@ -266,18 +280,30 @@ function validateGridPlacement(row, col, orientation, domino, options = {}) {
    ============================================================ */
 
 function tryPlaceDomino(domino, options = {}) {
-  console.log("===tryPlaceDomino v40 ===");
+  console.log("=== tryPlaceDomino (no H/V) ===");
   const simulate = options.simulate === true;
 
-  // Rotation simulation path
+  // ------------------------------------------------------------
+  // SIMULATION PATH (rotation)
+  // ------------------------------------------------------------
   if (simulate && domino.dataset.boardRow != null) {
-    const row = parseInt(domino.dataset.boardRow, 10);
-    const col = parseInt(domino.dataset.boardCol, 10);
-    const orientation = domino.dataset.boardOrientation;
-    return validateGridPlacement(row, col, orientation, domino, { simulate: true });
+    const oldRow = parseInt(domino.dataset.boardRow, 10);
+    const oldCol = parseInt(domino.dataset.boardCol, 10);
+
+    const [cell1Row, cell1Col, cell2Row, cell2Col] =
+      cellsFromFacing(oldRow, oldCol, domino.dataset.facing);
+
+    return validateGridPlacementCells(
+      cell1Row, cell1Col,
+      cell2Row, cell2Col,
+      domino,
+      { simulate: true }
+    );
   }
 
-  // Drag placement path
+  // ------------------------------------------------------------
+  // DRAG PLACEMENT PATH
+  // ------------------------------------------------------------
   const root = document.getElementById("pips-root");
   const rootRect = root.getBoundingClientRect();
 
@@ -292,9 +318,16 @@ function tryPlaceDomino(domino, options = {}) {
     height: rawDom.height
   };
 
-  // Probe rectangle: top half (vertical) or left half (horizontal)
+  // ------------------------------------------------------------
+  // Determine which half of the domino is the "anchor probe"
+  // based on facing (not orientation)
+  // ------------------------------------------------------------
   let anchorProbe;
-  if (domino.classList.contains("vertical")) {
+
+  const facing = domino.dataset.facing || "A-left";
+
+  if (facing === "A-top" || facing === "A-bottom") {
+    // vertical layout → probe top half
     anchorProbe = {
       left: domRect.left,
       right: domRect.right,
@@ -302,6 +335,7 @@ function tryPlaceDomino(domino, options = {}) {
       bottom: domRect.top + domRect.height / 2
     };
   } else {
+    // horizontal layout → probe left half
     anchorProbe = {
       left: domRect.left,
       right: domRect.left + domRect.width / 2,
@@ -310,7 +344,9 @@ function tryPlaceDomino(domino, options = {}) {
     };
   }
 
+  // ------------------------------------------------------------
   // Find best-overlap cell(s)
+  // ------------------------------------------------------------
   let bestCells = [];
   let bestOverlap = 0;
 
@@ -359,40 +395,29 @@ function tryPlaceDomino(domino, options = {}) {
     return false;
   }
 
+  // ------------------------------------------------------------
   // Convert anchor cell → grid coords
-  const row = parseInt(anchor.dataset.row, 10);
-  const col = parseInt(anchor.dataset.col, 10);
-  const orientation = domino.classList.contains("vertical") ? "vertical" : "horizontal";
+  // ------------------------------------------------------------
+  const anchorRow = parseInt(anchor.dataset.row, 10);
+  const anchorCol = parseInt(anchor.dataset.col, 10);
 
-  return validateGridPlacement(row, col, orientation, domino, { simulate });
+  // ------------------------------------------------------------
+  // Compute the two occupied cells from facing
+  // ------------------------------------------------------------
+  const [cell1Row, cell1Col, cell2Row, cell2Col] =
+    cellsFromFacing(anchorRow, anchorCol, facing);
+
+  // ------------------------------------------------------------
+  // Validate placement using the new validator
+  // ------------------------------------------------------------
+  return validateGridPlacementCells(
+    cell1Row, cell1Col,
+    cell2Row, cell2Col,
+    domino,
+    { simulate }
+  );
 }
 
-
-/* ============================================================
-   ROTATION — NYT‑STYLE SESSION SYSTEM
-   Tracks original position so invalid rotations can revert.
-   ============================================================ */
-/*
-let rotationSession = {
-  active: false,
-  domino: null,
-  originalLeft: null,
-  originalTop: null,
-  originalOrientation: null
-};
-
-function startRotationSession(domino) {
-  rotationSession.active = true;
-  rotationSession.domino = domino;
-
-  rotationSession.originalLeft = domino.style.left;
-  rotationSession.originalTop = domino.style.top;
-  rotationSession.originalOrientation =
-    domino.classList.contains("vertical") ? "vertical" : "horizontal";
-
-  console.log("Rotation session started for", domino.dataset.index);
-}
- */
 
 /* ============================================================
    ROTATION — NYT-STYLE AROUND CLICKED CELL
@@ -408,58 +433,39 @@ function startRotationSession(domino) {
    ============================================================ */
 
 function rotateDomino(domino, clickX, clickY) {
-  console.log("=== ROTATE START ===");
-  console.log("clickX, clickY:", clickX, clickY);
-  console.log("oldRow, oldCol:", domino.dataset.boardRow, domino.dataset.boardCol);
-  console.log("oldOrientation:", domino.dataset.boardOrientation);
-  console.log("NYT ROTATION ENGINE ACTIVE");
+  console.log("=== ROTATE START (facing model, no H/V) ===");
 
   // ------------------------------------------------------------
-  // TRAY ROTATION — simple toggle
+  // Ensure facing exists (tray dominos start as A-left)
   // ------------------------------------------------------------
-  const hasBoardRow = domino.dataset.boardRow;
-  const hasBoardCol = domino.dataset.boardCol;
-  const isOnBoard = hasBoardRow != null && hasBoardCol != null;
+  if (!domino.dataset.facing) {
+    domino.dataset.facing = "A-left";
+  }
 
+  const isOnBoard = domino.dataset.boardRow != null;
+
+  // ------------------------------------------------------------
+  // TRAY ROTATION — rotate facing only
+  // ------------------------------------------------------------
   if (!isOnBoard) {
-    if (!domino.classList.contains("horizontal") &&
-        !domino.classList.contains("vertical")) {
-      domino.classList.add("horizontal");
-    }
-
-    const newOrientation =
-      domino.classList.contains("horizontal") ? "vertical" : "horizontal";
-
-    domino.classList.remove("horizontal", "vertical");
-    domino.classList.add(newOrientation);
+    domino.dataset.facing = rotateFacingClockwise(domino.dataset.facing);
+    reorderPipGroups(domino);
+    applyFacingClass(domino);
     return true;
   }
 
   // ------------------------------------------------------------
   // BOARD ROTATION — NYT RULES
   // ------------------------------------------------------------
-
   const oldRow = parseInt(domino.dataset.boardRow, 10);
   const oldCol = parseInt(domino.dataset.boardCol, 10);
-  const oldOrientation = domino.dataset.boardOrientation;
 
-  // Current two occupied cells
-  let cell1Row = oldRow;
-  let cell1Col = oldCol;
-  let cell2Row, cell2Col;
-
-  if (oldOrientation === "horizontal") {
-    cell2Row = oldRow;
-    cell2Col = oldCol + 1;
-  } else {
-    cell2Row = oldRow + 1;
-    cell2Col = oldCol;
-  }
-
-  console.log("cell1:", cell1Row, cell1Col, "cell2:", cell2Row, cell2Col);
+  // Determine current two occupied cells from facing
+  const [cell1Row, cell1Col, cell2Row, cell2Col] =
+    cellsFromFacing(oldRow, oldCol, domino.dataset.facing);
 
   // ------------------------------------------------------------
-  // TRUE CLICKED CELL — compute from grid math
+  // Determine clicked cell
   // ------------------------------------------------------------
   const root = document.getElementById("pips-root");
   const rootRect = root.getBoundingClientRect();
@@ -470,29 +476,31 @@ function rotateDomino(domino, clickX, clickY) {
   const clickedCol = Math.floor((clickX - rootRect.left) / stride);
   const clickedRow = Math.floor((clickY - rootRect.top) / stride);
 
-  console.log("clicked cell:", clickedRow, clickedCol);
-
   // ------------------------------------------------------------
-  // PIVOT SELECTION — clicked cell wins
+  // Determine pivot cell and clicked half (A or B)
   // ------------------------------------------------------------
   let pivotRow, pivotCol, otherRow, otherCol;
+  let clickedHalf;
 
-  if (clickedRow === cell1Row && clickedCol === cell1Col) {
+  const firstIsA = domino.dataset.facing.startsWith("A-");
+  const clickedIsCell1 = (clickedRow === cell1Row && clickedCol === cell1Col);
+
+  if (clickedIsCell1) {
     pivotRow = cell1Row;
     pivotCol = cell1Col;
     otherRow = cell2Row;
     otherCol = cell2Col;
+    clickedHalf = firstIsA ? "A" : "B";
   } else {
     pivotRow = cell2Row;
     pivotCol = cell2Col;
     otherRow = cell1Row;
     otherCol = cell1Col;
+    clickedHalf = firstIsA ? "B" : "A";
   }
 
-  console.log("pivot:", pivotRow, pivotCol, "other:", otherRow, otherCol);
-
   // ------------------------------------------------------------
-  // ALWAYS CLOCKWISE ROTATION
+  // Rotate geometry clockwise around pivot
   // ------------------------------------------------------------
   const dr = otherRow - pivotRow;
   const dc = otherCol - pivotCol;
@@ -500,71 +508,121 @@ function rotateDomino(domino, clickX, clickY) {
   const newOtherRow = pivotRow + dc;
   const newOtherCol = pivotCol - dr;
 
-  console.log("rotated other:", newOtherRow, newOtherCol);
-
   // New two cells
   const newCell1Row = pivotRow;
   const newCell1Col = pivotCol;
   const newCell2Row = newOtherRow;
   const newCell2Col = newOtherCol;
 
-  const newOrientation =
-    newCell1Row === newCell2Row ? "horizontal" : "vertical";
-
-  console.log("new cells:", newCell1Row, newCell1Col, newCell2Row, newCell2Col);
-  console.log("newOrientation:", newOrientation);
+  // ------------------------------------------------------------
+  // Rotate facing clockwise
+  // ------------------------------------------------------------
+  let newFacing = rotateFacingClockwise(domino.dataset.facing);
 
   // ------------------------------------------------------------
-  // VALIDATION
+  // Ensure clicked half remains the pivot half
   // ------------------------------------------------------------
-  const cellA = document.getElementById(`cell-${newCell1Row}-${newCell1Col}`);
-  const cellB = document.getElementById(`cell-${newCell2Row}-${newCell2Col}`);
-  if (!cellA || !cellB) {
-    console.warn("Rotation invalid: off-board final position");
-    return false;
+  const pivotIsCell1 = (pivotRow === newCell1Row && pivotCol === newCell1Col);
+  const newFirstHalf = newFacing.startsWith("A-") ? "A" : "B";
+
+  if (pivotIsCell1 && newFirstHalf !== clickedHalf) {
+    newFacing = flipFacing(newFacing);
   }
 
-  const newRow = Math.min(newCell1Row, newCell2Row);
-  const newCol = Math.min(newCell1Col, newCell2Col);
+  if (!pivotIsCell1 && newFirstHalf === clickedHalf) {
+    newFacing = flipFacing(newFacing);
+  }
 
-  delete boardOccupancy[`${cell1Row},${cell1Col}`];
-  delete boardOccupancy[`${cell2Row},${cell2Col}`];
+  domino.dataset.facing = newFacing;
 
-  const valid = validateGridPlacement(
-    newRow,
-    newCol,
-    newOrientation,
+  // ------------------------------------------------------------
+  // Validate placement using the two cell pairs
+  // ------------------------------------------------------------
+  const valid = validateGridPlacementCells(
+    newCell1Row, newCell1Col,
+    newCell2Row, newCell2Col,
     domino,
     { simulate: true }
   );
 
   if (!valid) {
-    console.warn("Rotation invalid for domino", domino.dataset.index);
-    validateGridPlacement(oldRow, oldCol, oldOrientation, domino, { simulate: false });
+    // revert to old placement
+    validateGridPlacementCells(
+      cell1Row, cell1Col,
+      cell2Row, cell2Col,
+      domino,
+      { simulate: false }
+    );
     return false;
   }
 
-  // Commit new placement
-  validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: false });
-  console.log("DOM AFTER PLACEMENT:", domino.dataset.boardRow, domino.dataset.boardCol, domino.dataset.boardOrientation);
+  // Commit placement
+  validateGridPlacementCells(
+    newCell1Row, newCell1Col,
+    newCell2Row, newCell2Col,
+    domino,
+    { simulate: false }
+  );
 
   // ------------------------------------------------------------
-  // PIVOT‑PRESERVING PIP‑GROUP SWAP
+  // Reorder pip groups to match final facing
   // ------------------------------------------------------------
-  const pivotIsCell1 =
-    pivotRow === newCell1Row && pivotCol === newCell1Col;
+  reorderPipGroups(domino);
 
-  if (!pivotIsCell1) {
-    // Swap pip groups so the clicked half stays visually first
-    const a = domino.children[0];
-    const b = domino.children[1];
-    domino.insertBefore(b, a);
-  }
-
-  // Update orientation classes
-  domino.classList.remove("horizontal", "vertical");
-  domino.classList.add(newOrientation);
+  // ------------------------------------------------------------
+  // Apply CSS class for facing
+  // ------------------------------------------------------------
+  applyFacingClass(domino);
 
   console.log("=== ROTATE END ===");
   return true;
+}
+
+// Helper functions
+
+function rotateFacingClockwise(facing) {
+  return {
+    "A-top": "A-right",
+    "A-right": "A-bottom",
+    "A-bottom": "A-left",
+    "A-left": "A-top"
+  }[facing];
+}
+
+function flipFacing(facing) {
+  return {
+    "A-top": "A-bottom",
+    "A-bottom": "A-top",
+    "A-left": "A-right",
+    "A-right": "A-left"
+  }[facing];
+}
+
+function cellsFromFacing(row, col, facing) {
+  switch (facing) {
+    case "A-top":    return [row, col, row + 1, col];
+    case "A-bottom": return [row + 1, col, row, col];
+    case "A-left":   return [row, col, row, col + 1];
+    case "A-right":  return [row, col + 1, row, col];
+  }
+}
+
+function reorderPipGroups(domino) {
+  const firstIsA = domino.dataset.facing.startsWith("A-");
+  const a = domino.children[0];
+  const b = domino.children[1];
+
+  const valA = domino.dataset.valueA;
+  const valB = domino.dataset.valueB;
+
+  if (firstIsA) {
+    if (a.dataset.value !== valA) domino.insertBefore(b, a);
+  } else {
+    if (a.dataset.value !== valB) domino.insertBefore(b, a);
+  }
+}
+
+function applyFacingClass(domino) {
+  domino.classList.remove("A-top", "A-right", "A-bottom", "A-left");
+  domino.classList.add(domino.dataset.facing);
 }
