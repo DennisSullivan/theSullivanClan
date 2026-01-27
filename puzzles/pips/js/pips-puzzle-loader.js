@@ -273,6 +273,8 @@ function applyStartingDominos(puzzle) {
 
     if (!ok) {
       console.warn("Starting domino failed placement:", entry, dom);
+    } else {
+       console.log(c1, c2, facing)
     }
   });
 }
