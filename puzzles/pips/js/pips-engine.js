@@ -293,7 +293,8 @@ function tryPlaceDomino(domino, options = {}) {
     const [cell1Row, cell1Col, cell2Row, cell2Col] =
       cellsFromFacing(oldRow, oldCol, domino.dataset.facing);
 
-    return validateGridPlacementCells(
+     console.log("Good at " cekk1/riw, cell1Col, Cell2Row, Cell2Col);
+     return validateGridPlacementCells(
       cell1Row, cell1Col,
       cell2Row, cell2Col,
       domino,
