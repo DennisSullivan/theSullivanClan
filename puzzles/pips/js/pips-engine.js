@@ -212,6 +212,12 @@ function validateGridPlacementCells(
 ) {
   const simulate = options.simulate === true;
 
+   console.log(
+     "%c[VALIDATE] checking cells",
+     "color: #c60",
+     cell1Row, cell1Col,
+     cell2Row, cell2Col
+   );
   // ------------------------------------------------------------
   // 1. Bounds check
   // ------------------------------------------------------------
@@ -253,6 +259,12 @@ function validateGridPlacementCells(
     // Mark new occupancy
     boardOccupancy[keyA] = domino;
     boardOccupancy[keyB] = domino;
+      console.log(
+        "%c[VALIDATE] COMMIT",
+        "color: #c00",
+        "anchor:", anchorRow, anchorCol,
+        "occupancy keys:", keyA, keyB
+      );
 
     // Compute anchor (top-left of the two cells)
     const anchorRow = Math.min(cell1Row, cell2Row);
@@ -283,7 +295,15 @@ function validateGridPlacementCells(
    ============================================================ */
 
 function tryPlaceDomino(domino, options = {}) {
-  console.log("=== tryPlaceDomino (no H/V) ===");
+   console.log(
+     "%c[ENGINE] tryPlaceDomino called",
+     "color: #06c",
+     "index:", domino.dataset.index,
+     "simulate:", simulate,
+     "anchor :", options.anchorRow, options.anchorCol,
+     "facing:", domino.dataset.facing
+   );
+
   const simulate = options.simulate === true;
 
   // ------------------------------------------------------------
@@ -313,6 +333,14 @@ function tryPlaceDomino(domino, options = {}) {
     const anchorCol = options.anchorCol;
     const facing = domino.dataset.facing || "A-left";
 
+   console.log(
+     "%c[ENGINE] tryPlaceDomino called",
+     "color: #06c",
+     "index:", domino.dataset.index,
+     "simulate:", simulate,
+     "anchor override:", options.anchorRow, options.anchorCol,
+     "facing:", domino.dataset.facing
+   );
     const [cell1Row, cell1Col, cell2Row, cell2Col] =
       cellsFromFacing(anchorRow, anchorCol, facing);
 
