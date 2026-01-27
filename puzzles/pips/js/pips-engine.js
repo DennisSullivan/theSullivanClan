@@ -280,7 +280,26 @@ function validateGridPlacementCells(
    ============================================================ */
 
 function tryPlaceDomino(domino, options = {}) {
-  console.log("=== tryPlaceDomino (no H/V) ===");
+   console.log("=== tryPlaceDomino (no H/V) ===");
+   // ------------------------------------------------------------
+   // LOADER ANCHOR OVERRIDE
+   // If loader provides anchorRow/anchorCol, skip drag geometry
+   // ------------------------------------------------------------
+   if (options.anchorRow != null && options.anchorCol != null) {
+     const anchorRow = options.anchorRow;
+     const anchorCol = options.anchorCol;
+     const facing = domino.dataset.facing || "A-left";
+   
+     const [cell1Row, cell1Col, cell2Row, cell2Col] =
+       cellsFromFacing(anchorRow, anchorCol, facing);
+   
+     return validateGridPlacementCells(
+       cell1Row, cell1Col,
+       cell2Row, cell2Col,
+       domino,
+       { simulate: false }
+     );
+   }
   const simulate = options.simulate === true;
 
   // ------------------------------------------------------------
