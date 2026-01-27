@@ -295,6 +295,8 @@ function validateGridPlacementCells(
    ============================================================ */
 
 function tryPlaceDomino(domino, options = {}) {
+  const simulate = options.simulate === true;
+
    console.log(
      "%c[ENGINE] tryPlaceDomino called",
      "color: #06c",
@@ -303,8 +305,6 @@ function tryPlaceDomino(domino, options = {}) {
      "anchor :", options.anchorRow, options.anchorCol,
      "facing:", domino.dataset.facing
    );
-
-  const simulate = options.simulate === true;
 
   // ------------------------------------------------------------
   // SIMULATION PATH (rotation)
