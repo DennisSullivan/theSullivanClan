@@ -408,6 +408,10 @@ function startRotationSession(domino) {
    ============================================================ */
 
 function rotateDomino(domino, clickX, clickY) {
+console.log("=== ROTATE START ===");
+console.log("clickX, clickY:", clickX, clickY);
+console.log("oldRow, oldCol:", domino.dataset.boardRow, domino.dataset.boardCol);
+console.log("oldOrientation:", domino.dataset.boardOrientation);
   console.log("NYT ROTATION ENGINE ACTIVE");
 
   // ------------------------------------------------------------
@@ -457,6 +461,7 @@ function rotateDomino(domino, clickX, clickY) {
     cell2Row = oldRow + 1;
     cell2Col = oldCol;
   }
+console.log("cell1:", cell1Row, cell1Col, "cell2:", cell2Row, cell2Col);
 
   // ------------------------------------------------------------
   // TRUE PIVOT: which grid cell contains the click?
@@ -487,6 +492,7 @@ function rotateDomino(domino, clickX, clickY) {
     otherRow = cell2Row;
     otherCol = cell2Col;
   }
+console.log("pivot:", pivotRow, pivotCol, "other:", otherRow, otherCol);
 
   // ------------------------------------------------------------
   // ALWAYS CLOCKWISE ROTATION (rows down, cols right)
@@ -498,6 +504,7 @@ function rotateDomino(domino, clickX, clickY) {
   // Clockwise 90°: (dr, dc) -> (dc, -dr)
   const newOtherRow = pivotRow + dc;
   const newOtherCol = pivotCol - dr;
+console.log("rotated other:", newOtherRow, newOtherCol);
 
   // New two cells after rotation
   const newCell1Row = pivotRow;
@@ -513,6 +520,8 @@ function rotateDomino(domino, clickX, clickY) {
     newOrientation = "vertical";
   }
 
+console.log("new cells:", newCell1Row, newCell1Col, newCell2Row, newCell2Col);
+console.log("newOrientation:", newOrientation);
   // ------------------------------------------------------------
   // VALIDATION
   // ------------------------------------------------------------
@@ -557,5 +566,6 @@ function rotateDomino(domino, clickX, clickY) {
   // Pips: we do NOT reorder pip-groups.
   // The two halves keep their pip groups; rotation just moves them on the grid.
 
+console.log("=== ROTATE END ===");
   return true;
 }
