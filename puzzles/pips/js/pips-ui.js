@@ -51,15 +51,10 @@ function enableDominoInteractions() {
   console.log("enableDominoInteractions CALLED");
 
   document.querySelectorAll(".domino").forEach(domino => {
-    console.log("Attaching listeners to", domino);
-
     domino.addEventListener("mousedown", startDrag);
     domino.addEventListener("touchstart", startDrag, { passive: false });
 
-    // NYT: single-click does NOT rotate
     domino.addEventListener("click", onDominoClick);
-
-    // NYT: double-click rotates
     domino.addEventListener("dblclick", onDominoDoubleClick);
   });
 
@@ -75,13 +70,7 @@ function enableDominoInteractions() {
    ------------------------------------------------------------ */
 function onDominoClick(e) {
   const domino = e.currentTarget;
-
   console.log("Single-click: no rotation (NYT mode)");
-  console.log("DOMINO PARENT:", domino.parentElement);
-  console.log("PARENT CLASSES:", domino.parentElement ? domino.parentElement.className : null);
-  console.log("BOARD ROW:", domino.dataset.boardRow);
-  console.log("BOARD COL:", domino.dataset.boardCol);
-  console.log("ORIGIN:", domino.dataset.origin);
 }
 
 /* ------------------------------------------------------------
@@ -89,12 +78,7 @@ function onDominoClick(e) {
    ------------------------------------------------------------ */
 function onDominoDoubleClick(e) {
   const domino = e.currentTarget;
-  const clickX = e.clientX;
-  const clickY = e.clientY;
-
-  console.log("DOUBLE CLICK ROTATE", domino.dataset.index);
-
-  rotateDomino(domino, clickX, clickY);
+  rotateDomino(domino, e.clientX, e.clientY);
 }
 
 /* ------------------------------------------------------------
@@ -163,25 +147,25 @@ function drag(e) {
   const col = Math.round(boardX / step);
   const row = Math.round(boardY / step);
 
-  const orientation = activeDomino.classList.contains("vertical") ? "vertical" : "horizontal";
+  const facing = activeDomino.dataset.facing || "A-left";
+  const isVertical = (facing === "A-top" || facing === "A-bottom");
 
-  const cells =
-    orientation === "vertical"
-      ? [
-          [row, col],
-          [row + 1, col]
-        ]
-      : [
-          [row, col],
-          [row, col + 1]
-        ];
+  const cells = isVertical
+    ? [
+        [row, col],
+        [row + 1, col]
+      ]
+    : [
+        [row, col],
+        [row, col + 1]
+      ];
 
-  const sim = activeDomino.cloneNode(true);
-  sim.dataset.boardRow = row;
-  sim.dataset.boardCol = col;
-  sim.dataset.boardOrientation = orientation;
-
-  const valid = validateGridPlacement(row, col, orientation, sim, { simulate: true });
+  const valid = validateGridPlacementCells(
+    cells[0][0], cells[0][1],
+    cells[1][0], cells[1][1],
+    activeDomino,
+    { simulate: true }
+  );
 
   highlightCells(cells, valid);
 }
@@ -218,7 +202,10 @@ function endDrag(e) {
 
     const prevRow = parseInt(activeDomino.dataset.prevRow, 10);
     const prevCol = parseInt(activeDomino.dataset.prevCol, 10);
-    const prevOrientation = activeDomino.dataset.prevOrientation;
+
+    const facing = activeDomino.dataset.facing;
+    const [cell1Row, cell1Col, cell2Row, cell2Col] =
+      cellsFromFacing(prevRow, prevCol, facing);
 
     const anchorCell = document.getElementById(`cell-${prevRow}-${prevCol}`);
     const anchorRect = anchorCell.getBoundingClientRect();
@@ -226,42 +213,27 @@ function endDrag(e) {
     activeDomino.style.left = `${anchorRect.left - rootRect.left}px`;
     activeDomino.style.top = `${anchorRect.top - rootRect.top}px`;
 
-    const cells =
-      prevOrientation === "vertical"
-        ? [
-            [prevRow, prevCol],
-            [prevRow + 1, prevCol]
-          ]
-        : [
-            [prevRow, prevCol],
-            [prevRow, prevCol + 1]
-          ];
-
-    cells.forEach(([r, c]) => {
-      boardOccupancy[`${r},${c}`] = activeDomino;
-    });
+    boardOccupancy[`${cell1Row},${cell1Col}`] = activeDomino;
+    boardOccupancy[`${cell2Row},${cell2Col}`] = activeDomino;
 
     logBoardOccupancy();
   } else {
-     clearDominoFromBoard(activeDomino);
-   
-     const home = document.getElementById(activeDomino.dataset.homeSlot);
-     home.appendChild(activeDomino);
-   
-     // Reset positioning so flexbox can center it
-     activeDomino.style.position = "";
-     activeDomino.style.left = "";
-     activeDomino.style.top = "";
-     activeDomino.style.zIndex = "";
-     activeDomino.style.margin = "auto";
-   
-     // Reset orientation for tray consistency
-     activeDomino.classList.remove("horizontal", "vertical");
-     activeDomino.classList.add("horizontal");
-   
-     delete activeDomino.dataset.boardRow;
-     delete activeDomino.dataset.boardCol;
-     delete activeDomino.dataset.boardOrientation;
+    clearDominoFromBoard(activeDomino);
+
+    const home = document.getElementById(activeDomino.dataset.homeSlot);
+    home.appendChild(activeDomino);
+
+    activeDomino.style.position = "";
+    activeDomino.style.left = "";
+    activeDomino.style.top = "";
+    activeDomino.style.zIndex = "";
+    activeDomino.style.margin = "auto";
+
+    activeDomino.dataset.facing = "A-left";
+    applyFacingClass(activeDomino);
+
+    delete activeDomino.dataset.boardRow;
+    delete activeDomino.dataset.boardCol;
   }
 
   dragState = null;
