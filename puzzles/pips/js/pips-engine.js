@@ -303,22 +303,21 @@ function tryPlaceDomino(domino, options = {}) {
      console.log("Other path", simulate, domino.dataset.boardRow);
   }
 
-  // ------------------------------------------------------------
-  // DRAG PLACEMENT PATH
-  // ------------------------------------------------------------
-  const root = document.getElementById("pips-root");
-  const rootRect = root.getBoundingClientRect();
-
-  // Domino geometry relative to grid
-  const rawDom = domino.getBoundingClientRect();
-  const domRect = {
-    left: rawDom.left - rootRect.left,
-    right: rawDom.right - rootRect.left,
-    top: rawDom.top - rootRect.top,
-    bottom: rawDom.bottom - rootRect.top,
-    width: rawDom.width,
-    height: rawDom.height
-  };
+   // If loader provided anchorRow/anchorCol, use them directly
+   if (options.anchorRow != null && options.anchorCol != null) {
+     const anchorRow = options.anchorRow;
+     const anchorCol = options.anchorCol;
+   
+     const [cell1Row, cell1Col, cell2Row, cell2Col] =
+       cellsFromFacing(anchorRow, anchorCol, domino.dataset.facing);
+   
+     return validateGridPlacementCells(
+       cell1Row, cell1Col,
+       cell2Row, cell2Col,
+       domino,
+       { simulate: false }
+     );
+   }
 
   // ------------------------------------------------------------
   // Determine which half of the domino is the "anchor probe"
