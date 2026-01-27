@@ -235,9 +235,18 @@ function applyStartingDominos(puzzle) {
   if (!puzzle.startingDominos) return;
 
   const root = document.getElementById("pips-root");
+  const rootRect = root.getBoundingClientRect();
+
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+  const stride   = cellSize + cellGap;
 
   puzzle.startingDominos.forEach(entry => {
     const dom = document.querySelector(`.domino[data-index="${entry.index}"]`);
+    if (!dom) {
+      console.warn("Starting domino not found:", entry.index);
+      return;
+    }
 
     const [c1, c2] = entry.cells;
 
@@ -255,26 +264,24 @@ function applyStartingDominos(puzzle) {
     reorderPipGroups(dom);
     applyFacingClass(dom);
 
-    // Compute anchor (top-left of the two cells)
+    // Anchor = top-left of the two cells
     const anchorRow = Math.min(c1.row, c2.row);
     const anchorCol = Math.min(c1.col, c2.col);
 
+    // Convert board cell to pixel position inside pips-root
     const snapLeft = anchorCol * stride;
     const snapTop  = anchorRow * stride;
 
+    // Place the domino
     root.appendChild(dom);
-
     dom.style.position = "absolute";
     dom.style.left = `${snapLeft}px`;
     dom.style.top  = `${snapTop}px`;
 
-    // Let the engine commit the placement
+    // Commit placement to boardOccupancy
     const ok = tryPlaceDomino(dom, { simulate: false });
-
     if (!ok) {
       console.warn("Starting domino failed placement:", entry, dom);
-    } else {
-       console.log(c1, c2, facing)
     }
   });
 }
