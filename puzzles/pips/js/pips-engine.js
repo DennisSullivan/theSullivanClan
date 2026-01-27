@@ -478,40 +478,40 @@ function rotateDomino(domino, clickX, clickY) {
   let newCell2Row, newCell2Col;
   let newOrientation;
 
-  if (oldOrientation === "vertical") {
-    newOrientation = "horizontal";
-
-    if (pivotIsCell1) {
-      // pivot = top cell
-      newCell1Row = cell1Row;
-      newCell1Col = cell1Col;
-      newCell2Row = cell1Row;
-      newCell2Col = cell1Col + 1;
-    } else {
-      // pivot = bottom cell
-      newCell1Row = cell2Row;
-      newCell1Col = cell2Col;
-      newCell2Row = cell2Row;
-      newCell2Col = cell2Col - 1;
-    }
-
-  } else {
-    newOrientation = "vertical";
-
-    if (pivotIsCell1) {
-      // pivot = left cell
-      newCell1Row = cell1Row;
-      newCell1Col = cell1Col;
-      newCell2Row = cell1Row + 1;
-      newCell2Col = cell1Col;
-    } else {
-      // pivot = right cell
-      newCell1Row = cell2Row;
-      newCell1Col = cell2Col;
-      newCell2Row = cell2Row - 1;
-      newCell2Col = cell2Col;
-    }
-  }
+   if (oldOrientation === "vertical") {
+     newOrientation = "horizontal";
+   
+     if (pivotIsCell1) {
+       // pivot = top cell
+       newCell1Row = cell1Row;
+       newCell1Col = cell1Col;
+       newCell2Row = cell1Row;
+       newCell2Col = cell1Col + 1;
+     } else {
+       // pivot = bottom cell
+       newCell1Row = cell2Row;
+       newCell1Col = cell2Col;
+       newCell2Row = cell2Row;
+       newCell2Col = cell2Col - 1;
+     }
+   
+   } else {
+     newOrientation = "vertical";
+   
+     if (pivotIsCell1) {
+       // pivot = left cell
+       newCell1Row = cell1Row;
+       newCell1Col = cell1Col;
+       newCell2Row = cell1Row + 1;
+       newCell2Col = cell1Col;
+     } else {
+       // pivot = right cell
+       newCell1Row = cell2Row;
+       newCell1Col = cell2Col;
+       newCell2Row = cell2Row - 1;
+       newCell2Col = cell2Col;
+     }
+   }
 
   // ------------------------------------------------------------
   // VALIDATION
