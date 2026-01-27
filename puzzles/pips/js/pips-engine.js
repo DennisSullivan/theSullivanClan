@@ -279,27 +279,8 @@ function validateGridPlacementCells(
    Then calls validateGridPlacement() to approve/reject.
    ============================================================ */
 
-function tryPlaceDomino(domino, options = {}) {
-   console.log("=== tryPlaceDomino (no H/V) ===");
-   // ------------------------------------------------------------
-   // LOADER ANCHOR OVERRIDE
-   // If loader provides anchorRow/anchorCol, skip drag geometry
-   // ------------------------------------------------------------
-   if (options.anchorRow != null && options.anchorCol != null) {
-     const anchorRow = options.anchorRow;
-     const anchorCol = options.anchorCol;
-     const facing = domino.dataset.facing || "A-left";
-   
-     const [cell1Row, cell1Col, cell2Row, cell2Col] =
-       cellsFromFacing(anchorRow, anchorCol, facing);
-   
-     return validateGridPlacementCells(
-       cell1Row, cell1Col,
-       cell2Row, cell2Col,
-       domino,
-       { simulate: false }
-     );
-   }
+functionfunction tryPlaceDomino(domino, options = {}) {
+  console.log("=== tryPlaceDomino (no H/V) ===");
   const simulate = options.simulate === true;
 
   // ------------------------------------------------------------
@@ -312,42 +293,55 @@ function tryPlaceDomino(domino, options = {}) {
     const [cell1Row, cell1Col, cell2Row, cell2Col] =
       cellsFromFacing(oldRow, oldCol, domino.dataset.facing);
 
-     console.log("Good at ", cell1/riw, cell1Col, Cell2Row, Cell2Col);
-     return validateGridPlacementCells(
+    return validateGridPlacementCells(
       cell1Row, cell1Col,
       cell2Row, cell2Col,
       domino,
       { simulate: true }
     );
-     console.log("Other path", simulate, domino.dataset.boardRow);
   }
 
-   // If loader provided anchorRow/anchorCol, use them directly
-   if (options.anchorRow != null && options.anchorCol != null) {
-     const anchorRow = options.anchorRow;
-     const anchorCol = options.anchorCol;
-   
-     const [cell1Row, cell1Col, cell2Row, cell2Col] =
-       cellsFromFacing(anchorRow, anchorCol, domino.dataset.facing);
-   
-     return validateGridPlacementCells(
-       cell1Row, cell1Col,
-       cell2Row, cell2Col,
-       domino,
-       { simulate: false }
-     );
-   }
+  // ------------------------------------------------------------
+  // LOADER ANCHOR OVERRIDE
+  // If loader provides anchorRow/anchorCol, skip drag geometry
+  // ------------------------------------------------------------
+  if (options.anchorRow != null && options.anchorCol != null) {
+    const anchorRow = options.anchorRow;
+    const anchorCol = options.anchorCol;
+    const facing = domino.dataset.facing || "A-left";
+
+    const [cell1Row, cell1Col, cell2Row, cell2Col] =
+      cellsFromFacing(anchorRow, anchorCol, facing);
+
+    console.log("Valid placement (loader)", cell1Row, cell1Col, cell2Row, cell2Col, domino);
+    return validateGridPlacementCells(
+      cell1Row, cell1Col,
+      cell2Row, cell2Col,
+      domino,
+      { simulate: false }
+    );
+  }
 
   // ------------------------------------------------------------
-  // Determine which half of the domino is the "anchor probe"
-  // based on facing (not orientation)
+  // DRAG PLACEMENT PATH (UI-driven)
   // ------------------------------------------------------------
+  const root = document.getElementById("pips-root");
+  const rootRect = root.getBoundingClientRect();
+
+  const rawDom = domino.getBoundingClientRect();
+  const domRect = {
+    left: rawDom.left - rootRect.left,
+    right: rawDom.right - rootRect.left,
+    top: rawDom.top - rootRect.top,
+    bottom: rawDom.bottom - rootRect.top,
+    width: rawDom.width,
+    height: rawDom.height
+  };
+
   let anchorProbe;
-
   const facing = domino.dataset.facing || "A-left";
 
   if (facing === "A-top" || facing === "A-bottom") {
-    // vertical layout → probe top half
     anchorProbe = {
       left: domRect.left,
       right: domRect.right,
@@ -355,7 +349,6 @@ function tryPlaceDomino(domino, options = {}) {
       bottom: domRect.top + domRect.height / 2
     };
   } else {
-    // horizontal layout → probe left half
     anchorProbe = {
       left: domRect.left,
       right: domRect.left + domRect.width / 2,
@@ -364,9 +357,6 @@ function tryPlaceDomino(domino, options = {}) {
     };
   }
 
-  // ------------------------------------------------------------
-  // Find best-overlap cell(s)
-  // ------------------------------------------------------------
   let bestCells = [];
   let bestOverlap = 0;
 
@@ -399,13 +389,11 @@ function tryPlaceDomino(domino, options = {}) {
     }
   });
 
-  // No valid overlap
   if (bestCells.length === 0) {
     if (!simulate) domino.dataset.dropAttempt = "off-board";
     return false;
   }
 
-  // Require at least 25% overlap
   const anchor = bestCells[0];
   const anchorRect = anchor.getBoundingClientRect();
   const minArea = (anchorRect.width * anchorRect.height) * 0.25;
@@ -415,21 +403,12 @@ function tryPlaceDomino(domino, options = {}) {
     return false;
   }
 
-  // ------------------------------------------------------------
-  // Convert anchor cell → grid coords
-  // ------------------------------------------------------------
   const anchorRow = parseInt(anchor.dataset.row, 10);
   const anchorCol = parseInt(anchor.dataset.col, 10);
 
-  // ------------------------------------------------------------
-  // Compute the two occupied cells from facing
-  // ------------------------------------------------------------
   const [cell1Row, cell1Col, cell2Row, cell2Col] =
     cellsFromFacing(anchorRow, anchorCol, facing);
 
-  // ------------------------------------------------------------
-  // Validate placement using the new validator
-  // ------------------------------------------------------------
   console.log("Valid placement", cell1Row, cell1Col, cell2Row, cell2Col, domino);
   return validateGridPlacementCells(
     cell1Row, cell1Col,
@@ -438,7 +417,6 @@ function tryPlaceDomino(domino, options = {}) {
     { simulate }
   );
 }
-
 
 /* ============================================================
    ROTATION — NYT-STYLE AROUND CLICKED CELL
