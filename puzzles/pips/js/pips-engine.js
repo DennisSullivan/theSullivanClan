@@ -455,26 +455,21 @@ function rotateDomino(domino, clickX, clickY) {
     cell2Col = oldCol;
   }
 
-  // ------------------------------------------------------------
-  // TRUE NYT PIVOT DETECTION — GRID CELL, NOT DOM HALF
-  // ------------------------------------------------------------
-  const root = document.getElementById("pips-root");
-  const rootRect = root.getBoundingClientRect();
-
-  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-  const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-  const step = cellSize + cellGap;
-
-  // Convert click to grid coordinates
-  const gridX = clickX - rootRect.left;
-  const gridY = clickY - rootRect.top;
-
-  const clickedCol = Math.floor(gridX / step);
-  const clickedRow = Math.floor(gridY / step);
-
-  // Determine pivot cell by exact grid match
-  let pivotIsCell1 =
-    (clickedRow === cell1Row && clickedCol === cell1Col);
+   // ------------------------------------------------------------
+   // PIVOT DETECTION — DOM HALF (STABLE) 
+   // ------------------------------------------------------------
+   const rect = domino.getBoundingClientRect();
+   const localX = clickX - rect.left;
+   const localY = clickY - rect.top;
+   
+   let pivotIsCell1;
+   if (oldOrientation === "horizontal") {
+     const midX = rect.width / 2;
+     pivotIsCell1 = (localX < midX);   // left half → cell1, right half → cell2
+   } else {
+     const midY = rect.height / 2;
+     pivotIsCell1 = (localY < midY);   // top half → cell1, bottom half → cell2
+   }
 
   // ------------------------------------------------------------
   // NYT CLOCKWISE ROTATION — EXPLICIT CASES
