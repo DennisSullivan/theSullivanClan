@@ -300,6 +300,7 @@ function tryPlaceDomino(domino, options = {}) {
       domino,
       { simulate: true }
     );
+     console.log("Other path", simulate, domino.dataset.boardRow);
   }
 
   // ------------------------------------------------------------
