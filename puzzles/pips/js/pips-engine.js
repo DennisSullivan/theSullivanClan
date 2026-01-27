@@ -558,6 +558,7 @@ console.log("newOrientation:", newOrientation);
 
   // Commit new placement
   validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: false });
+console.log("DOM AFTER PLACEMENT:", domino.dataset.boardRow, domino.dataset.boardCol, domino.dataset.boardOrientation);
 
   // Update orientation classes
   domino.classList.remove("horizontal", "vertical");
