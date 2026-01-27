@@ -232,6 +232,18 @@ function buildRegionOverlays(puzzle) {
    APPLY STARTING DOMINOS
    ------------------------------------------------------------ */
 function applyStartingDominos(puzzle) {
+   console.log(
+     "%c[LOADER] placing domino",
+     "color: #0a0",
+     entry.index,
+     "cells:",
+     entry.cells,
+     "facing:",
+     facing,
+     "anchor:",
+     anchorRow,
+     anchorCol
+   );
   if (!puzzle.startingDominos) return;
 
   const root = document.getElementById("pips-root");
