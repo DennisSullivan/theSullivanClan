@@ -239,8 +239,28 @@ function applyStartingDominos(puzzle) {
   puzzle.startingDominos.forEach(entry => {
     const dom = document.querySelector(`.domino[data-index="${entry.index}"]`);
 
-    const snapLeft = entry.col * stride;
-    const snapTop  = entry.row * stride;
+    const [c1, c2] = entry.cells;
+
+    // Determine facing from the two cells
+    let facing;
+    if (c1.row === c2.row) {
+      // horizontal
+      facing = (c1.col < c2.col) ? "A-left" : "A-right";
+    } else {
+      // vertical
+      facing = (c1.row < c2.row) ? "A-top" : "A-bottom";
+    }
+
+    dom.dataset.facing = facing;
+    reorderPipGroups(dom);
+    applyFacingClass(dom);
+
+    // Compute anchor (top-left of the two cells)
+    const anchorRow = Math.min(c1.row, c2.row);
+    const anchorCol = Math.min(c1.col, c2.col);
+
+    const snapLeft = anchorCol * stride;
+    const snapTop  = anchorRow * stride;
 
     root.appendChild(dom);
 
@@ -248,18 +268,7 @@ function applyStartingDominos(puzzle) {
     dom.style.left = `${snapLeft}px`;
     dom.style.top  = `${snapTop}px`;
 
-    // Convert puzzle orientation → facing
-    let facing;
-    if (entry.orientation === "horizontal") {
-      facing = entry.aIsFirst ? "A-left" : "A-right";
-    } else {
-      facing = entry.aIsFirst ? "A-top" : "A-bottom";
-    }
-
-    dom.dataset.facing = facing;
-    reorderPipGroups(dom);
-    applyFacingClass(dom);
-
+    // Let the engine commit the placement
     const ok = tryPlaceDomino(dom, { simulate: false });
 
     if (!ok) {
