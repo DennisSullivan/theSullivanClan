@@ -411,7 +411,7 @@ function rotateDomino(domino, clickX, clickY) {
   console.log("NYT ROTATION ENGINE ACTIVE");
 
   // ------------------------------------------------------------
-  // TRAY ROTATION — always allowed, no grid constraints
+  // TRAY ROTATION — always allowed
   // ------------------------------------------------------------
   const isOnBoard =
     domino.dataset.boardRow !== undefined &&
@@ -435,7 +435,7 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   // ------------------------------------------------------------
-  // BOARD ROTATION — clicked cell stays fixed, other rotates CW
+  // BOARD ROTATION — NYT RULES
   // ------------------------------------------------------------
 
   const oldRow = parseInt(domino.dataset.boardRow, 10);
@@ -455,78 +455,85 @@ function rotateDomino(domino, clickX, clickY) {
     cell2Col = oldCol;
   }
 
-  // Determine which of the two cells was clicked (pivot)
-  const rect = domino.getBoundingClientRect();
-  const localX = clickX - rect.left;
-  const localY = clickY - rect.top;
+  // ------------------------------------------------------------
+  // TRUE NYT PIVOT DETECTION — GRID CELL, NOT DOM HALF
+  // ------------------------------------------------------------
+  const root = document.getElementById("pips-root");
+  const rootRect = root.getBoundingClientRect();
 
-  let pivotRow, pivotCol, otherRow, otherCol;
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+  const step = cellSize + cellGap;
 
-  if (oldOrientation === "horizontal") {
-    const midX = rect.width / 2;
-    if (localX < midX) {
-      // clicked left cell
-      pivotRow = cell1Row;
-      pivotCol = cell1Col;
-      otherRow = cell2Row;
-      otherCol = cell2Col;
+  // Convert click to grid coordinates
+  const gridX = clickX - rootRect.left;
+  const gridY = clickY - rootRect.top;
+
+  const clickedCol = Math.floor(gridX / step);
+  const clickedRow = Math.floor(gridY / step);
+
+  // Determine pivot cell by exact grid match
+  let pivotIsCell1 =
+    (clickedRow === cell1Row && clickedCol === cell1Col);
+
+  // ------------------------------------------------------------
+  // NYT CLOCKWISE ROTATION — EXPLICIT CASES
+  // ------------------------------------------------------------
+  let newCell1Row, newCell1Col;
+  let newCell2Row, newCell2Col;
+  let newOrientation;
+
+  if (oldOrientation === "vertical") {
+    newOrientation = "horizontal";
+
+    if (pivotIsCell1) {
+      // pivot = top cell
+      newCell1Row = cell1Row;
+      newCell1Col = cell1Col;
+      newCell2Row = cell1Row;
+      newCell2Col = cell1Col + 1;
     } else {
-      // clicked right cell
-      pivotRow = cell2Row;
-      pivotCol = cell2Col;
-      otherRow = cell1Row;
-      otherCol = cell1Col;
+      // pivot = bottom cell
+      newCell1Row = cell2Row;
+      newCell1Col = cell2Col;
+      newCell2Row = cell2Row;
+      newCell2Col = cell2Col - 1;
     }
+
   } else {
-    const midY = rect.height / 2;
-    if (localY < midY) {
-      // clicked top cell
-      pivotRow = cell1Row;
-      pivotCol = cell1Col;
-      otherRow = cell2Row;
-      otherCol = cell2Col;
+    newOrientation = "vertical";
+
+    if (pivotIsCell1) {
+      // pivot = left cell
+      newCell1Row = cell1Row;
+      newCell1Col = cell1Col;
+      newCell2Row = cell1Row + 1;
+      newCell2Col = cell1Col;
     } else {
-      // clicked bottom cell
-      pivotRow = cell2Row;
-      pivotCol = cell2Col;
-      otherRow = cell1Row;
-      otherCol = cell1Col;
+      // pivot = right cell
+      newCell1Row = cell2Row;
+      newCell1Col = cell2Col;
+      newCell2Row = cell2Row - 1;
+      newCell2Col = cell2Col;
     }
   }
 
-   // Vector from pivot to the other cell
-   const dRow = otherRow - pivotRow;
-   const dCol = otherCol - pivotCol;
-   
-   // Clockwise rotation in row-down, col-right grid: (dr, dc) -> (dc, -dr)
-   const newOtherRow = pivotRow + dCol;
-   const newOtherCol = pivotCol - dRow;
-
-   // New two cells after rotation
-  const newCell1Row = pivotRow;
-  const newCell1Col = pivotCol;
-  const newCell2Row = newOtherRow;
-  const newCell2Col = newOtherCol;
-
-  // On-board check
+  // ------------------------------------------------------------
+  // VALIDATION
+  // ------------------------------------------------------------
   const cellA = document.getElementById(`cell-${newCell1Row}-${newCell1Col}`);
   const cellB = document.getElementById(`cell-${newCell2Row}-${newCell2Col}`);
   if (!cellA || !cellB) {
-    console.warn("Rotation invalid: off-board final position");
+    console.warn("Rotation invalid: off-board");
     return false;
   }
 
-  // New anchor = top-left of the two cells
   const newRow = Math.min(newCell1Row, newCell2Row);
   const newCol = Math.min(newCell1Col, newCell2Col);
-  const newOrientation =
-    oldOrientation === "horizontal" ? "vertical" : "horizontal";
 
-  // Temporarily clear old occupancy
   delete boardOccupancy[`${cell1Row},${cell1Col}`];
   delete boardOccupancy[`${cell2Row},${cell2Col}`];
 
-  // Simulate new placement
   const valid = validateGridPlacement(
     newRow,
     newCol,
@@ -536,33 +543,19 @@ function rotateDomino(domino, clickX, clickY) {
   );
 
   if (!valid) {
-    console.warn("Rotation invalid for domino", domino.dataset.index);
-    // restore old placement
+    console.warn("Rotation invalid");
     validateGridPlacement(oldRow, oldCol, oldOrientation, domino, { simulate: false });
     return false;
   }
 
-  // Commit new placement
+  // Commit
   validateGridPlacement(newRow, newCol, newOrientation, domino, { simulate: false });
-   // ------------------------------------------------------------
-   // Ensure pip-groups keep the clicked cell's value in place
-   // Rule: the pip in the pivot cell must not jump to the other cell.
-   // ------------------------------------------------------------
-   const g1 = domino.children[0];
-   const g2 = domino.children[1];
-   
-   // Before rotation, cell1 is (cell1Row, cell1Col), cell2 is (cell2Row, cell2Col).
-   // The pivot cell is (pivotRow, pivotCol).
-   const pivotIsCell1 = (pivotRow === cell1Row && pivotCol === cell1Col);
-   
-   // If the pivot was cell2, swap groups so that the pivot's value
-   // stays with the pivot cell through the rotation.
-   if (!pivotIsCell1) {
-     domino.insertBefore(g2, g1);
-   }
 
   domino.classList.remove("horizontal", "vertical");
   domino.classList.add(newOrientation);
+
+  // ⭐ NO pip swapping. Ever.
+  // The two halves keep their pip groups.
 
   return true;
 }
