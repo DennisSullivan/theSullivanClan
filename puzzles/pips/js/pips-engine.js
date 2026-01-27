@@ -412,7 +412,8 @@ function tryPlaceDomino(domino, options = {}) {
   // ------------------------------------------------------------
   // Validate placement using the new validator
   // ------------------------------------------------------------
-  return validateGridPlacementCells(
+  console.log("Valid placement"
+  return validateGridPlacementCells(cell1Row, cell1Col, cell2Row, cell2Col, domino);
     cell1Row, cell1Col,
     cell2Row, cell2Col,
     domino,
