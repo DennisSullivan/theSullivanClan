@@ -158,6 +158,9 @@ function createPipGroup(value) {
   const group = document.createElement("div");
   group.classList.add("pip-group");
 
+  // ⭐ Tag the group with its value so reorderPipGroups can work
+  group.dataset.value = String(value);
+
   // Pip patterns for each number
   const pipPatterns = {
     0: [],
@@ -611,8 +614,8 @@ function reorderPipGroups(domino) {
   const a = domino.children[0];
   const b = domino.children[1];
 
-  const valA = domino.dataset.valueA;
-  const valB = domino.dataset.valueB;
+  const valA = String(domino.dataset.valueA);
+  const valB = String(domino.dataset.valueB);
 
   if (firstIsA) {
     if (a.dataset.value !== valA) domino.insertBefore(b, a);
