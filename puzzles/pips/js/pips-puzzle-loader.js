@@ -232,18 +232,6 @@ function buildRegionOverlays(puzzle) {
    APPLY STARTING DOMINOS
    ------------------------------------------------------------ */
 function applyStartingDominos(puzzle) {
-   console.log(
-     "%c[LOADER] placing domino",
-     "color: #0a0",
-     entry.index,
-     "cells:",
-     entry.cells,
-     "facing:",
-     facing,
-     "anchor:",
-     anchorRow,
-     anchorCol
-   );
   if (!puzzle.startingDominos) return;
 
   const root = document.getElementById("pips-root");
@@ -280,6 +268,18 @@ function applyStartingDominos(puzzle) {
     const anchorRow = Math.min(c1.row, c2.row);
     const anchorCol = Math.min(c1.col, c2.col);
 
+      console.log(
+        "%c[LOADER] placing domino",
+        "color: #0a0",
+        entry.index,
+        "cells:",
+        entry.cells,
+        "facing:",
+        facing,
+        "anchor:",
+        anchorRow,
+        anchorCol
+      );
     // Convert board cell to pixel position inside pips-root
     const snapLeft = anchorCol * stride;
     const snapTop  = anchorRow * stride;
