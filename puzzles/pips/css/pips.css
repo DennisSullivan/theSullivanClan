@@ -283,6 +283,21 @@ body {
   flex-direction: column;
 }
 
+/* Facing-based orientation (engine model) */
+.A-top,
+.A-bottom {
+  width: var(--cell-size);
+  height: calc(var(--cell-size) * 2 + var(--cell-gap));
+  flex-direction: column;
+}
+
+.A-left,
+.A-right {
+  width: calc(var(--cell-size) * 2 + var(--cell-gap));
+  height: var(--cell-size);
+  flex-direction: row;
+}
+
 /* NYT center dividing line */
 .domino::after {
   content: "";
