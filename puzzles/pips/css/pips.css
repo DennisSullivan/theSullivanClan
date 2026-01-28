@@ -276,6 +276,14 @@ body {
   align-items: center;
 }
 
+/* TRAY DOMINO LAYOUT — NYT STYLE */
+.domino {
+  display: flex;              /* horizontal layout */
+  flex-direction: row;        /* A-left = pip A on the left */
+  align-items: center;
+  justify-content: center;
+}
+
 /* Vertical orientation */
 .domino.vertical {
   width: var(--cell-size);
