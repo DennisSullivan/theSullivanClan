@@ -134,6 +134,7 @@ function buildDominoTray(dominoList) {
     domino.appendChild(createPipGroup(b));
 
     domino.dataset.facing = "A-left";   // required for rotation
+    console.log("INIT TRAY FACING", index, domino.dataset.facing);
     newDominoes.push(domino);
   });
 
