@@ -276,6 +276,11 @@ body {
   align-items: center;
 }
 
+/* Tray dominos must NOT be absolutely positioned */
+.tray-domino {
+  position: relative;
+}
+
 /* TRAY DOMINO LAYOUT — NYT STYLE */
 .domino {
   display: flex;              /* horizontal layout */
