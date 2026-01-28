@@ -124,7 +124,7 @@ function buildDominoTray(dominoList) {
     const [a, b] = pair;
 
     const domino = document.createElement("div");
-    domino.classList.add("domino");
+    domino.classList.add("domino", "tray-domino");
     domino.dataset.index = index;
     domino.dataset.valueA = a;
     domino.dataset.valueB = b;
