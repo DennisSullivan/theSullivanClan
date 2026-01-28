@@ -133,6 +133,7 @@ function buildDominoTray(dominoList) {
     domino.appendChild(createPipGroup(a));
     domino.appendChild(createPipGroup(b));
 
+    domino.dataset.facing = "A-left";   // required for rotation
     newDominoes.push(domino);
   });
 
