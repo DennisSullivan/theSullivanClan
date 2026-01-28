@@ -575,6 +575,9 @@ function rotateDomino(domino, clickX, clickY) {
     domino,
     { simulate: false }
   );
+   // ⭐ FIX: Update domino’s anchor to the new A cell
+   domino.dataset.boardRow = newCell1Row;
+   domino.dataset.boardCol = newCell1Col;
 
   // Reorder pip groups to match final facing
   reorderPipGroups(domino);
