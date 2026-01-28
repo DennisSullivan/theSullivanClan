@@ -654,6 +654,12 @@ function reorderPipGroups(domino) {
 }
 
 function applyFacingClass(domino) {
-  domino.classList.remove("A-top", "A-right", "A-bottom", "A-left");
-  domino.classList.add(domino.dataset.facing);
+  domino.classList.remove("A-top", "A-right", "A-bottom", "A-left", "vertical");
+
+  const facing = domino.dataset.facing;
+  domino.classList.add(facing);
+
+  if (facing === "A-top" || facing === "A-bottom") {
+    domino.classList.add("vertical");
+  }
 }
