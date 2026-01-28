@@ -472,124 +472,84 @@ function tryPlaceDomino(domino, options = {}) {
 
 function rotateDomino(domino, clickX, clickY) {
   console.log("=== ROTATE START (facing model, no H/V) ===");
-   console.log("ROTATE DEBUG dataset:", {
-     index: domino.dataset.index,
-     facing: domino.dataset.facing,
-     home: domino.dataset.homeSlot,
-     row: domino.dataset.boardRow,
-     col: domino.dataset.boardCol
-   });
+  console.log("ROTATE DEBUG dataset:", {
+    index: domino.dataset.index,
+    facing: domino.dataset.facing,
+    home: domino.dataset.homeSlot,
+    row: domino.dataset.boardRow,
+    col: domino.dataset.boardCol
+  });
 
-  // ------------------------------------------------------------
   // Ensure facing exists (tray dominos start as A-left)
-  // ------------------------------------------------------------
   if (!domino.dataset.facing) {
     domino.dataset.facing = "A-left";
   }
 
   const isOnBoard = domino.dataset.boardRow != null;
 
-   // ------------------------------------------------------------
-   // TRAY ROTATION (NYT-accurate)
-   // Dominos in the tray are always horizontal.
-   // Double-click flips A-left <-> A-right.
-   // ------------------------------------------------------------
-   if (!isOnBoard) {
-     const f = domino.dataset.facing;
-   
-     // Flip 180 degrees
-     if (f === "A-left") domino.dataset.facing = "A-right";
-     else domino.dataset.facing = "A-left";
+  // ------------------------------------------------------------
+  // TRAY ROTATION (NYT-accurate)
+  // Dominos in the tray are always horizontal.
+  // Double-click flips A-left <-> A-right.
+  // ------------------------------------------------------------
+  if (!isOnBoard) {
+    const f = domino.dataset.facing;
 
-     reorderPipGroups(domino);
-     applyFacingClass(domino);
-     return true;
-   }
+    // Flip 180 degrees
+    domino.dataset.facing = (f === "A-left") ? "A-right" : "A-left";
+
+    reorderPipGroups(domino);
+    applyFacingClass(domino);
+    return true;
+  }
 
   // ------------------------------------------------------------
   // BOARD ROTATION — NYT RULES
+  // Always rotate clockwise around the A cell.
+  // Click position is ignored for facing.
   // ------------------------------------------------------------
   const oldRow = parseInt(domino.dataset.boardRow, 10);
   const oldCol = parseInt(domino.dataset.boardCol, 10);
+  const oldFacing = domino.dataset.facing;
 
-  // Determine current two occupied cells from facing
+  // Current two occupied cells from facing
   const [cell1Row, cell1Col, cell2Row, cell2Col] =
-    cellsFromFacing(oldRow, oldCol, domino.dataset.facing);
+    cellsFromFacing(oldRow, oldCol, oldFacing);
 
-  // ------------------------------------------------------------
-  // Determine clicked cell
-  // ------------------------------------------------------------
-  const root = document.getElementById("pips-root");
-  const rootRect = root.getBoundingClientRect();
-  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-  const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-  const stride = cellSize + cellGap;
-
-  const clickedCol = Math.floor((clickX - rootRect.left) / stride);
-  const clickedRow = Math.floor((clickY - rootRect.top) / stride);
-
-  // ------------------------------------------------------------
-  // Determine pivot cell and clicked half (A or B)
-  // ------------------------------------------------------------
+  // Identify which cell is A (pivot) based on facing
   let pivotRow, pivotCol, otherRow, otherCol;
-  let clickedHalf;
-
-  const firstIsA = domino.dataset.facing.startsWith("A-");
-  const clickedIsCell1 = (clickedRow === cell1Row && clickedCol === cell1Col);
-
-  if (clickedIsCell1) {
+  if (oldFacing === "A-left" || oldFacing === "A-top") {
+    // A is cell1
     pivotRow = cell1Row;
     pivotCol = cell1Col;
     otherRow = cell2Row;
     otherCol = cell2Col;
-    clickedHalf = firstIsA ? "A" : "B";
   } else {
+    // A is cell2
     pivotRow = cell2Row;
     pivotCol = cell2Col;
     otherRow = cell1Row;
     otherCol = cell1Col;
-    clickedHalf = firstIsA ? "B" : "A";
   }
 
-  // ------------------------------------------------------------
   // Rotate geometry clockwise around pivot
-  // ------------------------------------------------------------
   const dr = otherRow - pivotRow;
   const dc = otherCol - pivotCol;
 
   const newOtherRow = pivotRow + dc;
   const newOtherCol = pivotCol - dr;
 
-  // New two cells
+  // New two cells: pivot (A) + rotated other
   const newCell1Row = pivotRow;
   const newCell1Col = pivotCol;
   const newCell2Row = newOtherRow;
   const newCell2Col = newOtherCol;
 
-  // ------------------------------------------------------------
-  // Rotate facing clockwise
-  // ------------------------------------------------------------
-  let newFacing = rotateFacingClockwise(domino.dataset.facing);
-
-  // ------------------------------------------------------------
-  // Ensure clicked half remains the pivot half
-  // ------------------------------------------------------------
-  const pivotIsCell1 = (pivotRow === newCell1Row && pivotCol === newCell1Col);
-  const newFirstHalf = newFacing.startsWith("A-") ? "A" : "B";
-
-  if (pivotIsCell1 && newFirstHalf !== clickedHalf) {
-    newFacing = flipFacing(newFacing);
-  }
-
-  if (!pivotIsCell1 && newFirstHalf === clickedHalf) {
-    newFacing = flipFacing(newFacing);
-  }
-
+  // Rotate facing clockwise (A stays the pivot)
+  const newFacing = rotateFacingClockwise(oldFacing);
   domino.dataset.facing = newFacing;
 
-  // ------------------------------------------------------------
   // Validate placement using the two cell pairs
-  // ------------------------------------------------------------
   const valid = validateGridPlacementCells(
     newCell1Row, newCell1Col,
     newCell2Row, newCell2Col,
@@ -616,14 +576,10 @@ function rotateDomino(domino, clickX, clickY) {
     { simulate: false }
   );
 
-  // ------------------------------------------------------------
   // Reorder pip groups to match final facing
-  // ------------------------------------------------------------
   reorderPipGroups(domino);
 
-  // ------------------------------------------------------------
   // Apply CSS class for facing
-  // ------------------------------------------------------------
   applyFacingClass(domino);
 
   console.log("=== ROTATE END ===");
