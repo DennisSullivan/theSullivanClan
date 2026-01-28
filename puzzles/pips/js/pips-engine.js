@@ -665,6 +665,7 @@ function applyFacingClass(domino) {
   const facing = domino.dataset.facing;
   domino.classList.add(facing);
 
+  // Only board facings use vertical geometry
   if (facing === "A-top" || facing === "A-bottom") {
     domino.classList.add("vertical");
   }
