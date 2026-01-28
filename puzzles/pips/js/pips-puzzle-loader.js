@@ -115,8 +115,8 @@ function loadBoardState(state) {
 function loadPuzzle(puzzle) {
   console.log(`Loading puzzle: ${puzzle.id} — ${puzzle.title}`);
 
-  buildBoardFromPuzzle(puzzle);
   clearBoard();
+  buildBoardFromPuzzle(puzzle);
   applyBlockedCells(puzzle);
   buildRegionOverlays(puzzle);
   applyStartingDominos(puzzle);
