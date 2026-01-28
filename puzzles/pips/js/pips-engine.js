@@ -565,7 +565,6 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   domino.dataset.facing = newFacing;
-  applyFacingClass(domino);
 
   // ------------------------------------------------------------
   // Validate placement using the two cell pairs
