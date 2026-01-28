@@ -471,11 +471,10 @@ function tryPlaceDomino(domino, options = {}) {
    ============================================================ */
 
 function rotateDomino(domino, clickX, clickY) {
-  console.log("=== ROTATE START (facing model, no H/V) ===");
+  console.log("=== ROTATE START (NYT rotation, visual only) ===");
   console.log("ROTATE DEBUG dataset:", {
     index: domino.dataset.index,
     facing: domino.dataset.facing,
-    home: domino.dataset.homeSlot,
     row: domino.dataset.boardRow,
     col: domino.dataset.boardCol
   });
@@ -488,92 +487,87 @@ function rotateDomino(domino, clickX, clickY) {
   const isOnBoard = domino.dataset.boardRow != null;
 
   // ------------------------------------------------------------
-  // TRAY ROTATION — flip A-left <-> A-right
+  // TRAY ROTATION — flip horizontally
   // ------------------------------------------------------------
   if (!isOnBoard) {
-    const f = domino.dataset.facing;
-    domino.dataset.facing = (f === "A-left") ? "A-right" : "A-left";
+    domino.dataset.facing =
+      domino.dataset.facing === "A-left" ? "A-right" : "A-left";
+
     reorderPipGroups(domino);
     applyFacingClass(domino);
     return true;
   }
 
   // ------------------------------------------------------------
-  // BOARD ROTATION — always pivot around A cell
+  // BOARD ROTATION — pivot = the cell the user double-clicked
   // ------------------------------------------------------------
+
+  const root = document.getElementById("pips-root");
+  const rootRect = root.getBoundingClientRect();
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
+  const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+  const stride = cellSize + cellGap;
+
+  const clickedCol = Math.floor((clickX - rootRect.left) / stride);
+  const clickedRow = Math.floor((clickY - rootRect.top) / stride);
+
   const oldRow = parseInt(domino.dataset.boardRow, 10);
   const oldCol = parseInt(domino.dataset.boardCol, 10);
   const oldFacing = domino.dataset.facing;
 
-  // Current two occupied cells from facing
+  // Current two occupied cells
   const [cell1Row, cell1Col, cell2Row, cell2Col] =
     cellsFromFacing(oldRow, oldCol, oldFacing);
 
-  // Identify which cell is A (pivot) based on facing
+  // Determine pivot cell based on click
   let pivotRow, pivotCol, otherRow, otherCol;
-  if (oldFacing === "A-left" || oldFacing === "A-top") {
-    // A is cell1
+
+  const clickedIsCell1 = (clickedRow === cell1Row && clickedCol === cell1Col);
+
+  if (clickedIsCell1) {
     pivotRow = cell1Row;
     pivotCol = cell1Col;
     otherRow = cell2Row;
     otherCol = cell2Col;
   } else {
-    // A is cell2
     pivotRow = cell2Row;
     pivotCol = cell2Col;
     otherRow = cell1Row;
     otherCol = cell1Col;
   }
 
-  // Rotate geometry clockwise around pivot (A)
+  // ------------------------------------------------------------
+  // Rotate geometry clockwise around pivot
+  // ------------------------------------------------------------
   const dr = otherRow - pivotRow;
   const dc = otherCol - pivotCol;
 
   const newOtherRow = pivotRow + dc;
   const newOtherCol = pivotCol - dr;
 
-  // New two cells: pivot (A) + rotated other
+  // New two cells (pivot stays where it is)
   const newCell1Row = pivotRow;
   const newCell1Col = pivotCol;
   const newCell2Row = newOtherRow;
   const newCell2Col = newOtherCol;
 
-  // Rotate facing clockwise (A stays the pivot)
+  // ------------------------------------------------------------
+  // Rotate facing clockwise (purely visual)
+  // ------------------------------------------------------------
   const newFacing = rotateFacingClockwise(oldFacing);
   domino.dataset.facing = newFacing;
 
-  // Validate placement using the two cell pairs
-  const valid = validateGridPlacementCells(
-    newCell1Row, newCell1Col,
-    newCell2Row, newCell2Col,
-    domino,
-    { simulate: true }
-  );
+  // ------------------------------------------------------------
+  // DO NOT VALIDATE OR COMMIT
+  // Rotation is visual only — NYT behavior
+  // ------------------------------------------------------------
 
-  if (!valid) {
-    // revert to old placement
-    validateGridPlacementCells(
-      cell1Row, cell1Col,
-      cell2Row, cell2Col,
-      domino,
-      { simulate: false }
-    );
-    return false;
-  }
+  // Update DOM position to reflect new geometry
+  // (boardRow/Col remain the anchor for rendering, not pivot)
+  domino.dataset.boardRow = Math.min(newCell1Row, newCell2Row);
+  domino.dataset.boardCol = Math.min(newCell1Col, newCell2Col);
 
-  // Commit placement
-  validateGridPlacementCells(
-    newCell1Row, newCell1Col,
-    newCell2Row, newCell2Col,
-    domino,
-    { simulate: false }
-  );
-
-  // Anchor is always the A cell
-  domino.dataset.boardRow = newCell1Row;
-  domino.dataset.boardCol = newCell1Col;
-
-  // Reorder pip groups to match final facing
+  // Reorder pip groups based on new facing
   reorderPipGroups(domino);
 
   // Apply CSS class for facing
@@ -582,6 +576,7 @@ function rotateDomino(domino, clickX, clickY) {
   console.log("=== ROTATE END ===");
   return true;
 }
+
 
 // Helper functions
 
