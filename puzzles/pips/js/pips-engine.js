@@ -475,15 +475,21 @@ function rotateDomino(domino, clickX, clickY) {
 
   const isOnBoard = domino.dataset.boardRow != null;
 
-  // ------------------------------------------------------------
-  // TRAY ROTATION — rotate facing only
-  // ------------------------------------------------------------
-  if (!isOnBoard) {
-    domino.dataset.facing = rotateFacingClockwise(domino.dataset.facing);
-    reorderPipGroups(domino);
-    applyFacingClass(domino);
-    return true;
-  }
+   // ------------------------------------------------------------
+   // TRAY ROTATION (NYT-accurate)
+   // Dominos in the tray are always horizontal.
+   // Double-click flips A-left <-> A-right.
+   // ------------------------------------------------------------
+   if (!isOnBoard) {
+     const f = domino.dataset.facing;
+   
+     // Flip 180 degrees
+     if (f === "A-left") domino.dataset.facing = "A-right";
+     else domino.dataset.facing = "A-left";
+   
+     applyFacingClass(domino);
+     return true;
+   }
 
   // ------------------------------------------------------------
   // BOARD ROTATION — NYT RULES
