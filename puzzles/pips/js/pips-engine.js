@@ -660,16 +660,20 @@ function cellsFromFacing(row, col, facing) {
 }
 
 function reorderPipGroups(domino) {
-  const firstIsA = domino.dataset.facing.startsWith("A-");
+  const facing = domino.dataset.facing;
+  const aShouldBeFirst = (facing === "A-left" || facing === "A-top");
+
   const a = domino.children[0];
   const b = domino.children[1];
 
   const valA = String(domino.dataset.valueA);
   const valB = String(domino.dataset.valueB);
 
-  if (firstIsA) {
+  if (aShouldBeFirst) {
+    // First child must be A
     if (a.dataset.value !== valA) domino.insertBefore(b, a);
   } else {
+    // First child must be B
     if (a.dataset.value !== valB) domino.insertBefore(b, a);
   }
 }
