@@ -17,7 +17,7 @@ function logBoardOccupancy() {
   } else {
     entries.forEach(([key, value]) => {
       const label = value.id ? value.id : "(no id)";
-      // console.log(`  cell ${key} -> domino ${label}`);
+      console.log(`  cell ${key} -> domino ${label}`);
     });
   }
   console.log("=============+===========");
