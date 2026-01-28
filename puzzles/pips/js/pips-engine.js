@@ -488,25 +488,18 @@ function rotateDomino(domino, clickX, clickY) {
   const isOnBoard = domino.dataset.boardRow != null;
 
   // ------------------------------------------------------------
-  // TRAY ROTATION (NYT-accurate)
-  // Dominos in the tray are always horizontal.
-  // Double-click flips A-left <-> A-right.
+  // TRAY ROTATION — flip A-left <-> A-right
   // ------------------------------------------------------------
   if (!isOnBoard) {
     const f = domino.dataset.facing;
-
-    // Flip 180 degrees
     domino.dataset.facing = (f === "A-left") ? "A-right" : "A-left";
-
     reorderPipGroups(domino);
     applyFacingClass(domino);
     return true;
   }
 
   // ------------------------------------------------------------
-  // BOARD ROTATION — NYT RULES
-  // Always rotate clockwise around the A cell.
-  // Click position is ignored for facing.
+  // BOARD ROTATION — always pivot around A cell
   // ------------------------------------------------------------
   const oldRow = parseInt(domino.dataset.boardRow, 10);
   const oldCol = parseInt(domino.dataset.boardCol, 10);
@@ -532,7 +525,7 @@ function rotateDomino(domino, clickX, clickY) {
     otherCol = cell1Col;
   }
 
-  // Rotate geometry clockwise around pivot
+  // Rotate geometry clockwise around pivot (A)
   const dr = otherRow - pivotRow;
   const dc = otherCol - pivotCol;
 
@@ -575,9 +568,10 @@ function rotateDomino(domino, clickX, clickY) {
     domino,
     { simulate: false }
   );
-   // ⭐ FIX: Update domino’s anchor to the new A cell
-   domino.dataset.boardRow = newCell1Row;
-   domino.dataset.boardCol = newCell1Col;
+
+  // Anchor is always the A cell
+  domino.dataset.boardRow = newCell1Row;
+  domino.dataset.boardCol = newCell1Col;
 
   // Reorder pip groups to match final facing
   reorderPipGroups(domino);
