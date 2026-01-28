@@ -145,7 +145,7 @@ function clearBoard() {
 
     delete dom.dataset.boardRow;
     delete dom.dataset.boardCol;
-    delete dom.dataset.facing;
+    dom.dataset.facing = "A-left";
   });
 }
 
