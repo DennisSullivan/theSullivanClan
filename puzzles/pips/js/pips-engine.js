@@ -1,3 +1,4 @@
+console.log("PIPS ENGINE VERSION 7");
 /* ============================================================
    PIPS ENGINE — BOARD OCCUPANCY
    Tracks which domino occupies which board cell.
