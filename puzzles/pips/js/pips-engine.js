@@ -465,6 +465,13 @@ function tryPlaceDomino(domino, options = {}) {
 
 function rotateDomino(domino, clickX, clickY) {
   console.log("=== ROTATE START (facing model, no H/V) ===");
+   console.log("ROTATE DEBUG dataset:", {
+     index: domino.dataset.index,
+     facing: domino.dataset.facing,
+     home: domino.dataset.homeSlot,
+     row: domino.dataset.boardRow,
+     col: domino.dataset.boardCol
+   });
 
   // ------------------------------------------------------------
   // Ensure facing exists (tray dominos start as A-left)
