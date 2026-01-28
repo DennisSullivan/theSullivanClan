@@ -494,7 +494,8 @@ function rotateDomino(domino, clickX, clickY) {
      // Flip 180 degrees
      if (f === "A-left") domino.dataset.facing = "A-right";
      else domino.dataset.facing = "A-left";
-   
+
+     reorderPipGroups(domino);
      applyFacingClass(domino);
      return true;
    }
