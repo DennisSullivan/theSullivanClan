@@ -473,6 +473,16 @@ function tryPlaceDomino(domino, options = {}) {
 function rotateDomino(domino, clickX, clickY) {
   console.log("=== ROTATE START (pivot‑fixed) ===");
 
+  // ------------------------------------------------------------
+  // INSTRUMENTATION — BEFORE ANYTHING HAPPENS
+  // ------------------------------------------------------------
+  console.log("BEFORE: facing =", domino.dataset.facing);
+  console.log("BEFORE: cellsFromFacing =", cellsFromFacing(
+    Number(domino.dataset.boardRow),
+    Number(domino.dataset.boardCol),
+    domino.dataset.facing
+  ));
+
   // Ensure facing exists
   if (!domino.dataset.facing) {
     domino.dataset.facing = "A-left";
@@ -489,6 +499,14 @@ function rotateDomino(domino, clickX, clickY) {
 
     reorderPipGroups(domino);
     applyFacingClass(domino);
+
+    console.log("AFTER (tray): facing =", domino.dataset.facing);
+    console.log("AFTER (tray): cellsFromFacing =", cellsFromFacing(
+      Number(domino.dataset.boardRow),
+      Number(domino.dataset.boardCol),
+      domino.dataset.facing
+    ));
+
     return true;
   }
 
@@ -564,8 +582,6 @@ function rotateDomino(domino, clickX, clickY) {
   // ------------------------------------------------------------
   // VISUAL ROTATION ONLY — NO ANCHOR CHANGE
   // ------------------------------------------------------------
-  // The pivot cell stays fixed in place.
-  // The domino's left/top remain tied to the anchor cell.
   domino.style.left = (anchorCol * stride) + "px";
   domino.style.top  = (anchorRow * stride) + "px";
 
@@ -579,6 +595,16 @@ function rotateDomino(domino, clickX, clickY) {
     pivot: [pivotRow, pivotCol],
     other: [newOtherRow, newOtherCol]
   });
+
+  // ------------------------------------------------------------
+  // INSTRUMENTATION — AFTER FACING UPDATE
+  // ------------------------------------------------------------
+  console.log("AFTER: facing =", domino.dataset.facing);
+  console.log("AFTER: cellsFromFacing =", cellsFromFacing(
+    Number(domino.dataset.boardRow),
+    Number(domino.dataset.boardCol),
+    domino.dataset.facing
+  ));
 
   console.log("=== ROTATE END ===");
   return true;
