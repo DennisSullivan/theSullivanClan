@@ -511,7 +511,7 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   // ------------------------------------------------------------
-  // BOARD ROTATION — pivot = clicked cell (visual only)
+  // BOARD ROTATION — pivot = clicked cell
   // ------------------------------------------------------------
 
   const root = document.getElementById("pips-root");
@@ -571,9 +571,16 @@ function rotateDomino(domino, clickX, clickY) {
   console.log("NEW OTHER:", newOtherRow, newOtherCol);
 
   // ------------------------------------------------------------
-  // Update facing (visual only)
+  // FIX: derive facing from the math result
   // ------------------------------------------------------------
-  const newFacing = rotateFacingClockwise(oldFacing);
+  function facingFromCells(pivotRow, pivotCol, otherRow, otherCol) {
+    if (otherRow === pivotRow && otherCol === pivotCol + 1) return "A-right";
+    if (otherRow === pivotRow && otherCol === pivotCol - 1) return "A-left";
+    if (otherCol === pivotCol && otherRow === pivotRow - 1) return "A-top";
+    if (otherCol === pivotCol && otherRow === pivotRow + 1) return "A-bottom";
+  }
+
+  const newFacing = facingFromCells(pivotRow, pivotCol, newOtherRow, newOtherCol);
   domino.dataset.facing = newFacing;
 
   reorderPipGroups(domino);
