@@ -322,7 +322,7 @@ function tryPlaceDomino(domino, options = {}) {
     const oldCol = parseInt(domino.dataset.boardCol, 10);
 
     const [cell1Row, cell1Col, cell2Row, cell2Col] =
-      cellsFromFacing(oldRow, oldCol, domino.dataset.facing);
+      ing(oldRow, oldCol, domino.dataset.facing);
 
     return validateGridPlacementCells(
       cell1Row, cell1Col,
@@ -534,6 +534,38 @@ function rotateDomino(domino, clickX, clickY) {
   // Current two cells
   const [cell1Row, cell1Col, cell2Row, cell2Col] =
     cellsFromFacing(anchorRow, anchorCol, oldFacing);
+   // ------------------------------------------------------------
+   // INSTRUMENTATION: Show actual pip values in the two cells
+   // ------------------------------------------------------------
+   function getPipValueAt(domino, row, col) {
+     // Determine which cell is A and which is B
+     const aVal = domino.dataset.valueA;
+     const bVal = domino.dataset.valueB;
+   
+     // Compute the two cells for the current facing
+     const [r1, c1, r2, c2] = cellsFromFacing(
+       Number(domino.dataset.boardRow),
+       Number(domino.dataset.boardCol),
+       domino.dataset.facing
+     );
+   
+     if (row === r1 && col === c1) return aVal;
+     if (row === r2 && col === c2) return bVal;
+     return null;
+   }
+   
+   console.log("PIP VALUES BEFORE ROTATION:", {
+     cell1: {
+       row: cell1Row,
+       col: cell1Col,
+       pip: getPipValueAt(domino, cell1Row, cell1Col)
+     },
+     cell2: {
+       row: cell2Row,
+       col: cell2Col,
+       pip: getPipValueAt(domino, cell2Row, cell2Col)
+     }
+   });
 
   console.log("CELLS BEFORE:", {
     cell1: [cell1Row, cell1Col],
@@ -651,6 +683,27 @@ function rotateDomino(domino, clickX, clickY) {
     domino.dataset.facing
   ));
 
+// ------------------------------------------------------------
+// INSTRUMENTATION: Show actual pip values AFTER rotation
+// ------------------------------------------------------------
+const [newC1r, newC1c, newC2r, newC2c] = cellsFromFacing(
+  Number(domino.dataset.boardRow),
+  Number(domino.dataset.boardCol),
+  domino.dataset.facing
+);
+
+   console.log("PIP VALUES AFTER ROTATION:", {
+     cell1: {
+       row: newC1r,
+       col: newC1c,
+       pip: getPipValueAt(domino, newC1r, newC1c)
+     },
+     cell2: {
+       row: newC2r,
+       col: newC2c,
+       pip: getPipValueAt(domino, newC2r, newC2c)
+     }
+   });
   console.log("=== ROTATE END ===");
   return true;
 }
