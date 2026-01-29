@@ -241,6 +241,11 @@ function validateGridPlacementCells(
   // ------------------------------------------------------------
   const keyA = `${cell1Row},${cell1Col}`;
   const keyB = `${cell2Row},${cell2Col}`;
+   console.log("ROTATE CELLS BEFORE:", {
+     cell1: [cell1Row, cell1Col],
+     cell2: [cell2Row, cell2Col],
+     clicked: [clickedRow, clickedCol]
+   });
 
   if (boardOccupancy[keyA] && boardOccupancy[keyA] !== domino) {
     if (!simulate) domino.dataset.dropAttempt = "invalid-on-board";
