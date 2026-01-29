@@ -472,6 +472,12 @@ function tryPlaceDomino(domino, options = {}) {
 
 function rotateDomino(domino, clickX, clickY) {
   console.log("=== ROTATE START (clean rotation) ===");
+  console.log("ROTATE DEBUG dataset:", {
+    index: domino.dataset.index,
+    facing: domino.dataset.facing,
+    row: domino.dataset.boardRow,
+    col: domino.dataset.boardCol
+  });
 
   // Ensure facing exists
   if (!domino.dataset.facing) {
@@ -513,6 +519,11 @@ function rotateDomino(domino, clickX, clickY) {
   const [cell1Row, cell1Col, cell2Row, cell2Col] =
     cellsFromFacing(oldRow, oldCol, oldFacing);
 
+  console.log("CELLS BEFORE:", {
+    cell1: [cell1Row, cell1Col],
+    cell2: [cell2Row, cell2Col]
+  });
+
   // Determine pivot cell
   let pivotRow, pivotCol, otherRow, otherCol;
 
@@ -530,6 +541,8 @@ function rotateDomino(domino, clickX, clickY) {
     otherCol = cell1Col;
   }
 
+  console.log("ROTATE PIVOT:", pivotRow, pivotCol);
+
   // ------------------------------------------------------------
   // Rotate the OTHER half clockwise around the pivot
   // ------------------------------------------------------------
@@ -545,6 +558,11 @@ function rotateDomino(domino, clickX, clickY) {
   const newCell2Row = newOtherRow;
   const newCell2Col = newOtherCol;
 
+  console.log("CELLS AFTER:", {
+    cell1: [newCell1Row, newCell1Col],
+    cell2: [newCell2Row, newCell2Col]
+  });
+
   // ------------------------------------------------------------
   // Rotate facing clockwise
   // ------------------------------------------------------------
@@ -555,31 +573,13 @@ function rotateDomino(domino, clickX, clickY) {
   applyFacingClass(domino);
 
   // ------------------------------------------------------------
-  // PLACE DOMINO USING NEW ANCHOR CELL
+  // CLEAN ANCHOR RULE:
+  // The anchor is ALWAYS the top-left of the two cells.
   // ------------------------------------------------------------
-  let anchorRow, anchorCol;
+  const anchorRow = Math.min(newCell1Row, newCell2Row);
+  const anchorCol = Math.min(newCell1Col, newCell2Col);
 
-  switch (newFacing) {
-    case "A-top":
-      anchorRow = newCell1Row;   // top cell
-      anchorCol = newCell1Col;
-      break;
-
-    case "A-bottom":
-      anchorRow = newCell2Row;   // bottom cell
-      anchorCol = newCell2Col;
-      break;
-
-    case "A-left":
-      anchorRow = newCell1Row;   // left cell
-      anchorCol = newCell1Col;
-      break;
-
-    case "A-right":
-      anchorRow = newCell2Row;   // right cell
-      anchorCol = newCell2Col;
-      break;
-  }
+  console.log("ANCHOR:", anchorRow, anchorCol);
 
   domino.style.left = (anchorCol * stride) + "px";
   domino.style.top  = (anchorRow * stride) + "px";
