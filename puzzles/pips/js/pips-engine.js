@@ -524,7 +524,7 @@ function rotateDomino(domino, clickX, clickY) {
   const clickedCol = Math.floor((clickX - rootRect.left) / stride);
   const clickedRow = Math.floor((clickY - rootRect.top)  / stride);
 
-  // Logical anchor (never changes during rotation)
+  // Current anchor
   const anchorRow = parseInt(domino.dataset.boardRow, 10);
   const anchorCol = parseInt(domino.dataset.boardCol, 10);
 
@@ -558,9 +558,6 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   console.log("ROTATE PIVOT:", pivotRow, pivotCol);
-   // *** FIX: pivot becomes new anchor ***
-   domino.dataset.boardRow = pivotRow;
-   domino.dataset.boardCol = pivotCol;
 
   // ------------------------------------------------------------
   // Compute new OTHER cell (clockwise rotation)
@@ -568,42 +565,66 @@ function rotateDomino(domino, clickX, clickY) {
   const dr = otherRow - pivotRow;
   const dc = otherCol - pivotCol;
 
-  const newOtherRow = pivotRow + dc;
-  const newOtherCol = pivotCol - dr;
+  let newOtherRow = pivotRow + dc;
+  let newOtherCol = pivotCol - dr;
 
   console.log("NEW OTHER:", newOtherRow, newOtherCol);
 
   // ------------------------------------------------------------
-  // FIX: derive facing from the math result
+  // NORMALIZE: choose top-left cell as anchor
   // ------------------------------------------------------------
-  function facingFromCells(pivotRow, pivotCol, otherRow, otherCol) {
-    if (otherRow === pivotRow && otherCol === pivotCol + 1) return "A-right";
-    if (otherRow === pivotRow && otherCol === pivotCol - 1) return "A-left";
-    if (otherCol === pivotCol && otherRow === pivotRow - 1) return "A-top";
-    if (otherCol === pivotCol && otherRow === pivotRow + 1) return "A-bottom";
+  let anchorRowNew = pivotRow;
+  let anchorColNew = pivotCol;
+  let otherRowNew  = newOtherRow;
+  let otherColNew  = newOtherCol;
+
+  // If other is above, or same row but left of pivot, make other the anchor
+  if (
+    otherRowNew < anchorRowNew ||
+    (otherRowNew === anchorRowNew && otherColNew < anchorColNew)
+  ) {
+    anchorRowNew = otherRowNew;
+    anchorColNew = otherColNew;
+    otherRowNew  = pivotRow;
+    otherColNew  = pivotCol;
   }
 
-  const newFacing = facingFromCells(pivotRow, pivotCol, newOtherRow, newOtherCol);
+  // Write back the new anchor
+  domino.dataset.boardRow = anchorRowNew;
+  domino.dataset.boardCol = anchorColNew;
+
+  // ------------------------------------------------------------
+  // Facing from normalized anchor + other
+  // ------------------------------------------------------------
+  function facingFromCells(anchorRow, anchorCol, otherRow, otherCol) {
+    if (otherRow === anchorRow && otherCol === anchorCol + 1) return "A-left";
+    if (otherRow === anchorRow && otherCol === anchorCol - 1) return "A-right";
+    if (otherCol === anchorCol && otherRow === anchorRow - 1) return "A-bottom";
+    if (otherCol === anchorCol && otherRow === anchorRow + 1) return "A-top";
+  }
+
+  const newFacing = facingFromCells(anchorRowNew, anchorColNew, otherRowNew, otherColNew);
   domino.dataset.facing = newFacing;
 
   reorderPipGroups(domino);
   applyFacingClass(domino);
 
   // ------------------------------------------------------------
-  // VISUAL ROTATION ONLY — NO ANCHOR CHANGE
+  // VISUAL POSITION — based on new anchor
   // ------------------------------------------------------------
-  domino.style.left = (anchorCol * stride) + "px";
-  domino.style.top  = (anchorRow * stride) + "px";
+  domino.style.left = (anchorColNew * stride) + "px";
+  domino.style.top  = (anchorRowNew * stride) + "px";
 
   // Store temporary rotation geometry for later commit/revert
-  domino.dataset.tempCell1Row = pivotRow;
-  domino.dataset.tempCell1Col = pivotCol;
-  domino.dataset.tempCell2Row = newOtherRow;
-  domino.dataset.tempCell2Col = newOtherCol;
+  domino.dataset.tempCell1Row = anchorRowNew;
+  domino.dataset.tempCell1Col = anchorColNew;
+  domino.dataset.tempCell2Row = otherRowNew;
+  domino.dataset.tempCell2Col = otherColNew;
 
   console.log("TEMP ROTATION STORED:", {
     pivot: [pivotRow, pivotCol],
-    other: [newOtherRow, newOtherCol]
+    other: [newOtherRow, newOtherCol],
+    anchor: [anchorRowNew, anchorColNew]
   });
 
   // ------------------------------------------------------------
@@ -619,6 +640,7 @@ function rotateDomino(domino, clickX, clickY) {
   console.log("=== ROTATE END ===");
   return true;
 }
+
 
 
 // Helper functions
