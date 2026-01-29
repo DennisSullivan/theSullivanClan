@@ -666,10 +666,17 @@ function rotateDomino(domino, clickX, clickY) {
   domino.style.top  = (anchorRowNew * stride) + "px";
 
   // Store temporary rotation geometry for later commit/revert
+   /*
   domino.dataset.tempCell1Row = anchorRowNew;
   domino.dataset.tempCell1Col = anchorColNew;
   domino.dataset.tempCell2Row = otherRowNew;
-  domino.dataset.tempCell2Col = otherColNew;
+  domino.dataset.tempCell2Col = otherColNew; */
+   // tempCell1 = pivot (A must always be here)
+   // tempCell2 = rotated other cell (B must always be here)
+   domino.dataset.tempCell1Row = pivotRow;
+   domino.dataset.tempCell1Col = pivotCol;
+   domino.dataset.tempCell2Row = newOtherRow;
+   domino.dataset.tempCell2Col = newOtherCol;
 
   console.log("TEMP ROTATION STORED:", {
     pivot: [pivotRow, pivotCol],
