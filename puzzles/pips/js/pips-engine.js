@@ -558,6 +558,9 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   console.log("ROTATE PIVOT:", pivotRow, pivotCol);
+   // *** FIX: pivot becomes new anchor ***
+   domino.dataset.boardRow = pivotRow;
+   domino.dataset.boardCol = pivotCol;
 
   // ------------------------------------------------------------
   // Compute new OTHER cell (clockwise rotation)
