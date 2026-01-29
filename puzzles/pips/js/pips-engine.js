@@ -471,15 +471,9 @@ function tryPlaceDomino(domino, options = {}) {
    ============================================================ */
 
 function rotateDomino(domino, clickX, clickY) {
-  console.log("=== ROTATE START (NYT rotation, visual only) ===");
-  console.log("ROTATE DEBUG dataset:", {
-    index: domino.dataset.index,
-    facing: domino.dataset.facing,
-    row: domino.dataset.boardRow,
-    col: domino.dataset.boardCol
-  });
+  console.log("=== ROTATE START (clean rotation) ===");
 
-  // Ensure facing exists (tray dominos start as A-left)
+  // Ensure facing exists
   if (!domino.dataset.facing) {
     domino.dataset.facing = "A-left";
   }
@@ -487,7 +481,7 @@ function rotateDomino(domino, clickX, clickY) {
   const isOnBoard = domino.dataset.boardRow != null;
 
   // ------------------------------------------------------------
-  // TRAY ROTATION — flip horizontally
+  // TRAY ROTATION — simple horizontal flip
   // ------------------------------------------------------------
   if (!isOnBoard) {
     domino.dataset.facing =
@@ -499,27 +493,27 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   // ------------------------------------------------------------
-  // BOARD ROTATION — pivot = the cell the user double-clicked
+  // BOARD ROTATION — pivot = clicked cell
   // ------------------------------------------------------------
 
   const root = document.getElementById("pips-root");
   const rootRect = root.getBoundingClientRect();
   const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-size"));
-  const cellGap = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
-  const stride = cellSize + cellGap;
+  const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
+  const stride   = cellSize + cellGap;
 
   const clickedCol = Math.floor((clickX - rootRect.left) / stride);
-  const clickedRow = Math.floor((clickY - rootRect.top) / stride);
+  const clickedRow = Math.floor((clickY - rootRect.top)  / stride);
 
   const oldRow = parseInt(domino.dataset.boardRow, 10);
   const oldCol = parseInt(domino.dataset.boardCol, 10);
   const oldFacing = domino.dataset.facing;
 
-  // Current two occupied cells
+  // Current two cells
   const [cell1Row, cell1Col, cell2Row, cell2Col] =
     cellsFromFacing(oldRow, oldCol, oldFacing);
 
-  // Determine pivot cell based on click
+  // Determine pivot cell
   let pivotRow, pivotCol, otherRow, otherCol;
 
   const clickedIsCell1 = (clickedRow === cell1Row && clickedCol === cell1Col);
@@ -536,35 +530,8 @@ function rotateDomino(domino, clickX, clickY) {
     otherCol = cell1Col;
   }
 
-  console.log("ROTATE PIVOT:", pivotRow, pivotCol);
-
-  // ⭐ Diagnostic 1: pixel position of pivot cell
-  const pivotCellEl = document.getElementById(`cell-${pivotRow}-${pivotCol}`);
-  const pivotRect = pivotCellEl.getBoundingClientRect();
-  console.log("PIVOT PIXELS:", {
-    left: pivotRect.left,
-    top: pivotRect.top,
-    right: pivotRect.right,
-    bottom: pivotRect.bottom
-  });
-
-  // ⭐ Diagnostic 2: DOM position before rotation
-  const domRectBefore = domino.getBoundingClientRect();
-  console.log("DOM BEFORE:", {
-    left: domRectBefore.left,
-    top: domRectBefore.top,
-    width: domRectBefore.width,
-    height: domRectBefore.height
-  });
-
-  // ⭐ Diagnostic 3: board cells before rotation
-  console.log("CELLS BEFORE:", {
-    cell1: [cell1Row, cell1Col],
-    cell2: [cell2Row, cell2Col]
-  });
-
   // ------------------------------------------------------------
-  // Rotate geometry clockwise around pivot
+  // Rotate the OTHER half clockwise around the pivot
   // ------------------------------------------------------------
   const dr = otherRow - pivotRow;
   const dc = otherCol - pivotCol;
@@ -572,64 +539,50 @@ function rotateDomino(domino, clickX, clickY) {
   const newOtherRow = pivotRow + dc;
   const newOtherCol = pivotCol - dr;
 
-  // New two cells (pivot stays where it is)
+  // New two cells
   const newCell1Row = pivotRow;
   const newCell1Col = pivotCol;
   const newCell2Row = newOtherRow;
   const newCell2Col = newOtherCol;
 
-  // ⭐ Diagnostic 4: board cells after rotation
-  console.log("CELLS AFTER:", {
-    cell1: [newCell1Row, newCell1Col],
-    cell2: [newCell2Row, newCell2Col]
-  });
-
   // ------------------------------------------------------------
-  // Rotate facing clockwise (purely visual)
+  // Rotate facing clockwise
   // ------------------------------------------------------------
   const newFacing = rotateFacingClockwise(oldFacing);
   domino.dataset.facing = newFacing;
 
-  // Reorder pip groups based on new facing
   reorderPipGroups(domino);
-
-  // Apply CSS class for facing
   applyFacingClass(domino);
 
   // ------------------------------------------------------------
-  // ⭐ VISUAL CORRECTION: keep the pinned half fixed
+  // PLACE DOMINO USING NEW ANCHOR CELL
   // ------------------------------------------------------------
-  {
-    // 1. Pixel center of pivot cell
-    const pivotCenterX = (pivotRect.left + pivotRect.right) / 2;
-    const pivotCenterY = (pivotRect.top + pivotRect.bottom) / 2;
+  let anchorRow, anchorCol;
 
-    // 2. Domino geometry BEFORE rotation
-    const beforeCenterX = domRectBefore.left + domRectBefore.width / 2;
-    const beforeCenterY = domRectBefore.top + domRectBefore.height / 2;
+  switch (newFacing) {
+    case "A-top":
+      anchorRow = newCell1Row;   // top cell
+      anchorCol = newCell1Col;
+      break;
 
-    // 3. Domino geometry AFTER rotation
-    const after = domino.getBoundingClientRect();
-    const afterCenterX = after.left + after.width / 2;
-    const afterCenterY = after.top + after.height / 2;
+    case "A-bottom":
+      anchorRow = newCell2Row;   // bottom cell
+      anchorCol = newCell2Col;
+      break;
 
-    // 4. Compute how far the domino moved relative to the pivot
-    const dx = (beforeCenterX - afterCenterX);
-    const dy = (beforeCenterY - afterCenterY);
+    case "A-left":
+      anchorRow = newCell1Row;   // left cell
+      anchorCol = newCell1Col;
+      break;
 
-    // 5. Apply translation to keep pivot pinned
-    domino.style.left = (parseFloat(domino.style.left) + dx) + "px";
-    domino.style.top  = (parseFloat(domino.style.top)  + dy) + "px";
+    case "A-right":
+      anchorRow = newCell2Row;   // right cell
+      anchorCol = newCell2Col;
+      break;
   }
 
-  // ⭐ Diagnostic 5: DOM position after rotation
-  const domRectAfter = domino.getBoundingClientRect();
-  console.log("DOM AFTER:", {
-    left: domRectAfter.left,
-    top: domRectAfter.top,
-    width: domRectAfter.width,
-    height: domRectAfter.height
-  });
+  domino.style.left = (anchorCol * stride) + "px";
+  domino.style.top  = (anchorRow * stride) + "px";
 
   console.log("=== ROTATE END ===");
   return true;
