@@ -535,6 +535,7 @@ function rotateDomino(domino, clickX, clickY) {
     otherRow = cell1Row;
     otherCol = cell1Col;
   }
+   console.log("ROTATE PIVOT:", pivotRow, pivotCol);
 
   // ------------------------------------------------------------
   // Rotate geometry clockwise around pivot
