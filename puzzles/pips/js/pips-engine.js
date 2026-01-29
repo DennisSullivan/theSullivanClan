@@ -765,6 +765,22 @@ function reorderPipGroups(domino) {
   }
 }
 
+function reorderPipGroupsForLoader(domino) {
+  const facing = domino.dataset.facing;
+  const aShouldBeFirst = (facing === "A-left" || facing === "A-top");
+
+  const a = domino.children[0];
+  const b = domino.children[1];
+
+  const valA = domino.dataset.valueA;
+  const valB = domino.dataset.valueB;
+
+  if (aShouldBeFirst) {
+    if (a.dataset.value !== valA) domino.insertBefore(b, a);
+  } else {
+    if (a.dataset.value !== valB) domino.insertBefore(b, a);
+  }
+}
 
 function applyFacingClass(domino) {
   domino.classList.remove("A-top", "A-right", "A-bottom", "A-left", "vertical");
