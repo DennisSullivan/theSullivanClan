@@ -483,7 +483,6 @@ function rotateDomino(domino, clickX, clickY) {
     domino.dataset.facing
   ));
 
-  // Ensure facing exists
   if (!domino.dataset.facing) {
     domino.dataset.facing = "A-left";
   }
@@ -501,12 +500,6 @@ function rotateDomino(domino, clickX, clickY) {
     applyFacingClass(domino);
 
     console.log("AFTER (tray): facing =", domino.dataset.facing);
-    console.log("AFTER (tray): cellsFromFacing =", cellsFromFacing(
-      Number(domino.dataset.boardRow),
-      Number(domino.dataset.boardCol),
-      domino.dataset.facing
-    ));
-
     return true;
   }
 
@@ -520,59 +513,34 @@ function rotateDomino(domino, clickX, clickY) {
   const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
   const stride   = cellSize + cellGap;
 
-  // Compute clicked cell
   const clickedCol = Math.floor((clickX - rootRect.left) / stride);
   const clickedRow = Math.floor((clickY - rootRect.top)  / stride);
 
-  // Current anchor
-  const anchorRow = parseInt(domino.dataset.boardRow, 10);
-  const anchorCol = parseInt(domino.dataset.boardCol, 10);
-
-  // Current facing
+  const anchorRow = Number(domino.dataset.boardRow);
+  const anchorCol = Number(domino.dataset.boardCol);
   const oldFacing = domino.dataset.facing;
 
-  // Current two cells
   const [cell1Row, cell1Col, cell2Row, cell2Col] =
     cellsFromFacing(anchorRow, anchorCol, oldFacing);
-   // ------------------------------------------------------------
-   // INSTRUMENTATION: Show actual pip values in the two cells
-   // ------------------------------------------------------------
-   function getPipValueAt(domino, row, col) {
-     // Determine which cell is A and which is B
-     const aVal = domino.dataset.valueA;
-     const bVal = domino.dataset.valueB;
-   
-     // Compute the two cells for the current facing
-     const [r1, c1, r2, c2] = cellsFromFacing(
-       Number(domino.dataset.boardRow),
-       Number(domino.dataset.boardCol),
-       domino.dataset.facing
-     );
-   
-     if (row === r1 && col === c1) return aVal;
-     if (row === r2 && col === c2) return bVal;
-     return null;
-   }
-   
-   console.log("PIP VALUES BEFORE ROTATION:", {
-     cell1: {
-       row: cell1Row,
-       col: cell1Col,
-       pip: getPipValueAt(domino, cell1Row, cell1Col)
-     },
-     cell2: {
-       row: cell2Row,
-       col: cell2Col,
-       pip: getPipValueAt(domino, cell2Row, cell2Col)
-     }
-   });
 
-  console.log("CELLS BEFORE:", {
-    cell1: [cell1Row, cell1Col],
-    cell2: [cell2Row, cell2Col]
+  function getPipValueAt(domino, row, col) {
+    const aVal = domino.dataset.valueA;
+    const bVal = domino.dataset.valueB;
+    const [r1, c1, r2, c2] = cellsFromFacing(
+      Number(domino.dataset.boardRow),
+      Number(domino.dataset.boardCol),
+      domino.dataset.facing
+    );
+    if (row === r1 && col === c1) return aVal;
+    if (row === r2 && col === c2) return bVal;
+    return null;
+  }
+
+  console.log("PIP VALUES BEFORE ROTATION:", {
+    cell1: { row: cell1Row, col: cell1Col, pip: getPipValueAt(domino, cell1Row, cell1Col) },
+    cell2: { row: cell2Row, col: cell2Col, pip: getPipValueAt(domino, cell2Row, cell2Col) }
   });
 
-  // Determine pivot cell
   let pivotRow, pivotCol, otherRow, otherCol;
 
   const clickedIsCell1 = (clickedRow === cell1Row && clickedCol === cell1Col);
@@ -590,10 +558,10 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   console.log("ROTATE PIVOT:", pivotRow, pivotCol);
-   console.log("PIP VALUES:",
-     "pivot", pivotRow, pivotCol, getPipValueAt(domino, pivotRow, pivotCol),
-     "other", otherRow, otherCol, getPipValueAt(domino, otherRow, otherCol)
-   );
+  console.log("PIP VALUES:",
+    "pivot", pivotRow, pivotCol, getPipValueAt(domino, pivotRow, pivotCol),
+    "other", otherRow, otherCol, getPipValueAt(domino, otherRow, otherCol)
+  );
 
   // ------------------------------------------------------------
   // Compute new OTHER cell (clockwise rotation)
@@ -607,66 +575,62 @@ function rotateDomino(domino, clickX, clickY) {
   console.log("NEW OTHER:", newOtherRow, newOtherCol);
 
   // ------------------------------------------------------------
-  // Decide anchor + facing so that:
-  // - A stays at the pivot cell
-  // - anchor is always the "first" cell for cellsFromFacing
+  // Decide anchor + facing so that A stays at pivot
   // ------------------------------------------------------------
   let anchorRowNew, anchorColNew;
   let otherRowNew, otherColNew;
   let newFacing;
 
   if (pivotRow === newOtherRow) {
-    // Horizontal
     if (pivotCol < newOtherCol) {
-      // pivot is left cell
       anchorRowNew = pivotRow;
       anchorColNew = pivotCol;
       otherRowNew  = newOtherRow;
       otherColNew  = newOtherCol;
-      newFacing    = "A-left";   // A at left (pivot), B at right
+      newFacing    = "A-left";
     } else {
-      // pivot is right cell
       anchorRowNew = newOtherRow;
       anchorColNew = newOtherCol;
       otherRowNew  = pivotRow;
       otherColNew  = pivotCol;
-      newFacing    = "A-right";  // A at right (pivot), B at left
+      newFacing    = "A-right";
     }
   } else {
-    // Vertical
     if (pivotRow < newOtherRow) {
-      // pivot is top cell
       anchorRowNew = pivotRow;
       anchorColNew = pivotCol;
       otherRowNew  = newOtherRow;
       otherColNew  = newOtherCol;
-      newFacing    = "A-top";    // A at top (pivot), B at bottom
+      newFacing    = "A-top";
     } else {
-      // pivot is bottom cell
       anchorRowNew = newOtherRow;
       anchorColNew = newOtherCol;
       otherRowNew  = pivotRow;
       otherColNew  = pivotCol;
-      newFacing    = "A-bottom"; // A at bottom (pivot), B at top
+      newFacing    = "A-bottom";
     }
   }
 
-  // Write back the new anchor and facing
+  // ------------------------------------------------------------
+  // Write anchor + facing FIRST (controls DOM snap)
+  // ------------------------------------------------------------
   domino.dataset.boardRow = anchorRowNew;
   domino.dataset.boardCol = anchorColNew;
   domino.dataset.facing   = newFacing;
 
-   // Store temporary rotation geometry FIRST
-   // tempCell1 = pivot (A must always be here)
-   // tempCell2 = rotated other cell (B must always be here)
-   domino.dataset.tempCell1Row = pivotRow;
-   domino.dataset.tempCell1Col = pivotCol;
-   domino.dataset.tempCell2Row = newOtherRow;
-   domino.dataset.tempCell2Col = newOtherCol;
-   
-   // THEN reorder pip groups using the correct pivot cell
-   reorderPipGroups(domino);
-   applyFacingClass(domino);
+  // ------------------------------------------------------------
+  // Store rotation geometry (pivot=A, other=B)
+  // ------------------------------------------------------------
+  domino.dataset.tempCell1Row = pivotRow;
+  domino.dataset.tempCell1Col = pivotCol;
+  domino.dataset.tempCell2Row = newOtherRow;
+  domino.dataset.tempCell2Col = newOtherCol;
+
+  // ------------------------------------------------------------
+  // Reorder pip groups using correct pivot
+  // ------------------------------------------------------------
+  reorderPipGroups(domino);
+  applyFacingClass(domino);
 
   console.log("TEMP ROTATION STORED:", {
     pivot: [pivotRow, pivotCol],
@@ -675,39 +639,32 @@ function rotateDomino(domino, clickX, clickY) {
   });
 
   // ------------------------------------------------------------
-  // INSTRUMENTATION — AFTER FACING UPDATE
+  // SNAP DOM TO NEW ANCHOR
   // ------------------------------------------------------------
-  console.log("AFTER: facing =", domino.dataset.facing);
-  console.log("AFTER: cellsFromFacing =", cellsFromFacing(
+  const anchorCell = document.getElementById(`cell-${anchorRowNew}-${anchorColNew}`);
+  const anchorRect = anchorCell.getBoundingClientRect();
+
+  domino.style.left = `${anchorRect.left - rootRect.left}px`;
+  domino.style.top  = `${anchorRect.top  - rootRect.top }px`;
+
+  // ------------------------------------------------------------
+  // INSTRUMENTATION — AFTER
+  // ------------------------------------------------------------
+  const [newC1r, newC1c, newC2r, newC2c] = cellsFromFacing(
     Number(domino.dataset.boardRow),
     Number(domino.dataset.boardCol),
     domino.dataset.facing
-  ));
+  );
 
-// ------------------------------------------------------------
-// INSTRUMENTATION: Show actual pip values AFTER rotation
-// ------------------------------------------------------------
-const [newC1r, newC1c, newC2r, newC2c] = cellsFromFacing(
-  Number(domino.dataset.boardRow),
-  Number(domino.dataset.boardCol),
-  domino.dataset.facing
-);
+  console.log("PIP VALUES AFTER ROTATION:", {
+    cell1: { row: newC1r, col: newC1c, pip: getPipValueAt(domino, newC1r, newC1c) },
+    cell2: { row: newC2r, col: newC2c, pip: getPipValueAt(domino, newC2r, newC2c) }
+  });
 
-   console.log("PIP VALUES AFTER ROTATION:", {
-     cell1: {
-       row: newC1r,
-       col: newC1c,
-       pip: getPipValueAt(domino, newC1r, newC1c)
-     },
-     cell2: {
-       row: newC2r,
-       col: newC2c,
-       pip: getPipValueAt(domino, newC2r, newC2c)
-     }
-   });
   console.log("=== ROTATE END ===");
   return true;
 }
+
 
 
 
