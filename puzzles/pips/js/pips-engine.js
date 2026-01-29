@@ -698,29 +698,20 @@ function cellsFromFacing(row, col, facing) {
 }
 
 function reorderPipGroups(domino) {
-  const a = domino.children[0];
-  const b = domino.children[1];
+  // Always put A first, B second.
+  // No anchor logic. No pivot logic. No facing logic.
+  // The rotation engine already guarantees:
+  //   A is at pivot
+  //   B is at other cell
 
-  const valA = String(domino.dataset.valueA);
-  const valB = String(domino.dataset.valueB);
+  const a = domino.querySelector('.pip-group[data-value="0"]');
+  const b = domino.querySelector('.pip-group[data-value="1"]');
 
-  // Pivot cell is always the A pip
-  const pivotRow = Number(domino.dataset.tempCell1Row);
-  const pivotCol = Number(domino.dataset.tempCell1Col);
+  if (!a || !b) return;
 
-  const anchorRow = Number(domino.dataset.boardRow);
-  const anchorCol = Number(domino.dataset.boardCol);
-
-  // Determine which cell is the pivot
-  const pivotIsAnchor = (pivotRow === anchorRow && pivotCol === anchorCol);
-
-  if (pivotIsAnchor) {
-    // A must be first
-    if (a.dataset.value !== valA) domino.insertBefore(b, a);
-  } else {
-    // B must be first
-    if (a.dataset.value !== valB) domino.insertBefore(b, a);
-  }
+  // Force DOM order: A then B
+  domino.appendChild(a);
+  domino.appendChild(b);
 }
 
 function reorderPipGroupsForLoader(domino) {
