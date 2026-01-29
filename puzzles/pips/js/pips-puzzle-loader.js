@@ -261,7 +261,7 @@ function applyStartingDominos(puzzle) {
     }
 
     dom.dataset.facing = facing;
-    reorderPipGroups(dom);
+    reorderPipGroupsForLoader(dom);
     applyFacingClass(dom);
 
     // Anchor = top-left of the two cells
