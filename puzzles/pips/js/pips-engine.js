@@ -241,11 +241,6 @@ function validateGridPlacementCells(
   // ------------------------------------------------------------
   const keyA = `${cell1Row},${cell1Col}`;
   const keyB = `${cell2Row},${cell2Col}`;
-   console.log("ROTATE CELLS BEFORE:", {
-     cell1: [cell1Row, cell1Col],
-     cell2: [cell2Row, cell2Col],
-     clicked: [clickedRow, clickedCol]
-   });
 
   if (boardOccupancy[keyA] && boardOccupancy[keyA] !== domino) {
     if (!simulate) domino.dataset.dropAttempt = "invalid-on-board";
@@ -567,11 +562,6 @@ function rotateDomino(domino, clickX, clickY) {
   // DO NOT VALIDATE OR COMMIT
   // Rotation is visual only — NYT behavior
   // ------------------------------------------------------------
-
-  // Update DOM position to reflect new geometry
-  // (boardRow/Col remain the anchor for rendering, not pivot)
-  domino.dataset.boardRow = Math.min(newCell1Row, newCell2Row);
-  domino.dataset.boardCol = Math.min(newCell1Col, newCell2Col);
 
   // Reorder pip groups based on new facing
   reorderPipGroups(domino);
