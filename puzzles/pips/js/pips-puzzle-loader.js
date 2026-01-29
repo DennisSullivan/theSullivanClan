@@ -95,7 +95,7 @@ function loadBoardState(state) {
     dom.dataset.boardCol = entry.col;
     dom.dataset.facing = entry.facing;
 
-    reorderPipGroups(dom);
+    reorderPipGroupsForLoader(dom);
     applyFacingClass(dom);
 
     const [r1, c1, r2, c2] =
