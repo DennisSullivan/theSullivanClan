@@ -536,6 +536,28 @@ function rotateDomino(domino, clickX, clickY) {
     otherCol = cell1Col;
   }
    console.log("ROTATE PIVOT:", pivotRow, pivotCol);
+   // ⭐ Diagnostic 1: pixel position of pivot cell
+   const pivotCellEl = document.getElementById(`cell-${pivotRow}-${pivotCol}`);
+   const pivotRect = pivotCellEl.getBoundingClientRect();
+   console.log("PIVOT PIXELS:", {
+     left: pivotRect.left,
+     top: pivotRect.top,
+     right: pivotRect.right,
+     bottom: pivotRect.bottom
+   });
+   // ⭐ Diagnostic 2: DOM position before rotation
+   const domRectBefore = domino.getBoundingClientRect();
+   console.log("DOM BEFORE:", {
+     left: domRectBefore.left,
+     top: domRectBefore.top,
+     width: domRectBefore.width,
+     height: domRectBefore.height
+   });
+   // ⭐ Diagnostic 3: board cells before rotation
+   console.log("CELLS BEFORE:", {
+     cell1: [cell1Row, cell1Col],
+     cell2: [cell2Row, cell2Col]
+   });
 
   // ------------------------------------------------------------
   // Rotate geometry clockwise around pivot
@@ -551,6 +573,11 @@ function rotateDomino(domino, clickX, clickY) {
   const newCell1Col = pivotCol;
   const newCell2Row = newOtherRow;
   const newCell2Col = newOtherCol;
+   // ⭐ Diagnostic 4: board cells after rotation
+   console.log("CELLS AFTER:", {
+     cell1: [newCell1Row, newCell1Col],
+     cell2: [newCell2Row, newCell2Col]
+   });
 
   // ------------------------------------------------------------
   // Rotate facing clockwise (purely visual)
@@ -569,6 +596,14 @@ function rotateDomino(domino, clickX, clickY) {
   // Apply CSS class for facing
   applyFacingClass(domino);
 
+   // ⭐ Diagnostic 5: DOM position after rotation
+   const domRectAfter = domino.getBoundingClientRect();
+   console.log("DOM AFTER:", {
+     left: domRectAfter.left,
+     top: domRectAfter.top,
+     width: domRectAfter.width,
+     height: domRectAfter.height
+   });
   console.log("=== ROTATE END ===");
   return true;
 }
