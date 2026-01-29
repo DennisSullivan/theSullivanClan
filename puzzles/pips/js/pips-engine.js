@@ -590,6 +590,10 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   console.log("ROTATE PIVOT:", pivotRow, pivotCol);
+   console.log("PIP VALUES:",
+     "pivot", pivotRow, pivotCol, board[pivotRow][pivotCol],
+     "other", otherRow, otherCol, board[otherRow][otherCol]
+   );
 
   // ------------------------------------------------------------
   // Compute new OTHER cell (clockwise rotation)
