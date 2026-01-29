@@ -471,13 +471,7 @@ function tryPlaceDomino(domino, options = {}) {
    ============================================================ */
 
 function rotateDomino(domino, clickX, clickY) {
-  console.log("=== ROTATE START (clean rotation) ===");
-  console.log("ROTATE DEBUG dataset:", {
-    index: domino.dataset.index,
-    facing: domino.dataset.facing,
-    row: domino.dataset.boardRow,
-    col: domino.dataset.boardCol
-  });
+  console.log("=== ROTATE START (pivot‑fixed) ===");
 
   // Ensure facing exists
   if (!domino.dataset.facing) {
@@ -499,7 +493,7 @@ function rotateDomino(domino, clickX, clickY) {
   }
 
   // ------------------------------------------------------------
-  // BOARD ROTATION — pivot = clicked cell
+  // BOARD ROTATION — pivot = clicked cell (visual only)
   // ------------------------------------------------------------
 
   const root = document.getElementById("pips-root");
@@ -508,16 +502,20 @@ function rotateDomino(domino, clickX, clickY) {
   const cellGap  = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--cell-gap"));
   const stride   = cellSize + cellGap;
 
+  // Compute clicked cell
   const clickedCol = Math.floor((clickX - rootRect.left) / stride);
   const clickedRow = Math.floor((clickY - rootRect.top)  / stride);
 
-  const oldRow = parseInt(domino.dataset.boardRow, 10);
-  const oldCol = parseInt(domino.dataset.boardCol, 10);
+  // Logical anchor (never changes during rotation)
+  const anchorRow = parseInt(domino.dataset.boardRow, 10);
+  const anchorCol = parseInt(domino.dataset.boardCol, 10);
+
+  // Current facing
   const oldFacing = domino.dataset.facing;
 
   // Current two cells
   const [cell1Row, cell1Col, cell2Row, cell2Col] =
-    cellsFromFacing(oldRow, oldCol, oldFacing);
+    cellsFromFacing(anchorRow, anchorCol, oldFacing);
 
   console.log("CELLS BEFORE:", {
     cell1: [cell1Row, cell1Col],
@@ -544,7 +542,7 @@ function rotateDomino(domino, clickX, clickY) {
   console.log("ROTATE PIVOT:", pivotRow, pivotCol);
 
   // ------------------------------------------------------------
-  // Rotate the OTHER half clockwise around the pivot
+  // Compute new OTHER cell (clockwise rotation)
   // ------------------------------------------------------------
   const dr = otherRow - pivotRow;
   const dc = otherCol - pivotCol;
@@ -552,19 +550,10 @@ function rotateDomino(domino, clickX, clickY) {
   const newOtherRow = pivotRow + dc;
   const newOtherCol = pivotCol - dr;
 
-  // New two cells
-  const newCell1Row = pivotRow;
-  const newCell1Col = pivotCol;
-  const newCell2Row = newOtherRow;
-  const newCell2Col = newOtherCol;
-
-  console.log("CELLS AFTER:", {
-    cell1: [newCell1Row, newCell1Col],
-    cell2: [newCell2Row, newCell2Col]
-  });
+  console.log("NEW OTHER:", newOtherRow, newOtherCol);
 
   // ------------------------------------------------------------
-  // Rotate facing clockwise
+  // Update facing (visual only)
   // ------------------------------------------------------------
   const newFacing = rotateFacingClockwise(oldFacing);
   domino.dataset.facing = newFacing;
@@ -573,16 +562,23 @@ function rotateDomino(domino, clickX, clickY) {
   applyFacingClass(domino);
 
   // ------------------------------------------------------------
-  // CLEAN ANCHOR RULE:
-  // The anchor is ALWAYS the top-left of the two cells.
+  // VISUAL ROTATION ONLY — NO ANCHOR CHANGE
   // ------------------------------------------------------------
-  const anchorRow = Math.min(newCell1Row, newCell2Row);
-  const anchorCol = Math.min(newCell1Col, newCell2Col);
-
-  console.log("ANCHOR:", anchorRow, anchorCol);
-
+  // The pivot cell stays fixed in place.
+  // The domino's left/top remain tied to the anchor cell.
   domino.style.left = (anchorCol * stride) + "px";
   domino.style.top  = (anchorRow * stride) + "px";
+
+  // Store temporary rotation geometry for later commit/revert
+  domino.dataset.tempCell1Row = pivotRow;
+  domino.dataset.tempCell1Col = pivotCol;
+  domino.dataset.tempCell2Row = newOtherRow;
+  domino.dataset.tempCell2Col = newOtherCol;
+
+  console.log("TEMP ROTATION STORED:", {
+    pivot: [pivotRow, pivotCol],
+    other: [newOtherRow, newOtherCol]
+  });
 
   console.log("=== ROTATE END ===");
   return true;
