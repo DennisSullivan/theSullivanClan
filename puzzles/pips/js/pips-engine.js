@@ -565,46 +565,60 @@ function rotateDomino(domino, clickX, clickY) {
   const dr = otherRow - pivotRow;
   const dc = otherCol - pivotCol;
 
-  let newOtherRow = pivotRow + dc;
-  let newOtherCol = pivotCol - dr;
+  const newOtherRow = pivotRow + dc;
+  const newOtherCol = pivotCol - dr;
 
   console.log("NEW OTHER:", newOtherRow, newOtherCol);
 
   // ------------------------------------------------------------
-  // NORMALIZE: choose top-left cell as anchor
+  // Decide anchor + facing so that:
+  // - A stays at the pivot cell
+  // - anchor is always the "first" cell for cellsFromFacing
   // ------------------------------------------------------------
-  let anchorRowNew = pivotRow;
-  let anchorColNew = pivotCol;
-  let otherRowNew  = newOtherRow;
-  let otherColNew  = newOtherCol;
+  let anchorRowNew, anchorColNew;
+  let otherRowNew, otherColNew;
+  let newFacing;
 
-  // If other is above, or same row but left of pivot, make other the anchor
-  if (
-    otherRowNew < anchorRowNew ||
-    (otherRowNew === anchorRowNew && otherColNew < anchorColNew)
-  ) {
-    anchorRowNew = otherRowNew;
-    anchorColNew = otherColNew;
-    otherRowNew  = pivotRow;
-    otherColNew  = pivotCol;
+  if (pivotRow === newOtherRow) {
+    // Horizontal
+    if (pivotCol < newOtherCol) {
+      // pivot is left cell
+      anchorRowNew = pivotRow;
+      anchorColNew = pivotCol;
+      otherRowNew  = newOtherRow;
+      otherColNew  = newOtherCol;
+      newFacing    = "A-left";   // A at left (pivot), B at right
+    } else {
+      // pivot is right cell
+      anchorRowNew = newOtherRow;
+      anchorColNew = newOtherCol;
+      otherRowNew  = pivotRow;
+      otherColNew  = pivotCol;
+      newFacing    = "A-right";  // A at right (pivot), B at left
+    }
+  } else {
+    // Vertical
+    if (pivotRow < newOtherRow) {
+      // pivot is top cell
+      anchorRowNew = pivotRow;
+      anchorColNew = pivotCol;
+      otherRowNew  = newOtherRow;
+      otherColNew  = newOtherCol;
+      newFacing    = "A-top";    // A at top (pivot), B at bottom
+    } else {
+      // pivot is bottom cell
+      anchorRowNew = newOtherRow;
+      anchorColNew = newOtherCol;
+      otherRowNew  = pivotRow;
+      otherColNew  = pivotCol;
+      newFacing    = "A-bottom"; // A at bottom (pivot), B at top
+    }
   }
 
-  // Write back the new anchor
+  // Write back the new anchor and facing
   domino.dataset.boardRow = anchorRowNew;
   domino.dataset.boardCol = anchorColNew;
-
-  // ------------------------------------------------------------
-  // Facing from normalized anchor + other
-  // ------------------------------------------------------------
-  function facingFromCells(anchorRow, anchorCol, otherRow, otherCol) {
-    if (otherRow === anchorRow && otherCol === anchorCol + 1) return "A-left";
-    if (otherRow === anchorRow && otherCol === anchorCol - 1) return "A-right";
-    if (otherCol === anchorCol && otherRow === anchorRow - 1) return "A-bottom";
-    if (otherCol === anchorCol && otherRow === anchorRow + 1) return "A-top";
-  }
-
-  const newFacing = facingFromCells(anchorRowNew, anchorColNew, otherRowNew, otherColNew);
-  domino.dataset.facing = newFacing;
+  domino.dataset.facing   = newFacing;
 
   reorderPipGroups(domino);
   applyFacingClass(domino);
