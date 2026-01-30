@@ -15,3 +15,7 @@
   z-index: 100;
 }
 
+#tray {
+  position: relative;
+  z-index: 500;
+}
