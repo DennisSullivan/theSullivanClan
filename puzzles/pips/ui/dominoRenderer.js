@@ -1,14 +1,3 @@
-// ============================================================
-// FILE: dominoRenderer.js
-// PURPOSE: Renders a single domino in the DOM, both in the tray
-//          and on the board.
-// NOTES:
-//   - Pure UI: reads domino state, never mutates it.
-//   - Board orientation is derived from geometry.
-//   - Tray orientation uses domino.trayOrientation.
-//   - Uses real multi-dot pip layout.
-// ============================================================
-
 export function renderDomino(domino, parentEl) {
   let el = document.getElementById(`domino-${domino.id}`);
 
@@ -49,11 +38,8 @@ function createDominoHTML(domino) {
 }
 
 function updatePipValues(el, domino) {
-  const h0 = el.querySelector(".half0");
-  const h1 = el.querySelector(".half1");
-
-  if (h0) h0.dataset.pip = domino.pip0;
-  if (h1) h1.dataset.pip = domino.pip1;
+  el.querySelector(".half0").dataset.pip = domino.pip0;
+  el.querySelector(".half1").dataset.pip = domino.pip1;
 }
 
 function applyDominoTransform(el, domino) {
