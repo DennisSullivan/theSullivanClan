@@ -6,19 +6,13 @@
 //   - Pure UI: reads domino state, never mutates it.
 //   - Board orientation is derived from geometry.
 //   - Tray orientation uses domino.trayOrientation.
-//   - No A/B model, no orientation flags.
+//   - Uses real multi-dot pip layout.
 // ============================================================
 
 
 // ------------------------------------------------------------
 // renderDomino(domino, parentEl)
 // Creates or updates the DOM element for a domino.
-// INPUTS:
-//   domino   - canonical Domino object
-//   parentEl - DOM node where the domino should be attached
-// NOTES:
-//   - If the element already exists, it is updated.
-//   - If not, it is created.
 // ------------------------------------------------------------
 export function renderDomino(domino, parentEl) {
   let el = document.getElementById(`domino-${domino.id}`);
@@ -32,7 +26,7 @@ export function renderDomino(domino, parentEl) {
     parentEl.appendChild(el);
   }
 
-  // Update pip values (in case of dynamic themes)
+  // Update pip values
   updatePipValues(el, domino);
 
   // Apply transform based on tray or board state
@@ -42,15 +36,29 @@ export function renderDomino(domino, parentEl) {
 
 // ------------------------------------------------------------
 // createDominoHTML(domino)
-// Returns the inner HTML for a domino.
-// NOTES:
-//   - Two halves: .half0 and .half1
-//   - Pip values inserted into data attributes for styling
+// Returns the inner HTML for a domino with 7 pip placeholders.
 // ------------------------------------------------------------
 function createDominoHTML(domino) {
   return `
-    <div class="half half0" data-pip="${domino.pip0}"></div>
-    <div class="half half1" data-pip="${domino.pip1}"></div>
+    <div class="half half0" data-pip="${domino.pip0}">
+      <div class="pip p1"></div>
+      <div class="pip p2"></div>
+      <div class="pip p3"></div>
+      <div class="pip p4"></div>
+      <div class="pip p5"></div>
+      <div class="pip p6"></div>
+      <div class="pip p7"></div>
+    </div>
+
+    <div class="half half1" data-pip="${domino.pip1}">
+      <div class="pip p1"></div>
+      <div class="pip p2"></div>
+      <div class="pip p3"></div>
+      <div class="pip p4"></div>
+      <div class="pip p5"></div>
+      <div class="pip p6"></div>
+      <div class="pip p7"></div>
+    </div>
   `;
 }
 
@@ -58,8 +66,6 @@ function createDominoHTML(domino) {
 // ------------------------------------------------------------
 // updatePipValues(el, domino)
 // Updates pip values on an existing DOM element.
-// NOTES:
-//   - Allows dynamic themes or pip rendering changes.
 // ------------------------------------------------------------
 function updatePipValues(el, domino) {
   const h0 = el.querySelector(".half0");
@@ -73,9 +79,6 @@ function updatePipValues(el, domino) {
 // ------------------------------------------------------------
 // applyDominoTransform(el, domino)
 // Applies CSS transforms based on domino state.
-// NOTES:
-//   - In tray: use trayOrientation only.
-//   - On board: compute orientation from geometry.
 // ------------------------------------------------------------
 function applyDominoTransform(el, domino) {
   if (domino.row0 === null) {
@@ -96,18 +99,10 @@ function applyDominoTransform(el, domino) {
 
   let angle = 0;
 
-  // Horizontal: half1 is to the right
-  if (dr === 0 && dc === 1) angle = 0;
-
-  // Horizontal: half1 is to the left
-  if (dr === 0 && dc === -1) angle = 180;
-
-  // Vertical: half1 is below
-  if (dr === 1 && dc === 0) angle = 90;
-
-  // Vertical: half1 is above
-  if (dr === -1 && dc === 0) angle = 270;
+  if (dr === 0 && dc === 1) angle = 0;     // right
+  if (dr === 0 && dc === -1) angle = 180;  // left
+  if (dr === 1 && dc === 0) angle = 90;    // down
+  if (dr === -1 && dc === 0) angle = 270;  // up
 
   el.style.transform = `rotate(${angle}deg)`;
 }
-
