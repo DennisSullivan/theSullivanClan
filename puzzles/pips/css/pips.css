@@ -30,6 +30,7 @@
 #board {
   position: relative;
   display: grid;
+  height: calc(100vh - 200px);
   background: var(--color-bg);
   border: 2px solid #aaa;
   touch-action: none;
