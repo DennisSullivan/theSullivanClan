@@ -66,9 +66,11 @@
    ============================================================ */
 
 .domino-wrapper {
-  width: var(--cell-size);
-  height: var(--cell-size);
-  pointer-events: none;
+  position: relative;                 /* establishes positioning context */
+  width: calc(var(--cell-size) * 2);  /* dominos are 2 cells wide */
+  height: var(--cell-size);           /* dominos are 1 cell tall */
+  pointer-events: auto;               /* wrapper must receive events */
+  z-index: 100;                       /* above region overlays & badges */
 }
 
 
