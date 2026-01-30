@@ -4,18 +4,18 @@
 
 :root {
   --cell-size: 48px;
-  --domino-thickness: 6px;
+  --domino-thickness: 2px; /* thinner outline */
 
   --color-bg: #fafafa;
-  --color-grid: #bbb;
+  --color-grid: #999;      /* slightly darker, clearer grid */
   --color-blocked: #444;
 
-  --color-region-0: #e8e8ff;
-  --color-region-1: #e8ffe8;
-  --color-region-2: #ffe8e8;
-  --color-region-3: #e8ffff;
+  --color-region-0: #dcdcff;
+  --color-region-1: #dcffdc;
+  --color-region-2: #ffdcdc;
+  --color-region-3: #dcffff;
 
-  --color-domino-bg: white;
+  --color-domino-bg: #ffffff;
   --color-domino-border: #222;
   --color-pip: #222;
 
@@ -47,7 +47,7 @@
   box-sizing: border-box;
   position: relative;
   background: transparent;
-  opacity: 1 !important; /* remove veil effect */
+  opacity: 1;
 }
 
 
@@ -81,7 +81,7 @@
   height: var(--cell-size);
   background: var(--color-domino-bg);
   border: var(--domino-thickness) solid var(--color-domino-border);
-  border-radius: 8px;
+  border-radius: 6px;
   box-sizing: border-box;
   display: flex;
   position: absolute;
@@ -101,7 +101,7 @@
 
 
 /* ============================================================
-   REAL DOMINO PIP SYSTEM
+   REAL DOMINO PIP SYSTEM (tighter, centered cluster)
    ============================================================ */
 
 .domino .half {
@@ -110,7 +110,10 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
+  justify-items: center;
+  align-items: center;
 
+  padding: calc(var(--cell-size) * 0.10); /* pull cluster inward */
   font-size: 0; /* hide numerals */
   border-right: 1px solid var(--color-domino-border);
 }
@@ -121,8 +124,8 @@
 
 /* pip dot */
 .domino .pip {
-  width: calc(var(--cell-size) * 0.18);
-  height: calc(var(--cell-size) * 0.18);
+  width: calc(var(--cell-size) * 0.12);
+  height: calc(var(--cell-size) * 0.12);
   background: var(--color-pip);
   border-radius: 50%;
   opacity: 0;
