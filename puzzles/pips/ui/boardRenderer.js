@@ -14,6 +14,7 @@
 import { renderDomino } from "./dominoRenderer.js";
 import { renderBlockedCells } from "./blockedRenderer.js";
 import { renderRegions } from "./regionRenderer.js";
+import { renderRegionBadges } from "./badgeRenderer.js";
 
 
 // ------------------------------------------------------------
@@ -30,7 +31,7 @@ import { renderRegions } from "./regionRenderer.js";
 //   - Board cells are drawn as a CSS grid.
 //   - Domino elements are positioned absolutely.
 // ------------------------------------------------------------
-export function renderBoard(dominos, grid, regionMap, blocked, boardEl) {
+export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   boardEl.innerHTML = ""; // full redraw for simplicity
 
   const rows = grid.length;
@@ -48,6 +49,9 @@ export function renderBoard(dominos, grid, regionMap, blocked, boardEl) {
 
   // Draw region overlays
   renderRegions(regionMap, boardEl);
+
+  // Draw the region Badges
+  renderRegionBadges(regions, boardEl);
 
   // Draw dominos
   renderBoardDominos(dominos, boardEl);
