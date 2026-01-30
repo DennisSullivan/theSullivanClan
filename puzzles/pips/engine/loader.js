@@ -4,33 +4,20 @@
 //          and produces all engine-ready structures.
 // NOTES:
 //   - No DOM logic.
-//   - No orientation stored in puzzle files.
 //   - Validates dominos, starting placements, regions, blocked.
 //   - Builds regionMap and canonical Domino objects.
+//   - Initializes history and rules.
 // ============================================================
 
 import { MASTER_TRAY, createDomino, isValidDominoId } from "./domino.js";
 import { createGrid, areAdjacent } from "./grid.js";
 import { buildRegionMap } from "./regionMapBuilder.js";
+import { initHistory } from "./history.js";
 
 
 // ------------------------------------------------------------
 // loadPuzzle(json)
 // Loads a puzzle definition and returns an engine-ready object.
-// INPUTS:
-//   json - parsed puzzle JSON (already validated by schema)
-// RETURNS:
-//   {
-//     width, height,
-//     dominos: Map<id, Domino>,
-//     grid,
-//     regionMap,
-//     blocked: Set<string>,
-//     regions: [...],
-//   }
-// NOTES:
-//   - Performs adjacency validation for startingDominos.
-//   - Ensures dominos are a sorted subset of MASTER_TRAY.
 // ------------------------------------------------------------
 export function loadPuzzle(json) {
   const { width, height } = json;
@@ -38,8 +25,11 @@ export function loadPuzzle(json) {
   // Create empty grid
   const grid = createGrid(width, height);
 
-  // Load blocked cells
-  const blocked = new Set(json.blocked || []);
+  // Normalize blocked cells into "r,c" strings
+  const blocked = new Set();
+  for (const cell of json.blocked || []) {
+    blocked.add(`${cell.row},${cell.col}`);
+  }
 
   // Validate and load dominos
   const dominos = loadDominos(json.dominos);
@@ -50,6 +40,9 @@ export function loadPuzzle(json) {
   // Build region map
   const regionMap = buildRegionMap(width, height, json.regions);
 
+  // Initialize history
+  const history = initHistory();
+
   return {
     width,
     height,
@@ -57,21 +50,15 @@ export function loadPuzzle(json) {
     grid,
     regionMap,
     blocked,
-    regions: json.regions
+    rules: json.rules || [],
+    regions: json.regions,
+    history
   };
 }
 
 
 // ------------------------------------------------------------
 // loadDominos(idList)
-// Validates and constructs canonical Domino objects.
-// INPUTS:
-//   idList - array of "XY" strings
-// RETURNS:
-//   Map<id, Domino>
-// NOTES:
-//   - Ensures sorted subset of MASTER_TRAY.
-//   - Ensures all IDs are valid.
 // ------------------------------------------------------------
 function loadDominos(idList) {
   // Validate subset
@@ -103,16 +90,6 @@ function loadDominos(idList) {
 
 // ------------------------------------------------------------
 // applyStartingDominos(startingList, dominos, grid)
-// Places pre-defined dominos onto the board.
-// INPUTS:
-//   startingList - array of { id, cells:[{row,col},{row,col}] }
-//   dominos      - Map<id,Domino>
-//   grid         - occupancy map
-// NOTES:
-//   - Validates adjacency.
-//   - Validates bounds.
-//   - Validates emptiness.
-//   - Sets pivotHalf = 0.
 // ------------------------------------------------------------
 function applyStartingDominos(startingList, dominos, grid) {
   for (const entry of startingList) {
@@ -161,4 +138,3 @@ function applyStartingDominos(startingList, dominos, grid) {
     grid[r1][c1] = { dominoId: id, half: 1 };
   }
 }
-
