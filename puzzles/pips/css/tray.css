@@ -1,1 +1,17 @@
+.tray-slot {
+  position: relative;     
+  width: calc(var(--cell-size) * 2);
+  height: var(--cell-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.domino-wrapper {
+  position: relative;
+  width: calc(var(--cell-size) * 2);
+  height: var(--cell-size);
+  pointer-events: auto;
+  z-index: 100;
+}
 
