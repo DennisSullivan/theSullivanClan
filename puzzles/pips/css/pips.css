@@ -1,384 +1,189 @@
 /* ============================================================
-   FULL NYT‑STYLE PIPS CSS — DROP‑IN REPLACEMENT
+   ROOT VARIABLES
+   Purpose: global sizing, colors, spacing
    ============================================================ */
 
-/* ------------------------------
-   CSS VARIABLES (NYT THEME)
-   ------------------------------ */
 :root {
-  --bg: #f7f7f7;
-  --board-bg: #ffffff;
-  --cell-line: #d0d0d0;
-
   --cell-size: 48px;
-  --cell-gap: 2px;
-  --radius: 6px;
+  --domino-thickness: 6px;
 
-  --domino-bg: #ffffff;
-  --domino-border: #000000;
-  --domino-shadow: rgba(0, 0, 0, 0.18);
+  --color-bg: #fafafa;
+  --color-grid: #ddd;
+  --color-blocked: #444;
+  --color-region-0: #f7f7ff;
+  --color-region-1: #f7fff7;
+  --color-region-2: #fff7f7;
+  --color-region-3: #f7ffff;
 
-  --pip-size: 7px;
-  --pip-color: #000;
+  --color-domino-bg: white;
+  --color-domino-border: #222;
+  --color-pip: #222;
 
-  --badge-bg: #fff;
-  --badge-text: #000;
-  --badge-border: #000;
-
-  --region-outline: rgba(0, 0, 0, 0.45);
-  --region-fill: rgba(0, 0, 0, 0.08);
+  --transition-fast: 120ms ease-out;
 }
 
-@media (max-width: 600px) {
-  :root {
-    --cell-size: 38px;
-  }
-}
-
-/* ------------------------------
-   PAGE LAYOUT
-   ------------------------------ */
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--bg);
-  font-family: system-ui, sans-serif;
-  color: #222;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* ------------------------------
-   ROOT + LAYERS
-   ------------------------------ */
-
-#pips-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
-#pips-root-wrapper {
-  position: relative;
-  margin-top: 20px;
-  background: var(--board-bg);
-  padding: 0;
-  border-radius: var(--radius);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-/* Overlay layers */
-#badge-layer,
-#region-layer {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-}
-
-#badge-layer { z-index: 300; }
-#region-layer { z-index: 200; }
 
 /* ============================================================
-   LAYERING FIX — GRID, REGIONS, BADGES, DOMINOS
+   BOARD LAYOUT
    ============================================================ */
 
-#region-layer,
-#badge-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-/* Ensure dominos always sit above regions and grid */
-.domino {
-  z-index: 400;
-}
-
-/* ------------------------------
-   GRID
-   ------------------------------ */
-
-#pips-root {
+#board {
   position: relative;
-  z-index: 100;
   display: grid;
-  gap: var(--cell-gap);
-  grid-template-columns: repeat(var(--cols), var(--cell-size));
-  grid-template-rows: repeat(var(--rows), var(--cell-size));
-  background: transparent;
+  background: var(--color-bg);
+  border: 2px solid #aaa;
+  touch-action: none;
 }
 
-.pips-cell {
+.board-cell {
+  border: 1px solid var(--color-grid);
+  box-sizing: border-box;
+  position: relative;
+}
+
+
+/* ============================================================
+   BLOCKED CELLS
+   ============================================================ */
+
+.board-cell.blocked {
+  background: var(--color-blocked);
+  opacity: 0.4;
+}
+
+
+/* ============================================================
+   REGION OVERLAYS
+   Purpose: subtle background tint per region
+   ============================================================ */
+
+.board-cell.region-0 { background: var(--color-region-0); }
+.board-cell.region-1 { background: var(--color-region-1); }
+.board-cell.region-2 { background: var(--color-region-2); }
+.board-cell.region-3 { background: var(--color-region-3); }
+
+/* Add more region colors as needed */
+
+
+/* ============================================================
+   DOMINO WRAPPER (board positioning)
+   ============================================================ */
+
+.domino-wrapper {
   width: var(--cell-size);
   height: var(--cell-size);
-  background: #fff;
-  border: 1px solid var(--cell-line);
-  border-radius: 4px;
+  pointer-events: none; /* children handle events */
+}
+
+
+/* ============================================================
+   DOMINO ELEMENT
+   ============================================================ */
+
+.domino {
+  width: calc(var(--cell-size) * 2);
+  height: var(--cell-size);
+  background: var(--color-domino-bg);
+  border: var(--domino-thickness) solid var(--color-domino-border);
+  border-radius: 8px;
   box-sizing: border-box;
-}
-
-.cell-highlight-valid {
-  outline: 3px solid #4caf50; /* green */
-  outline-offset: -3px;
-}
-
-.cell-highlight-invalid {
-  outline: 3px solid #e53935; /* red */
-  outline-offset: -3px;
-}
-
-/* ------------------------------
-   REGION OVERLAYS (NYT STYLE)
-   ------------------------------ */
-
-.region-cell {
+  display: flex;
   position: absolute;
-  box-sizing: border-box;
-  border: 1.5px solid var(--region-outline);
-  background: var(--region-fill);
-  border-radius: 0;
-  pointer-events: none;
+  transform-origin: center center;
+  transition: transform var(--transition-fast);
+  pointer-events: auto;
 }
 
+.domino.in-tray {
+  position: relative;
+  margin: 4px;
+}
 
-/* ------------------------------
-   REGION BADGES (NYT STYLE)
-   ------------------------------ */
-
-.region-badge {
+.domino.on-board {
   position: absolute;
-  top: -10px;      /* move badge upward */
-  left: -10px;     /* move badge leftward */
-  padding: 2px 6px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
-  border-radius: 999px;
-  background: var(--badge-bg);
-  border: 1.5px solid var(--badge-border);
-  color: var(--badge-text);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-  pointer-events: none;
-  z-index: 999;
 }
 
-/* NYT-style region colors */
-.region-cell[data-region="0"] { 
-  background: rgba(255, 200, 0, 0.25);
-  border-color: rgba(255, 200, 0, 0.6);
+
+/* ============================================================
+   DOMINO HALVES
+   ============================================================ */
+
+.domino .half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell-size) * 0.5);
+  font-weight: bold;
+  color: var(--color-pip);
+  border-right: 1px solid var(--color-domino-border);
 }
 
-.region-cell[data-region="1"] { 
-  background: rgba(0, 180, 255, 0.25);
-  border-color: rgba(0, 180, 255, 0.6);
+.domino .half1 {
+  border-right: none;
 }
 
-.region-cell[data-region="2"] { 
-  background: rgba(255, 120, 120, 0.25);
-  border-color: rgba(255, 120, 120, 0.6);
-}
 
-.region-cell[data-region="3"] { 
-  background: rgba(120, 255, 160, 0.25);
-  border-color: rgba(120, 255, 160, 0.6);
-}
+/* ============================================================
+   TRAY LAYOUT
+   ============================================================ */
 
-.region-cell[data-region="4"] { 
-  background: rgba(200, 160, 255, 0.25);
-  border-color: rgba(200, 160, 255, 0.6);
-}
-
-.region-cell[data-region="5"] { 
-  background: rgba(255, 180, 80, 0.25);
-  border-color: rgba(255, 180, 80, 0.6);
-}
-
-/* NYT-style badge colors per region */
-.region-cell[data-region="0"] .region-badge {
-  background: #fffbe6;
-  border-color: rgba(255, 200, 0, 0.8);
-  color: #000;
-}
-
-.region-cell[data-region="1"] .region-badge {
-  background: #e6f6ff;
-  border-color: rgba(0, 180, 255, 0.8);
-  color: #000;
-}
-
-.region-cell[data-region="2"] .region-badge {
-  background: #ffeaea;
-  border-color: rgba(255, 120, 120, 0.8);
-  color: #000;
-}
-
-.region-cell[data-region="3"] .region-badge {
-  background: #e9ffef;
-  border-color: rgba(120, 255, 160, 0.8);
-  color: #000;
-}
-
-.region-cell[data-region="4"] .region-badge {
-  background: #f3ecff;
-  border-color: rgba(200, 160, 255, 0.8);
-  color: #000;
-}
-
-.region-cell[data-region="5"] .region-badge {
-  background: #fff4e6;
-  border-color: rgba(255, 180, 80, 0.8);
-  color: #000;
-}
-
-/* ------------------------------
-   DOMINO TRAY
-   ------------------------------ */
-
-#domino-tray {
-  margin-top: 24px;
+#tray {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  background: #eee;
+  border-top: 2px solid #aaa;
 }
 
 .tray-slot {
-  width: calc(var(--cell-size) * 2 + var(--cell-gap));
+  width: calc(var(--cell-size) * 2);
   height: var(--cell-size);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ------------------------------
-   DOMINO TILE (NYT STYLE)
-   ------------------------------ */
-
-.domino {
-  position: absolute;
-  width: calc(var(--cell-size) * 2 + var(--cell-gap));
-  height: var(--cell-size);
-  background: var(--domino-bg);
-  border: 3px solid var(--domino-border);
-  border-radius: var(--radius);
-  box-shadow: 0 2px 4px var(--domino-shadow);
-  cursor: grab;
-  user-select: none;
-  transition: transform 0.15s ease;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Tray dominos must NOT be absolutely positioned */
-.tray-domino {
   position: relative;
 }
 
-/* TRAY DOMINO LAYOUT — NYT STYLE */
-.domino {
-  display: flex;              /* horizontal layout */
-  flex-direction: row;        /* A-left = pip A on the left */
+
+/* ============================================================
+   ROTATE BUTTON
+   ============================================================ */
+
+.rotate-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  border: 2px solid #222;
+  border-radius: 50%;
+  font-size: 14px;
+  display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* Vertical orientation */
-.domino.vertical {
-  width: var(--cell-size);
-  height: calc(var(--cell-size) * 2 + var(--cell-gap));
-  flex-direction: column;
-}
-
-/* Facing-based orientation (engine model) */
-.A-top,
-.A-bottom {
-  width: var(--cell-size);
-  height: calc(var(--cell-size) * 2 + var(--cell-gap));
-  flex-direction: column;
-}
-
-.A-left,
-.A-right {
-  width: calc(var(--cell-size) * 2 + var(--cell-gap));
-  height: var(--cell-size);
-  flex-direction: row;
-}
-
-/* NYT center dividing line */
-.domino::after {
-  content: "";
-  position: absolute;
-  background: #000;
-  z-index: 2;
-}
-
-.domino:not(.vertical)::after {
-  width: 1px;
-  height: 100%;
-  left: calc(50% - 0.5px);
-  top: 0;
-}
-
-.domino.vertical::after {
-  height: 1px;
-  width: 100%;
-  top: calc(50% - 0.5px);
-  left: 0;
-}
-
-/* ------------------------------
-   PIP CLUSTERS (NYT STYLE)
-   ------------------------------ */
-
-.pip-group {
-  width: 28px;
-  height: 28px;
-  margin: auto;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  place-items: center;
-}
-
-.pip {
-  width: var(--pip-size);
-  height: var(--pip-size);
-  background: var(--pip-color);
-  border-radius: 50%;
-}
-
-/* ------------------------------
-   PLACEMENT STATES
-   ------------------------------ */
-
-.cell-invalid {
-  background: #f8d0d0;
-  border-color: #b33;
-}
-
-.domino-placed {
-  box-shadow: none;
-  cursor: default;
-  opacity: 0.95;
-}
-
-.domino-selected {
-  transform: scale(1.06);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  cursor: pointer;
+  user-select: none;
+  z-index: 10;
 }
 
 
-/* ------------------------------
-   UTILITIES
-   ------------------------------ */
+/* ============================================================
+   DRAGGING FEEDBACK
+   ============================================================ */
 
-.hidden { display: none !important; }
-.center { display: flex; justify-content: center; align-items: center; }
+.domino.dragging {
+  opacity: 0.8;
+  cursor: grabbing;
+  z-index: 999;
+}
+
+
+/* ============================================================
+   MOBILE RESPONSIVENESS
+   ============================================================ */
+
+@media (max-width: 600px) {
+  :root {
+    --cell-size: 36px;
+  }
+}
