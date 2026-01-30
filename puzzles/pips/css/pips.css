@@ -187,3 +187,70 @@
     --cell-size: 36px;
   }
 }
+
+/* ============================================================
+   DARK MODE THEME
+   Apply via: body.dark-mode { ... }
+   ============================================================ */
+
+body.dark-mode {
+  --color-bg: #1a1a1a;
+  --color-grid: #333;
+  --color-blocked: #555;
+
+  --color-region-0: #222;
+  --color-region-1: #252525;
+  --color-region-2: #2a2a2a;
+  --color-region-3: #2d2d2d;
+
+  --color-domino-bg: #2b2b2b;
+  --color-domino-border: #888;
+  --color-pip: #f0f0f0;
+
+  --transition-fast: 120ms ease-out;
+}
+
+/* ============================================================
+   HIGH-CONTRAST ACCESSIBILITY THEME
+   Apply via: body.high-contrast { ... }
+   ============================================================ */
+
+body.high-contrast {
+  --color-bg: #ffffff;
+  --color-grid: #000000;
+  --color-blocked: #000000;
+
+  --color-region-0: #ffff00; /* yellow */
+  --color-region-1: #00ffff; /* cyan */
+  --color-region-2: #ff00ff; /* magenta */
+  --color-region-3: #00ff00; /* lime */
+
+  --color-domino-bg: #ffffff;
+  --color-domino-border: #000000;
+  --color-pip: #000000;
+
+  --transition-fast: none; /* no motion for accessibility */
+}
+
+/* ============================================================
+   RETRO DOMINO THEME
+   Apply via: body.retro { ... }
+   ============================================================ */
+
+body.retro {
+  --color-bg: #0f3b1f; /* felt green */
+  --color-grid: #0a2a16;
+  --color-blocked: #5a2a2a;
+
+  --color-region-0: #114d28;
+  --color-region-1: #0d4222;
+  --color-region-2: #08381c;
+  --color-region-3: #063016;
+
+  --color-domino-bg: #f5e6c8; /* aged ivory */
+  --color-domino-border: #2b1b0f; /* dark brown */
+  --color-pip: #000000;
+
+  --transition-fast: 150ms ease-out;
+}
+
