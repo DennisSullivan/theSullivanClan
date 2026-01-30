@@ -1,0 +1,70 @@
+// ============================================================
+// FILE: main.js
+// PURPOSE: Wires together the loader, engine, and UI.
+// NOTES:
+//   - Loads a puzzle JSON.
+//   - Initializes engine state.
+//   - Renders board + tray.
+//   - Enables drag/drop and rotation.
+//   - Runs SyncCheck after each action.
+// ============================================================
+
+import { loadPuzzle } from "./engine/loader.js";
+import { renderBoard } from "./ui/boardRenderer.js";
+import { renderTray } from "./ui/trayRenderer.js";
+import { enableDrag } from "./ui/dragDrop.js";
+import { enableRotateButtons } from "./ui/rotateButton.js";
+import { syncCheck } from "./engine/syncCheck.js";
+
+
+// ------------------------------------------------------------
+// startPuzzle(puzzleJson)
+// Initializes the entire puzzle system.
+// INPUTS:
+//   puzzleJson - parsed puzzle definition
+// NOTES:
+//   - Returns the engine state for debugging.
+// ------------------------------------------------------------
+export function startPuzzle(puzzleJson) {
+  // Load engine state
+  const state = loadPuzzle(puzzleJson);
+
+  const {
+    dominos,
+    grid,
+    regionMap,
+    blocked,
+    rules,
+    history
+  } = state;
+
+  // DOM containers
+  const boardEl = document.getElementById("board");
+  const trayEl = document.getElementById("tray");
+
+  // Initial render
+  renderBoard(dominos, grid, regionMap, blocked, boardEl);
+  renderTray(dominos, trayEl);
+
+  // Enable interactions
+  enableDrag(dominos, grid, regionMap, blocked, boardEl, trayEl);
+  enableRotateButtons(dominos, grid, regionMap, blocked, boardEl, trayEl);
+
+  // Initial sync check
+  syncCheck(dominos, grid);
+
+  return state; // useful for debugging in console
+}
+
+
+// ------------------------------------------------------------
+// loadAndStart(url)
+// Convenience helper: fetches a puzzle file and starts it.
+// NOTES:
+//   - Optional helper for real deployments.
+// ------------------------------------------------------------
+export async function loadAndStart(url) {
+  const response = await fetch(url);
+  const json = await response.json();
+  return startPuzzle(json);
+}
