@@ -16,6 +16,6 @@
   padding: 1px 3px;
   font-size: 12px;
   line-height: 1;
-  color: #222;
+  color: white;
   background: transparent; /* actual color comes from JS */
 }
