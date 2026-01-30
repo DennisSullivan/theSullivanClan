@@ -2,14 +2,14 @@
 // FILE: placement.js
 // PURPOSE: Implements all movement rules for dominos:
 //          - tray → board placement
+//          - board → board movement
 //          - board → tray removal
 //          - coordinate assignment
-//          - pivotHalf initialization
 // NOTES:
 //   - No orientation flags.
 //   - No DOM logic.
-//   - No A/B model.
-//   - trayOrientation controls tray-only visuals.
+//   - Geometry-only orientation.
+//   - trayOrientation is tray-only visual state.
 // ============================================================
 
 import { isInside, isCellFree, areAdjacent } from "./grid.js";
@@ -18,21 +18,9 @@ import { clearBoardState, setCells } from "./domino.js";
 
 // ------------------------------------------------------------
 // placeFromTray(domino, grid, dropRow, dropCol, direction)
-// Places a domino from the tray onto the board.
-// INPUTS:
-//   domino    - canonical Domino object (must be in tray)
-//   grid      - occupancy map
-//   dropRow   - target row for the pivot half
-//   dropCol   - target col for the pivot half
-//   direction - "up" | "down" | "left" | "right"
-// RETURNS:
-//   true if placement succeeded, false otherwise
-// NOTES:
-//   - pivotHalf is always 0 on initial placement.
-//   - trayOrientation determines initial orientation only.
-//   - direction determines where half1 goes.
+// Internal helper: places a domino from tray onto board.
 // ------------------------------------------------------------
-export function placeFromTray(domino, grid, dropRow, dropCol, direction) {
+function placeFromTray(domino, grid, dropRow, dropCol, direction) {
   // Compute partner cell based on direction
   let r0 = dropRow;
   let c0 = dropCol;
@@ -67,18 +55,9 @@ export function placeFromTray(domino, grid, dropRow, dropCol, direction) {
 
 // ------------------------------------------------------------
 // moveOnBoard(domino, grid, newR0, newC0, newR1, newC1)
-// Moves a domino already on the board to new coordinates.
-// INPUTS:
-//   domino - canonical Domino object
-//   grid   - occupancy map
-//   newR0,newC0,newR1,newC1 - new coordinates
-// RETURNS:
-//   true if move succeeded, false otherwise
-// NOTES:
-//   - Does NOT change pivotHalf.
-//   - Used for drag repositioning on board.
+// Internal helper: moves a domino already on the board.
 // ------------------------------------------------------------
-export function moveOnBoard(domino, grid, newR0, newC0, newR1, newC1) {
+function moveOnBoard(domino, grid, newR0, newC0, newR1, newC1) {
   // Must be inside grid
   if (!isInside(grid, newR0, newC0)) return false;
   if (!isInside(grid, newR1, newC1)) return false;
@@ -102,29 +81,57 @@ export function moveOnBoard(domino, grid, newR0, newC0, newR1, newC1) {
 
 // ------------------------------------------------------------
 // returnToTray(domino)
-// Removes a domino from the board and returns it to the tray.
-// INPUTS:
-//   domino - canonical Domino object
-// NOTES:
-//   - Coordinates cleared
-//   - pivotHalf cleared
-//   - trayOrientation preserved
-//   - Home slot is handled by trayRenderer, not here
+// Internal helper: removes a domino from the board.
 // ------------------------------------------------------------
-export function returnToTray(domino) {
+function returnToTray(domino) {
   clearBoardState(domino);
+}
+
+
+// ============================================================
+// CANONICAL PUBLIC API
+// These are the names expected by dragDrop.js, main.js, and UI.
+// ============================================================
+
+// ------------------------------------------------------------
+// placeDomino(domino, row, col, grid, direction)
+// Public wrapper for tray → board placement.
+// ------------------------------------------------------------
+export function placeDomino(domino, row, col, grid, direction) {
+  return placeFromTray(domino, grid, row, col, direction);
+}
+
+
+// ------------------------------------------------------------
+// moveDomino(domino, row, col, grid)
+// Public wrapper for board → board movement.
+// Computes new half1 based on existing geometry.
+// ------------------------------------------------------------
+export function moveDomino(domino, row, col, grid) {
+  const dr = domino.row1 - domino.row0;
+  const dc = domino.col1 - domino.col0;
+
+  const newR0 = row;
+  const newC0 = col;
+  const newR1 = row + dr;
+  const newC1 = col + dc;
+
+  return moveOnBoard(domino, grid, newR0, newC0, newR1, newC1);
+}
+
+
+// ------------------------------------------------------------
+// removeDominoToTray(domino)
+// Public wrapper for board → tray removal.
+// ------------------------------------------------------------
+export function removeDominoToTray(domino) {
+  return returnToTray(domino);
 }
 
 
 // ------------------------------------------------------------
 // getDropDirectionFromDrag(dx, dy)
-// Converts drag vector into a cardinal direction.
-// INPUTS:
-//   dx, dy - drag deltas
-// RETURNS:
-//   "up" | "down" | "left" | "right"
-// NOTES:
-//   - UI layer may use this to choose placement direction.
+// Utility used by UI to infer placement direction.
 // ------------------------------------------------------------
 export function getDropDirectionFromDrag(dx, dy) {
   if (Math.abs(dx) > Math.abs(dy)) {
@@ -133,4 +140,3 @@ export function getDropDirectionFromDrag(dx, dy) {
     return dy > 0 ? "down" : "up";
   }
 }
-
