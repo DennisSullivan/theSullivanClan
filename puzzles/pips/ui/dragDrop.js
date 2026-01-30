@@ -1,114 +1,126 @@
 // ============================================================
-// FILE: boardRenderer.js
-// PURPOSE: Renders the puzzle board, including:
-//          - grid cells
-//          - blocked cells
-//          - region overlays
-//          - dominos in board positions
+// FILE: dragDrop.js
+// PURPOSE: Enables drag-and-drop interactions for dominos.
 // NOTES:
-//   - Pure UI: reads engine state, never mutates it.
-//   - Board orientation is derived from geometry only.
-//   - Delegates domino visuals to dominoRenderer.
+//   - Pure UI event handling.
+//   - Calls engine placement/move functions.
+//   - Re-renders board + tray after each action.
+//   - Runs SyncCheck.
 // ============================================================
 
-import { renderDomino } from "./dominoRenderer.js";
-import { renderBlockedCells } from "./blockedRenderer.js";
-import { renderRegions } from "./regionRenderer.js";
+import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
+import { syncCheck } from "../engine/syncCheck.js";
+import { renderBoard } from "./boardRenderer.js";
+import { renderTray } from "./trayRenderer.js";
 
 
 // ------------------------------------------------------------
-// renderBoard(dominos, grid, regionMap, blocked, boardEl)
-// Renders the entire board state.
-// INPUTS:
-//   dominos   - Map<id,Domino>
-//   grid      - occupancy map
-//   regionMap - 2D array of region IDs
-//   blocked   - Set of "r,c" strings
-//   boardEl   - DOM element for the board container
-// NOTES:
-//   - Clears boardEl and rebuilds everything.
-//   - Board cells are drawn as a CSS grid.
-//   - Domino elements are positioned absolutely.
+// enableDrag(dominos, grid, regionMap, blocked, boardEl, trayEl)
+// Wires up drag events for all dominos.
 // ------------------------------------------------------------
-export function renderBoard(dominos, grid, regionMap, blocked, boardEl) {
-  boardEl.innerHTML = ""; // full redraw for simplicity
-
-  const rows = grid.length;
-  const cols = grid[0].length;
-
-  // Configure CSS grid
-  boardEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-  boardEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-
-  // Draw base grid cells
-  drawGridCells(boardEl, rows, cols);
-
-  // Draw blocked cells
-  renderBlockedCells(blocked, boardEl);
-
-  // Draw region overlays
-  renderRegions(regionMap, boardEl);
-
-  // Draw dominos
-  renderBoardDominos(dominos, boardEl);
+export function enableDrag(dominos, grid, regionMap, blocked, boardEl, trayEl) {
+  boardEl.addEventListener("pointerdown", (e) => startDrag(e, dominos, grid, regionMap, blocked, boardEl, trayEl));
+  trayEl.addEventListener("pointerdown", (e) => startDrag(e, dominos, grid, regionMap, blocked, boardEl, trayEl));
 }
 
 
 // ------------------------------------------------------------
-// drawGridCells(boardEl, rows, cols)
-// Creates the base grid cell elements.
-// NOTES:
-//   - These are background-only; dominos are absolutely positioned.
+// startDrag(e)
+// Determines which domino was grabbed and begins tracking.
 // ------------------------------------------------------------
-function drawGridCells(boardEl, rows, cols) {
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const cell = document.createElement("div");
-      cell.className = "board-cell";
-      cell.dataset.row = r;
-      cell.dataset.col = c;
-      boardEl.appendChild(cell);
+function startDrag(e, dominos, grid, regionMap, blocked, boardEl, trayEl) {
+  const target = e.target.closest(".domino");
+  if (!target) return;
+
+  const dominoId = target.dataset.id;
+  const domino = dominos.get(dominoId);
+  if (!domino) return;
+
+  e.preventDefault();
+  const startX = e.clientX;
+  const startY = e.clientY;
+
+  const dragState = {
+    domino,
+    startX,
+    startY,
+    moved: false
+  };
+
+  const moveHandler = (ev) => onDrag(ev, dragState);
+  const upHandler = (ev) => endDrag(ev, dragState, dominos, grid, regionMap, blocked, boardEl, trayEl, moveHandler, upHandler);
+
+  window.addEventListener("pointermove", moveHandler);
+  window.addEventListener("pointerup", upHandler);
+}
+
+
+// ------------------------------------------------------------
+// onDrag(e)
+// Tracks movement; sets moved=true once threshold exceeded.
+// ------------------------------------------------------------
+function onDrag(e, dragState) {
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
+
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+    dragState.moved = true;
+  }
+}
+
+
+// ------------------------------------------------------------
+// endDrag(e)
+// Determines drop target and applies engine action.
+// ------------------------------------------------------------
+function endDrag(e, dragState, dominos, grid, regionMap, blocked, boardEl, trayEl, moveHandler, upHandler) {
+  window.removeEventListener("pointermove", moveHandler);
+  window.removeEventListener("pointerup", upHandler);
+
+  const { domino, moved } = dragState;
+
+  // If not moved, treat as click (rotation handled elsewhere)
+  if (!moved) return;
+
+  const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+
+  // Dropped on tray?
+  if (dropTarget && dropTarget.closest("#tray")) {
+    removeDominoToTray(domino, grid);
+    finalize(dominos, grid, regionMap, blocked, boardEl, trayEl);
+    return;
+  }
+
+  // Dropped on board cell?
+  const cell = dropTarget && dropTarget.closest(".board-cell");
+  if (cell) {
+    const row = parseInt(cell.dataset.row, 10);
+    const col = parseInt(cell.dataset.col, 10);
+
+    if (domino.row0 === null) {
+      // From tray → board
+      placeDomino(domino, row, col, grid, blocked);
+    } else {
+      // From board → board
+      moveDomino(domino, row, col, grid, blocked);
     }
+
+    finalize(dominos, grid, regionMap, blocked, boardEl, trayEl);
+    return;
   }
+
+  // Otherwise: return to tray
+  removeDominoToTray(domino, grid);
+  finalize(dominos, grid, regionMap, blocked, boardEl, trayEl);
 }
 
 
 // ------------------------------------------------------------
-// renderBoardDominos(dominos, boardEl)
-// Renders all dominos that are currently on the board.
-// NOTES:
-//   - Each domino is positioned using CSS translate.
-//   - Orientation is handled by dominoRenderer.
+// finalize()
+// Re-render + sync check after any drag action.
 // ------------------------------------------------------------
-function renderBoardDominos(dominos, boardEl) {
-  for (const [id, d] of dominos) {
-    if (d.row0 === null) continue; // in tray, skip
-
-    const wrapper = createDominoWrapper(d);
-    boardEl.appendChild(wrapper);
-
-    // Render the domino inside the wrapper
-    renderDomino(d, wrapper);
-  }
+function finalize(dominos, grid, regionMap, blocked, boardEl, trayEl) {
+  renderBoard(dominos, grid, regionMap, blocked, boardEl);
+  renderTray(dominos, trayEl);
+  syncCheck(dominos, grid);
 }
-
-
-// ------------------------------------------------------------
-// createDominoWrapper(domino)
-// Creates a positioned wrapper for a board domino.
-// NOTES:
-//   - Wrapper is absolutely positioned at half0's cell.
-//   - dominoRenderer handles rotation.
-// ------------------------------------------------------------
-function createDominoWrapper(domino) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "domino-wrapper";
-
-  // Position at half0's cell
-  wrapper.style.position = "absolute";
-  wrapper.style.left = `calc(${domino.col0} * var(--cell-size))`;
-  wrapper.style.top  = `calc(${domino.row0} * var(--cell-size))`;
-
-  return wrapper;
-}
-
