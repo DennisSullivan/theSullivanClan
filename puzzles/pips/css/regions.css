@@ -11,12 +11,11 @@
 }
 
 .badge {
-  background: white;
-  border: 1px solid #666;
+  border: 1px solid;
   border-radius: 3px;
-  padding: 1px 3px;      /* smaller box */
-  font-size: 10px;       /* smaller text */
-  line-height: 1;        /* tighter vertical spacing */
+  padding: 1px 3px;
+  font-size: 12px;
+  line-height: 1;
   color: #222;
-  box-shadow: 0 1px 1px rgba(0,0,0,0.12);
+  background: transparent; /* actual color comes from JS */
 }
