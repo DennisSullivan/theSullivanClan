@@ -108,6 +108,13 @@
   position: absolute;
 }
 
+.domino .half::before {
+  content: attr(data-pip);
+  font-size: calc(var(--cell-size) * 0.5);
+  font-weight: bold;
+  color: var(--color-pip);
+}
+
 
 /* ============================================================
    DOMINO HALVES (TEXT-BASED PIPS)
