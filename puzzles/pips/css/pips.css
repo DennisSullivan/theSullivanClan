@@ -144,12 +144,27 @@
    Uncomment to use dot pips instead of numbers.
    ============================================================ */
 
-/*
 .domino .half {
-  position: relative;
-  font-size: 0; 
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-right: 1px solid var(--color-domino-border);
+
+  /* base text styling */
+  font-size: calc(var(--cell-size) * 0.5);
+  font-weight: bold;
+  color: var(--color-pip);
+
+  position: relative; /* REQUIRED for ::before */
 }
 
+.domino .half1 {
+  border-right: none;
+}
+
+/* This MUST come AFTER the .half rule */
 .domino .half::before {
   content: attr(data-pip);
   position: absolute;
@@ -157,10 +172,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-size: calc(var(--cell-size) * 0.5);
+  font-weight: bold;
   color: var(--color-pip);
 }
-*/
 
 
 /* ============================================================
