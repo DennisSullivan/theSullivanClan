@@ -6,6 +6,8 @@
   position: absolute;
   pointer-events: none;
   z-index: 30;
+  /* Shift badge above and left of the cell corner */
+  transform: translate(-6px, -6px);
 }
 
 .badge {
