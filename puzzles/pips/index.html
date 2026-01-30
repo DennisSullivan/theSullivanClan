@@ -7,26 +7,39 @@
 
   <!-- Core CSS -->
   <link rel="stylesheet" href="./css/pips.css" />
+
+  <style>
+    /* Center the puzzle board + tray */
+    .pips-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;   /* centers board + tray */
+      margin-top: 20px;
+    }
+
+    /* Optional: add breathing room between board and tray */
+    #board {
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 
 <body>
 
   <!-- ============================================================
-       BOARD + TRAY CONTAINERS
-       These are the only DOM elements the UI layer requires.
+       CENTERED PUZZLE CONTAINER
        ============================================================ -->
-
-  <div id="board"></div>
-  <div id="tray"></div>
+  <div class="pips-container">
+    <div id="board"></div>
+    <div id="tray"></div>
+  </div>
 
   <!-- ============================================================
        MAIN APP SCRIPT
-       Loads the sample puzzle and starts the engine/UI.
        ============================================================ -->
   <script type="module">
     import { loadAndStart } from "./main.js";
-
-    // Load your minimal starter puzzle
     loadAndStart("./puzzles/sample.json");
   </script>
 
