@@ -32,6 +32,10 @@ export function renderRegionBadges(regions, boardEl) {
     const badge = document.createElement("div");
     badge.className = "badge";
     badge.textContent = region.rule;
+  
+    // Apply region color via CSS variable
+    badge.style.background = `var(--color-region-${region.id})`;
+    badge.style.borderColor = `var(--color-region-${region.id})`;
 
     layer.appendChild(badge);
     boardEl.appendChild(layer);
