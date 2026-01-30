@@ -26,6 +26,7 @@ import { syncCheck } from "./engine/syncCheck.js";
 //   - Returns the engine state for debugging.
 // ------------------------------------------------------------
 export function startPuzzle(puzzleJson) {
+  console.log("startPuzzle() called");
   // Load engine state
   const state = loadPuzzle(puzzleJson);
 
@@ -64,6 +65,7 @@ export function startPuzzle(puzzleJson) {
 //   - Optional helper for real deployments.
 // ------------------------------------------------------------
 export async function loadAndStart(url) {
+  console.log("loadAndStart() fetching:", url);
   const response = await fetch(url);
   const json = await response.json();
   return startPuzzle(json);
