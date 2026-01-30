@@ -4,19 +4,20 @@
 
 :root {
   --cell-size: 48px;
-  --domino-thickness: 2px; /* thinner outline */
+
+  /* NYT-style thin borders */
+  --domino-thickness: 1px;
 
   --color-bg: #fafafa;
-  --color-grid: #999;      /* slightly darker, clearer grid */
-  --color-blocked: #444;
+  --color-grid: #ddd; /* lighter, cleaner */
 
-  --color-region-0: #dcdcff;
-  --color-region-1: #dcffdc;
-  --color-region-2: #ffdcdc;
-  --color-region-3: #dcffff;
+  --color-region-0: #d8d8ff;
+  --color-region-1: #d8ffd8;
+  --color-region-2: #ffd8d8;
+  --color-region-3: #d8ffff;
 
   --color-domino-bg: #ffffff;
-  --color-domino-border: #222;
+  --color-domino-border: #aaa; /* NYT-style light gray */
   --color-pip: #222;
 
   --transition-fast: 120ms ease-out;
@@ -38,16 +39,15 @@
   height: calc(var(--cell-size) * 6);
 
   background: var(--color-bg);
-  border: 2px solid #aaa;
+  border: 2px solid #ccc;
   touch-action: none;
 }
 
 .board-cell {
   border: 1px solid var(--color-grid);
   box-sizing: border-box;
-  position: relative;
   background: transparent;
-  opacity: 1;
+  opacity: 1; /* ensure no veil */
 }
 
 
@@ -73,15 +73,17 @@
 
 
 /* ============================================================
-   DOMINO ELEMENT
+   DOMINO ELEMENT — NYT STYLE
    ============================================================ */
 
 .domino {
   width: calc(var(--cell-size) * 2);
   height: var(--cell-size);
+
   background: var(--color-domino-bg);
   border: var(--domino-thickness) solid var(--color-domino-border);
-  border-radius: 6px;
+  border-radius: 4px; /* NYT-style subtle rounding */
+
   box-sizing: border-box;
   display: flex;
   position: absolute;
@@ -101,20 +103,21 @@
 
 
 /* ============================================================
-   REAL DOMINO PIP SYSTEM (tighter, centered cluster)
+   REAL DOMINO PIP SYSTEM — NYT STYLE
    ============================================================ */
 
 .domino .half {
   flex: 1;
-  position: relative;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
+
   justify-items: center;
   align-items: center;
 
-  padding: calc(var(--cell-size) * 0.10); /* pull cluster inward */
+  padding: calc(var(--cell-size) * 0.14); /* tighter, centered cluster */
   font-size: 0; /* hide numerals */
+
   border-right: 1px solid var(--color-domino-border);
 }
 
@@ -122,24 +125,23 @@
   border-right: none;
 }
 
-/* pip dot */
+/* pip dot — NYT small crisp dots */
 .domino .pip {
-  width: calc(var(--cell-size) * 0.12);
-  height: calc(var(--cell-size) * 0.12);
+  width: calc(var(--cell-size) * 0.10);
+  height: calc(var(--cell-size) * 0.10);
   background: var(--color-pip);
   border-radius: 50%;
   opacity: 0;
 }
 
 /* pip positions */
-.p1 { grid-area: 2 / 2; } /* center */
-.p2 { grid-area: 1 / 1; } /* top-left */
-.p3 { grid-area: 3 / 3; } /* bottom-right */
-.p4 { grid-area: 1 / 3; } /* top-right */
-.p5 { grid-area: 3 / 1; } /* bottom-left */
-.p6 { grid-area: 2 / 1; } /* mid-left */
-.p7 { grid-area: 2 / 3; } /* mid-right */
-
+.p1 { grid-area: 2 / 2; }
+.p2 { grid-area: 1 / 1; }
+.p3 { grid-area: 3 / 3; }
+.p4 { grid-area: 1 / 3; }
+.p5 { grid-area: 3 / 1; }
+.p6 { grid-area: 2 / 1; }
+.p7 { grid-area: 2 / 3; }
 
 /* pip patterns */
 .domino .half[data-pip="1"] .p1 { opacity: 1; }
@@ -180,36 +182,7 @@
   gap: 6px;
   padding: 8px;
   background: #eee;
-  border-top: 2px solid #aaa;
-}
-
-.tray-slot {
-  width: calc(var(--cell-size) * 2);
-  height: var(--cell-size);
-  position: relative;
-}
-
-
-/* ============================================================
-   ROTATE BUTTON
-   ============================================================ */
-
-.rotate-btn {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 22px;
-  height: 22px;
-  background: #fff;
-  border: 2px solid #222;
-  border-radius: 50%;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  user-select: none;
-  z-index: 10;
+  border-top: 2px solid #ccc;
 }
 
 
@@ -218,7 +191,7 @@
    ============================================================ */
 
 .domino.dragging {
-  opacity: 0.8;
+  opacity: 0.85;
   cursor: grabbing;
   z-index: 999;
 }
