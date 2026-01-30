@@ -7,7 +7,17 @@
 //   - Supports: place, move, rotate, return-to-tray.
 // ============================================================
 
-
+// ------------------------------------------------------------
+// initHistory()
+// RETURNS:
+//   { undoStack: [], redoStack: [] }
+// ------------------------------------------------------------
+export function initHistory() {
+  return {
+    undoStack: [],
+    redoStack: []
+  };
+}
 // ------------------------------------------------------------
 // createHistory()
 // Creates a new history stack.
