@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pips Puzzle</title>
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="./css/pips.css" />
+</head>
+
+<body>
+
+  <!-- ============================================================
+       BOARD + TRAY CONTAINERS
+       These are the only DOM elements the UI layer requires.
+       ============================================================ -->
+
+  <div id="board"></div>
+  <div id="tray"></div>
+
+  <!-- ============================================================
+       MAIN APP SCRIPT
+       Loads puzzle + wires engine + UI.
+       ============================================================ -->
+  <script type="module">
+    import { loadAndStart } from "./main.js";
+
+    // Load a puzzle file (you can change this path)
+    loadAndStart("./puzzles/sample.json");
+  </script>
+
+</body>
+</html>
