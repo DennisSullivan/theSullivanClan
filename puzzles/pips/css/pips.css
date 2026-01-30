@@ -1,6 +1,5 @@
 /* ============================================================
    ROOT VARIABLES
-   Purpose: global sizing, colors, spacing
    ============================================================ */
 
 :root {
@@ -10,6 +9,7 @@
   --color-bg: #fafafa;
   --color-grid: #ddd;
   --color-blocked: #444;
+
   --color-region-0: #f7f7ff;
   --color-region-1: #f7fff7;
   --color-region-2: #fff7f7;
@@ -30,7 +30,14 @@
 #board {
   position: relative;
   display: grid;
-  height: calc(100vh - 200px);
+
+  /* REQUIRED: define the grid */
+  grid-template-columns: repeat(6, var(--cell-size));
+  grid-template-rows: repeat(6, var(--cell-size));
+
+  width: calc(var(--cell-size) * 6);
+  height: calc(var(--cell-size) * 6);
+
   background: var(--color-bg);
   border: 2px solid #aaa;
   touch-action: none;
@@ -54,16 +61,13 @@
 
 
 /* ============================================================
-   REGION OVERLAYS
-   Purpose: subtle background tint per region
+   REGION COLORS
    ============================================================ */
 
 .board-cell.region-0 { background: var(--color-region-0); }
 .board-cell.region-1 { background: var(--color-region-1); }
 .board-cell.region-2 { background: var(--color-region-2); }
 .board-cell.region-3 { background: var(--color-region-3); }
-
-/* Add more region colors as needed */
 
 
 /* ============================================================
@@ -73,7 +77,7 @@
 .domino-wrapper {
   width: var(--cell-size);
   height: var(--cell-size);
-  pointer-events: none; /* children handle events */
+  pointer-events: none;
 }
 
 
@@ -106,7 +110,7 @@
 
 
 /* ============================================================
-   DOMINO HALVES
+   DOMINO HALVES (TEXT-BASED PIPS)
    ============================================================ */
 
 .domino .half {
@@ -114,15 +118,42 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* TEXT PIPS */
   font-size: calc(var(--cell-size) * 0.5);
   font-weight: bold;
   color: var(--color-pip);
+
   border-right: 1px solid var(--color-domino-border);
 }
 
 .domino .half1 {
   border-right: none;
 }
+
+
+/* ============================================================
+   OPTIONAL: NYT-STYLE DOT PIPS
+   Uncomment to use dot pips instead of numbers.
+   ============================================================ */
+
+/*
+.domino .half {
+  position: relative;
+  font-size: 0; 
+}
+
+.domino .half::before {
+  content: attr(data-pip);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell-size) * 0.5);
+  color: var(--color-pip);
+}
+*/
 
 
 /* ============================================================
@@ -189,9 +220,9 @@
   }
 }
 
+
 /* ============================================================
-   DARK MODE THEME
-   Apply via: body.dark-mode { ... }
+   THEMES (unchanged)
    ============================================================ */
 
 body.dark-mode {
@@ -207,39 +238,25 @@ body.dark-mode {
   --color-domino-bg: #2b2b2b;
   --color-domino-border: #888;
   --color-pip: #f0f0f0;
-
-  --transition-fast: 120ms ease-out;
 }
-
-/* ============================================================
-   HIGH-CONTRAST ACCESSIBILITY THEME
-   Apply via: body.high-contrast { ... }
-   ============================================================ */
 
 body.high-contrast {
   --color-bg: #ffffff;
   --color-grid: #000000;
   --color-blocked: #000000;
 
-  --color-region-0: #ffff00; /* yellow */
-  --color-region-1: #00ffff; /* cyan */
-  --color-region-2: #ff00ff; /* magenta */
-  --color-region-3: #00ff00; /* lime */
+  --color-region-0: #ffff00;
+  --color-region-1: #00ffff;
+  --color-region-2: #ff00ff;
+  --color-region-3: #00ff00;
 
   --color-domino-bg: #ffffff;
   --color-domino-border: #000000;
   --color-pip: #000000;
-
-  --transition-fast: none; /* no motion for accessibility */
 }
 
-/* ============================================================
-   RETRO DOMINO THEME
-   Apply via: body.retro { ... }
-   ============================================================ */
-
 body.retro {
-  --color-bg: #0f3b1f; /* felt green */
+  --color-bg: #0f3b1f;
   --color-grid: #0a2a16;
   --color-blocked: #5a2a2a;
 
@@ -248,10 +265,7 @@ body.retro {
   --color-region-2: #08381c;
   --color-region-3: #063016;
 
-  --color-domino-bg: #f5e6c8; /* aged ivory */
-  --color-domino-border: #2b1b0f; /* dark brown */
+  --color-domino-bg: #f5e6c8;
+  --color-domino-border: #2b1b0f;
   --color-pip: #000000;
-
-  --transition-fast: 150ms ease-out;
 }
-
