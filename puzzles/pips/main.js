@@ -35,6 +35,7 @@ export function startPuzzle(puzzleJson) {
     grid,
     regionMap,
     blocked,
+    regions,
     rules,
     history
   } = state;
