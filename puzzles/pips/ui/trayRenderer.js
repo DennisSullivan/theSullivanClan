@@ -33,7 +33,13 @@ export function renderTray(dominos, trayEl) {
     if (d.row0 === null) {
       const slotEl = createTraySlot(id);
       trayEl.appendChild(slotEl);
-      renderDomino(d, slotEl);
+      // Create wrapper for drag events
+      const wrapper = document.createElement("div");
+      wrapper.className = "domino-wrapper";
+      slotEl.appendChild(wrapper);
+      
+      // Render the domino inside the wrapper
+      renderDomino(d, wrapper);
     }
   }
 }
