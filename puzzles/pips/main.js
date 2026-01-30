@@ -27,7 +27,6 @@ import { syncCheck } from "./engine/syncCheck.js";
 // ------------------------------------------------------------
 export function startPuzzle(puzzleJson) {
   console.log("startPuzzle() called");
-  console.log("STATE:", state);
   // Load engine state
   const state = loadPuzzle(puzzleJson);
 
@@ -39,6 +38,7 @@ export function startPuzzle(puzzleJson) {
     rules,
     history
   } = state;
+  console.log("STATE:", state);
 
   // DOM containers
   const boardEl = document.getElementById("board");
