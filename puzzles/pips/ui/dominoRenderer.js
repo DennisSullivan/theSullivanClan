@@ -1,92 +1,174 @@
 // ============================================================
-// FILE: dominoRenderer.js
-// PURPOSE: Render a single domino using geometry-only orientation.
+// FILE: dragDrop.js
+// PURPOSE: Enables drag-and-drop interactions for dominos.
 // NOTES:
-//   - pip0 = half0, pip1 = half1
-//   - tray dominos have no rotation
-//   - board dominos derive rotation from geometry
+//   - Visual dragging with translate + scale(1.1)
+//   - Wrapper stays in tray slot (no collapse)
+//   - Engine placement unchanged
+//   - Full diagnostics preserved
 // ============================================================
 
-export function renderDomino(domino, parentEl) {
-  // Remove any existing domino inside this wrapper
-  parentEl.innerHTML = "";
-
-  const el = document.createElement("div");
-  el.id = `domino-${domino.id}`;
-  el.className = "domino";
-  el.dataset.id = domino.id;
-  el.innerHTML = createDominoHTML(domino);
-
-  parentEl.appendChild(el);
-
-  updatePipValues(el, domino);
-  applyDominoTransform(el, domino);
-}
-
+import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
+import { syncCheck } from "../engine/syncCheck.js";
+import { renderBoard } from "./boardRenderer.js";
+import { renderTray } from "./trayRenderer.js";
 
 
 // ------------------------------------------------------------
-// createDominoHTML
+// enableDrag
 // ------------------------------------------------------------
-function createDominoHTML(domino) {
-  return `
-    <div class="half half0" data-pip="${domino.pip0}">
-      <div class="pip p1"></div>
-      <div class="pip p2"></div>
-      <div class="pip p3"></div>
-      <div class="pip p4"></div>
-      <div class="pip p5"></div>
-      <div class="pip p6"></div>
-      <div class="pip p7"></div>
-    </div>
+export function enableDrag(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+  console.log("enableDrag: wiring pointerdown on board + tray");
 
-    <div class="half half1" data-pip="${domino.pip1}">
-      <div class="pip p1"></div>
-      <div class="pip p2"></div>
-      <div class="pip p3"></div>
-      <div class="pip p4"></div>
-      <div class="pip p5"></div>
-      <div class="pip p6"></div>
-      <div class="pip p7"></div>
-    </div>
-  `;
+  boardEl.addEventListener("pointerdown", (e) =>
+    startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
+  );
+
+  trayEl.addEventListener("pointerdown", (e) =>
+    startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
+  );
 }
 
 
 // ------------------------------------------------------------
-// updatePipValues
+// startDrag
 // ------------------------------------------------------------
-function updatePipValues(el, domino) {
-  el.querySelector(".half0").dataset.pip = domino.pip0;
-  el.querySelector(".half1").dataset.pip = domino.pip1;
+function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+  const target = e.target.closest(".domino");
+  if (!target) return;
+
+  const wrapper = target.closest(".domino-wrapper");
+  if (!wrapper) return;
+
+  const dominoId = target.dataset.id;
+  const domino = dominos.get(dominoId);
+  if (!domino) return;
+
+  console.log(`startDrag: grabbed domino ${dominoId} at (${e.clientX},${e.clientY})`);
+
+  e.preventDefault();
+
+  const rect = wrapper.getBoundingClientRect();
+
+  const dragState = {
+    domino,
+    wrapper,
+    startX: e.clientX,
+    startY: e.clientY,
+    originLeft: rect.left,
+    originTop: rect.top,
+    moved: false
+  };
+
+  wrapper.classList.add("dragging");
+
+  const moveHandler = (ev) => onDrag(ev, dragState);
+  const upHandler = (ev) =>
+    endDrag(ev, dragState, dominos, grid, regionMap, blocked, regions, boardEl, trayEl, moveHandler, upHandler);
+
+  window.addEventListener("pointermove", moveHandler);
+  window.addEventListener("pointerup", upHandler);
 }
 
 
 // ------------------------------------------------------------
-// applyDominoTransform
-// Geometry-only rotation
+// onDrag — visual dragging
 // ------------------------------------------------------------
-function applyDominoTransform(el, domino) {
-  // TRAY DOMINO
-  if (domino.row0 === null) {
-    el.style.transform = "rotate(0deg)";
-    el.classList.add("in-tray");
-    el.classList.remove("on-board");
+function onDrag(e, dragState) {
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
+
+  if (!dragState.moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+    console.log(`onDrag: movement threshold passed dx=${dx} dy=${dy}`);
+    dragState.moved = true;
+  }
+
+  // Apply visual dragging transform
+  dragState.wrapper.style.transform = `translate(${dx}px, ${dy}px) scale(1.1)`;
+}
+
+
+// ------------------------------------------------------------
+// endDrag
+// ------------------------------------------------------------
+function endDrag(
+  e,
+  dragState,
+  dominos,
+  grid,
+  regionMap,
+  blocked,
+  regions,
+  boardEl,
+  trayEl,
+  moveHandler,
+  upHandler
+) {
+  window.removeEventListener("pointermove", moveHandler);
+  window.removeEventListener("pointerup", upHandler);
+
+  const { domino, moved, wrapper } = dragState;
+
+  // Reset visual transform
+  wrapper.style.transform = "";
+  wrapper.classList.remove("dragging");
+
+  if (!moved) {
+    console.log(`endDrag: click-only, no movement for domino ${domino.id}`);
     return;
   }
 
-  // BOARD DOMINO
-  el.classList.remove("in-tray");
-  el.classList.add("on-board");
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
 
-  const dr = domino.row1 - domino.row0;
-  const dc = domino.col1 - domino.col0;
+  console.log(`endDrag: drop dx=${dx} dy=${dy}`);
 
-  let angle = 0;
-  if (dr === 0 && dc === 1) angle = 0;     // horizontal L→R
-  if (dr === 0 && dc === -1) angle = 180;  // horizontal R→L
-  if (dr === 1 && dc === 0) angle = 90;    // vertical T→B
-  if (dr === -1 && dc === 0) angle = 270;  // vertical B→T
+  const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+  console.log("endDrag: dropTarget =", dropTarget);
 
-  el.style.transform = `rotate(${angle}deg)`;
+  // Dropped on tray
+  if (dropTarget && dropTarget.closest("#tray")) {
+    console.log(`endDrag: dropping domino ${domino.id} onto tray`);
+    removeDominoToTray(domino, grid);
+    finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+    return;
+  }
+
+  // Dropped on board cell
+  const cell = dropTarget && dropTarget.closest(".board-cell");
+  if (cell) {
+    const row = parseInt(cell.dataset.row, 10);
+    const col = parseInt(cell.dataset.col, 10);
+
+    console.log(`endDrag: dropping on board cell (${row},${col})`);
+
+    if (domino.row0 === null) {
+      console.log(`endDrag: placing from tray → placeDomino(${domino.id})`);
+      const ok = placeDomino(domino, row, col, grid, dx, dy);
+      console.log(`placeDomino result: ${ok}`);
+    } else {
+      console.log(`endDrag: moving on board → moveDomino(${domino.id})`);
+      const ok = moveDomino(domino, row, col, grid);
+      console.log(`moveDomino result: ${ok}`);
+    }
+
+    finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+    return;
+  }
+
+  // Otherwise return to tray
+  console.log(`endDrag: no valid drop target → returning ${domino.id} to tray`);
+  removeDominoToTray(domino, grid);
+  finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+}
+
+
+// ------------------------------------------------------------
+// finalize
+// ------------------------------------------------------------
+function finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+  console.log("finalize: re-rendering board + tray + syncCheck");
+  renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
+  renderTray(dominos, trayEl);
+  syncCheck(dominos, grid);
 }
