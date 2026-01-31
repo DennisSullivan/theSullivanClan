@@ -4,12 +4,12 @@
 
 :root {
   --cell-size: 48px;
+  --cell-gap: 4px; /* NYT-style spacing */
 
-  /* NYT-style thin borders */
   --domino-thickness: 1px;
 
   --color-bg: #fafafa;
-  --color-grid: #ddd; /* lighter, cleaner */
+  --color-grid: #ddd;
 
   --color-region-0: #d8d8ff;
   --color-region-1: #d8ffd8;
@@ -17,7 +17,7 @@
   --color-region-3: #d8ffff;
 
   --color-domino-bg: #ffffff;
-  --color-domino-border: #aaa; /* NYT-style light gray */
+  --color-domino-border: #aaa;
   --color-pip: #222;
 
   --transition-fast: 120ms ease-out;
@@ -32,11 +32,11 @@
   position: relative;
   display: grid;
 
-  grid-template-columns: repeat(6, var(--cell-size));
-  grid-template-rows: repeat(6, var(--cell-size));
+  grid-template-columns: repeat(6, calc(var(--cell-size) + var(--cell-gap)));
+  grid-template-rows: repeat(6, calc(var(--cell-size) + var(--cell-gap)));
 
-  width: calc(var(--cell-size) * 6);
-  height: calc(var(--cell-size) * 6);
+  width: calc((var(--cell-size) + var(--cell-gap)) * 6);
+  height: calc((var(--cell-size) + var(--cell-gap)) * 6);
 
   background: var(--color-bg);
   border: 2px solid #ccc;
@@ -48,7 +48,7 @@
   border: 1px solid var(--color-grid);
   box-sizing: border-box;
   background: transparent;
-  opacity: 1; /* ensure no veil */
+  opacity: 1;
 }
 
 
@@ -67,11 +67,11 @@
    ============================================================ */
 
 .domino-wrapper {
-  position: relative;                 /* establishes positioning context */
-  width: calc(var(--cell-size) * 2);  /* dominos are 2 cells wide */
-  height: var(--cell-size);           /* dominos are 1 cell tall */
-  pointer-events: auto;               /* wrapper must receive events */
-  z-index: 100;                       /* above region overlays & badges */
+  position: absolute;
+  width: calc((var(--cell-size) * 2) + var(--cell-gap));
+  height: var(--cell-size);
+  pointer-events: auto;
+  z-index: 100;
 }
 
 
@@ -80,12 +80,12 @@
    ============================================================ */
 
 .domino {
-  width: calc(var(--cell-size) * 2);
+  width: calc((var(--cell-size) * 2) + var(--cell-gap));
   height: var(--cell-size);
 
   background: var(--color-domino-bg);
   border: var(--domino-thickness) solid var(--color-domino-border);
-  border-radius: 4px; /* NYT-style subtle rounding */
+  border-radius: 4px;
 
   box-sizing: border-box;
   display: flex;
@@ -118,8 +118,8 @@
   justify-items: center;
   align-items: center;
 
-  padding: calc(var(--cell-size) * 0.14); /* tighter, centered cluster */
-  font-size: 0; /* hide numerals */
+  padding: calc(var(--cell-size) * 0.14);
+  font-size: 0;
 
   border-right: 1px solid var(--color-domino-border);
 }
@@ -128,7 +128,6 @@
   border-right: none;
 }
 
-/* pip dot — NYT small crisp dots */
 .domino .pip {
   width: calc(var(--cell-size) * 0.10);
   height: calc(var(--cell-size) * 0.10);
