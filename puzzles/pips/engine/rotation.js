@@ -1,106 +1,152 @@
 // ============================================================
 // FILE: rotation.js
-// PURPOSE: Implements physical pivot-based rotation for dominos.
+// PURPOSE: Full rotation-mode system for dominos.
 // NOTES:
-//   - Rotation is geometric, not logical.
-//   - pivotHalf stays fixed in place.
-//   - The partner half rotates in a 4-cycle around the pivot.
-//   - No pip swapping, no half swapping, no orientation flags.
+//   - Double-click enters rotation mode.
+//   - Each double-click rotates 90° clockwise.
+//   - Pivot half determined via DOM (.half0 / .half1).
+//   - Rotation ignores constraints.
+//   - Rotation commits on endDrag.
+//   - Rotation cancels on outside click.
 // ============================================================
 
-import { isInside, isCellFree } from "./grid.js";
+import {
+  rotateDominoOnBoard,
+  rotateDominoInTray,
+  placeDomino,
+  moveDomino
+} from "./placement.js";
 
 
 // ------------------------------------------------------------
-// rotateDomino(domino, grid)
-// Rotates the domino 90° clockwise around pivotHalf.
-// INPUTS:
-//   domino - canonical Domino object (must be on board)
-//   grid   - occupancy map used to validate rotation
-// RETURNS:
-//   true if rotation succeeded, false if blocked
-// NOTES:
-//   - Updates domino.row0/col0 and domino.row1/col1 in place.
-//   - If rotation is illegal (blocked or out of bounds), no change.
+// Internal rotation-mode state
 // ------------------------------------------------------------
-export function rotateDomino(domino, grid) {
-  if (domino.pivotHalf === null) {
-    console.warn("rotateDomino called but pivotHalf is null");
-    return false;
-  }
+let rotatingDomino = null;
+let originalGeometry = null;
 
-  // Identify pivot and partner halves
-  const pivotIs0 = domino.pivotHalf === 0;
 
-  const pivotRow = pivotIs0 ? domino.row0 : domino.row1;
-  const pivotCol = pivotIs0 ? domino.col0 : domino.col1;
+// ------------------------------------------------------------
+// initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag)
+// ------------------------------------------------------------
+export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
 
-  const partRow = pivotIs0 ? domino.row1 : domino.row0;
-  const partCol = pivotIs0 ? domino.col1 : domino.col0;
+  // ==========================================================
+  // TRAY DOUBLE-CLICK → rotate tray domino (no rotation mode)
+  // ==========================================================
+  trayEl.addEventListener("dblclick", (event) => {
+    const dominoEl = event.target.closest(".domino");
+    if (!dominoEl) return;
 
-  // Compute relative offset of partner from pivot
-  const dr = partRow - pivotRow;
-  const dc = partCol - pivotCol;
+    const id = dominoEl.dataset.id;
+    const domino = dominos.get(id);
+    if (!domino) return;
 
-  // 90° clockwise rotation of (dr,dc)
-  // (dr,dc) → (-dc, dr)
-  const newDr = -dc;
-  const newDc = dr;
+    if (domino.row0 !== null) return; // must be in tray
 
-  const newPartRow = pivotRow + newDr;
-  const newPartCol = pivotCol + newDc;
+    rotateDominoInTray(domino);
+    renderPuzzle();
+  });
 
-  // Check bounds
-  if (!isInside(grid, newPartRow, newPartCol)) {
-    return false;
-  }
 
-  // Check if the destination cell is free or belongs to this domino
-  const cell = grid[newPartRow][newPartCol];
-  const movingHalf = pivotIs0 ? 1 : 0;
+  // ==========================================================
+  // BOARD DOUBLE-CLICK → enter rotation mode or rotate again
+  // ==========================================================
+  boardEl.addEventListener("dblclick", (event) => {
+    const dominoEl = event.target.closest(".domino");
+    if (!dominoEl) return;
 
-  if (cell && (cell.dominoId !== domino.id || cell.half !== movingHalf)) {
-    return false;
-  }
+    const id = dominoEl.dataset.id;
+    const domino = dominos.get(id);
+    if (!domino) return;
 
-  // Rotation is legal — update coordinates
-  if (pivotIs0) {
-    domino.row1 = newPartRow;
-    domino.col1 = newPartCol;
-  } else {
-    domino.row0 = newPartRow;
-    domino.col0 = newPartCol;
-  }
+    if (domino.row0 === null) return; // must be on board
 
-  return true;
+    // Determine pivot half via DOM
+    let pivotHalf = 0;
+    const half0 = event.target.closest(".half0");
+    const half1 = event.target.closest(".half1");
+    if (half1 && !half0) pivotHalf = 1;
+
+    // --------------------------------------------------------
+    // ENTER ROTATION MODE
+    // --------------------------------------------------------
+    if (rotatingDomino !== domino) {
+      rotatingDomino = domino;
+
+      // Save original geometry for cancel/commit
+      originalGeometry = {
+        row0: domino.row0,
+        col0: domino.col0,
+        row1: domino.row1,
+        col1: domino.col1
+      };
+    }
+
+    // --------------------------------------------------------
+    // ROTATE 90° CLOCKWISE (geometry only)
+    // --------------------------------------------------------
+    rotateDominoOnBoard(domino, pivotHalf);
+
+    // Visual update
+    renderPuzzle();
+  });
+
+
+  // ==========================================================
+  // OUTSIDE CLICK → cancel rotation mode
+  // ==========================================================
+  document.addEventListener("mousedown", (event) => {
+    if (!rotatingDomino) return;
+
+    // If click is inside a domino, ignore
+    if (event.target.closest(".domino")) return;
+
+    // Otherwise cancel rotation
+    cancelRotation(renderPuzzle);
+  });
+
+
+  // ==========================================================
+  // endDrag → commit rotation (validate placement)
+  // ==========================================================
+  endDrag.registerCallback((domino, row, col, grid) => {
+    if (rotatingDomino !== domino) return;
+
+    // Try to commit by placing/moving
+    const success = moveDomino(domino, row, col, grid);
+
+    if (!success) {
+      // Revert to original geometry
+      domino.row0 = originalGeometry.row0;
+      domino.col0 = originalGeometry.col0;
+      domino.row1 = originalGeometry.row1;
+      domino.col1 = originalGeometry.col1;
+    }
+
+    // End rotation mode
+    rotatingDomino = null;
+    originalGeometry = null;
+
+    renderPuzzle();
+  });
 }
 
 
+
 // ------------------------------------------------------------
-// getRotatedPartnerCell(domino)
-// Computes the partner half's new coordinates WITHOUT modifying
-// the domino. Useful for previewing rotation.
-// RETURNS:
-//   { row, col } or null if pivotHalf is null
+// cancelRotation
 // ------------------------------------------------------------
-export function getRotatedPartnerCell(domino) {
-  if (domino.pivotHalf === null) return null;
+function cancelRotation(renderPuzzle) {
+  if (!rotatingDomino || !originalGeometry) return;
 
-  const pivotIs0 = domino.pivotHalf === 0;
+  // Restore original geometry
+  rotatingDomino.row0 = originalGeometry.row0;
+  rotatingDomino.col0 = originalGeometry.col0;
+  rotatingDomino.row1 = originalGeometry.row1;
+  rotatingDomino.col1 = originalGeometry.col1;
 
-  const pivotRow = pivotIs0 ? domino.row0 : domino.row1;
-  const pivotCol = pivotIs0 ? domino.col0 : domino.col1;
+  rotatingDomino = null;
+  originalGeometry = null;
 
-  const partRow = pivotIs0 ? domino.row1 : domino.row0;
-  const partCol = pivotIs0 ? domino.col1 : domino.col0;
-
-  const dr = partRow - pivotRow;
-  const dc = partCol - pivotCol;
-
-  // 90° clockwise: (dr,dc) → (-dc, dr)
-  return {
-    row: pivotRow - dc,
-    col: pivotCol + dr
-  };
+  renderPuzzle();
 }
-
