@@ -2,11 +2,10 @@
 // FILE: dragDrop.js
 // PURPOSE: Enables drag-and-drop interactions for dominos.
 // NOTES:
-//   - Pure UI event handling.
-//   - Calls engine placement/move functions.
-//   - Re-renders board + tray after each action.
-//   - Runs SyncCheck.
-//   - Includes full diagnostic logging.
+//   - Visual dragging with translate + scale(1.1)
+//   - Wrapper stays in tray slot (no collapse)
+//   - Engine placement unchanged
+//   - Full diagnostics preserved
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
@@ -38,6 +37,9 @@ function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayE
   const target = e.target.closest(".domino");
   if (!target) return;
 
+  const wrapper = target.closest(".domino-wrapper");
+  if (!wrapper) return;
+
   const dominoId = target.dataset.id;
   const domino = dominos.get(dominoId);
   if (!domino) return;
@@ -46,12 +48,19 @@ function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayE
 
   e.preventDefault();
 
+  const rect = wrapper.getBoundingClientRect();
+
   const dragState = {
     domino,
+    wrapper,
     startX: e.clientX,
     startY: e.clientY,
+    originLeft: rect.left,
+    originTop: rect.top,
     moved: false
   };
+
+  wrapper.classList.add("dragging");
 
   const moveHandler = (ev) => onDrag(ev, dragState);
   const upHandler = (ev) =>
@@ -63,7 +72,7 @@ function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayE
 
 
 // ------------------------------------------------------------
-// onDrag
+// onDrag — visual dragging
 // ------------------------------------------------------------
 function onDrag(e, dragState) {
   const dx = e.clientX - dragState.startX;
@@ -73,6 +82,9 @@ function onDrag(e, dragState) {
     console.log(`onDrag: movement threshold passed dx=${dx} dy=${dy}`);
     dragState.moved = true;
   }
+
+  // Apply visual dragging transform
+  dragState.wrapper.style.transform = `translate(${dx}px, ${dy}px) scale(1.1)`;
 }
 
 
@@ -95,7 +107,11 @@ function endDrag(
   window.removeEventListener("pointermove", moveHandler);
   window.removeEventListener("pointerup", upHandler);
 
-  const { domino, moved } = dragState;
+  const { domino, moved, wrapper } = dragState;
+
+  // Reset visual transform
+  wrapper.style.transform = "";
+  wrapper.classList.remove("dragging");
 
   if (!moved) {
     console.log(`endDrag: click-only, no movement for domino ${domino.id}`);
@@ -113,7 +129,7 @@ function endDrag(
   // Dropped on tray
   if (dropTarget && dropTarget.closest("#tray")) {
     console.log(`endDrag: dropping domino ${domino.id} onto tray`);
-    removeDominoToTray(domino);
+    removeDominoToTray(domino, grid);
     finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
@@ -142,7 +158,7 @@ function endDrag(
 
   // Otherwise return to tray
   console.log(`endDrag: no valid drop target → returning ${domino.id} to tray`);
-  removeDominoToTray(domino);
+  removeDominoToTray(domino, grid);
   finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 }
 
