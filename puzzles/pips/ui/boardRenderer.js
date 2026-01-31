@@ -89,8 +89,9 @@ function createDominoWrapper(domino) {
   wrapper.style.left = `calc(${domino.col0} * (var(--cell-size) + var(--cell-gap)))`;
   wrapper.style.top  = `calc(${domino.row0} * (var(--cell-size) + var(--cell-gap)))`;
 
-  // Ensure no stale transforms from dragging
+  // Ensure no stale transforms from dragging or previous renders
   wrapper.style.transform = "";
+  wrapper.style.transformOrigin = "center center";
 
   // Optional: attach ID for debugging
   wrapper.dataset.id = domino.id;
