@@ -1,3 +1,12 @@
+// ============================================================
+// FILE: dominoRenderer.js
+// PURPOSE: Render a single domino using geometry-only orientation.
+// NOTES:
+//   - pip0 = half0, pip1 = half1
+//   - tray dominos have no rotation
+//   - board dominos derive rotation from geometry
+// ============================================================
+
 export function renderDomino(domino, parentEl) {
   let el = document.getElementById(`domino-${domino.id}`);
 
@@ -5,7 +14,7 @@ export function renderDomino(domino, parentEl) {
     el = document.createElement("div");
     el.id = `domino-${domino.id}`;
     el.className = "domino";
-    el.dataset.id = domino.id;   // ⭐ REQUIRED FOR DRAGGING
+    el.dataset.id = domino.id;   // required for dragging
     el.innerHTML = createDominoHTML(domino);
     parentEl.appendChild(el);
   }
@@ -14,6 +23,10 @@ export function renderDomino(domino, parentEl) {
   applyDominoTransform(el, domino);
 }
 
+
+// ------------------------------------------------------------
+// createDominoHTML
+// ------------------------------------------------------------
 function createDominoHTML(domino) {
   return `
     <div class="half half0" data-pip="${domino.pip0}">
@@ -38,19 +51,30 @@ function createDominoHTML(domino) {
   `;
 }
 
+
+// ------------------------------------------------------------
+// updatePipValues
+// ------------------------------------------------------------
 function updatePipValues(el, domino) {
   el.querySelector(".half0").dataset.pip = domino.pip0;
   el.querySelector(".half1").dataset.pip = domino.pip1;
 }
 
+
+// ------------------------------------------------------------
+// applyDominoTransform
+// Geometry-only rotation
+// ------------------------------------------------------------
 function applyDominoTransform(el, domino) {
+  // TRAY DOMINO
   if (domino.row0 === null) {
-    el.style.transform = `rotate(${domino.trayOrientation}deg)`;
+    el.style.transform = "rotate(0deg)";
     el.classList.add("in-tray");
     el.classList.remove("on-board");
     return;
   }
 
+  // BOARD DOMINO
   el.classList.remove("in-tray");
   el.classList.add("on-board");
 
@@ -58,10 +82,10 @@ function applyDominoTransform(el, domino) {
   const dc = domino.col1 - domino.col0;
 
   let angle = 0;
-  if (dr === 0 && dc === 1) angle = 0;
-  if (dr === 0 && dc === -1) angle = 180;
-  if (dr === 1 && dc === 0) angle = 90;
-  if (dr === -1 && dc === 0) angle = 270;
+  if (dr === 0 && dc === 1) angle = 0;     // horizontal L→R
+  if (dr === 0 && dc === -1) angle = 180;  // horizontal R→L
+  if (dr === 1 && dc === 0) angle = 90;    // vertical T→B
+  if (dr === -1 && dc === 0) angle = 270;  // vertical B→T
 
   el.style.transform = `rotate(${angle}deg)`;
 }
