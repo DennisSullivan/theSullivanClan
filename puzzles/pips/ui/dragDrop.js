@@ -130,8 +130,8 @@ function endDrag(
 // ------------------------------------------------------------
 // finalize()
 // ------------------------------------------------------------
-function finalize(dominos, grid, regionMap, boardEl, trayEl) {
-  renderBoard(dominos, grid, regionMap, boardEl);
+function finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+  renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(dominos, trayEl);
   syncCheck(dominos, grid);
 }
