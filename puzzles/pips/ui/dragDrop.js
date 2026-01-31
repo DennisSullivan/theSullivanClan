@@ -16,7 +16,6 @@ import { renderTray } from "./trayRenderer.js";
 
 // ------------------------------------------------------------
 // enableDrag(dominos, grid, regionMap, boardEl, trayEl)
-// Wires up drag events for all dominos.
 // ------------------------------------------------------------
 export function enableDrag(dominos, grid, regionMap, boardEl, trayEl) {
   boardEl.addEventListener("pointerdown", (e) =>
@@ -30,7 +29,6 @@ export function enableDrag(dominos, grid, regionMap, boardEl, trayEl) {
 
 // ------------------------------------------------------------
 // startDrag(e)
-// Determines which domino was grabbed and begins tracking.
 // ------------------------------------------------------------
 function startDrag(e, dominos, grid, regionMap, boardEl, trayEl) {
   const target = e.target.closest(".domino");
@@ -53,4 +51,87 @@ function startDrag(e, dominos, grid, regionMap, boardEl, trayEl) {
   const upHandler = (ev) =>
     endDrag(ev, dragState, dominos, grid, regionMap, boardEl, trayEl, moveHandler, upHandler);
 
-  window.addEventListener
+  window.addEventListener("pointermove", moveHandler);
+  window.addEventListener("pointerup", upHandler);
+}
+
+
+// ------------------------------------------------------------
+// onDrag(e)
+// ------------------------------------------------------------
+function onDrag(e, dragState) {
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
+
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+    dragState.moved = true;
+  }
+}
+
+
+// ------------------------------------------------------------
+// endDrag(e)
+// ------------------------------------------------------------
+function endDrag(
+  e,
+  dragState,
+  dominos,
+  grid,
+  regionMap,
+  boardEl,
+  trayEl,
+  moveHandler,
+  upHandler
+) {
+  window.removeEventListener("pointermove", moveHandler);
+  window.removeEventListener("pointerup", upHandler);
+
+  const { domino, moved } = dragState;
+
+  // If not moved, treat as click (rotation handled elsewhere)
+  if (!moved) return;
+
+  const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+
+  // Dropped on tray?
+  if (dropTarget && dropTarget.closest("#tray")) {
+    removeDominoToTray(domino);
+    finalize(dominos, grid, regionMap, boardEl, trayEl);
+    return;
+  }
+
+  // Dropped on board cell?
+  const cell = dropTarget && dropTarget.closest(".board-cell");
+  if (cell) {
+    const row = parseInt(cell.dataset.row, 10);
+    const col = parseInt(cell.dataset.col, 10);
+
+    const dx = e.clientX - dragState.startX;
+    const dy = e.clientY - dragState.startY;
+
+    if (domino.row0 === null) {
+      // From tray → board (geometry computed from dx, dy)
+      placeDomino(domino, row, col, grid, dx, dy);
+    } else {
+      // From board → board (half0 moves to row,col)
+      moveDomino(domino, row, col, grid);
+    }
+
+    finalize(dominos, grid, regionMap, boardEl, trayEl);
+    return;
+  }
+
+  // Otherwise: return to tray
+  removeDominoToTray(domino);
+  finalize(dominos, grid, regionMap, boardEl, trayEl);
+}
+
+
+// ------------------------------------------------------------
+// finalize()
+// ------------------------------------------------------------
+function finalize(dominos, grid, regionMap, boardEl, trayEl) {
+  renderBoard(dominos, grid, regionMap, boardEl);
+  renderTray(dominos, trayEl);
+  syncCheck(dominos, grid);
+}
