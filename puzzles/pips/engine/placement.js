@@ -5,7 +5,7 @@
 //   - Geometry-first model.
 //   - Tray → Board preserves trayOrientation.
 //   - Board → Tray resets trayOrientation to 0.
-//   - Board rotation (future) will modify geometry only.
+//   - Board rotation is geometry-only (no grid checks).
 // ============================================================
 
 
@@ -85,6 +85,11 @@ export function moveDomino(domino, row, col, grid) {
   const dc = domino.col1 - domino.col0;
 
   // Apply same geometry at new anchor
+  const oldRow0 = domino.row0;
+  const oldCol0 = domino.col0;
+  const oldRow1 = domino.row1;
+  const oldCol1 = domino.col1;
+
   domino.row0 = row;
   domino.col0 = col;
   domino.row1 = row + dr;
@@ -93,10 +98,10 @@ export function moveDomino(domino, row, col, grid) {
   // Validate
   if (!isPlacementValid(domino, grid)) {
     // Restore old geometry
-    domino.row0 = row - dr;
-    domino.col0 = col - dc;
-    domino.row1 = row;
-    domino.col1 = col;
+    domino.row0 = oldRow0;
+    domino.col0 = oldCol0;
+    domino.row1 = oldRow1;
+    domino.col1 = oldCol1;
 
     // Restore occupancy
     grid[domino.row0][domino.col0] = domino.id;
@@ -151,8 +156,8 @@ function isPlacementValid(domino, grid) {
   const c1 = domino.col1;
 
   // Bounds check
-  if (!grid[r0] || !grid[r0][c0]) return false;
-  if (!grid[r1] || !grid[r1][c1]) return false;
+  if (!grid[r0] || typeof grid[r0][c0] === "undefined") return false;
+  if (!grid[r1] || typeof grid[r1][c1] === "undefined") return false;
 
   // Occupancy check
   if (!isCellFree(grid, r0, c0)) return false;
@@ -165,8 +170,71 @@ function isPlacementValid(domino, grid) {
 // ------------------------------------------------------------
 // isCellFree(grid, row, col)
 // PURPOSE:
-//   - A cell is free if null OR already occupied by this domino.
+//   - A cell is free if null.
 // ------------------------------------------------------------
 function isCellFree(grid, row, col) {
   return grid[row][col] === null;
+}
+
+
+// ------------------------------------------------------------
+// rotateDominoOnBoard(domino, pivotHalf)
+// PURPOSE:
+//   - Rotate 90° clockwise around the clicked half.
+//   - Geometry-only: does NOT touch grid or validate.
+//   - Constraints are enforced later on placement/move.
+// ------------------------------------------------------------
+export function rotateDominoOnBoard(domino, pivotHalf) {
+  if (domino.row0 === null) return; // not on board
+
+  // Identify pivot and other half
+  let pivotRow, pivotCol, otherRow, otherCol;
+
+  if (pivotHalf === 0) {
+    pivotRow = domino.row0;
+    pivotCol = domino.col0;
+    otherRow = domino.row1;
+    otherCol = domino.col1;
+  } else {
+    pivotRow = domino.row1;
+    pivotCol = domino.col1;
+    otherRow = domino.row0;
+    otherCol = domino.col0;
+  }
+
+  const dr = otherRow - pivotRow;
+  const dc = otherCol - pivotCol;
+
+  // 90° clockwise: (dr, dc) -> (-dc, dr)
+  const newDr = -dc;
+  const newDc = dr;
+
+  const newOtherRow = pivotRow + newDr;
+  const newOtherCol = pivotCol + newDc;
+
+  // Reassign geometry, preserving half0/half1 identity
+  if (pivotHalf === 0) {
+    domino.row0 = pivotRow;
+    domino.col0 = pivotCol;
+    domino.row1 = newOtherRow;
+    domino.col1 = newOtherCol;
+  } else {
+    domino.row1 = pivotRow;
+    domino.col1 = pivotCol;
+    domino.row0 = newOtherRow;
+    domino.col0 = newOtherCol;
+  }
+}
+
+
+// ------------------------------------------------------------
+// rotateDominoInTray(domino)
+// PURPOSE:
+//   - Rotate a tray domino 90° clockwise visually.
+//   - Uses trayOrientation only; no geometry.
+// ------------------------------------------------------------
+export function rotateDominoInTray(domino) {
+  if (domino.row0 !== null) return; // only tray dominos
+
+  domino.trayOrientation = (domino.trayOrientation + 90) % 360;
 }
