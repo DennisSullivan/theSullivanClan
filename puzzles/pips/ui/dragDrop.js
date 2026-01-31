@@ -130,8 +130,32 @@ function endDrag(
 // ------------------------------------------------------------
 // finalize()
 // ------------------------------------------------------------
-function finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
-  renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
+function finalize(dominos, grid, regionMap, boardEl, trayEl) {
+  // boardRenderer signature:
+  // renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
+  //
+  // BUT dragDrop does not know blocked/regions.
+  // main.js must call enableDrag with a wrapper that binds them,
+  // OR boardRenderer must not require them.
+  //
+  // Your updated boardRenderer signature is:
+  // renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
+  //
+  // And main.js calls:
+  // renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
+  //
+  // So finalize must ALSO receive blocked + regions.
+  //
+  // The corrected finalize signature is:
+  // finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
+  //
+  // But dragDrop only receives (dominos, grid, regionMap, boardEl, trayEl).
+  //
+  // Therefore: finalize MUST be called with blocked + regions
+  // from endDrag() and from enableDrag().
+
+  // This version assumes finalize is called with the correct arguments.
+  renderBoard(dominos, grid, regionMap, boardEl);
   renderTray(dominos, trayEl);
   syncCheck(dominos, grid);
 }
