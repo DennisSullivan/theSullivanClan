@@ -63,45 +63,61 @@
 
 
 /* ============================================================
-   DOMINO WRAPPER
+   DOMINO WRAPPER (BASE)
    ============================================================ */
 
 .domino-wrapper {
-  position: absolute;
+  position: absolute; /* used for board placement */
   width: calc((var(--cell-size) * 2) + var(--cell-gap));
   height: var(--cell-size);
   pointer-events: auto;
   z-index: 100;
+  transform-origin: center center;
+}
+
+/* TRAY WRAPPER — natural size, no forced board geometry */
+.domino-wrapper.in-tray {
+  position: relative;
+  width: auto;
+  height: auto;
+  left: 0;
+  top: 0;
+  transform: none !important;
+}
+
+/* Dragging state */
+.domino-wrapper.dragging {
+  z-index: 1000;
+  pointer-events: none;
 }
 
 
 /* ============================================================
-   DOMINO ELEMENT — NYT STYLE
+   DOMINO ELEMENT (BASE)
    ============================================================ */
 
 .domino {
-  width: calc((var(--cell-size) * 2) + var(--cell-gap));
-  height: var(--cell-size);
-
+  display: flex;                     /* halves split 50/50 */
+  box-sizing: border-box;
+  transform-origin: center center;
+  pointer-events: auto;
   background: var(--color-domino-bg);
   border: var(--domino-thickness) solid var(--color-domino-border);
   border-radius: 4px;
-
-  box-sizing: border-box;
-  display: flex;
-  position: absolute;
-  transform-origin: center center;
-  transition: transform var(--transition-fast);
-  pointer-events: auto;
 }
 
-.domino.in-tray {
-  position: relative;
-  margin: 4px;
-}
-
+/* BOARD DOMINO — fixed 2×1 geometry */
 .domino.on-board {
   position: absolute;
+  width: calc((var(--cell-size) * 2) + var(--cell-gap));
+  height: var(--cell-size);
+}
+
+/* TRAY DOMINO — fill wrapper naturally */
+.domino.in-tray {
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 
@@ -175,27 +191,17 @@
 
 
 /* ============================================================
-   TRAY
+   TRAY (NYT FIXED GRID)
    ============================================================ */
 
 #tray {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(14, var(--cell-size));
+  grid-auto-rows: var(--cell-size);
+  gap: var(--cell-gap);
   padding: 8px;
   background: #eee;
   border-top: 2px solid #ccc;
-}
-
-
-/* ============================================================
-   DRAGGING FEEDBACK
-   ============================================================ */
-
-.domino.dragging {
-  opacity: 0.85;
-  cursor: grabbing;
-  z-index: 999;
 }
 
 
