@@ -1,21 +1,67 @@
+/* ============================================================
+   TRAY LAYOUT
+   ============================================================ */
+
+/* The tray is a fixed grid of 28 slots (MASTER_TRAY length).
+   You can adjust columns to taste. */
+#tray {
+  display: grid;
+  grid-template-columns: repeat(14, var(--cell-size));
+  grid-auto-rows: var(--cell-size);
+  gap: var(--cell-gap);
+  position: relative;
+  padding: 8px;
+}
+
+/* Each slot is a fixed cell in the grid.
+   It never collapses or shifts. */
 .tray-slot {
-  position: relative;     
-  width: calc(var(--cell-size) * 2);
+  width: var(--cell-size);
   height: var(--cell-size);
+  position: relative;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.domino-wrapper {
-  position: relative;
-  width: calc(var(--cell-size) * 2);
-  height: var(--cell-size);
-  pointer-events: auto;
-  z-index: 100;
+/* Optional: faint background to visualize empty slots */
+.tray-slot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px dashed rgba(0,0,0,0.1);
+  border-radius: 4px;
+  pointer-events: none;
 }
 
-#tray {
+/* ============================================================
+   DOMINO WRAPPER (in tray or board)
+   ============================================================ */
+
+.domino-wrapper {
+  position: absolute; /* required for board placement */
+  left: 0;
+  top: 0;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  transform-origin: center center;
+  transition: transform 0.05s linear;
+}
+
+/* When dragging, float above everything */
+.domino-wrapper.dragging {
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* ============================================================
+   DOMINO VISUALS
+   ============================================================ */
+
+.domino {
+  width: 100%;
+  height: 100%;
   position: relative;
-  z-index: 500;
+  transform-origin: center center;
 }
