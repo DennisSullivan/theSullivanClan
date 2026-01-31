@@ -41,6 +41,7 @@
   background: var(--color-bg);
   border: 2px solid #ccc;
   touch-action: none;
+  overflow: hidden;
 }
 
 .board-cell {
