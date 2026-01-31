@@ -15,6 +15,11 @@ export function renderDomino(domino, parentEl) {
   el.id = `domino-${domino.id}`;
   el.className = "domino";
   el.dataset.id = domino.id;
+
+  // Ensure clean transform state (important after dragging)
+  el.style.transform = "";
+  el.style.transformOrigin = "center center";
+
   el.innerHTML = createDominoHTML(domino);
 
   parentEl.appendChild(el);
@@ -53,6 +58,7 @@ function createDominoHTML(domino) {
 }
 
 
+
 // ------------------------------------------------------------
 // updatePipValues
 // ------------------------------------------------------------
@@ -60,6 +66,7 @@ function updatePipValues(el, domino) {
   el.querySelector(".half0").dataset.pip = domino.pip0;
   el.querySelector(".half1").dataset.pip = domino.pip1;
 }
+
 
 
 // ------------------------------------------------------------
