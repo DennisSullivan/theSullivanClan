@@ -13,7 +13,6 @@ import { loadPuzzle } from "./engine/loader.js";
 import { renderBoard } from "./ui/boardRenderer.js";
 import { renderTray } from "./ui/trayRenderer.js";
 import { enableDrag } from "./ui/dragDrop.js";
-import { enableRotateButtons } from "./ui/rotateButton.js";
 import { syncCheck } from "./engine/syncCheck.js";
 
 
