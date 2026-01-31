@@ -4,6 +4,7 @@
 //          - grid cells
 //          - blocked cells
 //          - region overlays
+//          - region badges
 //          - dominos in board positions
 // NOTES:
 //   - Pure UI: reads engine state, never mutates it.
@@ -87,6 +88,9 @@ function createDominoWrapper(domino) {
   wrapper.style.position = "absolute";
   wrapper.style.left = `calc(${domino.col0} * (var(--cell-size) + var(--cell-gap)))`;
   wrapper.style.top  = `calc(${domino.row0} * (var(--cell-size) + var(--cell-gap)))`;
+
+  // Ensure no stale transforms from dragging
+  wrapper.style.transform = "";
 
   // Optional: attach ID for debugging
   wrapper.dataset.id = domino.id;
