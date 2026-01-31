@@ -32,7 +32,11 @@ export function renderTray(dominos, trayEl) {
     // If the domino is in the tray, render it
     if (d && d.row0 === null) {
       const wrapper = document.createElement("div");
-      wrapper.className = "domino-wrapper";
+      wrapper.className = "domino-wrapper in-tray";
+
+      // ⭐ CRITICAL FIX: ensure no stale transforms distort layout
+      wrapper.style.transform = "none";
+
       slotEl.appendChild(wrapper);
 
       renderDomino(d, wrapper);
