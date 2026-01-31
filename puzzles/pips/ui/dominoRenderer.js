@@ -3,7 +3,7 @@
 // PURPOSE: Render a single domino using geometry-only orientation.
 // NOTES:
 //   - pip0 = half0, pip1 = half1
-//   - tray dominos have no rotation
+//   - tray dominos use domino.trayOrientation
 //   - board dominos derive rotation from geometry
 // ============================================================
 
@@ -74,15 +74,21 @@ function updatePipValues(el, domino) {
 // Geometry-only rotation
 // ------------------------------------------------------------
 function applyDominoTransform(el, domino) {
+  // ----------------------------------------------------------
   // TRAY DOMINO
+  // ----------------------------------------------------------
   if (domino.row0 === null) {
-    el.style.transform = "rotate(0deg)";
+    // ⭐ Corrected: use trayOrientation instead of forcing 0deg
+    el.style.transform = `rotate(${domino.trayOrientation}deg)`;
+
     el.classList.add("in-tray");
     el.classList.remove("on-board");
     return;
   }
 
+  // ----------------------------------------------------------
   // BOARD DOMINO
+  // ----------------------------------------------------------
   el.classList.remove("in-tray");
   el.classList.add("on-board");
 
