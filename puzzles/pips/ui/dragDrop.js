@@ -17,12 +17,12 @@ import { renderTray } from "./trayRenderer.js";
 // ------------------------------------------------------------
 // enableDrag(dominos, grid, regionMap, boardEl, trayEl)
 // ------------------------------------------------------------
-export function enableDrag(dominos, grid, regionMap, boardEl, trayEl) {
+export function enableDrag(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
   boardEl.addEventListener("pointerdown", (e) =>
-    startDrag(e, dominos, grid, regionMap, boardEl, trayEl)
+    startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
   );
   trayEl.addEventListener("pointerdown", (e) =>
-    startDrag(e, dominos, grid, regionMap, boardEl, trayEl)
+    startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
   );
 }
 
@@ -30,7 +30,7 @@ export function enableDrag(dominos, grid, regionMap, boardEl, trayEl) {
 // ------------------------------------------------------------
 // startDrag(e)
 // ------------------------------------------------------------
-function startDrag(e, dominos, grid, regionMap, boardEl, trayEl) {
+function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
   const target = e.target.closest(".domino");
   if (!target) return;
 
@@ -49,7 +49,7 @@ function startDrag(e, dominos, grid, regionMap, boardEl, trayEl) {
 
   const moveHandler = (ev) => onDrag(ev, dragState);
   const upHandler = (ev) =>
-    endDrag(ev, dragState, dominos, grid, regionMap, boardEl, trayEl, moveHandler, upHandler);
+    endDrag(ev, dragState, dominos, grid, regionMap, blocked, regions, boardEl, trayEl, moveHandler, upHandler);
 
   window.addEventListener("pointermove", moveHandler);
   window.addEventListener("pointerup", upHandler);
@@ -78,6 +78,8 @@ function endDrag(
   dominos,
   grid,
   regionMap,
+  blocked,
+  regions,
   boardEl,
   trayEl,
   moveHandler,
@@ -88,19 +90,18 @@ function endDrag(
 
   const { domino, moved } = dragState;
 
-  // If not moved, treat as click (rotation handled elsewhere)
   if (!moved) return;
 
   const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
 
-  // Dropped on tray?
+  // Dropped on tray
   if (dropTarget && dropTarget.closest("#tray")) {
     removeDominoToTray(domino);
-    finalize(dominos, grid, regionMap, boardEl, trayEl);
+    finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
 
-  // Dropped on board cell?
+  // Dropped on board
   const cell = dropTarget && dropTarget.closest(".board-cell");
   if (cell) {
     const row = parseInt(cell.dataset.row, 10);
@@ -110,52 +111,26 @@ function endDrag(
     const dy = e.clientY - dragState.startY;
 
     if (domino.row0 === null) {
-      // From tray → board (geometry computed from dx, dy)
       placeDomino(domino, row, col, grid, dx, dy);
     } else {
-      // From board → board (half0 moves to row,col)
       moveDomino(domino, row, col, grid);
     }
 
-    finalize(dominos, grid, regionMap, boardEl, trayEl);
+    finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
 
-  // Otherwise: return to tray
+  // Otherwise return to tray
   removeDominoToTray(domino);
-  finalize(dominos, grid, regionMap, boardEl, trayEl);
+  finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 }
 
 
 // ------------------------------------------------------------
 // finalize()
 // ------------------------------------------------------------
-function finalize(dominos, grid, regionMap, boardEl, trayEl) {
-  // boardRenderer signature:
-  // renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
-  //
-  // BUT dragDrop does not know blocked/regions.
-  // main.js must call enableDrag with a wrapper that binds them,
-  // OR boardRenderer must not require them.
-  //
-  // Your updated boardRenderer signature is:
-  // renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
-  //
-  // And main.js calls:
-  // renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
-  //
-  // So finalize must ALSO receive blocked + regions.
-  //
-  // The corrected finalize signature is:
-  // finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
-  //
-  // But dragDrop only receives (dominos, grid, regionMap, boardEl, trayEl).
-  //
-  // Therefore: finalize MUST be called with blocked + regions
-  // from endDrag() and from enableDrag().
-
-  // This version assumes finalize is called with the correct arguments.
-  renderBoard(dominos, grid, regionMap, boardEl);
+function finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+  renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(dominos, trayEl);
   syncCheck(dominos, grid);
 }
