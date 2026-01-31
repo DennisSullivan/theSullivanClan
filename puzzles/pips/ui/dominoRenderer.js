@@ -8,20 +8,21 @@
 // ============================================================
 
 export function renderDomino(domino, parentEl) {
-  let el = document.getElementById(`domino-${domino.id}`);
+  // Remove any existing domino inside this wrapper
+  parentEl.innerHTML = "";
 
-  if (!el) {
-    el = document.createElement("div");
-    el.id = `domino-${domino.id}`;
-    el.className = "domino";
-    el.dataset.id = domino.id;   // required for dragging
-    el.innerHTML = createDominoHTML(domino);
-    parentEl.appendChild(el);
-  }
+  const el = document.createElement("div");
+  el.id = `domino-${domino.id}`;
+  el.className = "domino";
+  el.dataset.id = domino.id;
+  el.innerHTML = createDominoHTML(domino);
+
+  parentEl.appendChild(el);
 
   updatePipValues(el, domino);
   applyDominoTransform(el, domino);
 }
+
 
 
 // ------------------------------------------------------------
