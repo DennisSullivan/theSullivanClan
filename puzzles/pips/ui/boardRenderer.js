@@ -18,21 +18,10 @@ import { renderRegionBadges } from "./badgeRenderer.js";
 
 
 // ------------------------------------------------------------
-// renderBoard(dominos, grid, regionMap, blocked, boardEl)
-// Renders the entire board state.
-// INPUTS:
-//   dominos   - Map<id,Domino>
-//   grid      - occupancy map
-//   regionMap - 2D array of region IDs
-//   blocked   - Set of "r,c" strings
-//   boardEl   - DOM element for the board container
-// NOTES:
-//   - Clears boardEl and rebuilds everything.
-//   - Board cells are drawn as a CSS grid.
-//   - Domino elements are positioned absolutely.
+// renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
 // ------------------------------------------------------------
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
-  boardEl.innerHTML = ""; // full redraw for simplicity
+  boardEl.innerHTML = ""; // full redraw
 
   const rows = grid.length;
   const cols = grid[0].length;
@@ -41,28 +30,23 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   boardEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
   boardEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-  // Draw base grid cells
+  // Base grid
   drawGridCells(boardEl, rows, cols);
 
-  // Draw blocked cells
+  // Blocked cells
   renderBlockedCells(blocked, boardEl);
 
-  // Draw region overlays
+  // Region overlays + badges
   renderRegions(regionMap, boardEl);
-
-  // Draw the region Badges
   renderRegionBadges(regions, boardEl);
 
-  // Draw dominos
+  // Dominos
   renderBoardDominos(dominos, boardEl);
 }
 
 
 // ------------------------------------------------------------
-// drawGridCells(boardEl, rows, cols)
-// Creates the base grid cell elements.
-// NOTES:
-//   - These are background-only; dominos are absolutely positioned.
+// drawGridCells
 // ------------------------------------------------------------
 function drawGridCells(boardEl, rows, cols) {
   for (let r = 0; r < rows; r++) {
@@ -78,41 +62,34 @@ function drawGridCells(boardEl, rows, cols) {
 
 
 // ------------------------------------------------------------
-// renderBoardDominos(dominos, boardEl)
-// Renders all dominos that are currently on the board.
-// NOTES:
-//   - Each domino is positioned using CSS translate.
-//   - Orientation is handled by dominoRenderer.
+// renderBoardDominos
 // ------------------------------------------------------------
 function renderBoardDominos(dominos, boardEl) {
   for (const [id, d] of dominos) {
-    if (d.row0 === null) continue; // in tray, skip
+    if (d.row0 === null) continue; // still in tray
 
     const wrapper = createDominoWrapper(d);
     boardEl.appendChild(wrapper);
 
-    // Render the domino inside the wrapper
     renderDomino(d, wrapper);
   }
 }
 
 
 // ------------------------------------------------------------
-// createDominoWrapper(domino)
-// Creates a positioned wrapper for a board domino.
-// NOTES:
-//   - Wrapper is absolutely positioned at half0's cell.
-//   - dominoRenderer handles rotation.
+// createDominoWrapper
 // ------------------------------------------------------------
 function createDominoWrapper(domino) {
   const wrapper = document.createElement("div");
   wrapper.className = "domino-wrapper";
 
-  // Position at half0's cell
+  // Position at half0's cell using stride = size + gap
   wrapper.style.position = "absolute";
-  wrapper.style.left = `calc(${domino.col0} * var(--cell-size))`;
-  wrapper.style.top  = `calc(${domino.row0} * var(--cell-size))`;
+  wrapper.style.left = `calc(${domino.col0} * (var(--cell-size) + var(--cell-gap)))`;
+  wrapper.style.top  = `calc(${domino.row0} * (var(--cell-size) + var(--cell-gap)))`;
+
+  // Optional: attach ID for debugging
+  wrapper.dataset.id = domino.id;
 
   return wrapper;
 }
-
