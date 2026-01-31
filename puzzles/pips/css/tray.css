@@ -1,5 +1,11 @@
 /* ============================================================
-   TRAY LAYOUT (NYT FIXED GRID)
+   FILE: tray.css
+   PURPOSE: NYT‑style fixed grid tray layout (no domino rules)
+   ============================================================ */
+
+
+/* ============================================================
+   1. TRAY GRID LAYOUT (NYT FIXED GRID)
    ============================================================ */
 
 #tray {
@@ -12,7 +18,11 @@
   border-top: 2px solid #ccc;
 }
 
-/* Optional: tray slot visualization */
+
+/* ============================================================
+   2. TRAY SLOT VISUALIZATION
+   ============================================================ */
+
 .tray-slot {
   width: var(--cell-size);
   height: var(--cell-size);
