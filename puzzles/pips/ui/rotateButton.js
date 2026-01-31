@@ -4,7 +4,6 @@
 // NOTES:
 //   - Pure UI: reads engine state, calls engine rotation.
 //   - Never mutates domino state directly.
-//   - No orientation flags, no A/B model.
 // ============================================================
 
 import { rotateDomino } from "../engine/rotation.js";
@@ -13,15 +12,9 @@ import { renderTray } from "./trayRenderer.js";
 
 
 // ------------------------------------------------------------
-// enableRotateButtons(dominos, grid, regionMap, blocked, boardEl, trayEl)
-// Attaches click handlers to all rotate buttons.
-// INPUTS:
-//   dominos, grid, regionMap, blocked - engine state
-//   boardEl, trayEl - DOM containers
-// NOTES:
-//   - Assumes each domino element contains a .rotate-btn child.
+// enableRotateButtons(dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
 // ------------------------------------------------------------
-export function enableRotateButtons(dominos, grid, regionMap, blocked, boardEl, trayEl) {
+export function enableRotateButtons(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
   document.addEventListener("click", e => {
     const btn = e.target.closest(".rotate-btn");
     if (!btn) return;
@@ -33,32 +26,24 @@ export function enableRotateButtons(dominos, grid, regionMap, blocked, boardEl, 
     const domino = dominos.get(id);
     if (!domino) return;
 
-    handleRotate(domino, dominos, grid, regionMap, blocked, boardEl, trayEl);
+    handleRotate(domino, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
   });
 }
 
 
 // ------------------------------------------------------------
 // handleRotate(domino, ...)
-// Attempts to rotate a domino and re-renders UI.
-// NOTES:
-//   - Calls engine.rotateDomino().
-//   - If rotation fails, nothing changes.
 // ------------------------------------------------------------
-function handleRotate(domino, dominos, grid, regionMap, blocked, boardEl, trayEl) {
-  const ok = rotateDomino(domino, grid);
-
-  // Even if rotation fails, we re-render to keep UI in sync
-  rerender(dominos, grid, regionMap, blocked, boardEl, trayEl);
+function handleRotate(domino, dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+  rotateDomino(domino, grid);
+  rerender(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 }
 
 
 // ------------------------------------------------------------
 // rerender(...)
-// Convenience helper to redraw board + tray.
 // ------------------------------------------------------------
-function rerender(dominos, grid, regionMap, blocked, boardEl, trayEl) {
-  renderBoard(dominos, grid, regionMap, blocked, boardEl);
+function rerender(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+  renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(dominos, trayEl);
 }
-
