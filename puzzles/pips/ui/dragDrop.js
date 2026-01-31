@@ -31,6 +31,7 @@ export function enableDrag(dominos, grid, regionMap, blocked, boardEl, trayEl) {
 function startDrag(e, dominos, grid, regionMap, blocked, boardEl, trayEl) {
   const target = e.target.closest(".domino");
 console.log("POINTERDOWN fired on:", e.target);
+console.log("closest('.domino') =", e.target.closest(".domino"));
   if (!target) return;
 
   const dominoId = target.dataset.id;
