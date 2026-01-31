@@ -1,14 +1,14 @@
 // ============================================================
 // FILE: dominoRenderer.js
-// PURPOSE: Render a single domino using geometry-only orientation.
+// PURPOSE: Render a single domino using geometry‑first orientation.
 // NOTES:
 //   - pip0 = half0, pip1 = half1
-//   - tray dominos use domino.trayOrientation
-//   - board dominos derive rotation from geometry
+//   - tray dominos have no rotation
+//   - board dominos derive rotation from geometry (row/col pairs)
 // ============================================================
 
 export function renderDomino(domino, parentEl) {
-  // Remove any existing domino inside this wrapper
+  // Clear any existing domino inside this wrapper
   parentEl.innerHTML = "";
 
   const el = document.createElement("div");
@@ -20,10 +20,12 @@ export function renderDomino(domino, parentEl) {
   el.style.transform = "";
   el.style.transformOrigin = "center center";
 
+  // Insert the HTML structure
   el.innerHTML = createDominoHTML(domino);
 
   parentEl.appendChild(el);
 
+  // Apply pip values + rotation
   updatePipValues(el, domino);
   applyDominoTransform(el, domino);
 }
@@ -31,7 +33,8 @@ export function renderDomino(domino, parentEl) {
 
 
 // ------------------------------------------------------------
-// createDominoHTML
+// createDominoHTML(domino)
+// Returns the full HTML for the two halves + pip grid.
 // ------------------------------------------------------------
 function createDominoHTML(domino) {
   return `
@@ -60,7 +63,8 @@ function createDominoHTML(domino) {
 
 
 // ------------------------------------------------------------
-// updatePipValues
+// updatePipValues(el, domino)
+// Syncs the DOM with the domino's pip values.
 // ------------------------------------------------------------
 function updatePipValues(el, domino) {
   el.querySelector(".half0").dataset.pip = domino.pip0;
@@ -70,25 +74,19 @@ function updatePipValues(el, domino) {
 
 
 // ------------------------------------------------------------
-// applyDominoTransform
-// Geometry-only rotation
+// applyDominoTransform(el, domino)
+// Geometry‑first rotation logic.
 // ------------------------------------------------------------
 function applyDominoTransform(el, domino) {
-  // ----------------------------------------------------------
   // TRAY DOMINO
-  // ----------------------------------------------------------
   if (domino.row0 === null) {
-    // ⭐ Corrected: use trayOrientation instead of forcing 0deg
-    el.style.transform = `rotate(${domino.trayOrientation}deg)`;
-
+    el.style.transform = "rotate(0deg)";
     el.classList.add("in-tray");
     el.classList.remove("on-board");
     return;
   }
 
-  // ----------------------------------------------------------
   // BOARD DOMINO
-  // ----------------------------------------------------------
   el.classList.remove("in-tray");
   el.classList.add("on-board");
 
