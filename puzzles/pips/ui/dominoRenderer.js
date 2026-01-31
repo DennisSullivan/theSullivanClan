@@ -5,6 +5,7 @@ export function renderDomino(domino, parentEl) {
     el = document.createElement("div");
     el.id = `domino-${domino.id}`;
     el.className = "domino";
+    el.dataset.id = domino.id;   // ⭐ REQUIRED FOR DRAGGING
     el.innerHTML = createDominoHTML(domino);
     parentEl.appendChild(el);
   }
