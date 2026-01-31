@@ -36,6 +36,7 @@ console.log("closest('.domino') =", e.target.closest(".domino"));
 
   const dominoId = target.dataset.id;
   const domino = dominos.get(dominoId);
+console.log("Domino is:, domino);
   if (!domino) return;
 
   e.preventDefault();
