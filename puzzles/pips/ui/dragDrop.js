@@ -6,12 +6,30 @@
 //   - Wrapper stays in tray slot (no collapse)
 //   - Engine placement unchanged
 //   - Full diagnostics preserved
+//   - Rotation-mode callbacks supported via endDrag.fire()
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
 import { syncCheck } from "../engine/syncCheck.js";
 import { renderBoard } from "./boardRenderer.js";
 import { renderTray } from "./trayRenderer.js";
+
+
+// ============================================================
+// Rotation-mode callback registry
+// rotation.js registers callbacks here
+// ============================================================
+export const endDrag = {
+  callbacks: [],
+  registerCallback(fn) {
+    this.callbacks.push(fn);
+  },
+  fire(domino, row, col, grid) {
+    for (const fn of this.callbacks) {
+      fn(domino, row, col, grid);
+    }
+  }
+};
 
 
 // ------------------------------------------------------------
@@ -64,7 +82,7 @@ function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayE
 
   const moveHandler = (ev) => onDrag(ev, dragState);
   const upHandler = (ev) =>
-    endDrag(ev, dragState, dominos, grid, regionMap, blocked, regions, boardEl, trayEl, moveHandler, upHandler);
+    endDragHandler(ev, dragState, dominos, grid, regionMap, blocked, regions, boardEl, trayEl, moveHandler, upHandler);
 
   window.addEventListener("pointermove", moveHandler);
   window.addEventListener("pointerup", upHandler);
@@ -89,9 +107,9 @@ function onDrag(e, dragState) {
 
 
 // ------------------------------------------------------------
-// endDrag
+// endDragHandler
 // ------------------------------------------------------------
-function endDrag(
+function endDragHandler(
   e,
   dragState,
   dominos,
@@ -126,21 +144,32 @@ function endDrag(
   const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
   console.log("endDrag: dropTarget =", dropTarget);
 
+  // ----------------------------------------------------------
   // Dropped on tray
+  // ----------------------------------------------------------
   if (dropTarget && dropTarget.closest("#tray")) {
     console.log(`endDrag: dropping domino ${domino.id} onto tray`);
+
+    // Notify rotation.js that rotation mode should end
+    endDrag.fire(domino, null, null, grid);
+
     removeDominoToTray(domino, grid);
     finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
 
+  // ----------------------------------------------------------
   // Dropped on board cell
+  // ----------------------------------------------------------
   const cell = dropTarget && dropTarget.closest(".board-cell");
   if (cell) {
     const row = parseInt(cell.dataset.row, 10);
     const col = parseInt(cell.dataset.col, 10);
 
     console.log(`endDrag: dropping on board cell (${row},${col})`);
+
+    // Notify rotation.js BEFORE committing placement
+    endDrag.fire(domino, row, col, grid);
 
     if (domino.row0 === null) {
       console.log(`endDrag: placing from tray → placeDomino(${domino.id})`);
@@ -156,8 +185,14 @@ function endDrag(
     return;
   }
 
+  // ----------------------------------------------------------
   // Otherwise return to tray
+  // ----------------------------------------------------------
   console.log(`endDrag: no valid drop target → returning ${domino.id} to tray`);
+
+  // Notify rotation.js that rotation mode should end
+  endDrag.fire(domino, null, null, grid);
+
   removeDominoToTray(domino, grid);
   finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 }
