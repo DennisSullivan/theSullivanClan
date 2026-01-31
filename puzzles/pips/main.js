@@ -50,8 +50,7 @@ export function startPuzzle(puzzleJson) {
 
   // Enable interactions
   enableDrag(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-  enableRotateButtons(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-
+ 
   // Initial sync check
   syncCheck(dominos, grid);
 
