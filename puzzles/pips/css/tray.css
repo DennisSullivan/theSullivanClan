@@ -1,5 +1,5 @@
 /* ============================================================
-   TRAY LAYOUT
+   TRAY LAYOUT (NYT FIXED GRID)
    ============================================================ */
 
 #tray {
@@ -7,10 +7,12 @@
   grid-template-columns: repeat(14, var(--cell-size));
   grid-auto-rows: var(--cell-size);
   gap: var(--cell-gap);
-  position: relative;
   padding: 8px;
+  background: #eee;
+  border-top: 2px solid #ccc;
 }
 
+/* Optional: tray slot visualization */
 .tray-slot {
   width: var(--cell-size);
   height: var(--cell-size);
@@ -28,48 +30,4 @@
   border: 1px dashed rgba(0,0,0,0.1);
   border-radius: 4px;
   pointer-events: none;
-}
-
-/* ============================================================
-   DOMINO WRAPPER
-   ============================================================ */
-
-/* BOARD WRAPPER — fixed 1×1 cell, absolute positioning */
-.domino-wrapper {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: var(--cell-size);
-  height: var(--cell-size);
-  transform-origin: center center;
-  transition: transform 0.05s linear;
-}
-
-/* TRAY WRAPPER — natural size, no forced 1×1 box */
-.domino-wrapper.in-tray {
-  position: relative;
-  width: auto;
-  height: auto;
-  left: 0;
-  top: 0;
-  transform: none !important;
-}
-
-/* Dragging state */
-.domino-wrapper.dragging {
-  z-index: 1000;
-  pointer-events: none;
-}
-
-/* ============================================================
-   DOMINO VISUALS
-   ============================================================ */
-
-.domino {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: flex;              /* CRITICAL: ensures halves split 50/50 */
-  box-sizing: border-box;
-  transform-origin: center center;
 }
