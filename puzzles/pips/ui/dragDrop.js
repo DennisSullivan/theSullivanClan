@@ -30,6 +30,7 @@ export function enableDrag(dominos, grid, regionMap, blocked, boardEl, trayEl) {
 // ------------------------------------------------------------
 function startDrag(e, dominos, grid, regionMap, blocked, boardEl, trayEl) {
   const target = e.target.closest(".domino");
+console.log("POINTERDOWN fired on:", e.target);
   if (!target) return;
 
   const dominoId = target.dataset.id;
@@ -62,6 +63,7 @@ function startDrag(e, dominos, grid, regionMap, blocked, boardEl, trayEl) {
 function onDrag(e, dragState) {
   const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
+console.log("DRAG MOVE:", e.clientX, e.clientY);
 
   if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
     dragState.moved = true;
@@ -76,6 +78,7 @@ function onDrag(e, dragState) {
 function endDrag(e, dragState, dominos, grid, regionMap, blocked, boardEl, trayEl, moveHandler, upHandler) {
   window.removeEventListener("pointermove", moveHandler);
   window.removeEventListener("pointerup", upHandler);
+console.log("END DRAG fired. moved =", dragState.moved);
 
   const { domino, moved } = dragState;
 
