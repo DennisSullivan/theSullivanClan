@@ -85,6 +85,18 @@ export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
   grid[domino.row0][domino.col0] = domino.id;
   grid[domino.row1][domino.col1] = domino.id;
 
+console.log(
+  "GRID WRITE:",
+  domino.id,
+  "→",
+  domino.row0, domino.col0,
+  "and",
+  domino.row1, domino.col1,
+  "grid values:",
+  grid[domino.row0][domino.col0],
+  grid[domino.row1][domino.col1],
+  "grid object:", grid
+);
   return true;
 }
 
