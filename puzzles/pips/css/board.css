@@ -1,13 +1,9 @@
 /* ============================================================
    FILE: board.css
-   PURPOSE: Geometry‑first board layout + refined domino system
+   PURPOSE: Board layout + NYT‑style pip system
    ============================================================ */
 
-
-/* ============================================================
-   1. ROOT VARIABLES
-   ============================================================ */
-
+/* 1. ROOT VARIABLES */
 :root {
   --cell-size: 48px;
   --cell-gap: 4px;
@@ -29,11 +25,7 @@
   --transition-fast: 120ms ease-out;
 }
 
-
-/* ============================================================
-   2. BOARD GRID LAYOUT
-   ============================================================ */
-
+/* 2. BOARD GRID LAYOUT */
 #board {
   position: relative;
   width: calc((var(--cell-size) + var(--cell-gap)) * 6);
@@ -43,7 +35,6 @@
   touch-action: none;
   overflow: hidden;
 
-  /* background grid only — dominos are absolutely positioned */
   display: grid;
   grid-template-columns: repeat(6, calc(var(--cell-size) + var(--cell-gap)));
   grid-template-rows: repeat(6, calc(var(--cell-size) + var(--cell-gap)));
@@ -55,27 +46,19 @@
   background: transparent;
 }
 
-
-/* ============================================================
-   3. REGION COLORS
-   ============================================================ */
-
+/* 3. REGION COLORS */
 .board-cell.region-0 { background: var(--color-region-0); }
 .board-cell.region-1 { background: var(--color-region-1); }
 .board-cell.region-2 { background: var(--color-region-2); }
 .board-cell.region-3 { background: var(--color-region-3); }
 
-
-/* ============================================================
-   4. REGION BADGES (REFINED)
-   ============================================================ */
-
+/* 4. REGION BADGES */
 .badge-layer {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 30;
-  transform: translate(-5px, -5px); /* refined offset */
+  transform: translate(-5px, -5px);
 }
 
 .badge {
@@ -88,11 +71,7 @@
   background: transparent;
 }
 
-
-/* ============================================================
-   5. DOMINO WRAPPER SYSTEM (GEOMETRY‑FIRST)
-   ============================================================ */
-
+/* 5. DOMINO WRAPPER (BOARD POSITIONING) */
 .domino-wrapper.on-board {
   position: absolute;
   width: var(--cell-size);
@@ -104,7 +83,6 @@
   transform-origin: center center;
 }
 
-/* tray dominos handled by tray.css */
 .domino-wrapper.in-tray {
   position: relative;
   width: auto;
@@ -114,67 +92,27 @@
   transform: none !important;
 }
 
-/* dragging overlay refinement */
 .domino-wrapper.dragging {
   z-index: 1000;
   pointer-events: none;
 }
 
-
-/* ============================================================
-   6. DOMINO GEOMETRY & VISUALS (REFINED)
-   ============================================================ */
-
-.domino {
-  display: flex;
-  box-sizing: border-box;
-  background: var(--color-domino-bg);
-  border: var(--domino-thickness) solid var(--color-domino-border);
-  border-radius: 4px;
-  transform-origin: center center;
-  pointer-events: auto;
-}
-
-/* board dominos fill wrapper */
+/* 6. DOMINO SIZE ON BOARD */
 .domino.on-board {
   position: absolute;
   width: 100%;
   height: 100%;
 }
 
-/* tray dominos fill tray slot */
 .domino.in-tray {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-
-/* ============================================================
-   7. PIP SYSTEM (NYT‑STYLE, REFINED)
-   ============================================================ */
-
-.domino .half {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-
-  justify-items: center;
-  align-items: center;
-
-  padding: calc(var(--cell-size) * 0.12); /* refined */
-  font-size: 0;
-
-  border-right: 1px solid var(--color-domino-border);
-}
-
-.domino .half1 {
-  border-right: none; /* refined: no double border */
-}
-
+/* 7. PIP SYSTEM (NYT‑STYLE) */
 .domino .pip {
-  width: calc(var(--cell-size) * 0.095); /* refined */
+  width: calc(var(--cell-size) * 0.095);
   height: calc(var(--cell-size) * 0.095);
   background: var(--color-pip);
   border-radius: 50%;
@@ -219,11 +157,7 @@
 .domino .half[data-pip="6"] .p6,
 .domino .half[data-pip="6"] .p7 { opacity: 1; }
 
-
-/* ============================================================
-   8. MOBILE SCALING (REFINED)
-   ============================================================ */
-
+/* 8. MOBILE SCALING */
 @media (max-width: 600px) {
   :root {
     --cell-size: 36px;
