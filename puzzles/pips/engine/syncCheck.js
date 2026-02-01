@@ -1,3 +1,4 @@
+console.log("syncCheck grid object:", grid);
 // ============================================================
 // FILE: syncCheck.js
 // PURPOSE: Development-only integrity checker.
