@@ -74,10 +74,12 @@
 /* 5. DOMINO WRAPPER (BOARD POSITIONING) */
 .domino-wrapper.on-board {
   position: absolute;
-  width: calc(var(--cell-size) * 2);   /* 2 wide */
-  height: var(--cell-size);            /* 1 tall */
-  left: calc(var(--col) * var(--cell-size));
-  top:  calc(var(--row) * var(--cell-size));
+  width: calc(var(--cell-size) * 2);   /* horizontal domino */
+  height: var(--cell-size);
+
+  left: calc(var(--col) * (var(--cell-size) + var(--cell-gap)));
+  top:  calc(var(--row) * (var(--cell-size) + var(--cell-gap)));
+
   pointer-events: auto;
   z-index: 100;
   transform-origin: center center;
