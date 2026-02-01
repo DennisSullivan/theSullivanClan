@@ -1,10 +1,6 @@
 /* ============================================================
    FILE: domino.css
-   PURPOSE: Geometry‑first domino component shared by board + tray.
-   NOTES:
-     - No pip rules here (all pip logic lives in board.css)
-     - No pip positions, no pip activation, no old grid
-     - Only neutral geometry + visual container styles
+   PURPOSE: Neutral geometry for all dominos (board + tray)
    ============================================================ */
 
 /* Wrapper: positioned by board.css or tray.css */
@@ -22,8 +18,8 @@
 .domino {
   display: flex;
   flex-direction: row;
-  background: var(--color-domino-bg, #fff);
-  border: var(--domino-thickness, 1px) solid var(--color-domino-border, #aaa);
+  background: var(--color-domino-bg);
+  border: var(--domino-thickness) solid var(--color-domino-border);
   border-radius: 4px;
   box-sizing: border-box;
   pointer-events: auto;
@@ -40,14 +36,14 @@
   align-items: center;
   padding: calc(var(--cell-size) * 0.12);
   font-size: 0;
-  border-right: 1px solid var(--color-domino-border, #aaa);
+  border-right: 1px solid var(--color-domino-border);
 }
 
 .domino .half1 {
   border-right: none;
 }
 
-/* Tray vs Board visual states */
+/* Visual states */
 .domino.in-tray {
   box-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
