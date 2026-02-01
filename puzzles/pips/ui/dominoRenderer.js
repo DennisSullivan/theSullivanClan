@@ -46,6 +46,8 @@ function createDominoHTML(domino) {
       <div class="pip p5"></div>
       <div class="pip p6"></div>
       <div class="pip p7"></div>
+      <div class="pip p8"></div>
+      <div class="pip p9"></div>
     </div>
 
     <div class="half half1" data-pip="${domino.pip1}">
@@ -56,10 +58,11 @@ function createDominoHTML(domino) {
       <div class="pip p5"></div>
       <div class="pip p6"></div>
       <div class="pip p7"></div>
+      <div class="pip p8"></div>
+      <div class="pip p9"></div>
     </div>
   `;
 }
-
 
 
 // ------------------------------------------------------------
