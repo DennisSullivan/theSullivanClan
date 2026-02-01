@@ -5,6 +5,7 @@ console.log("LOADED trayRenderer.js");
 // ============================================================
 
 export function renderTray(dominos, trayEl) {
+console.log("renderTray called, trayEl =", trayEl);
   trayEl.innerHTML = "";
 
   for (const [id, d] of dominos) {
