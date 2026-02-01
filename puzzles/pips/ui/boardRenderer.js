@@ -1,100 +1,76 @@
 // ============================================================
 // FILE: boardRenderer.js
-// PURPOSE: Renders the puzzle board, including:
-//          - grid cells
-//          - blocked cells
-//          - region overlays
-//          - region badges
-//          - dominos in board positions
-// NOTES:
-//   - Pure UI: reads engine state, never mutates it.
-//   - Board orientation is derived from geometry only.
-//   - Delegates domino visuals to dominoRenderer.
+// PURPOSE: Render the board using canonical grid format:
+//          grid[r][c] = { dominoId, half }
 // ============================================================
 
-import { renderDomino } from "./dominoRenderer.js";
-import { renderBlockedCells } from "./blockedRenderer.js";
-import { renderRegions } from "./regionRenderer.js";
-import { renderRegionBadges } from "./badgeRenderer.js";
-
-
-// ------------------------------------------------------------
-// renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
-// ------------------------------------------------------------
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
-  boardEl.innerHTML = ""; // full redraw
+  boardEl.innerHTML = "";
 
   const rows = grid.length;
   const cols = grid[0].length;
 
-  // Configure CSS grid
-  boardEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-  boardEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-
-  // Base grid
-  drawGridCells(boardEl, rows, cols);
-
-  // Blocked cells
-  renderBlockedCells(blocked, boardEl);
-
-  // Region overlays + badges
-  renderRegions(regionMap, boardEl);
-  renderRegionBadges(regions, boardEl);
-
-  // Dominos
-  renderBoardDominos(dominos, boardEl);
-}
-
-
-// ------------------------------------------------------------
-// drawGridCells
-// ------------------------------------------------------------
-function drawGridCells(boardEl, rows, cols) {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const cell = document.createElement("div");
-      cell.className = "board-cell";
-      cell.dataset.row = r;
-      cell.dataset.col = c;
-      boardEl.appendChild(cell);
+
+      const cellEl = document.createElement("div");
+      cellEl.className = "board-cell";
+
+      cellEl.dataset.row = r;
+      cellEl.dataset.col = c;
+
+      // Region styling
+      const regionId = regionMap[r][c];
+      cellEl.classList.add(`region-${regionId}`);
+
+      // Blocked cells
+      if (blocked.has(`${r},${c}`)) {
+        cellEl.classList.add("blocked");
+        boardEl.appendChild(cellEl);
+        continue;
+      }
+
+      const cell = grid[r][c];
+      if (!cell) {
+        boardEl.appendChild(cellEl);
+        continue;
+      }
+
+      const { dominoId, half } = cell;
+      const domino = dominos.get(dominoId);
+
+      // Create wrapper only for half0
+      if (half === 0) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "domino-wrapper";
+        wrapper.style.position = "absolute";
+
+        // Position wrapper at half0 cell
+        wrapper.style.left = `${c * 1}em`;
+        wrapper.style.top = `${r * 1}em`;
+
+        // Domino element
+        const domEl = document.createElement("div");
+        domEl.className = "domino";
+        domEl.dataset.id = dominoId;
+
+        // Half0
+        const h0 = document.createElement("div");
+        h0.className = "half half0";
+        h0.textContent = domino.pips0;
+
+        // Half1
+        const h1 = document.createElement("div");
+        h1.className = "half half1";
+        h1.textContent = domino.pips1;
+
+        domEl.appendChild(h0);
+        domEl.appendChild(h1);
+        wrapper.appendChild(domEl);
+        boardEl.appendChild(wrapper);
+      }
+
+      boardEl.appendChild(cellEl);
     }
   }
-}
-
-
-// ------------------------------------------------------------
-// renderBoardDominos
-// ------------------------------------------------------------
-function renderBoardDominos(dominos, boardEl) {
-  for (const [id, d] of dominos) {
-    if (d.row0 === null) continue; // still in tray
-
-    const wrapper = createDominoWrapper(d);
-    boardEl.appendChild(wrapper);
-
-    renderDomino(d, wrapper);
-  }
-}
-
-
-// ------------------------------------------------------------
-// createDominoWrapper
-// ------------------------------------------------------------
-function createDominoWrapper(domino) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "domino-wrapper";
-
-  // Position at half0's cell using stride = size + gap
-  wrapper.style.position = "absolute";
-  wrapper.style.left = `calc(${domino.col0} * (var(--cell-size) + var(--cell-gap)))`;
-  wrapper.style.top  = `calc(${domino.row0} * (var(--cell-size) + var(--cell-gap)))`;
-
-  // Ensure no stale transforms from dragging or previous renders
-  wrapper.style.transform = "";
-  wrapper.style.transformOrigin = "center center";
-
-  // Optional: attach ID for debugging
-  wrapper.dataset.id = domino.id;
-
-  return wrapper;
 }
