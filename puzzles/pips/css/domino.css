@@ -1,9 +1,10 @@
 /* ============================================================
    FILE: domino.css
-   PURPOSE: Geometry-first domino component shared by board + tray.
+   PURPOSE: Geometry‑first domino component shared by board + tray.
    NOTES:
-     - Defines physical size, halves, pip layout, and visual states
-     - Does NOT handle board/tray positioning (that’s board.css/tray.css)
+     - No pip rules here (all pip logic lives in board.css)
+     - No pip positions, no pip activation, no old grid
+     - Only neutral geometry + visual container styles
    ============================================================ */
 
 /* Wrapper: positioned by board.css or tray.css */
@@ -21,78 +22,30 @@
 .domino {
   display: flex;
   flex-direction: row;
-  width: 60px;
-  height: 120px;
-  border: 2px solid #222;
-  border-radius: 6px;
-  background: white;
+  background: var(--color-domino-bg, #fff);
+  border: var(--domino-thickness, 1px) solid var(--color-domino-border, #aaa);
+  border-radius: 4px;
   box-sizing: border-box;
-  position: relative;
+  pointer-events: auto;
+  transform-origin: center center;
 }
 
-/* Halves */
-.half {
-  flex: 1 1 50%;
+/* Halves (no pip logic here) */
+.domino .half {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  align-items: center;
   justify-items: center;
-  position: relative;
-  box-sizing: border-box;
+  align-items: center;
+  padding: calc(var(--cell-size) * 0.12);
+  font-size: 0;
+  border-right: 1px solid var(--color-domino-border, #aaa);
 }
 
-/* Divider line between halves */
-.half0 {
-  border-right: 1px solid #222;
+.domino .half1 {
+  border-right: none;
 }
-.half1 {
-  border-left: 1px solid #222;
-}
-
-/* Pips */
-.pip {
-  width: 8px;
-  height: 8px;
-  background: #222;
-  border-radius: 50%;
-  opacity: 0;
-}
-
-/* Pip activation via data-pip */
-.half[data-pip="0"] .pip { opacity: 0; }
-.half[data-pip="1"] .p5 { opacity: 1; }
-.half[data-pip="2"] .p1,
-.half[data-pip="2"] .p9 { opacity: 1; }
-.half[data-pip="3"] .p1,
-.half[data-pip="3"] .p5,
-.half[data-pip="3"] .p9 { opacity: 1; }
-.half[data-pip="4"] .p1,
-.half[data-pip="4"] .p3,
-.half[data-pip="4"] .p7,
-.half[data-pip="4"] .p9 { opacity: 1; }
-.half[data-pip="5"] .p1,
-.half[data-pip="5"] .p3,
-.half[data-pip="5"] .p5,
-.half[data-pip="5"] .p7,
-.half[data-pip="5"] .p9 { opacity: 1; }
-.half[data-pip="6"] .p1,
-.half[data-pip="6"] .p3,
-.half[data-pip="6"] .p4,
-.half[data-pip="6"] .p6,
-.half[data-pip="6"] .p7,
-.half[data-pip="6"] .p9 { opacity: 1; }
-
-/* Grid positions (1–9) */
-.p1 { grid-area: 1 / 1; }
-.p2 { grid-area: 1 / 2; }
-.p3 { grid-area: 1 / 3; }
-.p4 { grid-area: 2 / 1; }
-.p5 { grid-area: 2 / 2; }
-.p6 { grid-area: 2 / 3; }
-.p7 { grid-area: 3 / 1; }
-.p8 { grid-area: 3 / 2; }
-.p9 { grid-area: 3 / 3; }
 
 /* Tray vs Board visual states */
 .domino.in-tray {
