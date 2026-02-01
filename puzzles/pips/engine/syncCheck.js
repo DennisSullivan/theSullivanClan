@@ -13,6 +13,15 @@ import { areAdjacent, isInside } from "./grid.js";
 
 export function syncCheck(dominos, grid) {
 console.log("syncCheck grid object:", grid);
+if (dominos.has("15")) {
+  const d = dominos.get("15");
+  console.log("syncCheck: domino 15 geometry:",
+    "row0:", d.row0,
+    "col0:", d.col0,
+    "row1:", d.row1,
+    "col1:", d.col1
+  );
+}
   const rows = grid.length;
   const cols = grid[0].length;
 
