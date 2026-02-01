@@ -28,17 +28,6 @@ export function renderTray(dominos, trayEl) {
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper in-tray";
 
-    // ------------------------------------------------------------
-    // DIAGNOSTIC 1 — wrapper BEFORE renderDomino()
-    // ------------------------------------------------------------
-    console.log("TRAY DIAG: BEFORE renderDomino", {
-      id: d.id,
-      classList: [...wrapper.classList],
-      inlineStyle: wrapper.getAttribute("style"),
-      offsetWidth: wrapper.offsetWidth,
-      offsetHeight: wrapper.offsetHeight
-    });
-
     // Render domino inside wrapper
     renderDomino(d, wrapper);
 
@@ -46,25 +35,6 @@ export function renderTray(dominos, trayEl) {
     const domEl = wrapper.querySelector(".domino");
     domEl.style.transform = `rotate(${d.trayOrientation}deg)`;
 
-    // ------------------------------------------------------------
-    // DIAGNOSTIC 2 — wrapper + domino AFTER renderDomino()
-    // ------------------------------------------------------------
-    console.log("TRAY DIAG: AFTER renderDomino", {
-      id: d.id,
-      wrapper: {
-        classList: [...wrapper.classList],
-        inlineStyle: wrapper.getAttribute("style"),
-        offsetWidth: wrapper.offsetWidth,
-        offsetHeight: wrapper.offsetHeight
-      },
-      domino: {
-        classList: [...domEl.classList],
-        inlineStyle: domEl.getAttribute("style"),
-        offsetWidth: domEl.offsetWidth,
-        offsetHeight: domEl.offsetHeight
-      },
-      outerHTML: wrapper.outerHTML
-    });
 
     // Place into next slot
     if (index < slots.length) {
