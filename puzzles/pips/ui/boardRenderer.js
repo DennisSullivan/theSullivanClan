@@ -1,3 +1,4 @@
+console.log("LOADED trayRenderer.js");
 // ============================================================
 // FILE: boardRenderer.js
 // PURPOSE: Render the board using canonical grid format:
