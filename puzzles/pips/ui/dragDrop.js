@@ -7,7 +7,9 @@
 //   - Engine placement unchanged
 //   - Full diagnostics preserved
 //   - Rotation-mode callbacks supported via endDrag.fire()
-//   - Patched: correct half-detection using DOM
+//   - Correct half-detection using DOM
+//   - FIXED: origin detection BEFORE placement
+//   - FIXED: correct placeDomino signature
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
@@ -66,9 +68,7 @@ function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayE
 
   e.preventDefault();
 
-  // ============================================================
-  // PATCH: Determine which half was clicked (size-independent)
-  // ============================================================
+  // Determine clicked half
   const halfEl = e.target.closest(".half");
   let clickedHalf = 0;
   if (halfEl && halfEl.classList.contains("half1")) {
@@ -81,7 +81,7 @@ function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayE
   const dragState = {
     domino,
     wrapper,
-    clickedHalf,   // <-- PATCH: store clicked half
+    clickedHalf,
     startX: e.clientX,
     startY: e.clientY,
     originLeft: rect.left,
@@ -117,7 +117,7 @@ function onDrag(e, dragState) {
 
 
 // ------------------------------------------------------------
-// endDragHandler
+// endDragHandler — FIXED VERSION
 // ------------------------------------------------------------
 function endDragHandler(
   e,
@@ -154,6 +154,11 @@ function endDragHandler(
   console.log("endDrag: dropTarget =", dropTarget);
 
   // ----------------------------------------------------------
+  // FIX: Capture origin BEFORE any placement logic
+  // ----------------------------------------------------------
+  const cameFromBoard = (domino.row0 !== null);
+
+  // ----------------------------------------------------------
   // Dropped on tray
   // ----------------------------------------------------------
   if (dropTarget && dropTarget.closest("#tray")) {
@@ -178,18 +183,15 @@ function endDragHandler(
 
     endDrag.fire(domino, row, col, grid);
 
-    if (domino.row0 === null) {
+    let ok = false;
+
+    if (!cameFromBoard) {
       console.log(`endDrag: placing from tray → placeDomino(${domino.id})`);
-
-      // ======================================================
-      // PATCH: pass clickedHalf to engine
-      // ======================================================
-      const ok = placeDomino(domino, row, col, grid, clickedHalf);
+      ok = placeDomino(domino, row, col, grid, clickedHalf);
       console.log(`placeDomino result: ${ok}`);
-
     } else {
       console.log(`endDrag: moving on board → moveDomino(${domino.id})`);
-      const ok = moveDomino(domino, row, col, grid);
+      ok = moveDomino(domino, row, col, grid);
       console.log(`moveDomino result: ${ok}`);
     }
 
