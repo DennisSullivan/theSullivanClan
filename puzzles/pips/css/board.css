@@ -74,8 +74,8 @@
 /* 5. DOMINO WRAPPER (BOARD POSITIONING) */
 .domino-wrapper.on-board {
   position: absolute;
-  width: var(--cell-size);
-  height: calc(var(--cell-size) * 2);
+  width: calc(var(--cell-size) * 2);   /* 2 wide */
+  height: var(--cell-size);            /* 1 tall */
   left: calc(var(--col) * var(--cell-size));
   top:  calc(var(--row) * var(--cell-size));
   pointer-events: auto;
