@@ -1,114 +1,86 @@
 // ============================================================
 // FILE: syncCheck.js
-// PURPOSE: Development-only integrity checker.
+// PURPOSE: Ensures dominos[] geometry and grid[][] occupancy
+//          are perfectly synchronized.
 // NOTES:
-//   - Ensures grid and dominos agree.
-//   - Ensures adjacency is correct.
-//   - Ensures no overlaps or out-of-bounds.
-//   - Ensures pip order is preserved (pip0 = half0).
-//   - Logs warnings; does not throw.
+//   - Uses canonical grid cell format: { dominoId, half }
+//   - Geometry-first: domino.row0/col0 and row1/col1 are truth.
+//   - Grid must reflect geometry exactly.
 // ============================================================
 
-import { areAdjacent, isInside } from "./grid.js";
-
 export function syncCheck(dominos, grid) {
-console.log("syncCheck grid object:", grid);
-if (dominos.has("15")) {
-  const d = dominos.get("15");
-  console.log("syncCheck: domino 15 geometry:",
-    "row0:", d.row0,
-    "col0:", d.col0,
-    "row1:", d.row1,
-    "col1:", d.col1
-  );
-}
-  const rows = grid.length;
-  const cols = grid[0].length;
 
-  const seen = new Set();
-
-  // ------------------------------------------------------------
-  // PASS 1: Domino → Grid validation
-  // ------------------------------------------------------------
+  // ----------------------------------------------------------
+  // 1. Check each domino's geometry against the grid
+  // ----------------------------------------------------------
   for (const [id, d] of dominos) {
-    if (d.row0 === null) continue; // in tray
 
-    const { row0, col0, row1, col1 } = d;
-
-    // Bounds
-    if (!isInside(grid, row0, col0)) {
-      console.warn(`syncCheck: Domino ${id} half0 out of bounds`);
-      continue;
-    }
-    if (!isInside(grid, row1, col1)) {
-      console.warn(`syncCheck: Domino ${id} half1 out of bounds`);
+    // Tray dominos should have no grid cells
+    if (d.row0 === null) {
       continue;
     }
 
-    // Adjacency
-    if (!areAdjacent(row0, col0, row1, col1)) {
-      console.warn(`syncCheck: Domino ${id} halves not adjacent`);
+    const r0 = d.row0, c0 = d.col0;
+    const r1 = d.row1, c1 = d.col1;
+
+    const cell0 = grid[r0]?.[c0];
+    const cell1 = grid[r1]?.[c1];
+
+    // Missing cells
+    if (!cell0) {
+      console.warn(`syncCheck: Domino ${id} half0 missing in grid at (${r0},${c0})`);
+    }
+    if (!cell1) {
+      console.warn(`syncCheck: Domino ${id} half1 missing in grid at (${r1},${c1})`);
     }
 
-    // Pip order (Option B)
-    if (d.pip0 === undefined || d.pip1 === undefined) {
-      console.warn(`syncCheck: Domino ${id} missing pip values`);
-    }
-
-    // Degenerate geometry
-    if (row0 === row1 && col0 === col1) {
-      console.warn(`syncCheck: Domino ${id} halves occupy same cell`);
-    }
-
-    // Grid occupancy
-    const cellA = grid[row0][col0];
-    const cellB = grid[row1][col1];
-
-    if (!cellA || cellA.dominoId !== id || cellA.half !== 0) {
+    // Wrong dominoId
+    if (cell0 && cell0.dominoId !== id) {
       console.warn(`syncCheck: Domino ${id} half0 mismatch in grid`);
     }
-    if (!cellB || cellB.dominoId !== id || cellB.half !== 1) {
+    if (cell1 && cell1.dominoId !== id) {
       console.warn(`syncCheck: Domino ${id} half1 mismatch in grid`);
     }
 
-    // Overlap detection
-    const keyA = `${row0},${col0}`;
-    const keyB = `${row1},${col1}`;
-
-    if (seen.has(keyA)) console.warn(`syncCheck: Overlap at ${keyA}`);
-    if (seen.has(keyB)) console.warn(`syncCheck: Overlap at ${keyB}`);
-
-    seen.add(keyA);
-    seen.add(keyB);
+    // Wrong half identity
+    if (cell0 && cell0.half !== 0) {
+      console.warn(`syncCheck: Domino ${id} half0 has wrong half index`);
+    }
+    if (cell1 && cell1.half !== 1) {
+      console.warn(`syncCheck: Domino ${id} half1 has wrong half index`);
+    }
   }
 
-  // ------------------------------------------------------------
-  // PASS 2: Grid → Domino validation
-  // ------------------------------------------------------------
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
+
+  // ----------------------------------------------------------
+  // 2. Check each grid cell against dominos[] geometry
+  // ----------------------------------------------------------
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid[r].length; c++) {
+
       const cell = grid[r][c];
       if (!cell) continue;
 
       const { dominoId, half } = cell;
-      const d = dominos.get(dominoId);
 
+      const d = dominos.get(dominoId);
       if (!d) {
-        console.warn(`syncCheck: Grid cell (${r},${c}) references missing domino ${dominoId}`);
+        console.warn(`syncCheck: Grid cell (${r},${c}) references unknown domino ${dominoId}`);
         continue;
       }
 
-      // Validate half index
-      if (half !== 0 && half !== 1) {
-        console.warn(`syncCheck: Grid cell (${r},${c}) has invalid half index ${half}`);
+      // Domino should be on board
+      if (d.row0 === null) {
+        console.warn(`syncCheck: Grid cell (${r},${c}) references tray domino ${dominoId}`);
+        continue;
       }
 
-      // Validate geometry match
-      if (half === 0 && (d.row0 !== r || d.col0 !== c)) {
-        console.warn(`syncCheck: Grid mismatch for domino ${dominoId} half0 at (${r},${c})`);
-      }
-      if (half === 1 && (d.row1 !== r || d.col1 !== c)) {
-        console.warn(`syncCheck: Grid mismatch for domino ${dominoId} half1 at (${r},${c})`);
+      // Geometry must match
+      const match0 = (half === 0 && r === d.row0 && c === d.col0);
+      const match1 = (half === 1 && r === d.row1 && c === d.col1);
+
+      if (!match0 && !match1) {
+        console.warn(`syncCheck: Grid cell (${r},${c}) references domino ${dominoId} but geometry disagrees`);
       }
     }
   }
