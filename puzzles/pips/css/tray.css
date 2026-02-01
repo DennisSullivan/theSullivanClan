@@ -1,17 +1,17 @@
 /* ============================================================
    FILE: tray.css
-   PURPOSE: NYT‑style fixed grid tray layout (no domino rules)
+   PURPOSE: NYT‑style fixed grid tray layout
    ============================================================ */
 
 
 /* ============================================================
-   1. TRAY GRID LAYOUT (NYT FIXED GRID)
+   1. TRAY GRID LAYOUT (NYT FIXED GRID, FULL DOMINO HEIGHT)
    ============================================================ */
 
 #tray {
   display: grid;
   grid-template-columns: repeat(14, var(--cell-size));
-  grid-auto-rows: var(--cell-size);
+  grid-auto-rows: calc(var(--cell-size) * 2); /* each slot is one domino tall */
   gap: var(--cell-gap);
   padding: 8px;
   background: #eee;
@@ -20,12 +20,13 @@
 
 
 /* ============================================================
-   2. TRAY SLOT VISUALIZATION
+   2. TRAY SLOT GEOMETRY + VISUALIZATION
    ============================================================ */
 
 .tray-slot {
   width: var(--cell-size);
-  height: var(--cell-size);
+  height: calc(var(--cell-size) * 2);          /* match domino height */
+  padding: calc(var(--cell-gap) / 2);          /* breathing room around dominos */
   position: relative;
   box-sizing: border-box;
   display: flex;
