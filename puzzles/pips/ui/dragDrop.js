@@ -7,6 +7,7 @@
 //   - Engine placement unchanged
 //   - Full diagnostics preserved
 //   - Rotation-mode callbacks supported via endDrag.fire()
+//   - Patched: correct half-detection using DOM
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
@@ -17,7 +18,6 @@ import { renderTray } from "./trayRenderer.js";
 
 // ============================================================
 // Rotation-mode callback registry
-// rotation.js registers callbacks here
 // ============================================================
 export const endDrag = {
   callbacks: [],
@@ -66,11 +66,22 @@ function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayE
 
   e.preventDefault();
 
+  // ============================================================
+  // PATCH: Determine which half was clicked (size-independent)
+  // ============================================================
+  const halfEl = e.target.closest(".half");
+  let clickedHalf = 0;
+  if (halfEl && halfEl.classList.contains("half1")) {
+    clickedHalf = 1;
+  }
+  console.log(`startDrag: clickedHalf = ${clickedHalf}`);
+
   const rect = wrapper.getBoundingClientRect();
 
   const dragState = {
     domino,
     wrapper,
+    clickedHalf,   // <-- PATCH: store clicked half
     startX: e.clientX,
     startY: e.clientY,
     originLeft: rect.left,
@@ -101,7 +112,6 @@ function onDrag(e, dragState) {
     dragState.moved = true;
   }
 
-  // Apply visual dragging transform
   dragState.wrapper.style.transform = `translate(${dx}px, ${dy}px) scale(1.1)`;
 }
 
@@ -125,9 +135,8 @@ function endDragHandler(
   window.removeEventListener("pointermove", moveHandler);
   window.removeEventListener("pointerup", upHandler);
 
-  const { domino, moved, wrapper } = dragState;
+  const { domino, moved, wrapper, clickedHalf } = dragState;
 
-  // Reset visual transform
   wrapper.style.transform = "";
   wrapper.classList.remove("dragging");
 
@@ -150,7 +159,6 @@ function endDragHandler(
   if (dropTarget && dropTarget.closest("#tray")) {
     console.log(`endDrag: dropping domino ${domino.id} onto tray`);
 
-    // Notify rotation.js that rotation mode should end
     endDrag.fire(domino, null, null, grid);
 
     removeDominoToTray(domino, grid);
@@ -168,13 +176,17 @@ function endDragHandler(
 
     console.log(`endDrag: dropping on board cell (${row},${col})`);
 
-    // Notify rotation.js BEFORE committing placement
     endDrag.fire(domino, row, col, grid);
 
     if (domino.row0 === null) {
       console.log(`endDrag: placing from tray → placeDomino(${domino.id})`);
-      const ok = placeDomino(domino, row, col, grid, dx, dy);
+
+      // ======================================================
+      // PATCH: pass clickedHalf to engine
+      // ======================================================
+      const ok = placeDomino(domino, row, col, grid, clickedHalf);
       console.log(`placeDomino result: ${ok}`);
+
     } else {
       console.log(`endDrag: moving on board → moveDomino(${domino.id})`);
       const ok = moveDomino(domino, row, col, grid);
@@ -190,7 +202,6 @@ function endDragHandler(
   // ----------------------------------------------------------
   console.log(`endDrag: no valid drop target → returning ${domino.id} to tray`);
 
-  // Notify rotation.js that rotation mode should end
   endDrag.fire(domino, null, null, grid);
 
   removeDominoToTray(domino, grid);
