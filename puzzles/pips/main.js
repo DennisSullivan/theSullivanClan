@@ -45,9 +45,10 @@ export function startPuzzle(puzzleJson) {
   const trayEl = document.getElementById("tray");
 
   // Initial render (delayed to ensure CSS variables are applied)
-  await Promise.resolve();
-  renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
-  renderTray(dominos, trayEl);
+  setTimeout(() => {
+    renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
+    renderTray(dominos, trayEl);
+  }, 0);
 
   // Enable interactions
   enableDrag(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
