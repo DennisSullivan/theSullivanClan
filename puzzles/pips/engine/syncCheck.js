@@ -1,4 +1,3 @@
-console.log("syncCheck grid object:", grid);
 // ============================================================
 // FILE: syncCheck.js
 // PURPOSE: Development-only integrity checker.
@@ -13,6 +12,7 @@ console.log("syncCheck grid object:", grid);
 import { areAdjacent, isInside } from "./grid.js";
 
 export function syncCheck(dominos, grid) {
+console.log("syncCheck grid object:", grid);
   const rows = grid.length;
   const cols = grid[0].length;
 
