@@ -1,3 +1,4 @@
+console.log("LOADED trayRenderer.js");
 // ============================================================
 // FILE: trayRenderer.js
 // PURPOSE: Render tray dominos using canonical domino model.
