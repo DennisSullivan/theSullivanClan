@@ -216,7 +216,7 @@ function endDragHandler(
 // ------------------------------------------------------------
 function finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
   console.log("finalize: re-rendering board + tray + syncCheck");
-  console.log("trayEl before renderTray =", trayEl, trayEl.innerHTML);
+//  console.log("trayEl before renderTray =", trayEl, trayEl.innerHTML);
   renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(dominos, trayEl);
   syncCheck(dominos, grid);
