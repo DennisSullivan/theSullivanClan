@@ -44,7 +44,8 @@ export function startPuzzle(puzzleJson) {
   const boardEl = document.getElementById("board");
   const trayEl = document.getElementById("tray");
 
-  // Initial render
+  // Initial render (delayed to ensure CSS variables are applied)
+  await Promise.resolve();
   renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(dominos, trayEl);
 
