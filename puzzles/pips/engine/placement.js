@@ -10,49 +10,68 @@
 
 
 // ------------------------------------------------------------
-// placeDomino(domino, row, col, grid)
+// placeDomino(domino, row, col, grid, clickedHalf)
 // PURPOSE:
 //   - Place a domino from the tray onto the board.
 //   - Orientation is derived from trayOrientation (0/90/180/270).
-//   - No gesture-based orientation.
+//   - clickedHalf determines which half anchors at (row, col).
 // ------------------------------------------------------------
-export function placeDomino(domino, row, col, grid) {
+export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
 
   // Only apply orientation logic if the domino is coming from the tray
   if (domino.row0 === null) {
     const angle = domino.trayOrientation % 360;
 
+    let r0, c0, r1, c1;
+
     if (angle === 0) {
       // Horizontal L→R
-      domino.row0 = row;
-      domino.col0 = col;
-      domino.row1 = row;
-      domino.col1 = col + 1;
+      if (clickedHalf === 0) {
+        r0 = row;     c0 = col;
+        r1 = row;     c1 = col + 1;
+      } else {
+        r0 = row;     c0 = col - 1;
+        r1 = row;     c1 = col;
+      }
     }
 
     else if (angle === 90) {
       // Vertical T→B
-      domino.row0 = row;
-      domino.col0 = col;
-      domino.row1 = row + 1;
-      domino.col1 = col;
+      if (clickedHalf === 0) {
+        r0 = row;     c0 = col;
+        r1 = row + 1; c1 = col;
+      } else {
+        r0 = row - 1; c0 = col;
+        r1 = row;     c1 = col;
+      }
     }
 
     else if (angle === 180) {
       // Horizontal R→L
-      domino.row0 = row;
-      domino.col0 = col + 1;
-      domino.row1 = row;
-      domino.col1 = col;
+      if (clickedHalf === 0) {
+        r0 = row;     c0 = col + 1;
+        r1 = row;     c1 = col;
+      } else {
+        r0 = row;     c0 = col;
+        r1 = row;     c1 = col - 1;
+      }
     }
 
     else if (angle === 270) {
       // Vertical B→T
-      domino.row0 = row + 1;
-      domino.col0 = col;
-      domino.row1 = row;
-      domino.col1 = col;
+      if (clickedHalf === 0) {
+        r0 = row + 1; c0 = col;
+        r1 = row;     c1 = col;
+      } else {
+        r0 = row;     c0 = col;
+        r1 = row + 1; c1 = col;
+      }
     }
+
+    domino.row0 = r0;
+    domino.col0 = c0;
+    domino.row1 = r1;
+    domino.col1 = c1;
   }
 
   // Validate placement
