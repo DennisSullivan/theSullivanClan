@@ -1,3 +1,4 @@
+console.log("LOADED placement.js VERSION 1/31");
 // ============================================================
 // FILE: placement.js
 // PURPOSE: Handles all board/tray placement logic.
