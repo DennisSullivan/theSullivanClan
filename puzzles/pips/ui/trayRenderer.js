@@ -1,37 +1,44 @@
-console.log("LOADED trayRenderer.js");
 // ============================================================
 // FILE: trayRenderer.js
 // PURPOSE: Render tray dominos using canonical domino model.
+// NOTES:
+//   - Uses renderDomino() for pip grid + structure
+//   - Tray layout is a fixed CSS grid (28 slots)
+//   - Tray rotation uses domino.trayOrientation
 // ============================================================
 
+import { renderDomino } from "./dominoRenderer.js";
+
 export function renderTray(dominos, trayEl) {
-console.log("renderTray called, trayEl =", trayEl);
   trayEl.innerHTML = "";
+
+  // Create 28 tray slots
+  for (let i = 0; i < 28; i++) {
+    const slot = document.createElement("div");
+    slot.className = "tray-slot";
+    trayEl.appendChild(slot);
+  }
+
+  const slots = trayEl.querySelectorAll(".tray-slot");
+  let index = 0;
 
   for (const [id, d] of dominos) {
     if (d.row0 !== null) continue; // only tray dominos
 
     const wrapper = document.createElement("div");
-    wrapper.className = "domino-wrapper tray-wrapper";
+    wrapper.className = "domino-wrapper in-tray";
 
-    const domEl = document.createElement("div");
-    domEl.className = "domino";
-    domEl.dataset.id = id;
+    // Render domino inside wrapper
+    renderDomino(d, wrapper);
 
     // Apply tray rotation
+    const domEl = wrapper.querySelector(".domino");
     domEl.style.transform = `rotate(${d.trayOrientation}deg)`;
 
-    const h0 = document.createElement("div");
-    h0.className = "half half0";
-    h0.textContent = d.pips0;
-
-    const h1 = document.createElement("div");
-    h1.className = "half half1";
-    h1.textContent = d.pips1;
-
-    domEl.appendChild(h0);
-    domEl.appendChild(h1);
-    wrapper.appendChild(domEl);
-    trayEl.appendChild(wrapper);
+    // Place into next slot
+    if (index < slots.length) {
+      slots[index].appendChild(wrapper);
+    }
+    index++;
   }
 }
