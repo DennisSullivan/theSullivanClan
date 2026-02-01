@@ -1,8 +1,9 @@
 /* ============================================================
-   domino.css
-   DOMINO GEOMETRY (component-level)
-   Defines the physical size, halves, pip layout, and rotation.
-   Shared by board, tray, and drag layers.
+   FILE: domino.css
+   PURPOSE: Geometry-first domino component shared by board + tray.
+   NOTES:
+     - Defines physical size, halves, pip layout, and visual states
+     - Does NOT handle board/tray positioning (that’s board.css/tray.css)
    ============================================================ */
 
 /* Wrapper: positioned by board.css or tray.css */
@@ -11,12 +12,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-
-  /* Prevent collapse before children size in */
   width: max-content;
   height: max-content;
-
-  /* Smooth rotation */
   transform-origin: center center;
 }
 
@@ -24,8 +21,8 @@
 .domino {
   display: flex;
   flex-direction: row;
-  width: 60px;     /* canonical geometry-first width */
-  height: 120px;   /* canonical geometry-first height */
+  width: 60px;
+  height: 120px;
   border: 2px solid #222;
   border-radius: 6px;
   background: white;
@@ -59,31 +56,31 @@
   height: 8px;
   background: #222;
   border-radius: 50%;
-  opacity: 0; /* hidden until pip value activates it */
+  opacity: 0;
 }
 
 /* Pip activation via data-pip */
 .half[data-pip="0"] .pip { opacity: 0; }
 .half[data-pip="1"] .p5 { opacity: 1; }
-.half[data-pip="2"] .p1, 
+.half[data-pip="2"] .p1,
 .half[data-pip="2"] .p9 { opacity: 1; }
-.half[data-pip="3"] .p1, 
-.half[data-pip="3"] .p5, 
+.half[data-pip="3"] .p1,
+.half[data-pip="3"] .p5,
 .half[data-pip="3"] .p9 { opacity: 1; }
-.half[data-pip="4"] .p1, 
-.half[data-pip="4"] .p3, 
-.half[data-pip="4"] .p7, 
+.half[data-pip="4"] .p1,
+.half[data-pip="4"] .p3,
+.half[data-pip="4"] .p7,
 .half[data-pip="4"] .p9 { opacity: 1; }
-.half[data-pip="5"] .p1, 
-.half[data-pip="5"] .p3, 
-.half[data-pip="5"] .p5, 
-.half[data-pip="5"] .p7, 
+.half[data-pip="5"] .p1,
+.half[data-pip="5"] .p3,
+.half[data-pip="5"] .p5,
+.half[data-pip="5"] .p7,
 .half[data-pip="5"] .p9 { opacity: 1; }
-.half[data-pip="6"] .p1, 
-.half[data-pip="6"] .p3, 
-.half[data-pip="6"] .p4, 
-.half[data-pip="6"] .p6, 
-.half[data-pip="6"] .p7, 
+.half[data-pip="6"] .p1,
+.half[data-pip="6"] .p3,
+.half[data-pip="6"] .p4,
+.half[data-pip="6"] .p6,
+.half[data-pip="6"] .p7,
 .half[data-pip="6"] .p9 { opacity: 1; }
 
 /* Grid positions (1–9) */
