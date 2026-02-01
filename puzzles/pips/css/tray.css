@@ -8,10 +8,11 @@
    1. TRAY GRID LAYOUT (NYT FIXED GRID, FULL DOMINO HEIGHT)
    ============================================================ */
 
+/* TRAY GRID: horizontal domino slots */
 #tray {
   display: grid;
-  grid-template-columns: repeat(14, var(--cell-size));
-  grid-auto-rows: calc(var(--cell-size) * 2); /* each slot is one domino tall */
+  grid-template-columns: repeat(14, calc(var(--cell-size) * 2)); /* each slot is 2 cells wide */
+  grid-auto-rows: var(--cell-size);                              /* each slot is 1 cell tall */
   gap: var(--cell-gap);
   padding: 8px;
   background: #eee;
@@ -23,10 +24,11 @@
    2. TRAY SLOT GEOMETRY + VISUALIZATION
    ============================================================ */
 
+/* TRAY SLOT: horizontal domino footprint */
 .tray-slot {
-  width: var(--cell-size);
-  height: calc(var(--cell-size) * 2);          /* match domino height */
-  padding: calc(var(--cell-gap) / 2);          /* breathing room around dominos */
+  width: calc(var(--cell-size) * 2);  /* 2 cells wide */
+  height: var(--cell-size);           /* 1 cell tall */
+  padding: calc(var(--cell-gap) / 2);
   position: relative;
   box-sizing: border-box;
   display: flex;
