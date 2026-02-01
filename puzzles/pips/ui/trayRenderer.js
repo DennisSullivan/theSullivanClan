@@ -1,42 +1,35 @@
 // ============================================================
 // FILE: trayRenderer.js
-// PURPOSE: Render the tray using fixed 14‑column NYT‑style grid.
-// NOTES:
-//   - Always renders all 28 tray slots in MASTER_TRAY order.
-//   - Only dominos with row0 === null appear in the tray.
-//   - Wrapper uses .domino-wrapper.in-tray for natural sizing.
+// PURPOSE: Render tray dominos using canonical domino model.
 // ============================================================
 
-import { MASTER_TRAY } from "../engine/domino.js";
-import { renderDomino } from "./dominoRenderer.js";
-
-
-// ------------------------------------------------------------
-// renderTray(dominos, trayEl)
-// Renders the entire tray: 28 fixed slots, dominos in place.
-// ------------------------------------------------------------
 export function renderTray(dominos, trayEl) {
-  trayEl.innerHTML = ""; // full redraw
+  trayEl.innerHTML = "";
 
-  for (const id of MASTER_TRAY) {
-    const d = dominos.get(id);
+  for (const [id, d] of dominos) {
+    if (d.row0 !== null) continue; // only tray dominos
 
-    // Create the fixed slot
-    const slotEl = document.createElement("div");
-    slotEl.className = "tray-slot";
-    slotEl.dataset.id = id;
-    trayEl.appendChild(slotEl);
-
-    // If domino is not in the tray, leave slot empty
-    if (!d || d.row0 !== null) continue;
-
-    // Create wrapper for the domino
     const wrapper = document.createElement("div");
-    wrapper.className = "domino-wrapper in-tray";
-    wrapper.style.transform = ""; // ensure clean state
-    slotEl.appendChild(wrapper);
+    wrapper.className = "domino-wrapper tray-wrapper";
 
-    // Render the domino inside the wrapper
-    renderDomino(d, wrapper);
+    const domEl = document.createElement("div");
+    domEl.className = "domino";
+    domEl.dataset.id = id;
+
+    // Apply tray rotation
+    domEl.style.transform = `rotate(${d.trayOrientation}deg)`;
+
+    const h0 = document.createElement("div");
+    h0.className = "half half0";
+    h0.textContent = d.pips0;
+
+    const h1 = document.createElement("div");
+    h1.className = "half half1";
+    h1.textContent = d.pips1;
+
+    domEl.appendChild(h0);
+    domEl.appendChild(h1);
+    wrapper.appendChild(domEl);
+    trayEl.appendChild(wrapper);
   }
 }
