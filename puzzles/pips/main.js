@@ -15,6 +15,12 @@ import { renderTray } from "./ui/trayRenderer.js";
 import { enableDrag } from "./ui/dragDrop.js";
 import { syncCheck } from "./engine/syncCheck.js";
 
+function validatePuzzle(p) {
+  if (!p || typeof p !== "object") return false;
+  if (!Array.isArray(p.dominos)) return false;
+  // optional: require id or version if you want
+  return true;
+}
 
 // ------------------------------------------------------------
 // startPuzzle(puzzleJson)
@@ -26,7 +32,17 @@ import { syncCheck } from "./engine/syncCheck.js";
 // ------------------------------------------------------------
 export function startPuzzle(puzzleJson) {
   console.log("startPuzzle() called");
-  // Load engine state
+
+  if (!validatePuzzle(puzzleJson)) {
+    console.error("startPuzzle: invalid puzzleJson", puzzleJson);
+    return null;
+  }
+
+  // Preserve an immutable UI copy for tray rendering and UI use
+  const puzzleDef = JSON.parse(JSON.stringify(puzzleJson));
+  console.log("startPuzzle puzzleDef:", puzzleDef);
+
+  // Load engine state (engine may normalize/mutate the original)
   const state = loadPuzzle(puzzleJson);
 
   const {
@@ -47,12 +63,12 @@ export function startPuzzle(puzzleJson) {
   // Initial render (delayed to ensure CSS variables are applied)
   setTimeout(() => {
     renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
-    renderTray(puzzleJson, dominos, trayEl);
+    renderTray(puzzleDef, dominos, trayEl);
+
+    // Now that DOM is rendered and puzzleDef is preserved, enable drag
+    enableDrag(puzzleDef, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
   }, 0);
 
-  // Enable interactions
-  enableDrag(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
- 
   // Initial sync check
   syncCheck(dominos, grid);
 
@@ -64,11 +80,22 @@ export function startPuzzle(puzzleJson) {
 // loadAndStart(url)
 // Convenience helper: fetches a puzzle file and starts it.
 // NOTES:
-//   - Optional helper for real deployments.
+//   - Validates puzzle JSON before starting.
 // ------------------------------------------------------------
 export async function loadAndStart(url) {
   console.log("loadAndStart() fetching:", url);
-  const response = await fetch(url);
-  const json = await response.json();
-  return startPuzzle(json);
+  try {
+    const response = await fetch(url);
+    const json = await response.json();
+
+    if (!validatePuzzle(json)) {
+      console.error("loadAndStart: invalid puzzle JSON", json);
+      return null;
+    }
+
+    return startPuzzle(json);
+  } catch (err) {
+    console.error("loadAndStart: fetch or parse error", err);
+    return null;
+  }
 }
