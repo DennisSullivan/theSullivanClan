@@ -1,11 +1,11 @@
 /* ============================================================
    FILE: domino.css
-   PURPOSE: Neutral, NYT‑style domino geometry (board + tray)
+   PURPOSE: Neutral, NYT-style domino geometry (board + tray)
    NOTES:
-     - Wrapper sizing is provided by board.css (on-board)
-     - Tray sizing is provided by tray.css (in-tray)
-     - Inner .domino fills the wrapper exactly
-     - Pip spacing uses padding on .domino and grid cells for precise NYT look
+     - Wrapper sizing and any nudge/rotation are handled by board.css
+     - This file ensures the inner domino fills the wrapper exactly
+     - Internal spacing uses padding on .domino (box-sizing: border-box)
+     - Halves use a 3x3 grid with no gap so pips remain compact
    ============================================================ */
 
 /* 1. Wrapper (neutral) */
@@ -15,6 +15,7 @@
   justify-content: center;
   align-items: center;
   transform-origin: center center;
+  box-sizing: border-box;
 }
 
 /* 2. Domino core (fills wrapper exactly) */
@@ -29,11 +30,12 @@
   box-sizing: border-box; /* ensure borders/padding are inside declared size */
   pointer-events: auto;
   transform-origin: center center;
+
   /* NYT internal padding keeps pips visually compact without shrinking the domino */
   padding: calc(var(--cell-size) * 0.08);
 }
 
-/* 3. Halves: 3x3 pip grid, no padding (padding moved to .domino) */
+/* 3. Halves: 3x3 pip grid, no padding, no gap */
 .domino .half {
   flex: 1;
   display: grid;
@@ -72,20 +74,25 @@
 
 /* pip patterns */
 .domino .half[data-pip="1"] .p1 { opacity: 1; }
+
 .domino .half[data-pip="2"] .p2,
 .domino .half[data-pip="2"] .p3 { opacity: 1; }
+
 .domino .half[data-pip="3"] .p2,
 .domino .half[data-pip="3"] .p1,
 .domino .half[data-pip="3"] .p3 { opacity: 1; }
+
 .domino .half[data-pip="4"] .p2,
 .domino .half[data-pip="4"] .p3,
 .domino .half[data-pip="4"] .p4,
 .domino .half[data-pip="4"] .p5 { opacity: 1; }
+
 .domino .half[data-pip="5"] .p2,
 .domino .half[data-pip="5"] .p3,
 .domino .half[data-pip="5"] .p4,
 .domino .half[data-pip="5"] .p5,
 .domino .half[data-pip="5"] .p1 { opacity: 1; }
+
 .domino .half[data-pip="6"] .p2,
 .domino .half[data-pip="6"] .p3,
 .domino .half[data-pip="6"] .p4,
@@ -102,16 +109,28 @@
   box-shadow: none;
 }
 
-/* 6. Mobile scaling */
+/* 6. Accessibility and hit area (optional)
+   Keep pointer target generous while visual remains exact */
+.domino-wrapper .hit {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+/* 7. Mobile scaling */
 @media (max-width: 600px) {
   :root { --cell-size: 36px; }
+
   .domino .pip {
     width: calc(var(--cell-size) * 0.10);
     height: calc(var(--cell-size) * 0.10);
   }
+
   .domino {
     padding: calc(var(--cell-size) * 0.10);
   }
+
   .domino .half {
     gap: 0;
   }
