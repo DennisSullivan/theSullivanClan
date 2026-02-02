@@ -109,10 +109,11 @@ endDrag.registerCallback((domino, row, col, grid) => {
     domino.col1 = originalGeometry.col1;
   }
 
-  rotatingDomino = null;
-  originalGeometry = null;
-  renderPuzzle();
-});
+    rotatingDomino = null;
+    originalGeometry = null;
+    renderPuzzle();
+  });
+}
 
 // ------------------------------------------------------------
 // cancelRotation
