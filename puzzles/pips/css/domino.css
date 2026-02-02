@@ -3,19 +3,26 @@
    PURPOSE: Neutral geometry for all dominos (board + tray)
    ============================================================ */
 
-/* Wrapper: positioned by board.css or tray.css */
+/* Wrapper: neutral by default */
 .domino-wrapper {
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
- .domino-wrapper {
-  width: var(--cell-size);
-  height: calc(var(--cell-size) * 2);
-  position: absolute;
   transform-origin: center center;
 }
 
+/* Board dominos: sized by cell geometry */
+.domino-wrapper.on-board {
+  width: var(--cell-size);
+  height: calc(var(--cell-size) * 2);
+  position: absolute;
+}
+
+/* Tray dominos: tray.css will size these */
+.domino-wrapper.in-tray {
+  position: relative;
+}
 
 /* Domino core element */
 .domino {
@@ -31,8 +38,7 @@
   transform-origin: center center;
 }
 
-
-/* Halves (no pip logic here) */
+/* Halves */
 .domino .half {
   flex: 1;
   display: grid;
