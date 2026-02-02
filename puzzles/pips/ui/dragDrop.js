@@ -11,6 +11,7 @@
 //   - FIXED: origin detection BEFORE placement
 //   - FIXED: correct placeDomino signature
 //   - UPDATED: trayRenderer now requires puzzleJson
+//   - UPDATED: robust tray/board hit detection
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
@@ -48,7 +49,6 @@ export function enableDrag(
   boardEl,
   trayEl
 ) {
-  // Defensive guards to fail loudly and avoid uncaught TypeErrors
   if (!boardEl) {
     console.error("enableDrag: boardEl is null or undefined. Ensure renderBoard ran before enableDrag.");
     return;
@@ -103,7 +103,6 @@ function startDrag(
 
   e.preventDefault();
 
-  // Determine clicked half
   const halfEl = e.target.closest(".half");
   let clickedHalf = 0;
   if (halfEl && halfEl.classList.contains("half1")) {
@@ -165,7 +164,7 @@ function onDrag(e, dragState) {
 
 
 // ------------------------------------------------------------
-// endDragHandler — NOW RECEIVES puzzleJson
+// endDragHandler — NOW WITH ROBUST HIT DETECTION
 // ------------------------------------------------------------
 function endDragHandler(
   e,
@@ -194,21 +193,15 @@ function endDragHandler(
     return;
   }
 
-  const dx = e.clientX - dragState.startX;
-  const dy = e.clientY - dragState.startY;
-
-  console.log(`endDrag: drop dx=${dx} dy=${dy}`);
-
   const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
   console.log("endDrag: dropTarget =", dropTarget);
 
-  // Capture origin BEFORE placement logic
   const cameFromBoard = (domino.row0 !== null);
 
   // ----------------------------------------------------------
-  // Dropped on tray
+  // Dropped on tray (robust)
   // ----------------------------------------------------------
-  if (dropTarget && dropTarget.closest("#tray")) {
+  if (dropTarget && trayEl.contains(dropTarget)) {
     console.log(`endDrag: dropping domino ${domino.id} onto tray`);
 
     endDrag.fire(domino, null, null, grid);
@@ -219,9 +212,13 @@ function endDragHandler(
   }
 
   // ----------------------------------------------------------
-  // Dropped on board cell
+  // Dropped on board cell (robust)
   // ----------------------------------------------------------
-  const cell = dropTarget && dropTarget.closest(".board-cell");
+  let cell = null;
+  if (dropTarget && boardEl.contains(dropTarget)) {
+    cell = dropTarget.closest(".board-cell");
+  }
+
   if (cell) {
     const row = parseInt(cell.dataset.row, 10);
     const col = parseInt(cell.dataset.col, 10);
@@ -233,13 +230,9 @@ function endDragHandler(
     let ok = false;
 
     if (!cameFromBoard) {
-      console.log(`endDrag: placing from tray → placeDomino(${domino.id})`);
       ok = placeDomino(domino, row, col, grid, clickedHalf);
-      console.log(`placeDomino result: ${ok}`);
     } else {
-      console.log(`endDrag: moving on board → moveDomino(${domino.id})`);
       ok = moveDomino(domino, row, col, grid);
-      console.log(`moveDomino result: ${ok}`);
     }
 
     finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
