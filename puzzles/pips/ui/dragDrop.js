@@ -10,6 +10,7 @@
 //   - Correct half-detection using DOM
 //   - FIXED: origin detection BEFORE placement
 //   - FIXED: correct placeDomino signature
+//   - UPDATED: trayRenderer now requires puzzleJson
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
@@ -35,25 +36,44 @@ export const endDrag = {
 
 
 // ------------------------------------------------------------
-// enableDrag
+// enableDrag — NOW ACCEPTS puzzleJson
 // ------------------------------------------------------------
-export function enableDrag(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+export function enableDrag(
+  puzzleJson,
+  dominos,
+  grid,
+  regionMap,
+  blocked,
+  regions,
+  boardEl,
+  trayEl
+) {
   console.log("enableDrag: wiring pointerdown on board + tray");
 
   boardEl.addEventListener("pointerdown", (e) =>
-    startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
+    startDrag(e, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
   );
 
   trayEl.addEventListener("pointerdown", (e) =>
-    startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
+    startDrag(e, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
   );
 }
 
 
 // ------------------------------------------------------------
-// startDrag
+// startDrag — NOW RECEIVES puzzleJson
 // ------------------------------------------------------------
-function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+function startDrag(
+  e,
+  puzzleJson,
+  dominos,
+  grid,
+  regionMap,
+  blocked,
+  regions,
+  boardEl,
+  trayEl
+) {
   const target = e.target.closest(".domino");
   if (!target) return;
 
@@ -93,7 +113,20 @@ function startDrag(e, dominos, grid, regionMap, blocked, regions, boardEl, trayE
 
   const moveHandler = (ev) => onDrag(ev, dragState);
   const upHandler = (ev) =>
-    endDragHandler(ev, dragState, dominos, grid, regionMap, blocked, regions, boardEl, trayEl, moveHandler, upHandler);
+    endDragHandler(
+      ev,
+      dragState,
+      puzzleJson,
+      dominos,
+      grid,
+      regionMap,
+      blocked,
+      regions,
+      boardEl,
+      trayEl,
+      moveHandler,
+      upHandler
+    );
 
   window.addEventListener("pointermove", moveHandler);
   window.addEventListener("pointerup", upHandler);
@@ -117,11 +150,12 @@ function onDrag(e, dragState) {
 
 
 // ------------------------------------------------------------
-// endDragHandler — FIXED VERSION
+// endDragHandler — NOW RECEIVES puzzleJson
 // ------------------------------------------------------------
 function endDragHandler(
   e,
   dragState,
+  puzzleJson,
   dominos,
   grid,
   regionMap,
@@ -153,9 +187,7 @@ function endDragHandler(
   const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
   console.log("endDrag: dropTarget =", dropTarget);
 
-  // ----------------------------------------------------------
-  // FIX: Capture origin BEFORE any placement logic
-  // ----------------------------------------------------------
+  // Capture origin BEFORE placement logic
   const cameFromBoard = (domino.row0 !== null);
 
   // ----------------------------------------------------------
@@ -167,7 +199,7 @@ function endDragHandler(
     endDrag.fire(domino, null, null, grid);
 
     removeDominoToTray(domino, grid);
-    finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
 
@@ -195,7 +227,7 @@ function endDragHandler(
       console.log(`moveDomino result: ${ok}`);
     }
 
-    finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
 
@@ -207,17 +239,26 @@ function endDragHandler(
   endDrag.fire(domino, null, null, grid);
 
   removeDominoToTray(domino, grid);
-  finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+  finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 }
 
 
 // ------------------------------------------------------------
-// finalize
+// finalize — NOW CALLS renderTray(puzzleJson,...)
 // ------------------------------------------------------------
-function finalize(dominos, grid, regionMap, blocked, regions, boardEl, trayEl) {
+function finalize(
+  puzzleJson,
+  dominos,
+  grid,
+  regionMap,
+  blocked,
+  regions,
+  boardEl,
+  trayEl
+) {
   console.log("finalize: re-rendering board + tray + syncCheck");
-//  console.log("trayEl before renderTray =", trayEl, trayEl.innerHTML);
+
   renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
-  renderTray(dominos, trayEl);
+  renderTray(puzzleJson, dominos, trayEl);
   syncCheck(dominos, grid);
 }
