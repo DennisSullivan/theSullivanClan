@@ -97,22 +97,31 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
 endDrag.registerCallback((domino, row, col, grid) => {
   if (rotatingDomino !== domino) return;
 
-  // Clear leftover drag transforms
-  const wrapper = document.querySelector(`.domino-wrapper[data-id="${domino.id}"]`);
-  if (wrapper) wrapper.style.transform = "";
+  // 1. Remove old grid occupancy
+  grid[originalGeometry.row0][originalGeometry.col0] = null;
+  grid[originalGeometry.row1][originalGeometry.col1] = null;
 
-  // Validate rotated geometry
+  // 2. Validate rotated geometry
   if (!isPlacementValid(domino, grid)) {
+    // Revert geometry
     domino.row0 = originalGeometry.row0;
     domino.col0 = originalGeometry.col0;
     domino.row1 = originalGeometry.row1;
     domino.col1 = originalGeometry.col1;
+
+    // Restore original grid occupancy
+    grid[domino.row0][domino.col0] = domino.id;
+    grid[domino.row1][domino.col1] = domino.id;
+  } else {
+    // 3. Commit rotated geometry to grid
+    grid[domino.row0][domino.col0] = domino.id;
+    grid[domino.row1][domino.col1] = domino.id;
   }
 
-    rotatingDomino = null;
-    originalGeometry = null;
-    renderPuzzle();
-  });
+  rotatingDomino = null;
+  originalGeometry = null;
+  renderPuzzle();
+});
 }
 
 // ------------------------------------------------------------
