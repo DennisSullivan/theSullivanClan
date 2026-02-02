@@ -49,7 +49,7 @@ export function enableDrag(
   trayEl
 ) {
   console.log("enableDrag: wiring pointerdown on board + tray");
-
+  console.log("puuxxleJson", puzzleJson);
   boardEl.addEventListener("pointerdown", (e) =>
     startDrag(e, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
   );
