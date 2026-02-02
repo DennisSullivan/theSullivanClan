@@ -5,6 +5,7 @@
 //   - Uses renderDomino() for pip grids
 //   - One wrapper per domino (created at half0 only)
 //   - Wrapper positioned via CSS variables (--row, --col)
+//   - Rotation is set via CSS custom property (--angle) instead of inline transform
 //   - Board cells rendered first, dominos layered on top
 // ============================================================
 
@@ -48,12 +49,29 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper on-board";
 
+    // Keep dataset for debugging/inspection
+    wrapper.dataset.row = d.row0;
+    wrapper.dataset.col = d.col0;
+
     // Position via CSS variables (canonical)
     wrapper.style.setProperty("--row", d.row0);
     wrapper.style.setProperty("--col", d.col0);
 
-    // Render the domino inside the wrapper
+    // Render the domino inside the wrapper (should NOT set wrapper.style.transform)
     renderDomino(d, wrapper);
+
+    // Set rotation declaratively via CSS custom property.
+    // Use d.angle (degrees) if present; otherwise derive from orientation.
+    // Adjust this logic if your model uses different fields.
+    let angleDeg = 0;
+    if (typeof d.angle === "number") {
+      angleDeg = d.angle;
+    } else if (d.orientation === "vertical" || d.orientation === "V") {
+      angleDeg = 90;
+    } else {
+      angleDeg = 0;
+    }
+    wrapper.style.setProperty("--angle", `${angleDeg}deg`);
 
     boardEl.appendChild(wrapper);
   }
