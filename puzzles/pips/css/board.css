@@ -32,8 +32,8 @@
   /* Static nudge computed from geometry:
      nudge = (cell-gap / 2) + (grid-border / 2) - (domino-border / 2)
      With defaults: (4px/2) + (1px/2) - (1px/2) = 2px */
-  --domino-nudge-x: 2px;
-  --domino-nudge-y: 2px;
+  --domino-nudge-x: 20px;
+  --domino-nudge-y: 20px;
 }
 
 /* 2. BOARD GRID LAYOUT */
