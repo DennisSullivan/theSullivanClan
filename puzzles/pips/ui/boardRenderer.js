@@ -22,13 +22,14 @@ function applyNudgeToRenderedWrappers() {
   const nudgeY = (getComputedStyle(document.documentElement).getPropertyValue('--domino-nudge-y') || '2px').trim();
 
   document.querySelectorAll('.domino-wrapper.on-board').forEach(wrapper => {
-    // Prepend translate to wrapper inline transform if not already present
+    // Only prepend if the wrapper's inline style does not already start with a translate(...)
     const existingWrapper = wrapper.style.transform || '';
     if (!/^\s*translate\(/.test(existingWrapper)) {
+      // Prepend the visual nudge to any existing inline transform (safe if empty)
       wrapper.style.transform = `translate(${nudgeX}, ${nudgeY}) ${existingWrapper}`.trim();
     }
 
-    // Also compose into inner .domino in case renderer sets transform on the child
+    // Also compose into inner .domino in case some renderer set transform on the child.
     const domino = wrapper.querySelector('.domino');
     if (domino) {
       const existingChild = domino.style.transform || '';
@@ -82,8 +83,8 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.dataset.col = d.col0;
 
     // Position via CSS variables (canonical)
-    wrapper.style.setProperty("--row", d.row0);
-    wrapper.style.setProperty("--col", d.col0);
+    wrapper.style.setProperty("--row", String(d.row0));
+    wrapper.style.setProperty("--col", String(d.col0));
 
     // Render the domino inside the wrapper (renderDomino should NOT set wrapper.style.transform)
     renderDomino(d, wrapper);
@@ -108,7 +109,5 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   //    This makes the nudge visible immediately even if some renderer
   //    writes inline style.transform after render.
   // ------------------------------------------------------------
-  // Call the helper once after rendering. If your app re-renders frequently,
-  // it's safe to call this after each render/finalize step.
   applyNudgeToRenderedWrappers();
 }
