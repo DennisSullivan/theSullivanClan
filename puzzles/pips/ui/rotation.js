@@ -6,24 +6,21 @@
 //   - Each double-click rotates 90° clockwise.
 //   - Pivot half determined via DOM (.half / .half1).
 //   - Rotation ignores constraints.
-//   - Rotation commits on endDrag.
+//   - Rotation commits on endDrag (if valid).
 //   - Rotation cancels on outside click.
 // ============================================================
 
 import {
   rotateDominoOnBoard,
   rotateDominoInTray,
-  placeDomino,
-  moveDomino
+  isPlacementValid
 } from "../engine/placement.js";
-
 
 // ------------------------------------------------------------
 // Internal rotation-mode state
 // ------------------------------------------------------------
 let rotatingDomino = null;
 let originalGeometry = null;
-
 
 // ------------------------------------------------------------
 // initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag)
@@ -39,14 +36,11 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
 
     const id = dominoEl.dataset.id;
     const domino = dominos.get(id);
-    if (!domino) return;
-
-    if (domino.row0 !== null) return; // must be in tray
+    if (!domino || domino.row0 !== null) return;
 
     rotateDominoInTray(domino);
     renderPuzzle();
   });
-
 
   // ==========================================================
   // BOARD DOUBLE-CLICK → enter rotation mode or rotate again
@@ -57,16 +51,13 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
 
     const id = dominoEl.dataset.id;
     const domino = dominos.get(id);
-    if (!domino) return;
-
-    if (domino.row0 === null) return; // must be on board
+    if (!domino || domino.row0 === null) return;
 
     // Determine pivot half via DOM
     let pivotHalf = 0;
     if (event.target.closest(".half1")) {
       pivotHalf = 1;
     }
-
 
     // --------------------------------------------------------
     // ENTER ROTATION MODE
@@ -87,25 +78,18 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
     // ROTATE 90° CLOCKWISE (geometry only)
     // --------------------------------------------------------
     rotateDominoOnBoard(domino, pivotHalf);
-
-    // Visual update
     renderPuzzle();
   });
-
 
   // ==========================================================
   // OUTSIDE CLICK → cancel rotation mode
   // ==========================================================
   document.addEventListener("mousedown", (event) => {
     if (!rotatingDomino) return;
-
-    // If click is inside a domino, ignore
     if (event.target.closest(".domino")) return;
 
-    // Otherwise cancel rotation
     cancelRotation(renderPuzzle);
   });
-
 
   // ==========================================================
   // endDrag → commit rotation (validate placement)
@@ -113,10 +97,8 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
   endDrag.registerCallback((domino, row, col, grid) => {
     if (rotatingDomino !== domino) return;
 
-    // Try to commit by placing/moving
-    const success = moveDomino(domino, row, col, grid);
-
-    if (!success) {
+    // Validate rotated geometry
+    if (!isPlacementValid(domino, grid)) {
       // Revert to original geometry
       domino.row0 = originalGeometry.row0;
       domino.col0 = originalGeometry.col0;
@@ -124,15 +106,11 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
       domino.col1 = originalGeometry.col1;
     }
 
-    // End rotation mode
     rotatingDomino = null;
     originalGeometry = null;
-
     renderPuzzle();
   });
 }
-
-
 
 // ------------------------------------------------------------
 // cancelRotation
@@ -140,7 +118,6 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
 function cancelRotation(renderPuzzle) {
   if (!rotatingDomino || !originalGeometry) return;
 
-  // Restore original geometry
   rotatingDomino.row0 = originalGeometry.row0;
   rotatingDomino.col0 = originalGeometry.col0;
   rotatingDomino.row1 = originalGeometry.row1;
