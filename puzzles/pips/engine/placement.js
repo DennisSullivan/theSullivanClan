@@ -175,7 +175,7 @@ export function removeDominoToTray(domino, grid) {
 // PURPOSE:
 //   - Ensure both cells are in bounds and unoccupied.
 // ------------------------------------------------------------
-function isPlacementValid(domino, grid) {
+export function isPlacementValid(domino, grid) {
   const r0 = domino.row0;
   const c0 = domino.col0;
   const r1 = domino.row1;
