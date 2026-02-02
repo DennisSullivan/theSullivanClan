@@ -12,23 +12,18 @@
 import { loadPuzzle } from "./engine/loader.js";
 import { renderBoard } from "./ui/boardRenderer.js";
 import { renderTray } from "./ui/trayRenderer.js";
-import { enableDrag } from "./ui/dragDrop.js";
+import { enableDrag, endDrag } from "./ui/dragDrop.js";
+import { initRotation } from "./ui/rotation.js";
 import { syncCheck } from "./engine/syncCheck.js";
 
 function validatePuzzle(p) {
   if (!p || typeof p !== "object") return false;
   if (!Array.isArray(p.dominos)) return false;
-  // optional: require id or version if you want
   return true;
 }
 
 // ------------------------------------------------------------
 // startPuzzle(puzzleJson)
-// Initializes the entire puzzle system.
-// INPUTS:
-//   puzzleJson - parsed puzzle definition
-// NOTES:
-//   - Returns the engine state for debugging.
 // ------------------------------------------------------------
 export function startPuzzle(puzzleJson) {
   console.log("startPuzzle() called");
@@ -38,11 +33,9 @@ export function startPuzzle(puzzleJson) {
     return null;
   }
 
-  // Preserve an immutable UI copy for tray rendering and UI use
   const puzzleDef = JSON.parse(JSON.stringify(puzzleJson));
   console.log("startPuzzle puzzleDef:", puzzleDef);
 
-  // Load engine state (engine may normalize/mutate the original)
   const state = loadPuzzle(puzzleJson);
 
   const {
@@ -50,37 +43,39 @@ export function startPuzzle(puzzleJson) {
     grid,
     regionMap,
     blocked,
-    regions,
-    rules,
-    history
+    regions
   } = state;
+
   console.log("STATE:", state);
 
-  // DOM containers
   const boardEl = document.getElementById("board");
   const trayEl = document.getElementById("tray");
 
-  // Initial render (delayed to ensure CSS variables are applied)
-  setTimeout(() => {
+  // Wrapper for rotation.js
+  function renderPuzzle() {
     renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
     renderTray(puzzleDef, dominos, trayEl);
+    syncCheck(dominos, grid);
+  }
 
-    // Now that DOM is rendered and puzzleDef is preserved, enable drag
+  // Initial render
+  setTimeout(() => {
+    renderPuzzle();
+
+    // Enable drag/drop
     enableDrag(puzzleDef, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+
+    // Enable rotation mode
+    initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag);
   }, 0);
 
-  // Initial sync check
   syncCheck(dominos, grid);
 
-  return state; // useful for debugging in console
+  return state;
 }
-
 
 // ------------------------------------------------------------
 // loadAndStart(url)
-// Convenience helper: fetches a puzzle file and starts it.
-// NOTES:
-//   - Validates puzzle JSON before starting.
 // ------------------------------------------------------------
 export async function loadAndStart(url) {
   console.log("loadAndStart() fetching:", url);
