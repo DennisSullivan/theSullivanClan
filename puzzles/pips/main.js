@@ -47,7 +47,7 @@ export function startPuzzle(puzzleJson) {
   // Initial render (delayed to ensure CSS variables are applied)
   setTimeout(() => {
     renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
-    renderTray(dominos, trayEl);
+    renderTray(puzzle, dominos, trayEl);
   }, 0);
 
   // Enable interactions
