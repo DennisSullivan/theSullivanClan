@@ -112,9 +112,10 @@
   transform-origin: center center;
 
   /* translate then rotate; --angle set by renderer (deg) */
-  transform: translate(var(--domino-nudge-x), var(--domino-nudge-y)) rotate(var(--angle, 0deg));
+  transform: translate(var(--domino-nudge-x, 2px), var(--domino-nudge-y, 2px)) rotate(var(--angle, 0deg));
   box-sizing: border-box;
 }
+
 
 /* Remove nudge while dragging to avoid cursor/ghost mismatch */
 .domino-wrapper.on-board.dragging {
