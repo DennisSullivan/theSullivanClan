@@ -7,6 +7,7 @@
 //   - Validates dominos, starting placements, regions, blocked.
 //   - Builds regionMap and canonical Domino objects.
 //   - Initializes history and rules.
+//   - Assigns each domino a stable homeSlot based on puzzle order.
 // ============================================================
 
 import { MASTER_TRAY, createDomino, isValidDominoId } from "./domino.js";
@@ -31,7 +32,7 @@ export function loadPuzzle(json) {
     blocked.add(`${cell.row},${cell.col}`);
   }
 
-  // Validate and load dominos
+  // Validate and load dominos (with homeSlot assignment)
   const dominos = loadDominos(json.dominos);
 
   // Apply starting placements
@@ -59,6 +60,7 @@ export function loadPuzzle(json) {
 
 // ------------------------------------------------------------
 // loadDominos(idList)
+// Assigns each domino a stable homeSlot based on puzzle order.
 // ------------------------------------------------------------
 function loadDominos(idList) {
   // Validate subset
@@ -79,11 +81,24 @@ function loadDominos(idList) {
     }
   }
 
-  // Build map of Domino objects
+  // Build map of Domino objects with stable homeSlot
   const map = new Map();
+  let index = 0;
+
   for (const id of idList) {
-    map.set(id, createDomino(id));
+    const d = createDomino(id);
+
+    // --------------------------------------------------------
+    // NEW: Stable tray slot assignment
+    // --------------------------------------------------------
+    d.homeSlot = index++;
+
+    // NEW: Ensure trayOrientation exists (future-proof)
+    d.trayOrientation = 0;
+
+    map.set(id, d);
   }
+
   return map;
 }
 
