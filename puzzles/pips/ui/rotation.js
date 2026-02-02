@@ -15,7 +15,7 @@ import {
   rotateDominoInTray,
   placeDomino,
   moveDomino
-} from "./placement.js";
+} from "../engine/placement.js";
 
 
 // ------------------------------------------------------------
