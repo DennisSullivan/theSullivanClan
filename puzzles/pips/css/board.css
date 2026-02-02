@@ -1,6 +1,10 @@
 /* ============================================================
    FILE: board.css
-   PURPOSE: Board layout + NYT‑style pip system
+   PURPOSE: Board layout + wrapper sizing that includes cell gap
+   NOTES:
+     - Grid columns/rows include the inter-cell gap in sizing
+     - Domino wrapper footprint includes the inter-cell gap so .domino 100% fills it
+     - Rotation is applied to the wrapper; inner .domino remains untransformed
    ============================================================ */
 
 /* 1. ROOT VARIABLES */
@@ -71,10 +75,13 @@
   background: transparent;
 }
 
-/* 5. DOMINO WRAPPER (BOARD POSITIONING) */
+/* 5. DOMINO WRAPPER (BOARD POSITIONING)
+   Note: width includes the inter-cell gap so a horizontal domino spans two cells exactly */
 .domino-wrapper.on-board {
   position: absolute;
-  width: calc(var(--cell-size) * 2);   /* horizontal domino */
+
+  /* horizontal footprint: two cells plus the gap between them */
+  width: calc(var(--cell-size) * 2 + var(--cell-gap));
   height: var(--cell-size);
 
   left: calc(var(--col) * (var(--cell-size) + var(--cell-gap)));
@@ -85,6 +92,7 @@
   transform-origin: center center;
 }
 
+/* in-tray wrapper remains flexible and sized by tray.css */
 .domino-wrapper.in-tray {
   position: relative;
   width: auto;
@@ -104,6 +112,7 @@
   position: absolute;
   width: 100%;
   height: 100%;
+  box-sizing: border-box; /* ensure borders included in size */
 }
 
 .domino.in-tray {
@@ -131,27 +140,22 @@
 .p6 { grid-area: 2 / 1; }
 .p7 { grid-area: 2 / 3; }
 
-/* pip patterns */
+/* pip patterns (same as domino.css) */
 .domino .half[data-pip="1"] .p1 { opacity: 1; }
-
 .domino .half[data-pip="2"] .p2,
 .domino .half[data-pip="2"] .p3 { opacity: 1; }
-
 .domino .half[data-pip="3"] .p2,
 .domino .half[data-pip="3"] .p1,
 .domino .half[data-pip="3"] .p3 { opacity: 1; }
-
 .domino .half[data-pip="4"] .p2,
 .domino .half[data-pip="4"] .p3,
 .domino .half[data-pip="4"] .p4,
 .domino .half[data-pip="4"] .p5 { opacity: 1; }
-
 .domino .half[data-pip="5"] .p2,
 .domino .half[data-pip="5"] .p3,
 .domino .half[data-pip="5"] .p4,
 .domino .half[data-pip="5"] .p5,
 .domino .half[data-pip="5"] .p1 { opacity: 1; }
-
 .domino .half[data-pip="6"] .p2,
 .domino .half[data-pip="6"] .p3,
 .domino .half[data-pip="6"] .p4,
@@ -161,8 +165,11 @@
 
 /* 8. MOBILE SCALING */
 @media (max-width: 600px) {
-  :root {
-    --cell-size: 36px;
+  :root { --cell-size: 36px; }
+
+  #board {
+    width: calc((var(--cell-size) + var(--cell-gap)) * 6);
+    height: calc((var(--cell-size) + var(--cell-gap)) * 6);
   }
 
   .domino .pip {
@@ -171,6 +178,6 @@
   }
 
   .domino .half {
-    padding: calc(var(--cell-size) * 0.14);
+    gap: 0;
   }
 }
