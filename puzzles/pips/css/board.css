@@ -1,10 +1,11 @@
 /* ============================================================
    FILE: board.css
    PURPOSE: Board layout + wrapper sizing that includes cell gap
+            + static nudge to align painted domino seam with grid
    NOTES:
-     - Grid columns/rows include the inter-cell gap in sizing
+     - Assumes --cell-size, --cell-gap, --domino-thickness are defined here
      - Domino wrapper footprint includes the inter-cell gap so .domino 100% fills it
-     - Rotation is applied to the wrapper; inner .domino remains untransformed
+     - A static nudge is applied via CSS variables to align painted pixels
    ============================================================ */
 
 /* 1. ROOT VARIABLES */
@@ -27,6 +28,12 @@
   --color-pip: #222;
 
   --transition-fast: 120ms ease-out;
+
+  /* Static nudge computed from geometry:
+     nudge = (cell-gap / 2) + (grid-border / 2) - (domino-border / 2)
+     With defaults: (4px/2) + (1px/2) - (1px/2) = 2px */
+  --domino-nudge-x: 2px;
+  --domino-nudge-y: 2px;
 }
 
 /* 2. BOARD GRID LAYOUT */
@@ -48,6 +55,7 @@
   border: 1px solid var(--color-grid);
   box-sizing: border-box;
   background: transparent;
+  position: relative;
 }
 
 /* 3. REGION COLORS */
@@ -56,7 +64,7 @@
 .board-cell.region-2 { background: var(--color-region-2); }
 .board-cell.region-3 { background: var(--color-region-3); }
 
-/* 4. REGION BADGES */
+/* 4. REGION BADGES / OUTLINES */
 .badge-layer {
   position: absolute;
   inset: 0;
@@ -75,8 +83,20 @@
   background: transparent;
 }
 
+/* Optional region outline overlay (keeps outlines visible around dominos) */
+.region-outline {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50; /* above cells, below dominos (domino z-index: 100) */
+  border: 2px solid rgba(0,0,0,0.06);
+  box-sizing: border-box;
+  outline: none;
+}
+
 /* 5. DOMINO WRAPPER (BOARD POSITIONING)
-   Note: width includes the inter-cell gap so a horizontal domino spans two cells exactly */
+   Note: width includes the inter-cell gap so a horizontal domino spans two cells exactly.
+   A static translate nudge is applied to align painted pixels; rotation is applied via --angle. */
 .domino-wrapper.on-board {
   position: absolute;
 
@@ -90,6 +110,15 @@
   pointer-events: auto;
   z-index: 100;
   transform-origin: center center;
+
+  /* translate then rotate; --angle set by renderer (deg) */
+  transform: translate(var(--domino-nudge-x), var(--domino-nudge-y)) rotate(var(--angle, 0deg));
+  box-sizing: border-box;
+}
+
+/* Remove nudge while dragging to avoid cursor/ghost mismatch */
+.domino-wrapper.on-board.dragging {
+  transform: rotate(var(--angle, 0deg));
 }
 
 /* in-tray wrapper remains flexible and sized by tray.css */
@@ -113,6 +142,7 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box; /* ensure borders included in size */
+  transform-origin: center center;
 }
 
 .domino.in-tray {
@@ -140,7 +170,7 @@
 .p6 { grid-area: 2 / 1; }
 .p7 { grid-area: 2 / 3; }
 
-/* pip patterns (same as domino.css) */
+/* pip patterns */
 .domino .half[data-pip="1"] .p1 { opacity: 1; }
 .domino .half[data-pip="2"] .p2,
 .domino .half[data-pip="2"] .p3 { opacity: 1; }
@@ -181,3 +211,8 @@
     gap: 0;
   }
 }
+
+/* 9. Debug helpers (toggle classes in DevTools) */
+.domino-wrapper.on-board.debug-outline { outline: 1px dashed rgba(255,0,0,0.6); }
+.domino.on-board.debug-outline { outline: 1px solid rgba(0,255,0,0.6); }
+.board-cell.debug-outline { outline: 1px dotted rgba(0,0,255,0.25); }
