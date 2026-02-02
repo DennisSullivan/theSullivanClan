@@ -1,10 +1,11 @@
 // ============================================================
 // FILE: trayRenderer.js
-// PURPOSE: Render tray dominos using puzzle-defined slot order.
+// PURPOSE: Render tray dominos using stable homeSlot order.
 // NOTES:
-//   - Puzzle.dominos[] defines tray order
+//   - Each domino has d.homeSlot assigned in loader.js
+//   - Tray has fixed slots: no collapsing, no shifting
 //   - If a domino is on the board, its slot stays empty
-//   - No collapsing, no shifting
+//   - Pure rendering: no state mutation
 // ============================================================
 
 import { renderDomino } from "./dominoRenderer.js";
@@ -24,10 +25,11 @@ export function renderTray(puzzleJson, dominos, trayEl) {
 
   trayEl.innerHTML = "";
 
-  const trayOrder = puzzleJson.dominos; // canonical order
-  const slotCount = trayOrder.length;
+  // ----------------------------------------------------------
+  // 1. Create fixed tray slots (one per domino)
+  // ----------------------------------------------------------
+  const slotCount = puzzleJson.dominos.length;
 
-  // Create fixed tray slots
   for (let i = 0; i < slotCount; i++) {
     const slot = document.createElement("div");
     slot.className = "tray-slot";
@@ -35,26 +37,29 @@ export function renderTray(puzzleJson, dominos, trayEl) {
     trayEl.appendChild(slot);
   }
 
-  // Place dominos into their fixed slots
-  for (let i = 0; i < slotCount; i++) {
-    const id = trayOrder[i];
-    const d = dominos.get(id);
-    const slot = trayEl.querySelector(`.tray-slot[data-slot="${i}"]`);
-
-    if (!slot) continue;
-
-    // If no domino with this id exists, leave the slot empty
-    if (!d) continue;
-
-    // If the domino is on the board, leave the slot empty
+  // ----------------------------------------------------------
+  // 2. Place dominos into their stable homeSlot
+  // ----------------------------------------------------------
+  for (const [id, d] of dominos) {
+    // Skip dominos that are on the board
     if (d.row0 !== null) continue;
 
-    // Otherwise render it into the slot
+    // Skip dominos without a valid homeSlot
+    if (typeof d.homeSlot !== "number") {
+      console.warn(`renderTray: Domino ${id} missing homeSlot`);
+      continue;
+    }
+
+    const slot = trayEl.querySelector(`.tray-slot[data-slot="${d.homeSlot}"]`);
+    if (!slot) continue;
+
+    // Render domino into its slot
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper in-tray";
 
     renderDomino(d, wrapper);
 
+    // Apply tray orientation if present
     const domEl = wrapper.querySelector(".domino");
     if (domEl && typeof d.trayOrientation === "number") {
       domEl.style.transform = `rotate(${d.trayOrientation}deg)`;
