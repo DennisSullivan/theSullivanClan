@@ -12,6 +12,7 @@
 //   - FIXED: correct placeDomino signature
 //   - UPDATED: trayRenderer now requires puzzleJson
 //   - UPDATED: robust tray/board hit detection
+//   - CHANGES: inline transform writes adjusted to preserve CSS nudge
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
@@ -159,7 +160,10 @@ function onDrag(e, dragState) {
     dragState.moved = true;
   }
 
-  dragState.wrapper.style.transform = `translate(${dx}px, ${dy}px) scale(1.1)`;
+  // compose the CSS nudge into the inline drag transform so the nudge is never lost
+  const nudgeX = getComputedStyle(document.documentElement).getPropertyValue('--domino-nudge-x').trim() || '2px';
+  const nudgeY = getComputedStyle(document.documentElement).getPropertyValue('--domino-nudge-y').trim() || '2px';
+  dragState.wrapper.style.transform = `translate(${nudgeX}, ${nudgeY}) translate(${dx}px, ${dy}px) scale(1.1)`;
 }
 
 
@@ -185,7 +189,8 @@ function endDragHandler(
 
   const { domino, moved, wrapper, clickedHalf } = dragState;
 
-  wrapper.style.transform = "";
+  // let CSS own the composed transform again
+  wrapper.style.removeProperty('transform');
   wrapper.classList.remove("dragging");
 
   if (!moved) {
