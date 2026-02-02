@@ -48,8 +48,23 @@ export function enableDrag(
   boardEl,
   trayEl
 ) {
+  // Defensive guards to fail loudly and avoid uncaught TypeErrors
+  if (!boardEl) {
+    console.error("enableDrag: boardEl is null or undefined. Ensure renderBoard ran before enableDrag.");
+    return;
+  }
+  if (!trayEl) {
+    console.error("enableDrag: trayEl is null or undefined. Ensure renderTray ran before enableDrag.");
+    return;
+  }
+  if (!puzzleJson || !Array.isArray(puzzleJson.dominos)) {
+    console.error("enableDrag: invalid puzzleJson passed", puzzleJson);
+    return;
+  }
+
   console.log("enableDrag: wiring pointerdown on board + tray");
-  console.log("puuxxleJson", puzzleJson);
+  console.log("enableDrag: puzzleJson id =", puzzleJson.id ?? "<no id>", "dominos.length =", puzzleJson.dominos.length);
+
   boardEl.addEventListener("pointerdown", (e) =>
     startDrag(e, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
   );
