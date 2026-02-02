@@ -7,9 +7,37 @@
 //   - Wrapper positioned via CSS variables (--row, --col)
 //   - Rotation is set via CSS custom property (--angle) instead of inline transform
 //   - Board cells rendered first, dominos layered on top
+//   - After render, a small helper composes the visual nudge into any inline transforms
+//     so the nudge is visible immediately even if other renderers write inline transforms.
 // ============================================================
 
 import { renderDomino } from "./dominoRenderer.js";
+
+/**
+ * Compose the CSS nudge into any inline transforms on wrappers/children.
+ * This is idempotent and safe to call after each render.
+ */
+function applyNudgeToRenderedWrappers() {
+  const nudgeX = (getComputedStyle(document.documentElement).getPropertyValue('--domino-nudge-x') || '2px').trim();
+  const nudgeY = (getComputedStyle(document.documentElement).getPropertyValue('--domino-nudge-y') || '2px').trim();
+
+  document.querySelectorAll('.domino-wrapper.on-board').forEach(wrapper => {
+    // Prepend translate to wrapper inline transform if not already present
+    const existingWrapper = wrapper.style.transform || '';
+    if (!/^\s*translate\(/.test(existingWrapper)) {
+      wrapper.style.transform = `translate(${nudgeX}, ${nudgeY}) ${existingWrapper}`.trim();
+    }
+
+    // Also compose into inner .domino in case renderer sets transform on the child
+    const domino = wrapper.querySelector('.domino');
+    if (domino) {
+      const existingChild = domino.style.transform || '';
+      if (!/^\s*translate\(/.test(existingChild)) {
+        domino.style.transform = `translate(${nudgeX}, ${nudgeY}) ${existingChild}`.trim();
+      }
+    }
+  });
+}
 
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   boardEl.innerHTML = "";
@@ -57,12 +85,11 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.style.setProperty("--row", d.row0);
     wrapper.style.setProperty("--col", d.col0);
 
-    // Render the domino inside the wrapper (should NOT set wrapper.style.transform)
+    // Render the domino inside the wrapper (renderDomino should NOT set wrapper.style.transform)
     renderDomino(d, wrapper);
 
     // Set rotation declaratively via CSS custom property.
     // Use d.angle (degrees) if present; otherwise derive from orientation.
-    // Adjust this logic if your model uses different fields.
     let angleDeg = 0;
     if (typeof d.angle === "number") {
       angleDeg = d.angle;
@@ -75,4 +102,13 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
 
     boardEl.appendChild(wrapper);
   }
+
+  // ------------------------------------------------------------
+  // 3. Ensure the visual nudge is composed into any inline transforms
+  //    This makes the nudge visible immediately even if some renderer
+  //    writes inline style.transform after render.
+  // ------------------------------------------------------------
+  // Call the helper once after rendering. If your app re-renders frequently,
+  // it's safe to call this after each render/finalize step.
+  applyNudgeToRenderedWrappers();
 }
