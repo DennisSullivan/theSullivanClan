@@ -94,23 +94,25 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
   // ==========================================================
   // endDrag → commit rotation (validate placement)
   // ==========================================================
-  endDrag.registerCallback((domino, row, col, grid) => {
-    if (rotatingDomino !== domino) return;
+endDrag.registerCallback((domino, row, col, grid) => {
+  if (rotatingDomino !== domino) return;
 
-    // Validate rotated geometry
-    if (!isPlacementValid(domino, grid)) {
-      // Revert to original geometry
-      domino.row0 = originalGeometry.row0;
-      domino.col0 = originalGeometry.col0;
-      domino.row1 = originalGeometry.row1;
-      domino.col1 = originalGeometry.col1;
-    }
+  // Clear leftover drag transforms
+  const wrapper = document.querySelector(`.domino-wrapper[data-id="${domino.id}"]`);
+  if (wrapper) wrapper.style.transform = "";
 
-    rotatingDomino = null;
-    originalGeometry = null;
-    renderPuzzle();
-  });
-}
+  // Validate rotated geometry
+  if (!isPlacementValid(domino, grid)) {
+    domino.row0 = originalGeometry.row0;
+    domino.col0 = originalGeometry.col0;
+    domino.row1 = originalGeometry.row1;
+    domino.col1 = originalGeometry.col1;
+  }
+
+  rotatingDomino = null;
+  originalGeometry = null;
+  renderPuzzle();
+});
 
 // ------------------------------------------------------------
 // cancelRotation
