@@ -63,9 +63,10 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
 
     // Determine pivot half via DOM
     let pivotHalf = 0;
-    const half0 = event.target.closest(".half0");
-    const half1 = event.target.closest(".half1");
-    if (half1 && !half0) pivotHalf = 1;
+    if (event.target.closest(".half1")) {
+      pivotHalf = 1;
+    }
+
 
     // --------------------------------------------------------
     // ENTER ROTATION MODE
