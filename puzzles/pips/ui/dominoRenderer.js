@@ -5,7 +5,7 @@
 //   - pip0 = half0, pip1 = half1
 //   - tray dominos have no rotation
 //   - board dominos derive rotation from geometry (row/col pairs)
-//   - rotation is applied to the WRAPPER, not the inner .domino
+//   - rotation is applied via CSS custom property (--angle) on the WRAPPER
 // ============================================================
 
 export function renderDomino(domino, parentEl) {
@@ -13,7 +13,8 @@ export function renderDomino(domino, parentEl) {
   parentEl.innerHTML = "";
 
   // Reset wrapper transform (important after dragging or rotation)
-  parentEl.style.transform = "";
+  // Remove inline transform so CSS can compose translate + rotate.
+  parentEl.style.removeProperty('transform');
   parentEl.style.transformOrigin = "center center";
 
   // Create inner domino element
@@ -29,7 +30,7 @@ export function renderDomino(domino, parentEl) {
   // Sync pip values
   updatePipValues(el, domino);
 
-  // Apply rotation to the WRAPPER
+  // Apply rotation to the WRAPPER (via --angle)
   applyWrapperRotation(parentEl, domino);
 }
 
@@ -82,12 +83,12 @@ function updatePipValues(el, domino) {
 
 // ------------------------------------------------------------
 // applyWrapperRotation(parentEl, domino)
-// Geometry‑first rotation applied to the WRAPPER.
+// Geometry‑first rotation applied to the WRAPPER via --angle.
 // ------------------------------------------------------------
 function applyWrapperRotation(parentEl, domino) {
-  // TRAY DOMINO
+  // TRAY DOMINO: set angle to 0 and toggle classes
   if (domino.row0 === null) {
-    parentEl.style.transform = "rotate(0deg)";
+    parentEl.style.setProperty('--angle', '0deg');
     parentEl.classList.add("in-tray");
     parentEl.classList.remove("on-board");
     return;
@@ -106,5 +107,6 @@ function applyWrapperRotation(parentEl, domino) {
   if (dr === 1 && dc === 0) angle = 90;    // vertical T→B
   if (dr === -1 && dc === 0) angle = 270;  // vertical B→T
 
-  parentEl.style.transform = `rotate(${angle}deg)`;
+  // Set rotation declaratively via CSS custom property
+  parentEl.style.setProperty('--angle', `${angle}deg`);
 }
