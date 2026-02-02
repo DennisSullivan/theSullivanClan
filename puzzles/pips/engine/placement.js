@@ -19,8 +19,10 @@
 // ------------------------------------------------------------
 export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
 
-  // Only apply orientation logic if the domino is coming from the tray
-  if (domino.row0 === null) {
+  const cameFromTray = (domino.row0 === null);
+
+  // Compute geometry only if coming from tray
+  if (cameFromTray) {
     const angle = domino.trayOrientation % 360;
 
     let r0, c0, r1, c1;
@@ -77,7 +79,15 @@ export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
 
   // Validate placement
   if (!isPlacementValid(domino, grid)) {
-    domino.row0 = domino.col0 = domino.row1 = domino.col1 = null;
+
+    // If it came from the tray, restore tray state explicitly
+    if (cameFromTray) {
+      domino.row0 = null;
+      domino.col0 = null;
+      domino.row1 = null;
+      domino.col1 = null;
+    }
+
     return false;
   }
 
