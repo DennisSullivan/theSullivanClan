@@ -4,7 +4,7 @@
 // NOTES:
 //   - Double-click enters rotation mode.
 //   - Each double-click rotates 90° clockwise.
-//   - Pivot half determined via DOM (.half0 / .half1).
+//   - Pivot half determined via DOM (.half / .half1).
 //   - Rotation ignores constraints.
 //   - Rotation commits on endDrag.
 //   - Rotation cancels on outside click.
