@@ -9,10 +9,22 @@
 
 import { renderDomino } from "./dominoRenderer.js";
 
-export function renderTray(puzzle, dominos, trayEl) {
+export function renderTray(puzzleJson, dominos, trayEl) {
+  // Defensive guards
+  if (!trayEl) {
+    console.error("renderTray: trayEl is null or undefined. Ensure the tray container exists in the DOM.");
+    return;
+  }
+
+  if (!puzzleJson || !Array.isArray(puzzleJson.dominos)) {
+    console.error("renderTray: invalid puzzleJson.dominos", puzzleJson);
+    trayEl.innerHTML = "";
+    return;
+  }
+
   trayEl.innerHTML = "";
 
-  const trayOrder = puzzle.dominos;        // <-- the canonical order
+  const trayOrder = puzzleJson.dominos; // canonical order
   const slotCount = trayOrder.length;
 
   // Create fixed tray slots
@@ -29,7 +41,10 @@ export function renderTray(puzzle, dominos, trayEl) {
     const d = dominos.get(id);
     const slot = trayEl.querySelector(`.tray-slot[data-slot="${i}"]`);
 
-    if (!d || !slot) continue;
+    if (!slot) continue;
+
+    // If no domino with this id exists, leave the slot empty
+    if (!d) continue;
 
     // If the domino is on the board, leave the slot empty
     if (d.row0 !== null) continue;
@@ -41,7 +56,9 @@ export function renderTray(puzzle, dominos, trayEl) {
     renderDomino(d, wrapper);
 
     const domEl = wrapper.querySelector(".domino");
-    domEl.style.transform = `rotate(${d.trayOrientation}deg)`;
+    if (domEl && typeof d.trayOrientation === "number") {
+      domEl.style.transform = `rotate(${d.trayOrientation}deg)`;
+    }
 
     slot.appendChild(wrapper);
   }
