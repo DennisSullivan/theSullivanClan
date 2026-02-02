@@ -62,7 +62,7 @@ export function renderTray(puzzleJson, dominos, trayEl) {
     // Apply tray orientation if present
     const domEl = wrapper.querySelector(".domino");
     if (domEl && typeof d.trayOrientation === "number") {
-      domEl.style.transform = `rotate(${d.trayOrientation}deg)`;
+      wrapper.style.setProperty('--angle', `${d.trayOrientation}deg`);
     }
 
     slot.appendChild(wrapper);
