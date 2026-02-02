@@ -1,14 +1,45 @@
 /* ============================================================
    FILE: domino.css
-   PURPOSE: Neutral, NYT-style domino geometry (board + tray)
-   NOTES:
-     - Wrapper sizing and any nudge/rotation are handled by board.css
-     - This file ensures the inner domino fills the wrapper exactly
-     - Internal spacing uses padding on .domino (box-sizing: border-box)
-     - Halves use a 3x3 grid with no gap so pips remain compact
+   PURPOSE: Drop-in replacement for domino visuals (NYT-style)
+   USAGE: Replace your existing domino.css with this file. It
+          assumes global CSS variables are defined (e.g.
+          --cell-size, --cell-gap, --domino-thickness). It
+          applies the static visual nudge to the inner .domino
+          so the painted seam aligns with the grid.
    ============================================================ */
 
-/* 1. Wrapper (neutral) */
+/* -------------------------
+   Core assumptions (use existing vars)
+   - --cell-size
+   - --cell-gap
+   - --domino-thickness
+   - --color-domino-bg
+   - --color-domino-border
+   - --color-pip
+   - --transition-fast
+   - --domino-nudge-x / --domino-nudge-y (optional overrides)
+   ------------------------- */
+
+/* Safety defaults if variables are missing (won't override your root) */
+:root {
+  --_fallback-cell-size: 48px;
+  --_fallback-cell-gap: 4px;
+  --_fallback-domino-thickness: 1px;
+  --_fallback-color-domino-bg: #ffffff;
+  --_fallback-color-domino-border: #aaa;
+  --_fallback-color-pip: #222;
+  --_fallback-transition-fast: 120ms ease-out;
+
+  /* sensible default nudge (computed from geometry in your setup) */
+  --domino-nudge-x: 2px;
+  --domino-nudge-y: 2px;
+}
+
+/* -------------------------
+   Wrapper (neutral)
+   - wrapper sizing is controlled by board.css / tray.css
+   - keep wrapper free of translate; rotation may be applied there
+   ------------------------- */
 .domino-wrapper {
   position: relative;
   display: flex;
@@ -16,26 +47,54 @@
   align-items: center;
   transform-origin: center center;
   box-sizing: border-box;
+  pointer-events: auto;
 }
 
-/* 2. Domino core (fills wrapper exactly) */
+/* -------------------------
+   Domino core (fills wrapper exactly)
+   - box-sizing: border-box so borders/padding stay inside width/height
+   - internal padding used for pip spacing (keeps halves gap-free)
+   ------------------------- */
 .domino {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: row;
-  background: var(--color-domino-bg);
-  border: var(--domino-thickness) solid var(--color-domino-border);
+  background: var(--color-domino-bg, var(--_fallback-color-domino-bg));
+  border: var(--domino-thickness, var(--_fallback-domino-thickness)) solid var(--color-domino-border, var(--_fallback-color-domino-border));
   border-radius: 4px;
-  box-sizing: border-box; /* ensure borders/padding are inside declared size */
-  pointer-events: auto;
+  box-sizing: border-box;
   transform-origin: center center;
+  pointer-events: auto;
 
-  /* NYT internal padding keeps pips visually compact without shrinking the domino */
-  padding: calc(var(--cell-size) * 0.08);
+  /* internal padding keeps pips compact without shrinking the domino */
+  padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.08);
 }
 
-/* 3. Halves: 3x3 pip grid, no padding, no gap */
+/* -------------------------
+   Apply static visual nudge to inner domino
+   - This ensures the painted domino pixels shift relative to the grid
+   - Keeps rotation on the wrapper (so rotation and translate compose)
+   - Remove nudge while dragging to avoid cursor/ghost mismatch
+   ------------------------- */
+.domino.on-board {
+  transform: translate(var(--domino-nudge-x, 2px), var(--domino-nudge-y, 2px));
+  transform-origin: center center;
+  box-sizing: border-box;
+}
+
+.domino-wrapper.on-board.dragging .domino {
+  transform: translate(0, 0);
+}
+
+/* If your renderer sets rotation via --angle in CSS, keep it on wrapper:
+   .domino-wrapper.on-board { transform: rotate(var(--angle, 0deg)); }
+   If renderer sets inline rotation, the inner translate still composes. */
+
+/* -------------------------
+   Halves: 3x3 pip grid, no gap
+   - gap = 0 so pips remain compact; spacing handled by .domino padding
+   ------------------------- */
 .domino .half {
   flex: 1;
   display: grid;
@@ -43,24 +102,27 @@
   grid-template-rows: repeat(3, 1fr);
   justify-items: center;
   align-items: center;
-  gap: 0;            /* keep pips compact; spacing handled by .domino padding */
+  gap: 0;
   padding: 0;
   font-size: 0;
-  border-right: 1px solid var(--color-domino-border);
+  border-right: 1px solid var(--color-domino-border, var(--_fallback-color-domino-border));
 }
 
 .domino .half1 {
   border-right: none;
 }
 
-/* 4. Pips (NYT proportions) */
+/* -------------------------
+   Pips (NYT proportions)
+   - pip size scales with cell size
+   ------------------------- */
 .domino .pip {
-  width: calc(var(--cell-size) * 0.095);
-  height: calc(var(--cell-size) * 0.095);
-  background: var(--color-pip);
+  width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.095);
+  height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.095);
+  background: var(--color-pip, var(--_fallback-color-pip));
   border-radius: 50%;
   opacity: 0;
-  transition: opacity var(--transition-fast);
+  transition: opacity var(--transition-fast, var(--_fallback-transition-fast));
 }
 
 /* pip positions (3x3 grid) */
@@ -100,7 +162,9 @@
 .domino .half[data-pip="6"] .p6,
 .domino .half[data-pip="6"] .p7 { opacity: 1; }
 
-/* 5. Visual states */
+/* -------------------------
+   Visual states
+   ------------------------- */
 .domino.in-tray {
   box-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
@@ -109,29 +173,27 @@
   box-shadow: none;
 }
 
-/* 6. Accessibility and hit area (optional)
-   Keep pointer target generous while visual remains exact */
-.domino-wrapper .hit {
-  position: absolute;
-  inset: 0;
-  background: transparent;
-  pointer-events: auto;
-}
-
-/* 7. Mobile scaling */
+/* -------------------------
+   Mobile scaling
+   ------------------------- */
 @media (max-width: 600px) {
-  :root { --cell-size: 36px; }
-
   .domino .pip {
-    width: calc(var(--cell-size) * 0.10);
-    height: calc(var(--cell-size) * 0.10);
+    width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
+    height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
   }
 
   .domino {
-    padding: calc(var(--cell-size) * 0.10);
+    padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
   }
 
   .domino .half {
     gap: 0;
   }
 }
+
+/* -------------------------
+   Debug helpers (toggle classes in DevTools)
+   ------------------------- */
+.domino-wrapper.on-board.debug-outline { outline: 1px dashed rgba(255,0,0,0.6); }
+.domino.on-board.debug-outline { outline: 1px solid rgba(0,255,0,0.6); }
+.board-cell.debug-outline { outline: 1px dotted rgba(0,0,255,0.25); }
