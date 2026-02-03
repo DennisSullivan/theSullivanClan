@@ -25,13 +25,11 @@
 .tray-slot {
   width: calc(var(--cell-size) * 2);  /* horizontal domino footprint */
   height: var(--cell-size);           /* one cell tall */
-  align-items: center;
   justify-content: center;
   overflow: visible;
   position: relative;       /* establishes containing block */
   box-sizing: content-box;  /* ensures width/height are exact */
   padding: 0;               /* no internal offset */
-  display: block;           /* remove flex centering */
   flex: 0 0 auto;           /* prevents flexbox from resizing the slot */
 }
 
