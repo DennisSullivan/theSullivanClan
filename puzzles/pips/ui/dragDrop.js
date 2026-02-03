@@ -149,7 +149,10 @@ function startDrag(
 
 
 // ------------------------------------------------------------
-// onDrag — visual dragging
+// onDrag — visual dragging (replacement)
+// - Compose rotation from --angle so inline transform does not clobber rotation.
+// - Keep scale for the drag ghost.
+// - Do not reintroduce the static nudge while dragging; CSS handles that.
 // ------------------------------------------------------------
 function onDrag(e, dragState) {
   const dx = e.clientX - dragState.startX;
@@ -160,10 +163,11 @@ function onDrag(e, dragState) {
     dragState.moved = true;
   }
 
-  // compose the CSS nudge into the inline drag transform so the nudge is never lost
-  const nudgeX = getComputedStyle(document.documentElement).getPropertyValue('--domino-nudge-x').trim() || '2px';
-  const nudgeY = getComputedStyle(document.documentElement).getPropertyValue('--domino-nudge-y').trim() || '2px';
-  dragState.wrapper.style.transform = `translate(${nudgeX}, ${nudgeY}) translate(${dx}px, ${dy}px) scale(1.1)`;
+  // Compose inline transform so rotation (var(--angle)) is preserved.
+  // We intentionally do NOT include the static nudge here; your CSS removes
+  // the nudge while dragging and applies it to the inner .domino when not dragging.
+  // Use a fallback angle of 0deg if --angle is not set.
+  dragState.wrapper.style.transform = `rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px) scale(1.1)`;
 }
 
 
