@@ -68,6 +68,7 @@
   box-sizing: border-box;
   transform-origin: center center;
   pointer-events: auto;
+  transform: rotate(var(--angle, 0deg));
 
   /* internal padding keeps pips compact without shrinking the domino */
   padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.08);
