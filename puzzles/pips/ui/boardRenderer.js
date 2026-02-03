@@ -1,3 +1,4 @@
+
 // ============================================================
 // FILE: boardRenderer.js
 // PURPOSE: Canonical board renderer using geometry‑first model
