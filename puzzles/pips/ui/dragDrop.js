@@ -65,6 +65,28 @@ export function enableDrag(
   trayEl.addEventListener("pointerdown", (e) =>
     startDrag(e, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
   );
+// ------------------------------------------------------------
+// dblclick rotation for tray (centered, 150ms, clockwise)
+// ------------------------------------------------------------
+trayEl.addEventListener("dblclick", (e) => {
+  const wrapper = e.target.closest(".domino-wrapper");
+  if (!wrapper) return;
+
+  const dominoId = wrapper.dataset.id;
+  const domino = (dominos instanceof Map)
+    ? dominos.get(dominoId)
+    : dominos.find(d => String(d.id) === String(dominoId));
+  if (!domino) return;
+
+  // Clockwise rotation = -90 degrees
+  domino.angle = ((domino.angle ?? 0) - 90) % 360;
+
+  // Apply new angle to CSS variable
+  wrapper.style.setProperty("--angle", `${domino.angle}deg`);
+
+  // Re-render tray only
+  renderTray(puzzleJson, dominos, trayEl);
+});
 }
 
 // ------------------------------------------------------------
