@@ -29,6 +29,13 @@ export const endDrag = {
   }
 };
 
+// ============================================================
+// Double-click detection state (for tray rotation)
+// ============================================================
+let lastClickTime = 0;
+let lastClickDominoId = null;
+const DBLCLICK_THRESHOLD_MS = 250;
+
 // ------------------------------------------------------------
 // enableDrag — NOW ACCEPTS puzzleJson
 // ------------------------------------------------------------
@@ -65,28 +72,6 @@ export function enableDrag(
   trayEl.addEventListener("pointerdown", (e) =>
     startDrag(e, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
   );
-// ------------------------------------------------------------
-// dblclick rotation for tray (centered, 150ms, clockwise)
-// ------------------------------------------------------------
-trayEl.addEventListener("dblclick", (e) => {
-  const wrapper = e.target.closest(".domino-wrapper");
-  if (!wrapper) return;
-
-  const dominoId = wrapper.dataset.id;
-  const domino = (dominos instanceof Map)
-    ? dominos.get(dominoId)
-    : dominos.find(d => String(d.id) === String(dominoId));
-  if (!domino) return;
-
-  // Clockwise rotation = -90 degrees
-  domino.angle = ((domino.angle ?? 0) - 90) % 360;
-
-  // Apply new angle to CSS variable
-  wrapper.style.setProperty("--angle", `${domino.angle}deg`);
-
-  // Re-render tray only
-  renderTray(puzzleJson, dominos, trayEl);
-});
 }
 
 // ------------------------------------------------------------
@@ -134,7 +119,8 @@ function startDrag(
     startY: e.clientY,
     originLeft: rect.left,
     originTop: rect.top,
-    moved: false
+    moved: false,
+    fromTray: trayEl.contains(wrapper)
   };
 
   wrapper.classList.add("dragging");
@@ -199,14 +185,48 @@ function endDragHandler(
   window.removeEventListener("pointermove", moveHandler);
   window.removeEventListener("pointerup", upHandler);
 
-  const { domino, moved, wrapper, clickedHalf } = dragState;
+  const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
 
   // Let CSS own the composed transform again
-  wrapper.style.removeProperty('transform');
+  wrapper.style.removeProperty("transform");
   wrapper.classList.remove("dragging");
 
+  // --------------------------------------------------------
+  // Click-only: handle single-click vs double-click
+  // --------------------------------------------------------
   if (!moved) {
     console.log(`endDrag: click-only, no movement for domino ${domino.id}`);
+
+    const now = (typeof performance !== "undefined" && performance.now)
+      ? performance.now()
+      : Date.now();
+
+    const isSameDomino = (lastClickDominoId === domino.id);
+    const isDblClick = isSameDomino && (now - lastClickTime <= DBLCLICK_THRESHOLD_MS);
+
+    if (isDblClick && fromTray) {
+      console.log(`endDrag: detected tray double-click on domino ${domino.id} → rotate`);
+
+      // Clockwise rotation = -90 degrees
+      domino.angle = ((domino.angle ?? 0) - 90) % 360;
+
+      // Apply new angle to CSS variable (centered rotation via CSS)
+      wrapper.style.setProperty("--angle", `${domino.angle}deg`);
+
+      // Re-render tray only (no reflow of siblings)
+      renderTray(puzzleJson, dominos, trayEl);
+
+      // Reset dblclick state
+      lastClickTime = 0;
+      lastClickDominoId = null;
+
+      return;
+    }
+
+    // Not a double-click: record this as the latest click
+    lastClickTime = now;
+    lastClickDominoId = domino.id;
+
     return;
   }
 
