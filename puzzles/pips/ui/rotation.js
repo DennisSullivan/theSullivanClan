@@ -2,30 +2,37 @@
 // FILE: rotation.js
 // PURPOSE: Full rotation-mode system for dominos.
 // NOTES:
-//   - Double-click enters rotation mode.
-//   - Each double-click rotates 90° clockwise.
-//   - Pivot half determined via DOM (.half / .half1).
-//   - Rotation ignores constraints.
-//   - Rotation commits on endDrag (if valid).
-//   - Rotation cancels on outside click.
+//   - Double-click enters rotation mode on board dominos.
+//   - Double-click on tray rotates tray domino visually.
+//   - While in rotation mode, rotations are geometry-only.
+//   - When rotation mode completes, commitRotation(domino, grid)
+//     is called to validate and atomically apply the rotated geometry.
+//   - Canceling restores original geometry.
 // ============================================================
 
 import {
   rotateDominoOnBoard,
   rotateDominoInTray,
-  isPlacementValid
+  commitRotation
 } from "../engine/placement.js";
 
 // ------------------------------------------------------------
 // Internal rotation-mode state
 // ------------------------------------------------------------
 let rotatingDomino = null;
-let originalGeometry = null;
 
 // ------------------------------------------------------------
 // initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag)
+// - dominos: Map or collection of domino objects
+// - trayEl, boardEl: DOM elements
+// - renderPuzzle: function that re-renders board + tray
+// - endDrag: rotation-mode uses endDrag.fire to commit on drop
 // ------------------------------------------------------------
 export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
+  if (!trayEl || !boardEl || !renderPuzzle || !endDrag) {
+    console.warn("initRotation: missing required args");
+    return;
+  }
 
   // ==========================================================
   // TRAY DOUBLE-CLICK → rotate tray domino (no rotation mode)
@@ -35,7 +42,7 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
     if (!dominoEl) return;
 
     const id = dominoEl.dataset.id;
-    const domino = dominos.get(id);
+    const domino = (dominos instanceof Map) ? dominos.get(id) : dominos.find(d => String(d.id) === String(id));
     if (!domino || domino.row0 !== null) return;
 
     rotateDominoInTray(domino);
@@ -50,34 +57,36 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
     if (!dominoEl) return;
 
     const id = dominoEl.dataset.id;
-    const domino = dominos.get(id);
+    const domino = (dominos instanceof Map) ? dominos.get(id) : dominos.find(d => String(d.id) === String(id));
     if (!domino || domino.row0 === null) return;
 
-    // Determine pivot half via DOM
+    // Determine pivot half robustly
+    const halfEl = event.target.closest(".half");
     let pivotHalf = 0;
-    if (event.target.closest(".half1")) {
-      pivotHalf = 1;
+    if (halfEl) {
+      if (halfEl.classList.contains("half1")) pivotHalf = 1;
+      else if (halfEl.classList.contains("half0")) pivotHalf = 0;
+      else {
+        const halves = Array.from(halfEl.parentElement.querySelectorAll('.half'));
+        pivotHalf = halves.indexOf(halfEl) === 1 ? 1 : 0;
+      }
     }
 
-    // --------------------------------------------------------
-    // ENTER ROTATION MODE
-    // --------------------------------------------------------
+    // Enter rotation mode if not already rotating this domino
     if (rotatingDomino !== domino) {
       rotatingDomino = domino;
 
-      // Save original geometry for cancel/commit
-      originalGeometry = {
-        row0: domino.row0,
-        col0: domino.col0,
-        row1: domino.row1,
-        col1: domino.col1
-      };
+      // Snapshot previous geometry on the domino so commitRotation can restore if needed
+      domino._prevRow0 = domino.row0;
+      domino._prevCol0 = domino.col0;
+      domino._prevRow1 = domino.row1;
+      domino._prevCol1 = domino.col1;
     }
 
-    // --------------------------------------------------------
-    // ROTATE 90° CLOCKWISE (geometry only)
-    // --------------------------------------------------------
+    // Geometry-only rotate (user can rotate past bounds/obstructions)
     rotateDominoOnBoard(domino, pivotHalf);
+
+    // Re-render to show geometry-only rotation
     renderPuzzle();
   });
 
@@ -88,55 +97,59 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
     if (!rotatingDomino) return;
     if (event.target.closest(".domino")) return;
 
+    // Cancel rotation and restore snapshot
     cancelRotation(renderPuzzle);
   });
 
   // ==========================================================
   // endDrag → commit rotation (validate placement)
+  // The endDrag callback receives (domino, row, col, grid)
   // ==========================================================
-endDrag.registerCallback((domino, row, col, grid) => {
-  if (rotatingDomino !== domino) return;
+  endDrag.registerCallback((domino, row, col, grid) => {
+    if (!rotatingDomino) return;
+    if (rotatingDomino !== domino) return;
 
-  // 1. Remove old grid occupancy
-  grid[originalGeometry.row0][originalGeometry.col0] = null;
-  grid[originalGeometry.row1][originalGeometry.col1] = null;
+    // Attempt to commit the rotated geometry atomically.
+    // commitRotation will validate bounds/occupancy and restore previous geometry
+    // if the commit fails. It returns true on success, false on failure.
+    const ok = commitRotation(domino, grid);
 
-  // 2. Validate rotated geometry
-  if (!isPlacementValid(domino, grid)) {
-    // Revert geometry
-    domino.row0 = originalGeometry.row0;
-    domino.col0 = originalGeometry.col0;
-    domino.row1 = originalGeometry.row1;
-    domino.col1 = originalGeometry.col1;
+    // Clear rotation-mode state regardless of success
+    rotatingDomino = null;
 
-    // Restore original grid occupancy
-    grid[domino.row0][domino.col0] = domino.id;
-    grid[domino.row1][domino.col1] = domino.id;
-  } else {
-    // 3. Commit rotated geometry to grid
-    grid[domino.row0][domino.col0] = domino.id;
-    grid[domino.row1][domino.col1] = domino.id;
-  }
+    // Re-render to reflect final state
+    renderPuzzle();
 
-  rotatingDomino = null;
-  originalGeometry = null;
-  renderPuzzle();
-});
+    if (!ok) {
+      // Optional: brief console hint for debugging; UI can show a toast instead.
+      console.warn(`rotation: commit failed for domino ${domino.id}; geometry restored`);
+    }
+  });
 }
 
 // ------------------------------------------------------------
 // cancelRotation
+// Restores the domino geometry snapshot and clears rotation state.
 // ------------------------------------------------------------
 function cancelRotation(renderPuzzle) {
-  if (!rotatingDomino || !originalGeometry) return;
+  if (!rotatingDomino) return;
 
-  rotatingDomino.row0 = originalGeometry.row0;
-  rotatingDomino.col0 = originalGeometry.col0;
-  rotatingDomino.row1 = originalGeometry.row1;
-  rotatingDomino.col1 = originalGeometry.col1;
+  const d = rotatingDomino;
+
+  if (typeof d._prevRow0 !== 'undefined') {
+    d.row0 = d._prevRow0;
+    d.col0 = d._prevCol0;
+    d.row1 = d._prevRow1;
+    d.col1 = d._prevCol1;
+  }
+
+  // Cleanup snapshot metadata
+  delete d._prevRow0;
+  delete d._prevCol0;
+  delete d._prevRow1;
+  delete d._prevCol1;
 
   rotatingDomino = null;
-  originalGeometry = null;
 
   renderPuzzle();
 }
