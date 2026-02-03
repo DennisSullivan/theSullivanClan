@@ -10,7 +10,7 @@
 
 #tray {
   display: flex;
-  flex-wrap: wrap;                 /* <-- key: allows multiple rows */
+  flex-wrap: wrap;                 /* allows multiple rows */
   gap: var(--cell-gap);
   padding: 8px;
   background: #eee;
@@ -23,13 +23,14 @@
    ============================================================ */
 
 .tray-slot {
-  width: calc(var(--cell-size) * 2);  /* horizontal domino footprint */
-  height: var(--cell-size);           /* one cell tall */
-  padding: 0);
-  position: relative;
-  box-sizing: border-box;
-  display: flex;
+  width: calc(var(--cell-size) * 2);   /* horizontal domino footprint */
+  height: var(--cell-size);            /* one cell tall */
+  position: relative;                  /* containing block for wrapper */
+  box-sizing: content-box;             /* exact geometry */
+  padding: 0;                           /* no internal offset */
+  display: block;                       /* no flex centering */
   overflow: visible;
+  flex: 0 0 auto;                       /* stable size in flex-wrap tray */
 }
 
 .tray-slot::before {
