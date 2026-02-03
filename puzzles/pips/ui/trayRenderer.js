@@ -63,6 +63,16 @@ export function renderTray(puzzleJson, dominos, trayEl) {
     const domEl = wrapper.querySelector(".domino");
     if (domEl && typeof d.trayOrientation === "number") {
       wrapper.style.setProperty('--angle', `${d.trayOrientation}deg`);
+      // === Instrumentation: verify rotation is applied ===
+      setTimeout(() => {
+        const cs = getComputedStyle(wrapper);
+        const rect = wrapper.getBoundingClientRect();
+        console.log(
+          `TRAY ROTATION DEBUG — id=${d.id}, angle=${d.trayOrientation}, ` +
+          `computedTransform=${cs.transform}, ` +
+          `bbox=${rect.width.toFixed(1)}x${rect.height.toFixed(1)}`
+        );
+      }, 0);
     }
 
     slot.appendChild(wrapper);
