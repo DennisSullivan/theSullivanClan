@@ -19,6 +19,7 @@ export function renderDomino(domino, parentEl) {
   // Create inner domino element
   const el = document.createElement("div");
   el.className = "domino";
+  el.classList.add("in-tray");   // <-- REQUIRED FOR TRAY ROTATION
   el.dataset.id = domino.id;
 
   // Insert HTML structure
@@ -32,6 +33,7 @@ export function renderDomino(domino, parentEl) {
   // Apply rotation to the WRAPPER (via --angle)
   applyWrapperRotation(parentEl, domino);
 }
+
 
 // ------------------------------------------------------------
 // createDominoHTML(domino)
