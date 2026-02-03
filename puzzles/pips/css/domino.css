@@ -31,8 +31,8 @@
   --_fallback-transition-fast: 120ms ease-out;
 
   /* sensible default nudge (computed from geometry in your setup) */
-  --domino-nudge-x: 2px;
-  --domino-nudge-y: 2px;
+  --domino-nudge-x: 0px;
+  --domino-nudge-y: 0px;
 }
 
 /* -------------------------
