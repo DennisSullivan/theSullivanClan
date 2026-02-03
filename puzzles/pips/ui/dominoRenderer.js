@@ -3,9 +3,9 @@
 // PURPOSE: Render a single domino using geometry‑first orientation.
 // NOTES:
 //   - pip0 = half0, pip1 = half1
-//   - tray dominos have no rotation
+//   - tray dominos preserve user rotation (trayOrientation)
 //   - board dominos derive rotation from geometry (row/col pairs)
-//   - rotation is applied via CSS custom property (--angle) on the WRAPPER
+//   - rotation is applied via CSS custom property (--angle) on WRAPPER
 // ============================================================
 
 export function renderDomino(domino, parentEl) {
@@ -19,8 +19,10 @@ export function renderDomino(domino, parentEl) {
   // Create inner domino element
   const el = document.createElement("div");
   el.className = "domino";
-  el.classList.add("in-tray");   // <-- REQUIRED FOR TRAY ROTATION
   el.dataset.id = domino.id;
+
+  // Tray dominos must rotate with wrapper
+  el.classList.add("in-tray");
 
   // Insert HTML structure
   el.innerHTML = createDominoHTML(domino);
@@ -33,7 +35,6 @@ export function renderDomino(domino, parentEl) {
   // Apply rotation to the WRAPPER (via --angle)
   applyWrapperRotation(parentEl, domino);
 }
-
 
 // ------------------------------------------------------------
 // createDominoHTML(domino)
@@ -83,9 +84,9 @@ function updatePipValues(el, domino) {
 function applyWrapperRotation(parentEl, domino) {
   // TRAY DOMINO
   if (domino.row0 === null) {
-    parentEl.style.setProperty("--angle", "0deg");
     parentEl.classList.add("in-tray");
     parentEl.classList.remove("on-board");
+    // IMPORTANT: do NOT force angle here — trayRenderer handles it
     return;
   }
 
