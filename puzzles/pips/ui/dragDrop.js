@@ -2,24 +2,17 @@
 // FILE: dragDrop.js
 // PURPOSE: Enables drag-and-drop interactions for dominos.
 // NOTES:
-//   - Visual dragging with translate + scale(1.1)
+//   - Visual dragging composes rotation via rotate(var(--angle))
 //   - Wrapper stays in tray slot (no collapse)
 //   - Engine placement unchanged
-//   - Full diagnostics preserved
 //   - Rotation-mode callbacks supported via endDrag.fire()
 //   - Correct half-detection using DOM
-//   - FIXED: origin detection BEFORE placement
-//   - FIXED: correct placeDomino signature
-//   - UPDATED: trayRenderer now requires puzzleJson
-//   - UPDATED: robust tray/board hit detection
-//   - CHANGES: inline transform writes adjusted to preserve CSS nudge
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
 import { syncCheck } from "../engine/syncCheck.js";
 import { renderBoard } from "./boardRenderer.js";
 import { renderTray } from "./trayRenderer.js";
-
 
 // ============================================================
 // Rotation-mode callback registry
@@ -31,11 +24,10 @@ export const endDrag = {
   },
   fire(domino, row, col, grid) {
     for (const fn of this.callbacks) {
-      fn(domino, row, col, grid);
+      try { fn(domino, row, col, grid); } catch (err) { console.error("endDrag callback error", err); }
     }
   }
 };
-
 
 // ------------------------------------------------------------
 // enableDrag — NOW ACCEPTS puzzleJson
@@ -75,9 +67,8 @@ export function enableDrag(
   );
 }
 
-
 // ------------------------------------------------------------
-// startDrag — NOW RECEIVES puzzleJson
+// startDrag
 // ------------------------------------------------------------
 function startDrag(
   e,
@@ -97,7 +88,7 @@ function startDrag(
   if (!wrapper) return;
 
   const dominoId = target.dataset.id;
-  const domino = dominos.get(dominoId);
+  const domino = (dominos instanceof Map) ? dominos.get(dominoId) : dominos.find(d => String(d.id) === String(dominoId));
   if (!domino) return;
 
   console.log(`startDrag: grabbed domino ${dominoId} at (${e.clientX},${e.clientY})`);
@@ -147,12 +138,10 @@ function startDrag(
   window.addEventListener("pointerup", upHandler);
 }
 
-
 // ------------------------------------------------------------
-// onDrag — visual dragging (replacement)
-// - Compose rotation from --angle so inline transform does not clobber rotation.
-// - Keep scale for the drag ghost.
-// - Do not reintroduce the static nudge while dragging; CSS handles that.
+// onDrag — visual dragging (composes rotation)
+// - Inline transform composes rotate(var(--angle)) so rotation is preserved.
+// - Do not reintroduce the static nudge here; CSS handles nudge removal while dragging.
 // ------------------------------------------------------------
 function onDrag(e, dragState) {
   const dx = e.clientX - dragState.startX;
@@ -164,15 +153,12 @@ function onDrag(e, dragState) {
   }
 
   // Compose inline transform so rotation (var(--angle)) is preserved.
-  // We intentionally do NOT include the static nudge here; your CSS removes
-  // the nudge while dragging and applies it to the inner .domino when not dragging.
-  // Use a fallback angle of 0deg if --angle is not set.
+  // Use rotate(var(--angle, 0deg)) so the wrapper's CSS variable is respected.
   dragState.wrapper.style.transform = `rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px) scale(1.1)`;
 }
 
-
 // ------------------------------------------------------------
-// endDragHandler — NOW WITH ROBUST HIT DETECTION
+// endDragHandler — robust hit detection and finalize
 // ------------------------------------------------------------
 function endDragHandler(
   e,
@@ -193,7 +179,7 @@ function endDragHandler(
 
   const { domino, moved, wrapper, clickedHalf } = dragState;
 
-  // let CSS own the composed transform again
+  // Let CSS own the composed transform again
   wrapper.style.removeProperty('transform');
   wrapper.classList.remove("dragging");
 
@@ -207,9 +193,7 @@ function endDragHandler(
 
   const cameFromBoard = (domino.row0 !== null);
 
-  // ----------------------------------------------------------
-  // Dropped on tray (robust)
-  // ----------------------------------------------------------
+  // Dropped on tray
   if (dropTarget && trayEl.contains(dropTarget)) {
     console.log(`endDrag: dropping domino ${domino.id} onto tray`);
 
@@ -220,9 +204,7 @@ function endDragHandler(
     return;
   }
 
-  // ----------------------------------------------------------
-  // Dropped on board cell (robust)
-  // ----------------------------------------------------------
+  // Dropped on board cell
   let cell = null;
   if (dropTarget && boardEl.contains(dropTarget)) {
     cell = dropTarget.closest(".board-cell");
@@ -248,9 +230,7 @@ function endDragHandler(
     return;
   }
 
-  // ----------------------------------------------------------
   // Otherwise return to tray
-  // ----------------------------------------------------------
   console.log(`endDrag: no valid drop target → returning ${domino.id} to tray`);
 
   endDrag.fire(domino, null, null, grid);
@@ -259,9 +239,8 @@ function endDragHandler(
   finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 }
 
-
 // ------------------------------------------------------------
-// finalize — NOW CALLS renderTray(puzzleJson,...)
+// finalize — re-render board + tray + syncCheck
 // ------------------------------------------------------------
 function finalize(
   puzzleJson,
