@@ -49,6 +49,7 @@
   transition: transform 150ms ease-out;
   box-sizing: border-box;
   pointer-events: auto;
+  transform: rotate(var(--angle, 0deg));
 }
 
 /* -------------------------
