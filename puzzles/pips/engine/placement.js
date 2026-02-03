@@ -5,7 +5,9 @@
 //   - Geometry-first model.
 //   - Tray → Board preserves trayOrientation.
 //   - Board → Tray resets trayOrientation to 0.
-//   - Board rotation is geometry-only (no grid checks).
+//   - Board rotation is geometry-only while rotating (no grid checks).
+//   - When rotation mode completes, call commitRotation(domino, grid)
+//     to validate and atomically apply the rotated geometry to the grid.
 //   - Grid cells use canonical format: { dominoId, half }
 // ============================================================
 
@@ -107,9 +109,13 @@ export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
 // ------------------------------------------------------------
 export function moveDomino(domino, row, col, grid) {
 
-  // Clear old occupancy
-  grid[domino.row0][domino.col0] = null;
-  grid[domino.row1][domino.col1] = null;
+  // Clear old occupancy (only if those cells reference this domino)
+  if (grid[domino.row0] && grid[domino.row0][domino.col0] && grid[domino.row0][domino.col0].dominoId === domino.id) {
+    grid[domino.row0][domino.col0] = null;
+  }
+  if (grid[domino.row1] && grid[domino.row1][domino.col1] && grid[domino.row1][domino.col1].dominoId === domino.id) {
+    grid[domino.row1][domino.col1] = null;
+  }
 
   const dr = domino.row1 - domino.row0;
   const dc = domino.col1 - domino.col0;
@@ -157,8 +163,12 @@ export function moveDomino(domino, row, col, grid) {
 export function removeDominoToTray(domino, grid) {
 
   if (domino.row0 !== null) {
-    grid[domino.row0][domino.col0] = null;
-    grid[domino.row1][domino.col1] = null;
+    if (grid[domino.row0] && grid[domino.row0][domino.col0] && grid[domino.row0][domino.col0].dominoId === domino.id) {
+      grid[domino.row0][domino.col0] = null;
+    }
+    if (grid[domino.row1] && grid[domino.row1][domino.col1] && grid[domino.row1][domino.col1].dominoId === domino.id) {
+      grid[domino.row1][domino.col1] = null;
+    }
   }
 
   domino.row0 = null;
@@ -198,6 +208,7 @@ export function isPlacementValid(domino, grid) {
 // PURPOSE:
 //   - Rotate 90° clockwise around the clicked half.
 //   - Geometry-only: does NOT touch grid or validate.
+//   - Use this during rotation mode so the user can rotate freely.
 // ------------------------------------------------------------
 export function rotateDominoOnBoard(domino, pivotHalf) {
   if (domino.row0 === null) return;
@@ -232,6 +243,104 @@ export function rotateDominoOnBoard(domino, pivotHalf) {
     domino.row0 = newOtherRow;
     domino.col0 = newOtherCol;
   }
+}
+
+
+// ------------------------------------------------------------
+// commitRotation(domino, grid)
+// PURPOSE:
+//   - After geometry-only rotation(s) are done, validate and atomically
+//     apply the domino's current geometry to the grid.
+//   - If the commit fails (out of bounds or occupied), restore previous
+//     geometry and grid occupancy and return false.
+//   - Returns true on success.
+// USAGE:
+//   - Call this when rotation mode completes (user places domino or cancels).
+// ------------------------------------------------------------
+export function commitRotation(domino, grid) {
+  // Domino must be on board to commit
+  if (domino.row0 === null) return false;
+
+  // Capture previous geometry snapshot if not already present
+  if (typeof domino._prevRow0 === 'undefined') {
+    domino._prevRow0 = domino.row0;
+    domino._prevCol0 = domino.col0;
+    domino._prevRow1 = domino.row1;
+    domino._prevCol1 = domino.col1;
+  }
+
+  const prevRow0 = domino._prevRow0;
+  const prevCol0 = domino._prevCol0;
+  const prevRow1 = domino._prevRow1;
+  const prevCol1 = domino._prevCol1;
+
+  // Proposed new coordinates are the current domino geometry
+  const newRow0 = domino.row0;
+  const newCol0 = domino.col0;
+  const newRow1 = domino.row1;
+  const newCol1 = domino.col1;
+
+  const rows = grid.length;
+  const cols = grid[0].length;
+
+  // Bounds check
+  if (newRow0 < 0 || newRow0 >= rows || newCol0 < 0 || newCol0 >= cols) {
+    // restore snapshot and return false
+    domino.row0 = prevRow0;
+    domino.col0 = prevCol0;
+    domino.row1 = prevRow1;
+    domino.col1 = prevCol1;
+    cleanupPrevSnapshot(domino);
+    return false;
+  }
+  if (newRow1 < 0 || newRow1 >= rows || newCol1 < 0 || newCol1 >= cols) {
+    domino.row0 = prevRow0;
+    domino.col0 = prevCol0;
+    domino.row1 = prevRow1;
+    domino.col1 = prevCol1;
+    cleanupPrevSnapshot(domino);
+    return false;
+  }
+
+  // Helper: cell is free if null OR already occupied by this domino
+  const cellFreeOrSelf = (r, c) => {
+    const cell = grid[r][c];
+    return cell === null || (cell && cell.dominoId === domino.id);
+  };
+
+  if (!cellFreeOrSelf(newRow0, newCol0) || !cellFreeOrSelf(newRow1, newCol1)) {
+    // restore geometry
+    domino.row0 = prevRow0;
+    domino.col0 = prevCol0;
+    domino.row1 = prevRow1;
+    domino.col1 = prevCol1;
+    cleanupPrevSnapshot(domino);
+    return false;
+  }
+
+  // Clear current occupancy (only clear cells that reference this domino)
+  if (grid[prevRow0] && grid[prevRow0][prevCol0] && grid[prevRow0][prevCol0].dominoId === domino.id) {
+    grid[prevRow0][prevCol0] = null;
+  }
+  if (grid[prevRow1] && grid[prevRow1][prevCol1] && grid[prevRow1][prevCol1].dominoId === domino.id) {
+    grid[prevRow1][prevCol1] = null;
+  }
+
+  // Write new occupancy
+  grid[newRow0][newCol0] = { dominoId: domino.id, half: 0 };
+  grid[newRow1][newCol1] = { dominoId: domino.id, half: 1 };
+
+  // Clear snapshot metadata
+  cleanupPrevSnapshot(domino);
+
+  return true;
+}
+
+function cleanupPrevSnapshot(domino) {
+  delete domino._prevRow0;
+  delete domino._prevCol0;
+  delete domino._prevRow1;
+  delete domino._prevCol1;
 }
 
 
