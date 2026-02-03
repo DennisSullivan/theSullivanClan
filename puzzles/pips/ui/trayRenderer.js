@@ -67,11 +67,11 @@ export function renderTray(puzzleJson, dominos, trayEl) {
       setTimeout(() => {
         const cs = getComputedStyle(wrapper);
         const rect = wrapper.getBoundingClientRect();
-        console.log(
+ /*       console.log(
           `TRAY ROTATION DEBUG — id=${d.id}, angle=${d.trayOrientation}, ` +
           `computedTransform=${cs.transform}, ` +
           `bbox=${rect.width.toFixed(1)}x${rect.height.toFixed(1)}`
-        );
+        ); */
       }, 0);
     }
 
