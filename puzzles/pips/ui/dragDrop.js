@@ -88,6 +88,7 @@ function startDrag(
   boardEl,
   trayEl
 ) {
+  console.log("startDrag initiated");
   const target = e.target.closest(".domino");
   if (!target) return;
 
