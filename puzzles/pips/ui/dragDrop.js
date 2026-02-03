@@ -208,10 +208,10 @@ function endDragHandler(
       console.log(`endDrag: detected tray double-click on domino ${domino.id} → rotate`);
 
       // Clockwise rotation = -90 degrees
-      domino.angle = ((domino.angle ?? 0) - 90) % 360;
+      domino.trayOrientation = ((domino.trayOrientation ?? 0) - 90) % 360;
 
       // Apply new angle to CSS variable (centered rotation via CSS)
-      wrapper.style.setProperty("--angle", `${domino.angle}deg`);
+      wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
 
       // Re-render tray only (no reflow of siblings)
       renderTray(puzzleJson, dominos, trayEl);
