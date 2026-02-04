@@ -1,0 +1,238 @@
+PIPS Retrofit Plan
+This document describes the step‑by‑step plan for retrofitting the new
+interaction rules into the existing Pips engine. The plan is structured
+to be incremental, safe, and testable, allowing changes to be made
+during both high‑capacity and low‑capacity development hours.
+
+PHASE 1 — Establish the /docs foundation
+Goal
+Create a stable home for all rule specifications.
+
+Actions
+Create a /docs folder at the project root.
+
+Add INTERACTION_RULES.md (completed).
+
+Add placeholder files for future rule sets:
+
+BOARD_PLACEMENT_RULES.md
+
+BOARD_ROTATION_RULES.md
+
+TRAY_BEHAVIOR.md
+
+DRAG_DROP_RULES.md
+
+PUZZLE_DEFINITION_RULES.md
+
+RENDERING_RULES.md
+
+SYNC_VALIDATION_RULES.md
+
+Verification
+GitHub renders the /docs folder cleanly.
+
+All files are readable without horizontal scrolling.
+
+PHASE 2 — Update drag detection thresholds
+Goal
+Make the system human‑friendly and prevent accidental drags.
+
+Actions
+Introduce a global constant:
+
+Code
+const DRAG_THRESHOLD = 20;
+Replace all existing drag threshold checks with this constant.
+
+Apply the threshold in:
+
+startDrag
+
+onDrag
+
+double‑click detection logic
+
+Verification
+Double‑clicking in the tray always rotates.
+
+No accidental drags from micro‑movement.
+
+Board dragging still feels intentional.
+
+PHASE 3 — Fix tray drag centering
+Goal
+Prevent the half‑cell jump when dragging out of the tray.
+
+Actions
+Ensure drag transforms always include:
+
+Code
+translate(-50%, -50%)
+Update drag transforms to:
+
+Code
+translate(-50%, -50%) rotate(var(--angle)) translate(dx, dy)
+Verification
+Dragging out of the tray no longer jumps.
+
+Rotation in the tray remains visually centered.
+
+PHASE 4 — Correct tray drop‑target detection
+Goal
+Ensure dominos “stick” when dropped onto the tray.
+
+Actions
+Replace broad tray detection:
+
+Code
+if (trayEl.contains(dropTarget)) {
+with precise slot detection:
+
+Code
+const slot = dropTarget.closest(".tray-slot");
+if (slot) {
+Verification
+Dropping onto a tray slot works reliably.
+
+Dropping onto another domino in the tray does not count as a tray drop.
+
+Dropping outside the tray returns the domino to its home slot.
+
+PHASE 5 — Implement unified drop rules
+Goal
+Make board and tray drops consistent with the new specification.
+
+Actions
+Update endDrag to follow the three‑way drop logic:
+
+Board cell → place using clickedHalf.
+
+Tray slot → return to homeSlot, orientation = 0.
+
+Elsewhere → return to tray, orientation = 0.
+
+Verification
+Board placement uses the pivot half correctly.
+
+Invalid board placements return to the tray.
+
+Tray drops always reset orientation.
+
+PHASE 6 — Separate tray rotation from board rotation
+Goal
+Ensure the two rotation systems are fully independent.
+
+Actions
+Remove unused rotation functions (e.g., old rotateDominoInTray).
+
+Confirm tray rotation uses only CSS transforms.
+
+Confirm board rotation uses only geometric repositioning.
+
+Verification
+Tray rotation never affects board geometry.
+
+Board rotation never uses CSS transforms.
+
+No cross‑contamination between systems.
+
+PHASE 7 — Update board placement logic
+Goal
+Ensure placement uses the clicked half as the anchor.
+
+Actions
+Modify placement logic to:
+
+place the pivot half in the target cell,
+
+compute the adjacent cell for the other half,
+
+validate legality before committing.
+
+Verification
+All four orientations place correctly.
+
+Pivot half never moves during placement.
+
+Illegal placements are rejected.
+
+PHASE 8 — Update rendering to match new rules
+Goal
+Ensure visual behavior matches the interaction specification.
+
+Actions
+Confirm tray wrappers always use:
+
+Code
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%) rotate(...)
+Confirm board wrappers use absolute positioning based on grid cells.
+
+Verification
+Tray dominos always appear centered.
+
+Board dominos always align to grid cells.
+
+No visual drift during drag or rotation.
+
+PHASE 9 — Add instrumentation for debugging
+Goal
+Maintain visibility into system behavior during the retrofit.
+
+Actions
+Add logs for:
+
+pick‑up half
+
+drag threshold crossing
+
+drop target classification
+
+rotation source (tray vs board)
+
+pivot half
+
+placement legality
+
+Verification
+Console logs match expected behavior.
+
+No silent failures occur.
+
+PHASE 10 — Final syncCheck updates
+Goal
+Ensure syncCheck validates the new geometry rules.
+
+Actions
+Update syncCheck to confirm:
+
+pivot half remains fixed,
+
+board geometry matches the model,
+
+tray orientation resets correctly,
+
+no mismatches occur after drag or rotation.
+
+Verification
+syncCheck reports “OK” for all valid actions.
+
+syncCheck catches illegal states.
+
+PHASE 11 — Document everything
+Goal
+Keep the system maintainable and future‑proof.
+
+Actions
+Add new .md files for each rule system.
+
+Cross‑link documents where appropriate.
+
+Keep all files wrapped to 80 columns for readability.
+
+Verification
+/docs becomes the authoritative reference.
+
+Future maintainers can understand the system instantly.
