@@ -207,7 +207,14 @@ function endDragHandler(
 
     if (isDblClick && fromTray) {
       console.log(`endDrag: detected tray double-click on domino ${domino.id} → rotate`);
-
+  console.log(
+    `%cTRAY ROTATE (MODEL)`,
+    "color: purple; font-weight: bold;",
+    `id=${domino.id}`,
+    `old=${oldAngle}`,
+    `new=${domino.trayOrientation}`
+  );
+      
       // Clockwise rotation = -90 degrees
       domino.trayOrientation = ((domino.trayOrientation ?? 0) - 90) % 360;
 
