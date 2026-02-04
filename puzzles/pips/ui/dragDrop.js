@@ -207,16 +207,25 @@ function endDragHandler(
 
     if (isDblClick && fromTray) {
       console.log(`endDrag: detected tray double-click on domino ${domino.id} → rotate`);
-  console.log(
-    `%cTRAY ROTATE (MODEL)`,
-    "color: purple; font-weight: bold;",
-    `id=${domino.id}`,
-    `old=${oldAngle}`,
-    `new=${domino.trayOrientation}`
-  );
-      
-      // Clockwise rotation = -90 degrees
-      domino.trayOrientation = ((domino.trayOrientation ?? 0) - 90) % 360;
+
+      const oldAngle = domino.trayOrientation ?? 0;
+
+      console.log(
+        "%cTRAY ROTATE (MODEL, BEFORE)",
+        "color: purple; font-weight: bold;",
+        `id=${domino.id}`,
+        `before=${oldAngle}`
+      );
+
+      // NOTE: still using your current -90 so we can see the "erratic" behavior in numbers
+      domino.trayOrientation = (oldAngle - 90) % 360;
+
+      console.log(
+        "%cTRAY ROTATE (MODEL, AFTER)",
+        "color: purple; font-weight: bold;",
+        `id=${domino.id}`,
+        `after=${domino.trayOrientation}`
+      );
 
       // Apply new angle to CSS variable (centered rotation via CSS)
       wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
@@ -230,6 +239,7 @@ function endDragHandler(
 
       return;
     }
+
 
     // Not a double-click: record this as the latest click
     lastClickTime = now;
