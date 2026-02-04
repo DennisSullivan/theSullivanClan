@@ -351,5 +351,5 @@ function cleanupPrevSnapshot(domino) {
 // ------------------------------------------------------------
 export function rotateDominoInTray(domino) {
   if (domino.row0 !== null) return;
-  domino.trayOrientation = (domino.trayOrientation + 90) % 360;
+  domino.trayOrientation = (domino.trayOrientation - 90 + 360) % 360;
 }
