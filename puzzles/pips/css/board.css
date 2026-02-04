@@ -122,16 +122,6 @@
   transform: rotate(var(--angle, 0deg));
 }
 
-/* in-tray wrapper remains flexible and sized by tray.css */
-.domino-wrapper.in-tray {
-  position: relative;
-  width: auto;
-  height: auto;
-  left: 0;
-  top: 0;
-  transform: none !important;
-}
-
 .domino-wrapper.dragging {
   z-index: 1000;
   pointer-events: none;
