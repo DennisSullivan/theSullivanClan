@@ -1,11 +1,11 @@
 /* ============================================================
-   FILE: tray.css
-   PURPOSE: Wrapped multi‑row tray (Option B)
+   FILE: tray.css (Drop‑in Replacement)
+   PURPOSE: Multi‑row tray with correct domino centering + rotation
    ============================================================ */
 
 
 /* ============================================================
-   1. TRAY LAYOUT — FLEX WRAP (NOT GRID)
+   1. TRAY LAYOUT — FLEX WRAP
    ============================================================ */
 
 #tray {
@@ -26,13 +26,12 @@
   width: calc(var(--cell-size) * 2);   /* horizontal domino footprint */
   height: var(--cell-size);            /* one cell tall */
   position: relative;                  /* containing block for wrapper */
-  box-sizing: content-box;             /* exact geometry */
-  padding: 0;                           /* no internal offset */
-  display: block;                       /* no flex centering */
+  box-sizing: content-box;
+  padding: 0;
+  display: block;
   overflow: visible;
-  flex: 0 0 auto;                       /* stable size in flex-wrap tray */
+  flex: 0 0 auto;
 
-  /* eliminate invisible line box expansion */
   line-height: 0;
   font-size: 0;
 }
@@ -48,18 +47,25 @@
 
 
 /* ============================================================
-   3. DOMINO WRAPPER — CENTERED + ROTATABLE
+   3. DOMINO WRAPPER — CORRECT CENTERING + ROTATION
    ============================================================ */
 
 .domino-wrapper.in-tray {
   position: absolute;
+
+  /* center the wrapper inside the slot */
   top: 50%;
   left: 50%;
+
   width: calc(var(--cell-size) * 2);
   height: var(--cell-size);
 
-  /* ⭐ Correct transform order: rotate FIRST, then translate */
-  transform: rotate(var(--angle, 0deg)) translate(-50%, -50%);
-
   overflow: visible;
+
+  /* ⭐ Correct transform order:
+       1. translate(-50%, -50%) centers the wrapper
+       2. rotate(var(--angle)) rotates around the center
+  */
+  transform: translate(-50%, -50%) rotate(var(--angle, 0deg));
+  transform-origin: center center;
 }
