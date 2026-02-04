@@ -163,7 +163,8 @@ function onDrag(e, dragState) {
 
   // Compose inline transform so rotation (var(--angle)) is preserved.
   // Use rotate(var(--angle, 0deg)) so the wrapper's CSS variable is respected.
-  dragState.wrapper.style.transform = `rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px) scale(1.1)`;
+  dragState.wrapper.style.transform =
+    `translate(-50%, -50%) rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px) scale(1.1)`;
 }
 
 // ------------------------------------------------------------
