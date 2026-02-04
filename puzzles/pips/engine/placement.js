@@ -351,5 +351,15 @@ function cleanupPrevSnapshot(domino) {
 // ------------------------------------------------------------
 export function rotateDominoInTray(domino) {
   if (domino.row0 !== null) return;
+
+  const oldAngle = domino.trayOrientation;
   domino.trayOrientation = (domino.trayOrientation + 90 + 360) % 360;
+
+  console.log(
+    `%cTRAY ROTATE (MODEL)`,
+    "color: purple; font-weight: bold;",
+    `id=${domino.id}`,
+    `old=${oldAngle}`,
+    `new=${domino.trayOrientation}`
+  );
 }
