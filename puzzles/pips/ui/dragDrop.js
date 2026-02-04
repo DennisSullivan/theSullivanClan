@@ -216,9 +216,7 @@ function endDragHandler(
         `id=${domino.id}`,
         `before=${oldAngle}`
       );
-
-      // NOTE: still using your current -90 so we can see the "erratic" behavior in numbers
-      domino.trayOrientation = (oldAngle - 90) % 360;
+      domino.trayOrientation = (oldAngle + 90) % 360;
 
       console.log(
         "%cTRAY ROTATE (MODEL, AFTER)",
