@@ -17,7 +17,7 @@
 export function createGrid(width, height) {
   const grid = [];
   for (let r = 0; r < height; r++) {
-const row = new Array(width).fill(null);
+    const row = new Array(width).fill(null);
     grid.push(row);
   }
   return grid;
