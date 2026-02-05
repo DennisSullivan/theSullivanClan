@@ -6,7 +6,7 @@
 //   - Wrapper stays in tray slot (no collapse)
 //   - Engine placement unchanged
 //   - Rotation-mode callbacks supported via endDrag.fire()
-//   - Correct half-detection using DOM
+//   - Robust hit testing using a non-interactive visual clone
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
@@ -122,7 +122,9 @@ function startDrag(
     originTop: rect.top,
     moved: false,
     fromTray: trayEl.contains(wrapper),
-    clone: null
+    clone: null,
+    offsetX: 0,
+    offsetY: 0
   };
 
   wrapper.classList.add("dragging");
@@ -149,6 +151,18 @@ function startDrag(
     clone.style.boxSizing = comp.boxSizing;
     clone.style.transformOrigin = comp.transformOrigin;
 
+    // compute wrapper center and pointer offset so the clone doesn't snap to cursor
+    const wrapperCenterX = rect.left + rect.width / 2;
+    const wrapperCenterY = rect.top + rect.height / 2;
+
+    // offset from pointer to wrapper center (pointer - center)
+    const offsetX = e.clientX - wrapperCenterX;
+    const offsetY = e.clientY - wrapperCenterY;
+
+    // store offsets so onDrag can keep the same relative positioning
+    dragState.offsetX = offsetX;
+    dragState.offsetY = offsetY;
+
     // copy CSS variable angle if present and set initial transform
     const angleVar = comp.getPropertyValue('--angle')?.trim();
     if (angleVar) {
@@ -160,9 +174,10 @@ function startDrag(
         : 'translate(-50%, -50%)';
     }
 
-    // position the clone at the pointer start (centered)
-    clone.style.left = `${e.clientX}px`;
-    clone.style.top = `${e.clientY}px`;
+    // position the clone so its center matches the original wrapper center (no jump)
+    clone.style.left = `${wrapperCenterX}px`;
+    clone.style.top = `${wrapperCenterY}px`;
+
     clone.style.pointerEvents = 'none';
     clone.style.position = 'fixed';
     clone.style.transformOrigin = 'center center';
@@ -212,14 +227,13 @@ function onDrag(e, dragState) {
     dragState.moved = true;
   }
 
-  // If we created a clone, move it to follow the pointer
+  // If we created a clone, move it to follow the pointer while preserving initial offset
   if (dragState.clone) {
-    // center the clone on the pointer (use left/top only)
-    dragState.clone.style.left = `${e.clientX}px`;
-    dragState.clone.style.top = `${e.clientY}px`;
+    // position clone center = pointer - initial offset
+    dragState.clone.style.left = `${e.clientX - dragState.offsetX}px`;
+    dragState.clone.style.top = `${e.clientY - dragState.offsetY}px`;
 
-    // preserve rotation and scale but DO NOT add translate(dx,dy)
-    // (left/top already positions the clone at the pointer)
+    // preserve rotation and scale but DO NOT add translate(dx,dy) because left/top already positions it
     dragState.clone.style.transform = `translate(-50%, -50%) rotate(var(--angle, 0deg)) scale(1.1)`;
     return;
   }
@@ -253,6 +267,9 @@ function endDragHandler(
 
   // Remove inline transform from the original (it was hidden during drag)
   wrapper.style.removeProperty("transform");
+
+  // Debug line (optional): shows what element is under the pointer at release
+  // console.log('debug endDrag coords', e.clientX, e.clientY, document.elementFromPoint(e.clientX, e.clientY));
 
   // Compute drop target while the clone is still visible (clone has pointer-events:none)
   const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
