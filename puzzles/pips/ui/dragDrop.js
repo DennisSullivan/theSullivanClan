@@ -136,6 +136,20 @@ function startDrag(
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
 
+    // after clone.style.width/height are set
+    const comp = window.getComputedStyle(wrapper);
+    
+    // copy key computed visuals so the clone looks identical when moved to document.body
+    clone.style.background = comp.backgroundColor;
+    clone.style.border = comp.border;
+    clone.style.borderRadius = comp.borderRadius;
+    clone.style.boxShadow = comp.boxShadow;
+    clone.style.padding = comp.padding;
+    clone.style.color = comp.color; // if text or SVG pips rely on color
+    // copy CSS variable angle if present
+    const angleVar = comp.getPropertyValue('--angle')?.trim();
+    if (angleVar) clone.style.setProperty('--angle', angleVar);
+
     // copy rotation angle from CSS variable if present
     const computed = window.getComputedStyle(wrapper);
     const angleVar = computed.getPropertyValue('--angle')?.trim();
