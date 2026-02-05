@@ -121,10 +121,51 @@ function startDrag(
     originLeft: rect.left,
     originTop: rect.top,
     moved: false,
-    fromTray: trayEl.contains(wrapper)
+    fromTray: trayEl.contains(wrapper),
+    clone: null
   };
 
   wrapper.classList.add("dragging");
+
+  // --- create a visual clone that will follow the pointer but won't capture pointer events
+  try {
+    const clone = wrapper.cloneNode(true);
+    clone.classList.add("domino-clone");
+
+    // size the clone to match the wrapper's on-screen size
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+
+    // copy rotation angle from CSS variable if present
+    const computed = window.getComputedStyle(wrapper);
+    const angleVar = computed.getPropertyValue('--angle')?.trim();
+    if (angleVar) {
+      // angleVar might be like "90deg" or "0deg"
+      clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
+    } else {
+      // fallback: copy computed transform matrix (may be 'none')
+      const compTransform = computed.transform;
+      clone.style.transform = compTransform && compTransform !== 'none' ? compTransform : 'translate(-50%, -50%)';
+    }
+
+    // position the clone at the pointer start (centered)
+    clone.style.left = `${e.clientX}px`;
+    clone.style.top = `${e.clientY}px`;
+    clone.style.pointerEvents = 'none';
+    clone.style.position = 'fixed';
+    clone.style.transformOrigin = 'center center';
+    clone.style.zIndex = '9999';
+    document.body.appendChild(clone);
+
+    // hide the original wrapper so it doesn't interfere with hit testing
+    wrapper.style.visibility = 'hidden';
+
+    // store clone in drag state
+    dragState.clone = clone;
+  } catch (err) {
+    console.warn("startDrag: clone creation failed, falling back to inline transform", err);
+    dragState.clone = null;
+  }
 
   const moveHandler = (ev) => onDrag(ev, dragState);
   const upHandler = (ev) =>
@@ -161,8 +202,17 @@ function onDrag(e, dragState) {
     dragState.moved = true;
   }
 
-  // Compose inline transform so rotation (var(--angle)) is preserved.
-  // Use rotate(var(--angle, 0deg)) so the wrapper's CSS variable is respected.
+  // If we created a clone, move it to follow the pointer
+  if (dragState.clone) {
+    // center the clone on the pointer
+    dragState.clone.style.left = `${e.clientX}px`;
+    dragState.clone.style.top = `${e.clientY}px`;
+    // optional: preserve rotation and small translate while dragging for the same visual feel
+    dragState.clone.style.transform = `translate(-50%, -50%) rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px) scale(1.1)`;
+    return;
+  }
+
+  // Fallback: if no clone, move the original wrapper (less ideal)
   dragState.wrapper.style.transform =
     `translate(-50%, -50%) rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px) scale(1.1)`;
 }
@@ -189,9 +239,19 @@ function endDragHandler(
 
   const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
 
-  // Let CSS own the composed transform again
+  // Remove inline transform from the original (it was hidden during drag)
   wrapper.style.removeProperty("transform");
+
+  // Compute drop target while the clone is still visible (clone has pointer-events:none)
+  const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+  console.log("endDrag: dropTarget =", dropTarget);
+
+  // Cleanup: remove clone and restore original wrapper visibility
+  if (dragState.clone && dragState.clone.parentNode) {
+    dragState.clone.parentNode.removeChild(dragState.clone);
+  }
   wrapper.classList.remove("dragging");
+  wrapper.style.visibility = '';
 
   // --------------------------------------------------------
   // Click-only: handle single-click vs double-click
@@ -239,16 +299,12 @@ function endDragHandler(
       return;
     }
 
-
     // Not a double-click: record this as the latest click
     lastClickTime = now;
     lastClickDominoId = domino.id;
 
     return;
   }
-
-  const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
-  console.log("endDrag: dropTarget =", dropTarget);
 
   const cameFromBoard = (domino.row0 !== null);
 
