@@ -175,6 +175,25 @@
   box-shadow: none;
 }
 
+/* clone used during dragging — purely visual, never hit-tested */
+.domino-clone {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  z-index: 9999;
+  pointer-events: none;
+  user-select: none;
+  touch-action: none;
+  display: block;
+  box-sizing: border-box;
+
+  /* preserve visual fidelity from the original wrapper/domino */
+  background: inherit;
+  border-radius: inherit;
+  border: inherit;
+  box-shadow: inherit;
+}
+
 /* -------------------------
    Mobile scaling
    ------------------------- */
