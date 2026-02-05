@@ -136,30 +136,28 @@ function startDrag(
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
 
-    // after clone.style.width/height are set
+    // copy computed styles once and use them for visual fidelity
     const comp = window.getComputedStyle(wrapper);
-    
+
     // copy key computed visuals so the clone looks identical when moved to document.body
     clone.style.background = comp.backgroundColor;
     clone.style.border = comp.border;
     clone.style.borderRadius = comp.borderRadius;
     clone.style.boxShadow = comp.boxShadow;
     clone.style.padding = comp.padding;
-    clone.style.color = comp.color; // if text or SVG pips rely on color
-    // copy CSS variable angle if present
-    const angleVar = comp.getPropertyValue('--angle')?.trim();
-    if (angleVar) clone.style.setProperty('--angle', angleVar);
+    clone.style.color = comp.color;
+    clone.style.boxSizing = comp.boxSizing;
+    clone.style.transformOrigin = comp.transformOrigin;
 
-    // copy rotation angle from CSS variable if present
-    const computed = window.getComputedStyle(wrapper);
-    const angleVar = computed.getPropertyValue('--angle')?.trim();
+    // copy CSS variable angle if present and set initial transform
+    const angleVar = comp.getPropertyValue('--angle')?.trim();
     if (angleVar) {
-      // angleVar might be like "90deg" or "0deg"
       clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
     } else {
-      // fallback: copy computed transform matrix (may be 'none')
-      const compTransform = computed.transform;
-      clone.style.transform = compTransform && compTransform !== 'none' ? compTransform : 'translate(-50%, -50%)';
+      const compTransform = comp.transform;
+      clone.style.transform = compTransform && compTransform !== 'none'
+        ? compTransform
+        : 'translate(-50%, -50%)';
     }
 
     // position the clone at the pointer start (centered)
