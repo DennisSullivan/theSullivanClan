@@ -202,8 +202,6 @@ function startDrag(
 
 // ------------------------------------------------------------
 // onDrag — visual dragging (composes rotation)
-// - Inline transform composes rotate(var(--angle)) so rotation is preserved.
-// - Do not reintroduce the static nudge here; CSS handles nudge removal while dragging.
 // ------------------------------------------------------------
 function onDrag(e, dragState) {
   const dx = e.clientX - dragState.startX;
@@ -216,11 +214,13 @@ function onDrag(e, dragState) {
 
   // If we created a clone, move it to follow the pointer
   if (dragState.clone) {
-    // center the clone on the pointer
+    // center the clone on the pointer (use left/top only)
     dragState.clone.style.left = `${e.clientX}px`;
     dragState.clone.style.top = `${e.clientY}px`;
-    // optional: preserve rotation and small translate while dragging for the same visual feel
-    dragState.clone.style.transform = `translate(-50%, -50%) rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px) scale(1.1)`;
+
+    // preserve rotation and scale but DO NOT add translate(dx,dy)
+    // (left/top already positions the clone at the pointer)
+    dragState.clone.style.transform = `translate(-50%, -50%) rotate(var(--angle, 0deg)) scale(1.1)`;
     return;
   }
 
