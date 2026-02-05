@@ -88,7 +88,6 @@ function startDrag(
   boardEl,
   trayEl
 ) {
-  console.log("startDrag initiated");
   const target = e.target.closest(".domino");
   if (!target) return;
 
@@ -268,12 +267,31 @@ function endDragHandler(
   // Remove inline transform from the original (it was hidden during drag)
   wrapper.style.removeProperty("transform");
 
-  // Debug line (optional): shows what element is under the pointer at release
-  // console.log('debug endDrag coords', e.clientX, e.clientY, document.elementFromPoint(e.clientX, e.clientY));
+  // Compute hit list at release point (more robust than single elementFromPoint)
+  const hits = document.elementsFromPoint(e.clientX, e.clientY);
+  console.log("endDrag: elementsFromPoint hits:", hits);
 
-  // Compute drop target while the clone is still visible (clone has pointer-events:none)
-  const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
-  console.log("endDrag: dropTarget =", dropTarget);
+  // Prefer the nearest board cell in the hit stack
+  let dropTarget = null;
+  let cell = null;
+
+  for (const el of hits) {
+    if (!el) continue;
+    // If this element or an ancestor is a board cell, choose it immediately
+    const maybeCell = el.closest ? el.closest(".board-cell") : null;
+    if (maybeCell) {
+      dropTarget = maybeCell;
+      cell = maybeCell;
+      break;
+    }
+    // If not a board cell, check if it's inside the tray (tray half or slot)
+    if (el.closest && el.closest(".tray")) {
+      dropTarget = el;
+      break;
+    }
+  }
+
+  console.log("endDrag: resolved dropTarget =", dropTarget, "resolved cell =", cell);
 
   // Cleanup: remove clone and restore original wrapper visibility
   if (dragState.clone && dragState.clone.parentNode) {
@@ -348,12 +366,7 @@ function endDragHandler(
     return;
   }
 
-  // Dropped on board cell
-  let cell = null;
-  if (dropTarget && boardEl.contains(dropTarget)) {
-    cell = dropTarget.closest(".board-cell");
-  }
-
+  // Dropped on board cell (we resolved 'cell' above)
   if (cell) {
     const row = parseInt(cell.dataset.row, 10);
     const col = parseInt(cell.dataset.col, 10);
