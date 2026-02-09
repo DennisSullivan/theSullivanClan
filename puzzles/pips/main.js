@@ -49,6 +49,7 @@ export function startPuzzle(puzzleJson) {
 // Debug helpers (development only)
 window.__pips_state = { dominos, grid, regionMap, blocked, regions };
 window.syncCheck = syncCheck;
+  console.log("New STATE:", state);
   console.log("STATE:", state);
 
   const boardEl = document.getElementById("board");
