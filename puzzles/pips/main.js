@@ -15,15 +15,25 @@ import { renderTray } from "./ui/trayRenderer.js";
 import { enableDrag, endDrag } from "./ui/dragDrop.js";
 import { initRotation } from "./ui/rotation.js";
 import { syncCheck } from "./engine/syncCheck.js";
+import { renderRegions } from "./ui/regionRenderer.js";
+import { renderBlockedCells } from "./ui/blockedRenderer.js";
+import { renderRegionBadges } from "./ui/badgeRenderer.js";
+import { attachPlacementValidator } from "./engine/placementValidator.js";
 
+/**
+ * validatePuzzle(p)
+ * Basic sanity checks for the incoming puzzle JSON.
+ */
 function validatePuzzle(p) {
   if (!p || typeof p !== "object") return false;
   if (!Array.isArray(p.dominos)) return false;
+  if (typeof p.width !== "number" || typeof p.height !== "number") return false;
   return true;
 }
 
 // ------------------------------------------------------------
 // startPuzzle(puzzleJson)
+// Initializes engine state and wires UI + interactions.
 // ------------------------------------------------------------
 export function startPuzzle(puzzleJson) {
   console.log("startPuzzle() called");
@@ -33,9 +43,10 @@ export function startPuzzle(puzzleJson) {
     return null;
   }
 
+  // Keep an immutable copy of the original JSON for renderers that expect it
   const puzzleDef = JSON.parse(JSON.stringify(puzzleJson));
-  console.log("startPuzzle puzzleDef:", puzzleDef);
 
+  // Build engine state (dominos Map, grid, regionMap, blocked Set, regions, history)
   const state = loadPuzzle(puzzleJson);
 
   const {
@@ -46,41 +57,59 @@ export function startPuzzle(puzzleJson) {
     regions
   } = state;
 
-  console.log("STATE:", state);
-
+  // DOM references (ensure these exist in your index.html)
   const boardEl = document.getElementById("board");
   const trayEl = document.getElementById("tray");
+  const appRoot = document.getElementById("appRoot") || document;
 
-  // Wrapper for rotation.js
+  if (!boardEl || !trayEl) {
+    console.error("startPuzzle: missing #board or #tray elements in DOM");
+    return state;
+  }
+
+  // renderPuzzle is passed to rotation mode and used for re-renders
   function renderPuzzle() {
     renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
     renderTray(puzzleDef, dominos, trayEl);
+    renderRegions(regionMap, boardEl);
+    renderBlockedCells(blocked, boardEl);
+    renderRegionBadges(regions, boardEl);
     syncCheck(dominos, grid);
   }
 
-  // Initial render
+  // Initial render + wiring (deferred to allow DOM to settle)
   setTimeout(() => {
     renderPuzzle();
 
-    // Enable drag/drop
+    // Attach placement validator so it can observe pips:* events emitted by dragDrop
+    attachPlacementValidator(appRoot, state);
+
+    // Enable drag/drop (dragDrop emits pips:* events that the validator listens for)
     enableDrag(puzzleDef, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 
-    // Enable rotation mode
+    // Enable rotation mode (uses renderPuzzle and endDrag callbacks)
     initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag);
   }, 0);
 
-  syncCheck(dominos, grid);
+  // Expose for debugging and manual re-render
+  window.__PIPS = window.__PIPS || {};
+  window.__PIPS.puzzleDef = puzzleDef;
+  window.__PIPS.state = state;
+  window.__PIPS.renderPuzzle = renderPuzzle;
 
+  console.log("startPuzzle: wiring complete");
   return state;
 }
 
 // ------------------------------------------------------------
 // loadAndStart(url)
+// Convenience helper to fetch a puzzle JSON and start it.
 // ------------------------------------------------------------
 export async function loadAndStart(url) {
   console.log("loadAndStart() fetching:", url);
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
     const json = await response.json();
 
     if (!validatePuzzle(json)) {
