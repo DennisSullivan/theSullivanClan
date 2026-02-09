@@ -164,7 +164,7 @@ export function isPlacementValid(domino, grid) {
  * The function tries the four cardinal orientations in this order:
  *  - right, down, left, up (relative to the clicked half)
  *
- * On success it updates domino.row*/col* and writes grid occupancy and returns true.
+ * On success it updates domino.row* or col* and writes grid occupancy and returns true.
  * On failure it leaves the domino unchanged and returns false.
  */
 export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
