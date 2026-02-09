@@ -69,3 +69,12 @@
   transform: translate(-50%, -50%) rotate(var(--angle, 0deg));
   transform-origin: center center;
 }
+
+
+/* ============================================================
+   4. FIX — RESET INNER DOMINO TRANSFORM IN TRAY
+   ============================================================ */
+
+.domino.in-tray {
+  transform: none !important;
+}
