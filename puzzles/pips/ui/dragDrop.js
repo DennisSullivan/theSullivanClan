@@ -129,6 +129,7 @@ function startDrag(
     offsetY: 0
   };
 
+  // Add dragging class but avoid changing layout-affecting transforms on the original.
   wrapper.classList.add("dragging");
 
   // --- create a visual clone that will follow the pointer but won't capture pointer events
@@ -186,8 +187,15 @@ function startDrag(
     clone.style.zIndex = '9999';
     document.body.appendChild(clone);
 
-    // hide the original wrapper so it doesn't interfere with hit testing
-    wrapper.style.visibility = 'hidden';
+    // hide the original wrapper visually but keep layout stable.
+    // Using opacity keeps layout and transforms intact while making it invisible.
+    try {
+      wrapper.style.opacity = '0';
+      wrapper.style.pointerEvents = 'none';
+    } catch (err) {
+      // fallback to visibility if opacity fails
+      wrapper.style.visibility = 'hidden';
+    }
 
     // store clone in drag state
     dragState.clone = clone;
@@ -270,9 +278,6 @@ function endDragHandler(
 
   const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
 
-  // Remove inline transform from the original (it was hidden during drag)
-  wrapper.style.removeProperty("transform");
-
   // Compute hit list at release point (more robust than single elementFromPoint)
   const hits = document.elementsFromPoint(e.clientX, e.clientY);
   console.log("endDrag: elementsFromPoint hits:", hits);
@@ -304,7 +309,15 @@ function endDragHandler(
     dragState.clone.parentNode.removeChild(dragState.clone);
   }
   wrapper.classList.remove("dragging");
-  wrapper.style.visibility = '';
+
+  // Restore original wrapper visibility/opacity
+  try {
+    wrapper.style.opacity = '';
+    wrapper.style.pointerEvents = '';
+    wrapper.style.visibility = '';
+  } catch (e) {
+    wrapper.style.visibility = '';
+  }
 
   // --------------------------------------------------------
   // Click-only: handle single-click vs double-click
@@ -338,12 +351,23 @@ function endDragHandler(
       // Ensure the wrapper (if still present) has the CSS var for immediate render
       try { wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`); } catch (e) { /* ignore */ }
 
-      // Schedule re-render on next frame so the rotation transition is visible
+      // Apply inline transform so the user sees the rotation on pointerup,
+      // then allow one paint frame before re-rendering the tray to keep animation visible.
+      try {
+        wrapper.style.transform = `translate(-50%, -50%) rotate(${domino.trayOrientation}deg)`;
+        // Force layout so the transform is applied
+        void wrapper.getBoundingClientRect();
+      } catch (e) { /* ignore */ }
+
+      // Use a double rAF to ensure the browser paints the transform and runs the transition,
+      // then re-render the tray so DOM and model stay in sync.
       try {
         requestAnimationFrame(() => {
-          try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
-          // Clear any inline transform left on the old wrapper to avoid stale transforms
-          try { wrapper.style.removeProperty('transform'); } catch (e) { /* ignore */ }
+          requestAnimationFrame(() => {
+            try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
+            // Clear any inline transform left on the old wrapper to avoid stale transforms
+            try { wrapper.style.removeProperty('transform'); } catch (e) { /* ignore */ }
+          });
         });
       } catch (e) {
         // fallback: immediate render
