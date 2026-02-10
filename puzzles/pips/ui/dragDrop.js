@@ -7,6 +7,7 @@
 //   - Engine placement unchanged
 //   - Rotation-mode callbacks supported via endDrag.fire()
 //   - Robust hit testing using a non-interactive visual clone
+//   - Temporary debug instrumentation included (DBG logs)
 // ============================================================
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
@@ -170,9 +171,10 @@ function startDrag(
     _handlers: null
   };
 
-if (dragState.fromTray) {
+  if (dragState.fromTray) {
     wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
-}
+  }
+
   const moveHandler = (ev) => onDrag(ev, dragState);
   const upHandler = (ev) =>
     endDragHandler(
@@ -270,6 +272,8 @@ function endDragHandler(
 
   cleanupDragState(dragState);
 
+  const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
+
   // After cleanup: confirm wrapper visibility and clone state
   try {
     dbg("post-cleanup wrapper", {
@@ -280,8 +284,6 @@ function endDragHandler(
   } catch (err) {
     dbg("post-cleanup inspect failed", err);
   }
-
-  const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
 
   const hits = document.elementsFromPoint(e.clientX, e.clientY);
 
@@ -361,10 +363,10 @@ function endDragHandler(
 
   if (dropTarget && trayEl.contains(dropTarget)) {
     endDrag.fire(domino, null, null, grid);
-    dbg("drop outside board — returning to tray", { id: domino.id });
+    dbg("drop onto tray target — returning to tray", { id: domino.id });
     removeDominoToTray(domino, grid);
-    dbg("after removeDominoToTray", { domino: dbgDominoState(domino) });
-    finalize(...);
+    dbg("after removeDominoToTray (tray target)", { domino: dbgDominoState(domino) });
+    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
 
@@ -430,11 +432,11 @@ function endDragHandler(
     return;
   }
 
-    endDrag.fire(domino, null, null, grid);
-    dbg("drop outside board — returning to tray", { id: domino.id });
-    removeDominoToTray(domino, grid);
-    dbg("after removeDominoToTray", { domino: dbgDominoState(domino) });
-    finalize(...);
+  endDrag.fire(domino, null, null, grid);
+  dbg("drop outside board — returning to tray", { id: domino.id });
+  removeDominoToTray(domino, grid);
+  dbg("after removeDominoToTray (outside)", { domino: dbgDominoState(domino) });
+  finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 }
 
 // ------------------------------------------------------------
@@ -501,18 +503,18 @@ function beginRealDrag(dragState, e) {
 
     document.body.appendChild(clone);
 
+    wrapper.classList.add("dragging");
+    wrapper.style.visibility = "hidden";
+    wrapper.style.pointerEvents = "none";
+
+    dragState.clone = clone;
+
     dbg("beginRealDrag clone appended", {
       id: dragState.domino.id,
       wrapperRect: rect,
       cloneRect: clone.getBoundingClientRect(),
       angleVar
     });
-
-    wrapper.classList.add("dragging");
-    wrapper.style.visibility = "hidden";
-    wrapper.style.pointerEvents = "none";
-
-    dragState.clone = clone;
   } catch (err) {
     console.warn("beginRealDrag: clone creation failed", err);
     dragState.clone = null;
@@ -535,7 +537,6 @@ function finalize(
   dbg("finalize ENTER", {
     dominosCount: dominos instanceof Map ? dominos.size : dominos.length
   });
-
   renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(puzzleJson, dominos, trayEl);
   syncCheck(dominos, grid);
