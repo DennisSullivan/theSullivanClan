@@ -2,7 +2,7 @@
 // FILE: dragDrop.js
 // PURPOSE: Enables drag-and-drop interactions for dominos.
 // NOTES:
-//   - Visual dragging composes rotation via rotate(var(--angle))
+//   - Visual dragging composes rotation via translate(-50%,-50%) rotate(var(--angle))
 //   - Wrapper stays in tray slot (no collapse)
 //   - Engine placement unchanged
 //   - Rotation-mode callbacks supported via endDrag.fire()
@@ -114,6 +114,9 @@ function startDrag(
 
   const rect = wrapper.getBoundingClientRect();
 
+  // Debug: log wrapper rect so we can compare clone placement
+  console.log("startDrag: wrapper rect", { left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+
   const dragState = {
     domino,
     wrapper,
@@ -166,16 +169,11 @@ function startDrag(
     dragState.offsetX = offsetX;
     dragState.offsetY = offsetY;
 
-    // copy CSS variable angle if present and set initial transform (no scale)
-    const angleVar = comp.getPropertyValue('--angle')?.trim();
-    if (angleVar) {
-      clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
-    } else {
-      const compTransform = comp.transform;
-      clone.style.transform = compTransform && compTransform !== 'none'
-        ? compTransform
-        : 'translate(-50%, -50%)';
-    }
+    // copy CSS variable angle if present and set initial transform (use same expression as wrapper)
+    // default to 0deg if not present
+    const angleVarRaw = comp.getPropertyValue('--angle')?.trim();
+    const angleVar = angleVarRaw && angleVarRaw.length ? angleVarRaw : '0deg';
+    clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
 
     // position the clone so its center matches the original wrapper center (no jump)
     clone.style.left = `${wrapperCenterX}px`;
@@ -187,14 +185,22 @@ function startDrag(
     clone.style.zIndex = '9999';
     document.body.appendChild(clone);
 
+    // Debug: log clone placement
+    console.log("startDrag: clone placed at", {
+      left: clone.style.left,
+      top: clone.style.top,
+      transform: clone.style.transform
+    });
+
     // hide the original wrapper visually but keep layout stable.
-    // Using opacity keeps layout and transforms intact while making it invisible.
+    // Use visibility:hidden so layout/positioning remains identical to the clone's reference.
     try {
-      wrapper.style.opacity = '0';
+      wrapper.style.visibility = 'hidden';
       wrapper.style.pointerEvents = 'none';
     } catch (err) {
-      // fallback to visibility if opacity fails
-      wrapper.style.visibility = 'hidden';
+      // fallback to opacity if visibility fails
+      wrapper.style.opacity = '0';
+      wrapper.style.pointerEvents = 'none';
     }
 
     // store clone in drag state
@@ -312,9 +318,9 @@ function endDragHandler(
 
   // Restore original wrapper visibility/opacity
   try {
-    wrapper.style.opacity = '';
-    wrapper.style.pointerEvents = '';
     wrapper.style.visibility = '';
+    wrapper.style.pointerEvents = '';
+    wrapper.style.opacity = '';
   } catch (e) {
     wrapper.style.visibility = '';
   }
