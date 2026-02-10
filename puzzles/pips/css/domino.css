@@ -86,8 +86,8 @@
   box-sizing: border-box;
 }
 
-.domino-wrapper.on-board.dragging .domino {
-  transform: translate(0, 0);
+.domino-wrapper.dragging .domino {
+  transform: translate(0, 0) !important;
 }
 
 /* If your renderer sets rotation via --angle in CSS, keep it on wrapper:
