@@ -348,9 +348,10 @@ function beginRealDrag(dragState, e) {
     const clone = wrapper.cloneNode(true);
     clone.classList.add("domino-clone");
 
-    clone.style.width = `${rect.width}px`;
-    clone.style.height = `${rect.height}px`;
-
+    // Use the wrapper’s actual rendered size (post-rotation)
+    clone.style.width = `${wrapper.offsetWidth}px`;
+    clone.style.height = `${wrapper.offsetHeight}px`;
+    
     const comp = window.getComputedStyle(wrapper);
 
     clone.style.background = comp.backgroundColor;
@@ -380,11 +381,16 @@ function beginRealDrag(dragState, e) {
       cloneInner.style.transform = innerTransform;
     }
 
-    const compTransform = comp.transform;
-    if (compTransform && compTransform !== "none") {
-      clone.style.transform = compTransform;
+    // Always use the wrapper’s computed transform, even if it reports "none"
+    const computed = window.getComputedStyle(wrapper);
+    const computedTransform = computed.transform;
+    
+    // If computedTransform is "none", build the correct transform manually
+    if (computedTransform && computedTransform !== "none") {
+        clone.style.transform = computedTransform;
     } else {
-      clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
+        clone.style.transform =
+            `translate(-50%, -50%) rotate(${angleVar})`;
     }
 
     clone.style.left = `${wrapperCenterX}px`;
