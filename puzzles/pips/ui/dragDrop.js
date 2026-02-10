@@ -37,6 +37,29 @@ let lastClickDominoId = null;
 const DBLCLICK_THRESHOLD_MS = 250;
 
 // ------------------------------------------------------------
+// Helper: cleanup drag state (remove clone, restore wrapper)
+// ------------------------------------------------------------
+function cleanupDragState(dragState) {
+  if (!dragState) return;
+  try {
+    if (dragState.clone && dragState.clone.parentNode) {
+      dragState.clone.parentNode.removeChild(dragState.clone);
+    }
+  } catch (e) { /* ignore */ }
+
+  try {
+    const w = dragState.wrapper;
+    if (w) {
+      w.classList.remove("dragging");
+      w.style.visibility = '';
+      w.style.opacity = '';
+      w.style.pointerEvents = '';
+      try { w.style.removeProperty('transform'); } catch (e) { /* ignore */ }
+    }
+  } catch (e) { /* ignore */ }
+}
+
+// ------------------------------------------------------------
 // enableDrag — NOW ACCEPTS puzzleJson
 // ------------------------------------------------------------
 export function enableDrag(
@@ -126,7 +149,8 @@ function startDrag(
     fromTray: trayEl.contains(wrapper),
     clone: null,
     offsetX: 0,
-    offsetY: 0
+    offsetY: 0,
+    _handlers: null
   };
 
   // Add dragging class but avoid changing layout-affecting transforms on the original.
@@ -166,9 +190,20 @@ function startDrag(
     dragState.offsetX = offsetX;
     dragState.offsetY = offsetY;
 
+    // --- match inner domino transform (nudge) so clone pixels align with original
+    const inner = wrapper.querySelector('.domino');
+    const cloneInner = clone.querySelector('.domino');
+    if (inner && cloneInner) {
+      const compInner = window.getComputedStyle(inner);
+      const innerTransform = compInner.transform && compInner.transform !== 'none' ? compInner.transform : '';
+      if (innerTransform) {
+        try { cloneInner.style.transform = innerTransform; } catch (err) { /* ignore */ }
+      } else {
+        try { cloneInner.style.transform = ''; } catch (err) { /* ignore */ }
+      }
+    }
+
     // --- IMPORTANT: match the clone's transform expression to the wrapper's computed transform when possible
-    // If the wrapper has a computed transform (matrix or translate/rotate), use it directly so the clone visually matches.
-    // Otherwise fall back to the translate(-50%,-50%) centering + rotate(var(--angle)).
     const compTransform = comp.transform;
     const angleVarRaw = comp.getPropertyValue('--angle')?.trim();
     const angleVar = angleVarRaw && angleVarRaw.length ? angleVarRaw : '0deg';
@@ -192,7 +227,6 @@ function startDrag(
     document.body.appendChild(clone);
 
     // hide the original wrapper visually but keep layout stable.
-    // Use visibility:hidden so layout/positioning remains identical to the clone's reference.
     try {
       wrapper.style.visibility = 'hidden';
       wrapper.style.pointerEvents = 'none';
@@ -226,8 +260,30 @@ function startDrag(
       upHandler
     );
 
+  // cancellation and blur handlers to ensure cleanup
+  const cancelHandler = (ev) => {
+    try { cleanupDragState(dragState); } catch (e) { /* ignore */ }
+    window.removeEventListener("pointermove", moveHandler);
+    window.removeEventListener("pointerup", upHandler);
+    window.removeEventListener("pointercancel", cancelHandler);
+    window.removeEventListener("blur", blurHandler);
+  };
+
+  const blurHandler = () => {
+    try { cleanupDragState(dragState); } catch (e) { /* ignore */ }
+    window.removeEventListener("pointermove", moveHandler);
+    window.removeEventListener("pointerup", upHandler);
+    window.removeEventListener("pointercancel", cancelHandler);
+    window.removeEventListener("blur", blurHandler);
+  };
+
+  // store handlers so endDragHandler can remove them if needed
+  dragState._handlers = { moveHandler, upHandler, cancelHandler, blurHandler };
+
   window.addEventListener("pointermove", moveHandler);
   window.addEventListener("pointerup", upHandler);
+  window.addEventListener("pointercancel", cancelHandler);
+  window.addEventListener("blur", blurHandler);
 }
 
 // ------------------------------------------------------------
@@ -252,8 +308,6 @@ function onDrag(e, dragState) {
     // Only add scale when the drag has actually started (moved === true)
     const scalePart = dragState.moved ? ' scale(1.1)' : '';
     // Use rotate(var(--angle)) so the clone follows the model angle while dragging.
-    // If the clone was created using a computed transform string, this will override it during drag,
-    // which is desirable so the clone reflects live model rotation.
     dragState.clone.style.transform = `translate(-50%, -50%) rotate(var(--angle, 0deg))${scalePart}`;
     return;
   }
@@ -281,8 +335,14 @@ function endDragHandler(
   moveHandler,
   upHandler
 ) {
-  window.removeEventListener("pointermove", moveHandler);
-  window.removeEventListener("pointerup", upHandler);
+  // Remove pointer listeners (defensive)
+  try {
+    window.removeEventListener("pointermove", moveHandler);
+    window.removeEventListener("pointerup", upHandler);
+  } catch (e) { /* ignore */ }
+
+  // Ensure clone removed for all end paths
+  try { cleanupDragState(dragState); } catch (e) { /* ignore */ }
 
   const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
 
@@ -312,20 +372,8 @@ function endDragHandler(
 
   console.log("endDrag: resolved dropTarget =", dropTarget, "resolved cell =", cell);
 
-  // Cleanup: remove clone and restore original wrapper visibility
-  if (dragState.clone && dragState.clone.parentNode) {
-    dragState.clone.parentNode.removeChild(dragState.clone);
-  }
-  wrapper.classList.remove("dragging");
-
-  // Restore original wrapper visibility/opacity
-  try {
-    wrapper.style.visibility = '';
-    wrapper.style.pointerEvents = '';
-    wrapper.style.opacity = '';
-  } catch (e) {
-    wrapper.style.visibility = '';
-  }
+  // Ensure dragging class removed on wrapper (defensive)
+  try { wrapper.classList.remove("dragging"); } catch (e) { /* ignore */ }
 
   // --------------------------------------------------------
   // Click-only: handle single-click vs double-click
@@ -359,29 +407,49 @@ function endDragHandler(
       // Ensure the wrapper (if still present) has the CSS var for immediate render
       try { wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`); } catch (e) { /* ignore */ }
 
-      // Apply inline transform so the user sees the rotation on pointerup,
-      // then allow one paint frame before re-rendering the tray to keep animation visible.
+      // Remove clone immediately and restore original wrapper so we animate the real element
+      try { cleanupDragState(dragState); } catch (e) { /* ignore */ }
+
+      // Apply inline transform to the wrapper so the browser can animate it now
       try {
         wrapper.style.transform = `translate(-50%, -50%) rotate(${domino.trayOrientation}deg)`;
         // Force layout so the transform is applied
         void wrapper.getBoundingClientRect();
       } catch (e) { /* ignore */ }
 
-      // Use a double rAF to ensure the browser paints the transform and runs the transition,
-      // then re-render the tray so DOM and model stay in sync.
+      // Compute transition duration from computed style (fallback to 160ms)
+      let waitMs = 160;
       try {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
-            // Clear any inline transform left on the old wrapper to avoid stale transforms
-            try { wrapper.style.removeProperty('transform'); } catch (e) { /* ignore */ }
-          });
-        });
-      } catch (e) {
-        // fallback: immediate render
+        const cs = window.getComputedStyle(wrapper);
+        const dur = cs.transitionDuration || '';
+        const delay = cs.transitionDelay || '';
+        const toMs = (s) => s.endsWith('ms') ? parseFloat(s) : s.endsWith('s') ? parseFloat(s) * 1000 : 0;
+        const durations = dur.split(',').map(s => s.trim());
+        const delays = delay.split(',').map(s => s.trim());
+        let max = 0;
+        for (let i = 0; i < durations.length; i++) {
+          const d = toMs(durations[i] || '0s');
+          const dl = toMs(delays[i] || '0s');
+          max = Math.max(max, d + dl);
+        }
+        if (max > 0) waitMs = Math.ceil(max) + 20;
+      } catch (e) { /* ignore */ }
+
+      // After the transition, re-render tray from model and clear inline transform
+      setTimeout(() => {
         try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
         try { wrapper.style.removeProperty('transform'); } catch (e) { /* ignore */ }
-      }
+      }, waitMs);
+
+      // Remove pointer handlers for this drag (defensive)
+      try {
+        if (dragState._handlers) {
+          window.removeEventListener("pointermove", dragState._handlers.moveHandler);
+          window.removeEventListener("pointerup", dragState._handlers.upHandler);
+          window.removeEventListener("pointercancel", dragState._handlers.cancelHandler);
+          window.removeEventListener("blur", dragState._handlers.blurHandler);
+        }
+      } catch (e) { /* ignore */ }
 
       // Reset double-click tracking
       lastClickTime = 0;
@@ -392,7 +460,6 @@ function endDragHandler(
     // BOARD double-click detection (preserve existing board double-click behavior)
     if (isDblClick && !fromTray) {
       console.log(`endDrag: detected board double-click on domino ${domino.id}`);
-      // If you have a board double-click handler elsewhere, it can be triggered here.
       lastClickTime = 0;
       lastClickDominoId = null;
       return;
