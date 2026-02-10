@@ -152,11 +152,6 @@ function startDrag(
     _handlers: null
   };
 
-  // Add dragging class but avoid changing layout-affecting transforms on the original.
-  if (!dragState.fromTray) {
-    wrapper.classList.add("dragging");
-  }
-
   // --- create a visual clone that will follow the pointer but won't capture pointer events
   try {
     const clone = wrapper.cloneNode(true);
@@ -298,6 +293,9 @@ function onDrag(e, dragState) {
   if (!dragState.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
     console.log(`onDrag: movement threshold passed dx=${dx} dy=${dy}`);
     dragState.moved = true;
+  }
+  if (dragState.moved && !dragState.clone) {
+      beginRealDrag(dragState, e);
   }
 
   // If we created a clone, move it to follow the pointer while preserving initial offset
