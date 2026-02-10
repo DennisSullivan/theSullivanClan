@@ -15,6 +15,38 @@ import { renderBoard } from "./boardRenderer.js";
 import { renderTray } from "./trayRenderer.js";
 let pendingTrayRerender = null;
 
+// -----------------------------
+// Debug helpers (temporary)
+// -----------------------------
+function dbg(...args) {
+  try { console.log("%cDBG", "background:#222;color:#ffd700;padding:2px 4px;", ...args); } catch(e){}
+}
+
+function dbgDominoState(domino) {
+  return {
+    id: domino?.id,
+    row0: domino?.row0,
+    col0: domino?.col0,
+    row1: domino?.row1,
+    col1: domino?.col1,
+    trayOrientation: domino?.trayOrientation,
+    value0: domino?.value0,
+    value1: domino?.value1
+  };
+}
+
+// Expose a quick inspector to the console
+window.__debugDump = function(dominos, grid) {
+  try {
+    const list = (dominos instanceof Map)
+      ? Array.from(dominos.values()).map(d => dbgDominoState(d))
+      : dominos.map(d => dbgDominoState(d));
+    console.log("%c__debugDump", "background:#003366;color:#fff;padding:2px 4px;", { dominos: list, grid });
+  } catch (err) {
+    console.error("__debugDump error", err);
+  }
+};
+
 // ============================================================
 // Rotation-mode callback registry
 // ============================================================
@@ -225,10 +257,29 @@ function endDragHandler(
   moveHandler,
   upHandler
 ) {
+  dbg("endDragHandler ENTER", { clientX: e.clientX, clientY: e.clientY });
+  dbg("dragState summary", {
+    domino: dbgDominoState(dragState.domino),
+    moved: dragState.moved,
+    fromTray: dragState.fromTray,
+    clickedHalf: dragState.clickedHalf
+  });
+
   window.removeEventListener("pointermove", moveHandler);
   window.removeEventListener("pointerup", upHandler);
 
   cleanupDragState(dragState);
+
+  // After cleanup: confirm wrapper visibility and clone state
+  try {
+    dbg("post-cleanup wrapper", {
+      wrapperExists: !!wrapper,
+      wrapperVisibility: wrapper ? wrapper.style.visibility : undefined,
+      cloneExists: !!dragState.clone
+    });
+  } catch (err) {
+    dbg("post-cleanup inspect failed", err);
+  }
 
   const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
 
@@ -310,8 +361,10 @@ function endDragHandler(
 
   if (dropTarget && trayEl.contains(dropTarget)) {
     endDrag.fire(domino, null, null, grid);
+    dbg("drop outside board — returning to tray", { id: domino.id });
     removeDominoToTray(domino, grid);
-    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+    dbg("after removeDominoToTray", { domino: dbgDominoState(domino) });
+    finalize(...);
     return;
   }
 
@@ -321,25 +374,67 @@ function endDragHandler(
 
     endDrag.fire(domino, row, col, grid);
 
+    dbg("attempting placement", { domino: dbgDominoState(domino), row, col, clickedHalf, cameFromBoard });
+
     let ok = false;
-    if (!cameFromBoard) {
-      ok = placeDomino(domino, row, col, grid, clickedHalf);
-    } else {
-      ok = moveDomino(domino, row, col, grid);
+    try {
+      if (!cameFromBoard) {
+        ok = placeDomino(domino, row, col, grid, clickedHalf);
+      } else {
+        ok = moveDomino(domino, row, col, grid);
+      }
+    } catch (err) {
+      dbg("placement threw exception", { err });
+      // Ensure we don't lose the domino on exception
+      try { removeDominoToTray(domino, grid); } catch (e) { dbg("removeDominoToTray failed after exception", e); }
+      // Re-render and rethrow so devtools show stack if desired
+      finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+      throw err;
     }
+
+    dbg("placement result", { id: domino.id, ok, dominoAfter: dbgDominoState(domino) });
 
     // If placement failed, return the domino to the tray (spec: "if it does not fit then the domino should go back")
     if (!ok) {
-      removeDominoToTray(domino, grid);
+      dbg("placement failed — returning to tray", { id: domino.id });
+      try {
+        removeDominoToTray(domino, grid);
+      } catch (err) {
+        dbg("removeDominoToTray error", err);
+      }
+    }
+
+    // Log dominos presence before finalize
+    try {
+      dbg("before finalize dominos snapshot", {
+        dominosCount: dominos instanceof Map ? dominos.size : dominos.length,
+        containsDomino: dominos instanceof Map ? dominos.has(String(domino.id)) : dominos.some(d => String(d.id) === String(domino.id))
+      });
+    } catch (err) {
+      dbg("before finalize snapshot failed", err);
     }
 
     finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+
+    // Log dominos presence after finalize (finalize will re-render)
+    try {
+      dbg("after finalize dominos snapshot", {
+        dominosCount: dominos instanceof Map ? dominos.size : dominos.length,
+        containsDomino: dominos instanceof Map ? dominos.has(String(domino.id)) : dominos.some(d => String(d.id) === String(domino.id)),
+        dominoState: dbgDominoState(domino)
+      });
+    } catch (err) {
+      dbg("after finalize snapshot failed", err);
+    }
+
     return;
   }
 
-  endDrag.fire(domino, null, null, grid);
-  removeDominoToTray(domino, grid);
-  finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+    endDrag.fire(domino, null, null, grid);
+    dbg("drop outside board — returning to tray", { id: domino.id });
+    removeDominoToTray(domino, grid);
+    dbg("after removeDominoToTray", { domino: dbgDominoState(domino) });
+    finalize(...);
 }
 
 // ------------------------------------------------------------
