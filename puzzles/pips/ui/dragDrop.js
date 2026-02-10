@@ -200,9 +200,7 @@ function onDrag(e, dragState) {
     return;
   }
 
-  const scalePart = dragState.moved ? " scale(1.1)" : "";
-  dragState.wrapper.style.transform =
-    `translate(-50%, -50%) rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px)${scalePart}`;
+  // No clone yet — do nothing. Wrapper must remain untouched.
 }
 
 // ------------------------------------------------------------
