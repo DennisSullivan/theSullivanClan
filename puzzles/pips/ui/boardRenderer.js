@@ -1,105 +1,96 @@
 // ============================================================
 // FILE: boardRenderer.js
-// PURPOSE: Canonical board renderer using geometry‑first model
+// PURPOSE: Render dominos on the board using geometry-only rules.
 // NOTES:
-//   - Uses renderDomino() for pip grids
-//   - One wrapper per domino (created at half0 only)
-//   - Wrapper positioned via CSS variables (--row, --col)
-//   - Rotation is set via CSS custom property (--angle) by renderDomino
-//   - Board cells rendered first, dominos layered on top
-//   - After render, a small helper composes the visual nudge into any inline transforms
-//     so the nudge is visible immediately even if other renderers write inline transforms.
+//   - Orientation is derived from geometry (row/col pairs).
+//   - No legacy orientation flags.
+//   - UI is pure: no mutation of engine state.
+//   - Wrapper transform uses CSS var --angle.
 // ============================================================
 
-import { renderDomino } from "./dominoRenderer.js";
-
-/**
- * Compose the CSS nudge into any inline transforms on wrappers/children.
- * This is idempotent and safe to call after each render.
- */
-function applyNudgeToRenderedWrappers() {
-  const nudgeX = (getComputedStyle(document.documentElement).getPropertyValue('--domino-nudge-x') || '2px').trim();
-  const nudgeY = (getComputedStyle(document.documentElement).getPropertyValue('--domino-nudge-y') || '2px').trim();
-
-  document.querySelectorAll('.domino-wrapper.on-board').forEach(wrapper => {
-    // Only prepend if the wrapper's inline style does not already start with a translate(...)
-    const existingWrapper = wrapper.style.transform || '';
-    if (!/^\s*translate\(/.test(existingWrapper)) {
-      // Prepend the visual nudge to any existing inline transform (safe if empty)
-      wrapper.style.transform = `translate(${nudgeX}, ${nudgeY}) ${existingWrapper}`.trim();
-    }
-
-    // Also compose into inner .domino in case some renderer set transform on the child.
-    const domino = wrapper.querySelector('.domino');
-    if (domino) {
-      const existingChild = domino.style.transform || '';
-      if (!/^\s*translate\(/.test(existingChild)) {
-        domino.style.transform = `translate(${nudgeX}, ${nudgeY}) ${existingChild}`.trim();
-      }
-    }
-  });
-}
-
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
+  if (!boardEl) return;
+
+  // Clear board
   boardEl.innerHTML = "";
 
+  // Render each cell
   const rows = grid.length;
   const cols = grid[0].length;
 
-  // ------------------------------------------------------------
-  // 1. Render board cells (background grid)
-  // ------------------------------------------------------------
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const cellEl = document.createElement("div");
-      cellEl.className = "board-cell";
-      cellEl.dataset.row = r;
-      cellEl.dataset.col = c;
+      const cell = document.createElement("div");
+      cell.className = "board-cell";
+      cell.dataset.row = r;
+      cell.dataset.col = c;
 
-      // Region class
-      const regionId = regionMap[r][c];
-      cellEl.classList.add(`region-${regionId}`);
-
-      // Blocked?
-      if (blocked.has(`${r},${c}`)) {
-        cellEl.classList.add("blocked");
+      // Region coloring (optional)
+      if (regionMap && regionMap[r] && regionMap[r][c] != null) {
+        const regionId = regionMap[r][c];
+        cell.classList.add(`region-${regionId}`);
       }
 
-      boardEl.appendChild(cellEl);
+      // Blocked cells
+      if (blocked && blocked[r] && blocked[r][c]) {
+        cell.classList.add("blocked");
+      }
+
+      boardEl.appendChild(cell);
     }
   }
 
-  // ------------------------------------------------------------
-  // 2. Render dominos (one wrapper per domino)
-  //    - Create wrapper, set position vars and dataset, append to DOM,
-  //      then call renderDomino so it can set --angle and toggle 'vertical'.
-  // ------------------------------------------------------------
-  for (const [id, d] of dominos) {
-    if (d.row0 === null) continue; // tray dominos not shown here
+  // Render dominos on top of the grid
+  for (const domino of dominos.values ? dominos.values() : dominos) {
+    if (domino.row0 == null || domino.col0 == null) continue;
 
     const wrapper = document.createElement("div");
-    wrapper.className = "domino-wrapper on-board";
+    wrapper.className = "domino-wrapper";
+    wrapper.dataset.dominoId = domino.id;
 
-    // Keep dataset for debugging/inspection
-    wrapper.dataset.row = String(d.row0);
-    wrapper.dataset.col = String(d.col0);
+    // ------------------------------------------------------------
+    // ⭐ ORIENTATION FROM GEOMETRY
+    // ------------------------------------------------------------
+    // Horizontal: row0 == row1 → angle = 0°
+    // Vertical:   col0 == col1 → angle = 90°
+    let angle = 0;
+    if (domino.col0 === domino.col1) {
+      angle = 90;
+    }
 
-    // Position via CSS variables (canonical)
-    wrapper.style.setProperty("--row", String(d.row0));
-    wrapper.style.setProperty("--col", String(d.col0));
+    wrapper.style.setProperty("--angle", `${angle}deg`);
 
-    // Append wrapper to DOM before rendering inner domino so renderDomino
-    // can rely on computed styles and toggle classes immediately.
+    // ------------------------------------------------------------
+    // POSITIONING
+    // ------------------------------------------------------------
+    // Compute top-left cell of the domino (the min of row0/row1, col0/col1)
+    const minRow = Math.min(domino.row0, domino.row1);
+    const minCol = Math.min(domino.col0, domino.col1);
+
+    // Each cell is 1 unit; wrapper is centered on the first half
+    wrapper.style.left = `${minCol * 100}%`;
+    wrapper.style.top = `${minRow * 100}%`;
+
+    // ------------------------------------------------------------
+    // DOMINO INNER CONTENT
+    // ------------------------------------------------------------
+    const inner = document.createElement("div");
+    inner.className = "domino";
+    inner.dataset.id = domino.id;
+
+    // Two halves
+    const half0 = document.createElement("div");
+    half0.className = "half half0";
+    half0.textContent = domino.value0;
+
+    const half1 = document.createElement("div");
+    half1.className = "half half1";
+    half1.textContent = domino.value1;
+
+    inner.appendChild(half0);
+    inner.appendChild(half1);
+    wrapper.appendChild(inner);
+
     boardEl.appendChild(wrapper);
-
-    // Render the domino inside the wrapper (renderDomino sets --angle and vertical)
-    renderDomino(d, wrapper);
   }
-
-  // ------------------------------------------------------------
-  // 3. Ensure the visual nudge is composed into any inline transforms
-  //    This makes the nudge visible immediately even if some renderer
-  //    writes inline style.transform after render.
-  // ------------------------------------------------------------
-  applyNudgeToRenderedWrappers();
 }
