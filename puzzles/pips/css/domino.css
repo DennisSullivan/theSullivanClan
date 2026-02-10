@@ -192,6 +192,11 @@
   border-radius: inherit;
   border: inherit;
   box-shadow: inherit;
+   
+  /* Smooth rotation for tray dominos and the drag clone */
+  transition: transform 160ms cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+}
 }
 
 /* -------------------------
