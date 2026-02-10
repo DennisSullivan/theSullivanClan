@@ -321,7 +321,7 @@ function endDragHandler(
     if (fromTray) {
       const oldAngle = typeof domino.trayOrientation === "number" ? domino.trayOrientation : 0;
       domino.trayOrientation = (oldAngle + 90) % 360;
-
+    
       // Instrumentation logs for debugging
       console.log(
         "%cTRAY ROTATE (MODEL)",
@@ -330,21 +330,35 @@ function endDragHandler(
         `before=${oldAngle}`,
         `after=${domino.trayOrientation}`
       );
-
-      // Apply new angle to CSS variable (centered rotation via CSS)
+    
+      // 1) update CSS variable (keeps existing code paths compatible)
       try {
         wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
-      } catch (e) {
-        // ignore if wrapper not in scope
-      }
-
-      // Re-render tray so the rotated domino is visible in its slot
+      } catch (e) { /* ignore */ }
+    
+      // 2) apply an inline transform so the current wrapper rotates immediately
+      //    keep the translate(-50%,-50%) centering used elsewhere
       try {
-        renderTray(puzzleJson, dominos, trayEl);
+        wrapper.style.transform = `translate(-50%, -50%) rotate(${domino.trayOrientation}deg)`;
+      } catch (e) { /* ignore */ }
+    
+      // 3) force a layout read so the browser paints the new transform before we re-render
+      //    this avoids the "shape changes then orientation only on mouseup" glitch
+      try {
+        void wrapper.getBoundingClientRect();
+      } catch (e) { /* ignore */ }
+    
+      // 4) schedule the tray re-render on the next animation frame so the rotation is visible
+      //    (this also keeps your existing renderTray behavior intact)
+      try {
+        requestAnimationFrame(() => {
+          try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
+        });
       } catch (e) {
-        console.warn("renderTray failed after tray rotation:", e);
+        // fallback: immediate render if requestAnimationFrame not available
+        try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
       }
-
+    
       // Reset double-click tracking so subsequent clicks are fresh
       lastClickTime = 0;
       lastClickDominoId = null;
