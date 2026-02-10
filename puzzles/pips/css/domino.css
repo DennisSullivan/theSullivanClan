@@ -197,6 +197,10 @@
   transition: transform 160ms cubic-bezier(.2,.8,.2,1);
   will-change: transform;
 }
+
+/* Prevent the original wrapper from scaling while we use a clone */
+.domino-wrapper.dragging {
+  transform: none !important;
 }
 
 /* -------------------------
