@@ -98,6 +98,9 @@ function startDrag(
   const domino = (dominos instanceof Map) ? dominos.get(dominoId) : dominos.find(d => String(d.id) === String(dominoId));
   if (!domino) return;
 
+  // Ensure wrapper carries the domino id for robust lookup elsewhere
+  try { wrapper.dataset.dominoId = domino.id; } catch (e) { /* ignore */ }
+
   console.log(`startDrag: grabbed domino ${dominoId} at (${e.clientX},${e.clientY})`);
 
   e.preventDefault();
@@ -221,7 +224,8 @@ function onDrag(e, dragState) {
   const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
 
-  if (!dragState.moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+  // Use a larger threshold to avoid accidental drags while clicking
+  if (!dragState.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
     console.log(`onDrag: movement threshold passed dx=${dx} dy=${dy}`);
     dragState.moved = true;
   }
@@ -313,40 +317,51 @@ function endDragHandler(
     const isSameDomino = (lastClickDominoId === domino.id);
     const isDblClick = isSameDomino && (now - lastClickTime <= DBLCLICK_THRESHOLD_MS);
 
-    if (isDblClick && fromTray) {
-      console.log(`endDrag: detected tray double-click on domino ${domino.id} → rotate`);
-
-      const oldAngle = domino.trayOrientation ?? 0;
-
-      console.log(
-        "%cTRAY ROTATE (MODEL, BEFORE)",
-        "color: purple; font-weight: bold;",
-        `id=${domino.id}`,
-        `before=${oldAngle}`
-      );
+    // TRAY single-click rotates immediately (more discoverable)
+    if (fromTray) {
+      const oldAngle = typeof domino.trayOrientation === "number" ? domino.trayOrientation : 0;
       domino.trayOrientation = (oldAngle + 90) % 360;
 
+      // Instrumentation logs for debugging
       console.log(
-        "%cTRAY ROTATE (MODEL, AFTER)",
+        "%cTRAY ROTATE (MODEL)",
         "color: purple; font-weight: bold;",
         `id=${domino.id}`,
+        `before=${oldAngle}`,
         `after=${domino.trayOrientation}`
       );
 
       // Apply new angle to CSS variable (centered rotation via CSS)
-      wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
+      try {
+        wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
+      } catch (e) {
+        // ignore if wrapper not in scope
+      }
 
-      // Re-render tray only (no reflow of siblings)
-      renderTray(puzzleJson, dominos, trayEl);
+      // Re-render tray so the rotated domino is visible in its slot
+      try {
+        renderTray(puzzleJson, dominos, trayEl);
+      } catch (e) {
+        console.warn("renderTray failed after tray rotation:", e);
+      }
 
-      // Reset dblclick state
+      // Reset double-click tracking so subsequent clicks are fresh
       lastClickTime = 0;
       lastClickDominoId = null;
-
       return;
     }
 
-    // Not a double-click: record this as the latest click
+    // BOARD double-click detection (preserve existing board double-click behavior)
+    if (isDblClick && !fromTray) {
+      console.log(`endDrag: detected board double-click on domino ${domino.id}`);
+      // If you have a board double-click handler elsewhere, it can be triggered here.
+      // We simply reset the double-click state and return.
+      lastClickTime = 0;
+      lastClickDominoId = null;
+      return;
+    }
+
+    // Not a double-click: record this click for potential double-click detection
     lastClickTime = now;
     lastClickDominoId = domino.id;
 
