@@ -328,6 +328,11 @@ function endDragHandler(
       ok = moveDomino(domino, row, col, grid);
     }
 
+    // If placement failed, return the domino to the tray (spec: "if it does not fit then the domino should go back")
+    if (!ok) {
+      removeDominoToTray(domino, grid);
+    }
+
     finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
