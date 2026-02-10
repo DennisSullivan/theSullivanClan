@@ -501,6 +501,13 @@ function beginRealDrag(dragState, e) {
 
     document.body.appendChild(clone);
 
+    dbg("beginRealDrag clone appended", {
+      id: dragState.domino.id,
+      wrapperRect: rect,
+      cloneRect: clone.getBoundingClientRect(),
+      angleVar
+    });
+
     wrapper.classList.add("dragging");
     wrapper.style.visibility = "hidden";
     wrapper.style.pointerEvents = "none";
@@ -525,6 +532,10 @@ function finalize(
   boardEl,
   trayEl
 ) {
+  dbg("finalize ENTER", {
+    dominosCount: dominos instanceof Map ? dominos.size : dominos.length
+  });
+
   renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(puzzleJson, dominos, trayEl);
   syncCheck(dominos, grid);
