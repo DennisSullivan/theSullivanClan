@@ -45,11 +45,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  transform-origin: center center;
-  transition: transform 150ms ease-out;
   box-sizing: border-box;
   pointer-events: auto;
-  transform: rotate(var(--angle, 0deg));
+
+  transform: translate(-50%, -50%) rotate(var(--angle, 0deg));
+  transition: transform 150ms ease-out;
+  transform-origin: center center;
 }
 
 /* -------------------------
