@@ -434,11 +434,13 @@ function beginRealDrag(dragState, e) {
     const clone = wrapper.cloneNode(true);
     clone.classList.add("domino-clone");
 
+    // Match wrapper size
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
 
     const comp = window.getComputedStyle(wrapper);
 
+    // Copy key visuals
     clone.style.background = comp.backgroundColor;
     clone.style.border = comp.border;
     clone.style.borderRadius = comp.borderRadius;
@@ -448,28 +450,26 @@ function beginRealDrag(dragState, e) {
     clone.style.boxSizing = comp.boxSizing;
     clone.style.transformOrigin = comp.transformOrigin;
 
+    // Compute center + pointer offset
     const wrapperCenterX = rect.left + rect.width / 2;
     const wrapperCenterY = rect.top + rect.height / 2;
 
-    const offsetX = e.clientX - wrapperCenterX;
-    const offsetY = e.clientY - wrapperCenterY;
+    dragState.offsetX = e.clientX - wrapperCenterX;
+    dragState.offsetY = e.clientY - wrapperCenterY;
 
-    dragState.offsetX = offsetX;
-    dragState.offsetY = offsetY;
-
+    // Copy inner transform (nudge)
     const inner = wrapper.querySelector('.domino');
     const cloneInner = clone.querySelector('.domino');
     if (inner && cloneInner) {
       const compInner = window.getComputedStyle(inner);
-      const innerTransform = compInner.transform && compInner.transform !== 'none'
-        ? compInner.transform
-        : '';
+      const innerTransform = compInner.transform !== 'none' ? compInner.transform : '';
       cloneInner.style.transform = innerTransform;
     }
 
+    // Copy wrapper transform (rotation + translate)
     const compTransform = comp.transform;
     const angleVarRaw = comp.getPropertyValue('--angle')?.trim();
-    const angleVar = angleVarRaw && angleVarRaw.length ? angleVarRaw : '0deg';
+    const angleVar = angleVarRaw || '0deg';
 
     if (compTransform && compTransform !== 'none') {
       clone.style.transform = compTransform;
@@ -477,26 +477,28 @@ function beginRealDrag(dragState, e) {
       clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
     }
 
+    // Position clone
     clone.style.left = `${wrapperCenterX}px`;
     clone.style.top = `${wrapperCenterY}px`;
-
-    clone.style.pointerEvents = 'none';
     clone.style.position = 'fixed';
-    clone.style.transformOrigin = 'center center';
+    clone.style.pointerEvents = 'none';
     clone.style.zIndex = '9999';
+
     document.body.appendChild(clone);
 
+    // Hide wrapper AFTER clone is created
     wrapper.classList.add("dragging");
     wrapper.style.visibility = 'hidden';
     wrapper.style.pointerEvents = 'none';
 
     dragState.clone = clone;
+
   } catch (err) {
     console.warn("beginRealDrag: clone creation failed", err);
     dragState.clone = null;
   }
 }
-                       
+
 // ------------------------------------------------------------
 // finalize — re-render board + tray + syncCheck
 // ------------------------------------------------------------
