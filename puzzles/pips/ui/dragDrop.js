@@ -153,7 +153,9 @@ function startDrag(
   };
 
   // Add dragging class but avoid changing layout-affecting transforms on the original.
-  wrapper.classList.add("dragging");
+  if (!dragState.fromTray) {
+    wrapper.classList.add("dragging");
+  }
 
   // --- create a visual clone that will follow the pointer but won't capture pointer events
   try {
