@@ -13,6 +13,7 @@ import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement
 import { syncCheck } from "../engine/syncCheck.js";
 import { renderBoard } from "./boardRenderer.js";
 import { renderTray } from "./trayRenderer.js";
+let pendingTrayRerender = null;
 
 // ============================================================
 // Rotation-mode callback registry
@@ -184,6 +185,10 @@ function onDrag(e, dragState) {
 
   if (!dragState.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
     dragState.moved = true;
+    if (pendingTrayRerender) {
+        clearTimeout(pendingTrayRerender);
+        pendingTrayRerender = null;
+    }
   }
 
   if (dragState.moved && !dragState.clone) {
@@ -279,8 +284,9 @@ function endDragHandler(
         if (max > 0) waitMs = Math.ceil(max) + 20;
       } catch {}
 
-      setTimeout(() => {
-        renderTray(puzzleJson, dominos, trayEl);
+      pendingTrayRerender = setTimeout(() => {
+          renderTray(puzzleJson, dominos, trayEl);
+          pendingTrayRerender = null;
       }, waitMs);
 
       lastClickTime = 0;
