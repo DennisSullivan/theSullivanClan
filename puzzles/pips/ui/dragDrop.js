@@ -137,6 +137,9 @@ function startDrag(
     _handlers: null
   };
 
+if (dragState.fromTray) {
+    wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
+}
   const moveHandler = (ev) => onDrag(ev, dragState);
   const upHandler = (ev) =>
     endDragHandler(
