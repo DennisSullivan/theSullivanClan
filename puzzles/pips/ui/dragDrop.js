@@ -152,93 +152,6 @@ function startDrag(
     _handlers: null
   };
 
-  // --- create a visual clone that will follow the pointer but won't capture pointer events
-  try {
-    const clone = wrapper.cloneNode(true);
-    clone.classList.add("domino-clone");
-
-    // size the clone to match the wrapper's on-screen size
-    clone.style.width = `${rect.width}px`;
-    clone.style.height = `${rect.height}px`;
-
-    // copy computed styles once and use them for visual fidelity
-    const comp = window.getComputedStyle(wrapper);
-
-    // copy key computed visuals so the clone looks identical when moved to document.body
-    clone.style.background = comp.backgroundColor;
-    clone.style.border = comp.border;
-    clone.style.borderRadius = comp.borderRadius;
-    clone.style.boxShadow = comp.boxShadow;
-    clone.style.padding = comp.padding;
-    clone.style.color = comp.color;
-    clone.style.boxSizing = comp.boxSizing;
-    clone.style.transformOrigin = comp.transformOrigin;
-
-    // compute wrapper center and pointer offset so the clone doesn't snap to cursor
-    const wrapperCenterX = rect.left + rect.width / 2;
-    const wrapperCenterY = rect.top + rect.height / 2;
-
-    // offset from pointer to wrapper center (pointer - center)
-    const offsetX = e.clientX - wrapperCenterX;
-    const offsetY = e.clientY - wrapperCenterY;
-
-    // store offsets so onDrag can keep the same relative positioning
-    dragState.offsetX = offsetX;
-    dragState.offsetY = offsetY;
-
-    // --- match inner domino transform (nudge) so clone pixels align with original
-    const inner = wrapper.querySelector('.domino');
-    const cloneInner = clone.querySelector('.domino');
-    if (inner && cloneInner) {
-      const compInner = window.getComputedStyle(inner);
-      const innerTransform = compInner.transform && compInner.transform !== 'none' ? compInner.transform : '';
-      if (innerTransform) {
-        try { cloneInner.style.transform = innerTransform; } catch (err) { /* ignore */ }
-      } else {
-        try { cloneInner.style.transform = ''; } catch (err) { /* ignore */ }
-      }
-    }
-
-    // --- IMPORTANT: match the clone's transform expression to the wrapper's computed transform when possible
-    const compTransform = comp.transform;
-    const angleVarRaw = comp.getPropertyValue('--angle')?.trim();
-    const angleVar = angleVarRaw && angleVarRaw.length ? angleVarRaw : '0deg';
-
-    if (compTransform && compTransform !== 'none') {
-      // Use the computed transform string so clone matches wrapper exactly
-      clone.style.transform = compTransform;
-    } else {
-      // Fallback: center + rotate using the same angle variable the renderer uses
-      clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
-    }
-
-    // position the clone so its center matches the original wrapper center (no jump)
-    clone.style.left = `${wrapperCenterX}px`;
-    clone.style.top = `${wrapperCenterY}px`;
-
-    clone.style.pointerEvents = 'none';
-    clone.style.position = 'fixed';
-    clone.style.transformOrigin = 'center center';
-    clone.style.zIndex = '9999';
-    document.body.appendChild(clone);
-
-    // hide the original wrapper visually but keep layout stable.
-    try {
-      wrapper.style.visibility = 'hidden';
-      wrapper.style.pointerEvents = 'none';
-    } catch (err) {
-      // fallback to opacity if visibility fails
-      wrapper.style.opacity = '0';
-      wrapper.style.pointerEvents = 'none';
-    }
-
-    // store clone in drag state
-    dragState.clone = clone;
-  } catch (err) {
-    console.warn("startDrag: clone creation failed, falling back to inline transform", err);
-    dragState.clone = null;
-  }
-
   const moveHandler = (ev) => onDrag(ev, dragState);
   const upHandler = (ev) =>
     endDragHandler(
@@ -512,6 +425,96 @@ function endDragHandler(
   finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 }
 
+// beginRealDrag
+function beginRealDrag() {
+  // --- create a visual clone that will follow the pointer but won't capture pointer events
+  try {
+    const clone = wrapper.cloneNode(true);
+    clone.classList.add("domino-clone");
+
+    // size the clone to match the wrapper's on-screen size
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+
+    // copy computed styles once and use them for visual fidelity
+    const comp = window.getComputedStyle(wrapper);
+
+    // copy key computed visuals so the clone looks identical when moved to document.body
+    clone.style.background = comp.backgroundColor;
+    clone.style.border = comp.border;
+    clone.style.borderRadius = comp.borderRadius;
+    clone.style.boxShadow = comp.boxShadow;
+    clone.style.padding = comp.padding;
+    clone.style.color = comp.color;
+    clone.style.boxSizing = comp.boxSizing;
+    clone.style.transformOrigin = comp.transformOrigin;
+
+    // compute wrapper center and pointer offset so the clone doesn't snap to cursor
+    const wrapperCenterX = rect.left + rect.width / 2;
+    const wrapperCenterY = rect.top + rect.height / 2;
+
+    // offset from pointer to wrapper center (pointer - center)
+    const offsetX = e.clientX - wrapperCenterX;
+    const offsetY = e.clientY - wrapperCenterY;
+
+    // store offsets so onDrag can keep the same relative positioning
+    dragState.offsetX = offsetX;
+    dragState.offsetY = offsetY;
+
+    // --- match inner domino transform (nudge) so clone pixels align with original
+    const inner = wrapper.querySelector('.domino');
+    const cloneInner = clone.querySelector('.domino');
+    if (inner && cloneInner) {
+      const compInner = window.getComputedStyle(inner);
+      const innerTransform = compInner.transform && compInner.transform !== 'none' ? compInner.transform : '';
+      if (innerTransform) {
+        try { cloneInner.style.transform = innerTransform; } catch (err) { /* ignore */ }
+      } else {
+        try { cloneInner.style.transform = ''; } catch (err) { /* ignore */ }
+      }
+    }
+
+    // --- IMPORTANT: match the clone's transform expression to the wrapper's computed transform when possible
+    const compTransform = comp.transform;
+    const angleVarRaw = comp.getPropertyValue('--angle')?.trim();
+    const angleVar = angleVarRaw && angleVarRaw.length ? angleVarRaw : '0deg';
+
+    if (compTransform && compTransform !== 'none') {
+      // Use the computed transform string so clone matches wrapper exactly
+      clone.style.transform = compTransform;
+    } else {
+      // Fallback: center + rotate using the same angle variable the renderer uses
+      clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
+    }
+
+    // position the clone so its center matches the original wrapper center (no jump)
+    clone.style.left = `${wrapperCenterX}px`;
+    clone.style.top = `${wrapperCenterY}px`;
+
+    clone.style.pointerEvents = 'none';
+    clone.style.position = 'fixed';
+    clone.style.transformOrigin = 'center center';
+    clone.style.zIndex = '9999';
+    document.body.appendChild(clone);
+
+    // hide the original wrapper visually but keep layout stable.
+    try {
+      wrapper.style.visibility = 'hidden';
+      wrapper.style.pointerEvents = 'none';
+    } catch (err) {
+      // fallback to opacity if visibility fails
+      wrapper.style.opacity = '0';
+      wrapper.style.pointerEvents = 'none';
+    }
+
+    // store clone in drag state
+    dragState.clone = clone;
+  } catch (err) {
+    console.warn("startDrag: clone creation failed, falling back to inline transform", err);
+    dragState.clone = null;
+  }
+}
+                       
 // ------------------------------------------------------------
 // finalize — re-render board + tray + syncCheck
 // ------------------------------------------------------------
