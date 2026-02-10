@@ -54,7 +54,6 @@ function cleanupDragState(dragState) {
       w.style.visibility = '';
       w.style.opacity = '';
       w.style.pointerEvents = '';
-      try { w.style.removeProperty('transform'); } catch (e) { /* ignore */ }
     }
   } catch (e) { /* ignore */ }
 }
@@ -412,7 +411,6 @@ function endDragHandler(
 
       // Apply inline transform to the wrapper so the browser can animate it now
       try {
-        wrapper.style.transform = `translate(-50%, -50%) rotate(${domino.trayOrientation}deg)`;
         // Force layout so the transform is applied
         void wrapper.getBoundingClientRect();
       } catch (e) { /* ignore */ }
@@ -438,7 +436,6 @@ function endDragHandler(
       // After the transition, re-render tray from model and clear inline transform
       setTimeout(() => {
         try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
-        try { wrapper.style.removeProperty('transform'); } catch (e) { /* ignore */ }
       }, waitMs);
 
       // Remove pointer handlers for this drag (defensive)
