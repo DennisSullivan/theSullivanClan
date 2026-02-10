@@ -38,6 +38,20 @@ Rotation does not affect placement or geometry.
 
 Tray rotation is visual only and does not carry over to board placement.
 
+• Tray rotation uses a monotonically increasing angle (0°, 90°, 180°, 270°, 360°, …).
+  The angle is never wrapped modulo 360. This guarantees that CSS transitions
+  always animate clockwise and prevents counter‑rotation artifacts.
+
+• Tray rotation is expressed exclusively through the CSS variable --angle.
+  JS must not modify the wrapper’s transform property directly.
+
+• Click‑only interactions must not alter the wrapper. No clone creation,
+  wrapper hiding, or transform changes occur until drag movement exceeds
+  the movement threshold.
+
+• Dragging preserves the domino’s current rotation. The drag clone inherits
+  the wrapper’s computed transform, including rotation and nudge.
+
 2. Board Rotation Rules
 2.1 Activation
 Rotation is triggered by a double‑click on a specific half of a domino already on the board.
