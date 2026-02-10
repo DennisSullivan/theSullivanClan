@@ -45,21 +45,21 @@ function cleanupDragState(dragState) {
     if (dragState.clone && dragState.clone.parentNode) {
       dragState.clone.parentNode.removeChild(dragState.clone);
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {}
 
   try {
     const w = dragState.wrapper;
     if (w) {
       w.classList.remove("dragging");
-      w.style.visibility = '';
-      w.style.opacity = '';
-      w.style.pointerEvents = '';
+      w.style.visibility = "";
+      w.style.opacity = "";
+      w.style.pointerEvents = "";
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {}
 }
 
 // ------------------------------------------------------------
-// enableDrag — NOW ACCEPTS puzzleJson
+// enableDrag
 // ------------------------------------------------------------
 export function enableDrag(
   puzzleJson,
@@ -71,22 +71,6 @@ export function enableDrag(
   boardEl,
   trayEl
 ) {
-  if (!boardEl) {
-    console.error("enableDrag: boardEl is null or undefined. Ensure renderBoard ran before enableDrag.");
-    return;
-  }
-  if (!trayEl) {
-    console.error("enableDrag: trayEl is null or undefined. Ensure renderTray ran before enableDrag.");
-    return;
-  }
-  if (!puzzleJson || !Array.isArray(puzzleJson.dominos)) {
-    console.error("enableDrag: invalid puzzleJson passed", puzzleJson);
-    return;
-  }
-
-  console.log("enableDrag: wiring pointerdown on board + tray");
-  console.log("enableDrag: puzzleJson id =", puzzleJson.id ?? "<no id>", "dominos.length =", puzzleJson.dominos.length);
-
   boardEl.addEventListener("pointerdown", (e) =>
     startDrag(e, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
   );
@@ -117,22 +101,23 @@ function startDrag(
   if (!wrapper) return;
 
   const dominoId = target.dataset.id;
-  const domino = (dominos instanceof Map) ? dominos.get(dominoId) : dominos.find(d => String(d.id) === String(dominoId));
+  const domino = (dominos instanceof Map)
+    ? dominos.get(dominoId)
+    : dominos.find(d => String(d.id) === String(dominoId));
   if (!domino) return;
 
-  // Ensure wrapper carries the domino id for robust lookup elsewhere
-  try { wrapper.dataset.dominoId = domino.id; } catch (err) { /* ignore */ }
+  // Ensure wrapper carries the domino id
+  wrapper.dataset.dominoId = domino.id;
 
-  console.log(`startDrag: grabbed domino ${dominoId} at (${e.clientX},${e.clientY})`);
+  // ⭐ NEW: Sync wrapper rotation before any drag logic
+  if (trayEl.contains(wrapper)) {
+    wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
+  }
 
   e.preventDefault();
 
   const halfEl = e.target.closest(".half");
-  let clickedHalf = 0;
-  if (halfEl && halfEl.classList.contains("half1")) {
-    clickedHalf = 1;
-  }
-  console.log(`startDrag: clickedHalf = ${clickedHalf}`);
+  let clickedHalf = halfEl && halfEl.classList.contains("half1") ? 1 : 0;
 
   const rect = wrapper.getBoundingClientRect();
 
@@ -169,24 +154,16 @@ function startDrag(
       upHandler
     );
 
-  // cancellation and blur handlers to ensure cleanup
-  const cancelHandler = (ev) => {
-    try { cleanupDragState(dragState); } catch (e) { /* ignore */ }
+  const cancelHandler = () => {
+    cleanupDragState(dragState);
     window.removeEventListener("pointermove", moveHandler);
     window.removeEventListener("pointerup", upHandler);
     window.removeEventListener("pointercancel", cancelHandler);
     window.removeEventListener("blur", blurHandler);
   };
 
-  const blurHandler = () => {
-    try { cleanupDragState(dragState); } catch (e) { /* ignore */ }
-    window.removeEventListener("pointermove", moveHandler);
-    window.removeEventListener("pointerup", upHandler);
-    window.removeEventListener("pointercancel", cancelHandler);
-    window.removeEventListener("blur", blurHandler);
-  };
+  const blurHandler = cancelHandler;
 
-  // store handlers so endDragHandler can remove them if needed
   dragState._handlers = { moveHandler, upHandler, cancelHandler, blurHandler };
 
   window.addEventListener("pointermove", moveHandler);
@@ -196,42 +173,37 @@ function startDrag(
 }
 
 // ------------------------------------------------------------
-// onDrag — visual dragging (composes rotation)
+// onDrag
 // ------------------------------------------------------------
 function onDrag(e, dragState) {
   const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
 
-  // Use a larger threshold to avoid accidental drags while clicking
   if (!dragState.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
-    console.log(`onDrag: movement threshold passed dx=${dx} dy=${dy}`);
     dragState.moved = true;
   }
+
   if (dragState.moved && !dragState.clone) {
-      beginRealDrag(dragState, e);
+    beginRealDrag(dragState, e);
   }
 
-  // If we created a clone, move it to follow the pointer while preserving initial offset
   if (dragState.clone) {
-    // position clone center = pointer - initial offset
     dragState.clone.style.left = `${e.clientX - dragState.offsetX}px`;
     dragState.clone.style.top = `${e.clientY - dragState.offsetY}px`;
 
-    // Only add scale when the drag has actually started (moved === true)
-    const scalePart = dragState.moved ? ' scale(1.1)' : '';
-    // Use rotate(var(--angle)) so the clone follows the model angle while dragging.
-    dragState.clone.style.transform = `translate(-50%, -50%) rotate(var(--angle, 0deg))${scalePart}`;
+    const scalePart = dragState.moved ? " scale(1.1)" : "";
+    dragState.clone.style.transform =
+      `translate(-50%, -50%) rotate(var(--angle, 0deg))${scalePart}`;
     return;
   }
 
-  // Fallback: if no clone, move the original wrapper (less ideal)
-  const scalePart = dragState.moved ? ' scale(1.1)' : '';
+  const scalePart = dragState.moved ? " scale(1.1)" : "";
   dragState.wrapper.style.transform =
     `translate(-50%, -50%) rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px)${scalePart}`;
 }
 
 // ------------------------------------------------------------
-// endDragHandler — robust hit detection and finalize
+// endDragHandler
 // ------------------------------------------------------------
 function endDragHandler(
   e,
@@ -247,162 +219,102 @@ function endDragHandler(
   moveHandler,
   upHandler
 ) {
-  // Remove pointer listeners (defensive)
-  try {
-    window.removeEventListener("pointermove", moveHandler);
-    window.removeEventListener("pointerup", upHandler);
-  } catch (e) { /* ignore */ }
+  window.removeEventListener("pointermove", moveHandler);
+  window.removeEventListener("pointerup", upHandler);
 
-  // Ensure clone removed for all end paths
-  try { cleanupDragState(dragState); } catch (e) { /* ignore */ }
+  cleanupDragState(dragState);
 
   const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
 
-  // Compute hit list at release point (more robust than single elementFromPoint)
   const hits = document.elementsFromPoint(e.clientX, e.clientY);
-  console.log("endDrag: elementsFromPoint hits:", hits);
 
-  // Prefer the nearest board cell in the hit stack
   let dropTarget = null;
   let cell = null;
 
   for (const el of hits) {
     if (!el) continue;
-    // If this element or an ancestor is a board cell, choose it immediately
-    const maybeCell = el.closest ? el.closest(".board-cell") : null;
+    const maybeCell = el.closest?.(".board-cell");
     if (maybeCell) {
       dropTarget = maybeCell;
       cell = maybeCell;
       break;
     }
-    // If not a board cell, check if it's inside the tray (tray half or slot)
-    if (el.closest && el.closest(".tray")) {
+    if (el.closest?.(".tray")) {
       dropTarget = el;
       break;
     }
   }
 
-  console.log("endDrag: resolved dropTarget =", dropTarget, "resolved cell =", cell);
+  wrapper.classList.remove("dragging");
 
-  // Ensure dragging class removed on wrapper (defensive)
-  try { wrapper.classList.remove("dragging"); } catch (e) { /* ignore */ }
-
-  // --------------------------------------------------------
-  // Click-only: handle single-click vs double-click
-  // --------------------------------------------------------
+  // CLICK ONLY
   if (!moved) {
-    console.log(`endDrag: click-only, no movement for domino ${domino.id}`);
-
-    const now = (typeof performance !== "undefined" && performance.now)
-      ? performance.now()
-      : Date.now();
-
-    const isSameDomino = (lastClickDominoId === domino.id);
+    const now = performance.now ? performance.now() : Date.now();
+    const isSameDomino = lastClickDominoId === domino.id;
     const isDblClick = isSameDomino && (now - lastClickTime <= DBLCLICK_THRESHOLD_MS);
 
-    // TRAY single-click: commit rotation on pointerup (no preview on pointerdown)
     if (fromTray) {
-      const oldAngle = typeof domino.trayOrientation === "number" ? domino.trayOrientation : 0;
+      const oldAngle = domino.trayOrientation;
       domino.trayOrientation = oldAngle + 90;
 
-      console.log(
-        "%cTRAY ROTATE (MODEL COMMIT)",
-        "color: purple; font-weight: bold;",
-        `id=${domino.id}`,
-        `before=${oldAngle}`,
-        `after=${domino.trayOrientation}`
-      );
+      wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
 
-      // Ensure the wrapper (if still present) has the CSS var for immediate render
-      try { wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`); } catch (e) { /* ignore */ }
-
-      // Remove clone immediately and restore original wrapper so we animate the real element
-      try { cleanupDragState(dragState); } catch (e) { /* ignore */ }
-
-      // Apply inline transform to the wrapper so the browser can animate it now
-      try {
-        // Force layout so the transform is applied
-        void wrapper.getBoundingClientRect();
-      } catch (e) { /* ignore */ }
-
-      // Compute transition duration from computed style (fallback to 160ms)
       let waitMs = 160;
       try {
         const cs = window.getComputedStyle(wrapper);
-        const dur = cs.transitionDuration || '';
-        const delay = cs.transitionDelay || '';
-        const toMs = (s) => s.endsWith('ms') ? parseFloat(s) : s.endsWith('s') ? parseFloat(s) * 1000 : 0;
-        const durations = dur.split(',').map(s => s.trim());
-        const delays = delay.split(',').map(s => s.trim());
+        const dur = cs.transitionDuration || "";
+        const delay = cs.transitionDelay || "";
+        const toMs = (s) =>
+          s.endsWith("ms") ? parseFloat(s) :
+          s.endsWith("s") ? parseFloat(s) * 1000 : 0;
+        const durations = dur.split(",").map(s => s.trim());
+        const delays = delay.split(",").map(s => s.trim());
         let max = 0;
         for (let i = 0; i < durations.length; i++) {
-          const d = toMs(durations[i] || '0s');
-          const dl = toMs(delays[i] || '0s');
+          const d = toMs(durations[i] || "0s");
+          const dl = toMs(delays[i] || "0s");
           max = Math.max(max, d + dl);
         }
         if (max > 0) waitMs = Math.ceil(max) + 20;
-      } catch (e) { /* ignore */ }
+      } catch {}
 
-      // After the transition, re-render tray from model and clear inline transform
       setTimeout(() => {
-        try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
+        renderTray(puzzleJson, dominos, trayEl);
       }, waitMs);
 
-      // Remove pointer handlers for this drag (defensive)
-      try {
-        if (dragState._handlers) {
-          window.removeEventListener("pointermove", dragState._handlers.moveHandler);
-          window.removeEventListener("pointerup", dragState._handlers.upHandler);
-          window.removeEventListener("pointercancel", dragState._handlers.cancelHandler);
-          window.removeEventListener("blur", dragState._handlers.blurHandler);
-        }
-      } catch (e) { /* ignore */ }
-
-      // Reset double-click tracking
       lastClickTime = 0;
       lastClickDominoId = null;
       return;
     }
 
-    // BOARD double-click detection (preserve existing board double-click behavior)
     if (isDblClick && !fromTray) {
-      console.log(`endDrag: detected board double-click on domino ${domino.id}`);
       lastClickTime = 0;
       lastClickDominoId = null;
       return;
     }
 
-    // Not a double-click: record this click for potential double-click detection
     lastClickTime = now;
     lastClickDominoId = domino.id;
-
     return;
   }
 
-  const cameFromBoard = (domino.row0 !== null);
+  // DRAG PATHS
+  const cameFromBoard = domino.row0 !== null;
 
-  // Dropped on tray
   if (dropTarget && trayEl.contains(dropTarget)) {
-    console.log(`endDrag: dropping domino ${domino.id} onto tray`);
-
     endDrag.fire(domino, null, null, grid);
-
     removeDominoToTray(domino, grid);
     finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
 
-  // Dropped on board cell (we resolved 'cell' above)
   if (cell) {
     const row = parseInt(cell.dataset.row, 10);
     const col = parseInt(cell.dataset.col, 10);
 
-    console.log(`endDrag: dropping on board cell (${row},${col})`);
-
     endDrag.fire(domino, row, col, grid);
 
     let ok = false;
-
     if (!cameFromBoard) {
       ok = placeDomino(domino, row, col, grid, clickedHalf);
     } else {
@@ -413,16 +325,14 @@ function endDragHandler(
     return;
   }
 
-  // Otherwise return to tray
-  console.log(`endDrag: no valid drop target → returning ${domino.id} to tray`);
-
   endDrag.fire(domino, null, null, grid);
-
   removeDominoToTray(domino, grid);
   finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 }
 
+// ------------------------------------------------------------
 // beginRealDrag
+// ------------------------------------------------------------
 function beginRealDrag(dragState, e) {
   const wrapper = dragState.wrapper;
   const rect = wrapper.getBoundingClientRect();
@@ -431,13 +341,11 @@ function beginRealDrag(dragState, e) {
     const clone = wrapper.cloneNode(true);
     clone.classList.add("domino-clone");
 
-    // Match wrapper size
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
 
     const comp = window.getComputedStyle(wrapper);
 
-    // Copy key visuals
     clone.style.background = comp.backgroundColor;
     clone.style.border = comp.border;
     clone.style.borderRadius = comp.borderRadius;
@@ -447,49 +355,44 @@ function beginRealDrag(dragState, e) {
     clone.style.boxSizing = comp.boxSizing;
     clone.style.transformOrigin = comp.transformOrigin;
 
-    // Compute center + pointer offset
+    const angleVarRaw = comp.getPropertyValue("--angle")?.trim();
+    const angleVar = angleVarRaw || "0deg";
+    clone.style.setProperty("--angle", angleVar);
+
     const wrapperCenterX = rect.left + rect.width / 2;
     const wrapperCenterY = rect.top + rect.height / 2;
 
     dragState.offsetX = e.clientX - wrapperCenterX;
     dragState.offsetY = e.clientY - wrapperCenterY;
 
-    // Copy inner transform (nudge)
-    const inner = wrapper.querySelector('.domino');
-    const cloneInner = clone.querySelector('.domino');
+    const inner = wrapper.querySelector(".domino");
+    const cloneInner = clone.querySelector(".domino");
     if (inner && cloneInner) {
       const compInner = window.getComputedStyle(inner);
-      const innerTransform = compInner.transform !== 'none' ? compInner.transform : '';
+      const innerTransform = compInner.transform !== "none" ? compInner.transform : "";
       cloneInner.style.transform = innerTransform;
     }
 
-    // Copy wrapper transform (rotation + translate)
     const compTransform = comp.transform;
-    const angleVarRaw = comp.getPropertyValue('--angle')?.trim();
-    const angleVar = angleVarRaw || '0deg';
-
-    if (compTransform && compTransform !== 'none') {
+    if (compTransform && compTransform !== "none") {
       clone.style.transform = compTransform;
     } else {
       clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
     }
 
-    // Position clone
     clone.style.left = `${wrapperCenterX}px`;
     clone.style.top = `${wrapperCenterY}px`;
-    clone.style.position = 'fixed';
-    clone.style.pointerEvents = 'none';
-    clone.style.zIndex = '9999';
+    clone.style.position = "fixed";
+    clone.style.pointerEvents = "none";
+    clone.style.zIndex = "9999";
 
     document.body.appendChild(clone);
 
-    // Hide wrapper AFTER clone is created
     wrapper.classList.add("dragging");
-    wrapper.style.visibility = 'hidden';
-    wrapper.style.pointerEvents = 'none';
+    wrapper.style.visibility = "hidden";
+    wrapper.style.pointerEvents = "none";
 
     dragState.clone = clone;
-
   } catch (err) {
     console.warn("beginRealDrag: clone creation failed", err);
     dragState.clone = null;
@@ -497,7 +400,7 @@ function beginRealDrag(dragState, e) {
 }
 
 // ------------------------------------------------------------
-// finalize — re-render board + tray + syncCheck
+// finalize
 // ------------------------------------------------------------
 function finalize(
   puzzleJson,
@@ -509,8 +412,6 @@ function finalize(
   boardEl,
   trayEl
 ) {
-  console.log("finalize: re-rendering board + tray + syncCheck");
-
   renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(puzzleJson, dominos, trayEl);
   syncCheck(dominos, grid);
