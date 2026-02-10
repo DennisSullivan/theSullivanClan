@@ -114,9 +114,6 @@ function startDrag(
 
   const rect = wrapper.getBoundingClientRect();
 
-  // Debug: log wrapper rect so we can compare clone placement
-  console.log("startDrag: wrapper rect", { left: rect.left, top: rect.top, width: rect.width, height: rect.height });
-
   const dragState = {
     domino,
     wrapper,
@@ -169,11 +166,20 @@ function startDrag(
     dragState.offsetX = offsetX;
     dragState.offsetY = offsetY;
 
-    // copy CSS variable angle if present and set initial transform (use same expression as wrapper)
-    // default to 0deg if not present
+    // --- IMPORTANT: match the clone's transform expression to the wrapper's computed transform when possible
+    // If the wrapper has a computed transform (matrix or translate/rotate), use it directly so the clone visually matches.
+    // Otherwise fall back to the translate(-50%,-50%) centering + rotate(var(--angle)).
+    const compTransform = comp.transform;
     const angleVarRaw = comp.getPropertyValue('--angle')?.trim();
     const angleVar = angleVarRaw && angleVarRaw.length ? angleVarRaw : '0deg';
-    clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
+
+    if (compTransform && compTransform !== 'none') {
+      // Use the computed transform string so clone matches wrapper exactly
+      clone.style.transform = compTransform;
+    } else {
+      // Fallback: center + rotate using the same angle variable the renderer uses
+      clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
+    }
 
     // position the clone so its center matches the original wrapper center (no jump)
     clone.style.left = `${wrapperCenterX}px`;
@@ -184,13 +190,6 @@ function startDrag(
     clone.style.transformOrigin = 'center center';
     clone.style.zIndex = '9999';
     document.body.appendChild(clone);
-
-    // Debug: log clone placement
-    console.log("startDrag: clone placed at", {
-      left: clone.style.left,
-      top: clone.style.top,
-      transform: clone.style.transform
-    });
 
     // hide the original wrapper visually but keep layout stable.
     // Use visibility:hidden so layout/positioning remains identical to the clone's reference.
@@ -252,6 +251,9 @@ function onDrag(e, dragState) {
 
     // Only add scale when the drag has actually started (moved === true)
     const scalePart = dragState.moved ? ' scale(1.1)' : '';
+    // Use rotate(var(--angle)) so the clone follows the model angle while dragging.
+    // If the clone was created using a computed transform string, this will override it during drag,
+    // which is desirable so the clone reflects live model rotation.
     dragState.clone.style.transform = `translate(-50%, -50%) rotate(var(--angle, 0deg))${scalePart}`;
     return;
   }
