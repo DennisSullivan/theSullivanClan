@@ -56,6 +56,7 @@ export function renderTray(puzzleJson, dominos, trayEl) {
     // Render domino into its slot
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper in-tray";
+    wrapper.dataset.dominoId = d.id;
 
     renderDomino(d, wrapper);
 
