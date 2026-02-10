@@ -68,8 +68,10 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const minCol = Math.min(domino.col0, domino.col1);
 
     // Each cell is 1 unit; wrapper is centered on the first half
-    wrapper.style.left = `${minCol * 100}%`;
-    wrapper.style.top = `${minRow * 100}%`;
+    const cellSize = boardEl.querySelector(".board-cell")?.offsetWidth || 40;
+    
+    wrapper.style.left = `${minCol * cellSize}px`;
+    wrapper.style.top = `${minRow * cellSize}px`;
 
     // ------------------------------------------------------------
     // DOMINO INNER CONTENT
