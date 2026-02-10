@@ -99,7 +99,7 @@ function startDrag(
   if (!domino) return;
 
   // Ensure wrapper carries the domino id for robust lookup elsewhere
-  try { wrapper.dataset.dominoId = domino.id; } catch (e) { /* ignore */ }
+  try { wrapper.dataset.dominoId = domino.id; } catch (err) { /* ignore */ }
 
   console.log(`startDrag: grabbed domino ${dominoId} at (${e.clientX},${e.clientY})`);
 
@@ -165,7 +165,7 @@ function startDrag(
     dragState.offsetX = offsetX;
     dragState.offsetY = offsetY;
 
-    // copy CSS variable angle if present and set initial transform
+    // copy CSS variable angle if present and set initial transform (no scale)
     const angleVar = comp.getPropertyValue('--angle')?.trim();
     if (angleVar) {
       clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
@@ -236,14 +236,16 @@ function onDrag(e, dragState) {
     dragState.clone.style.left = `${e.clientX - dragState.offsetX}px`;
     dragState.clone.style.top = `${e.clientY - dragState.offsetY}px`;
 
-    // preserve rotation and scale but DO NOT add translate(dx,dy) because left/top already positions it
-    dragState.clone.style.transform = `translate(-50%, -50%) rotate(var(--angle, 0deg)) scale(1.1)`;
+    // Only add scale when the drag has actually started (moved === true)
+    const scalePart = dragState.moved ? ' scale(1.1)' : '';
+    dragState.clone.style.transform = `translate(-50%, -50%) rotate(var(--angle, 0deg))${scalePart}`;
     return;
   }
 
   // Fallback: if no clone, move the original wrapper (less ideal)
+  const scalePart = dragState.moved ? ' scale(1.1)' : '';
   dragState.wrapper.style.transform =
-    `translate(-50%, -50%) rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px) scale(1.1)`;
+    `translate(-50%, -50%) rotate(var(--angle, 0deg)) translate(${dx}px, ${dy}px)${scalePart}`;
 }
 
 // ------------------------------------------------------------
@@ -317,49 +319,39 @@ function endDragHandler(
     const isSameDomino = (lastClickDominoId === domino.id);
     const isDblClick = isSameDomino && (now - lastClickTime <= DBLCLICK_THRESHOLD_MS);
 
-    // TRAY single-click rotates immediately (more discoverable)
+    // TRAY single-click: commit rotation on pointerup (no preview on pointerdown)
     if (fromTray) {
       const oldAngle = typeof domino.trayOrientation === "number" ? domino.trayOrientation : 0;
-      domino.trayOrientation = (oldAngle + 90) % 360;
-    
-      // Instrumentation logs for debugging
+      const newAngle = (oldAngle + 90) % 360;
+
+      // Commit model
+      domino.trayOrientation = newAngle;
+
       console.log(
-        "%cTRAY ROTATE (MODEL)",
+        "%cTRAY ROTATE (MODEL COMMIT)",
         "color: purple; font-weight: bold;",
         `id=${domino.id}`,
         `before=${oldAngle}`,
         `after=${domino.trayOrientation}`
       );
-    
-      // 1) update CSS variable (keeps existing code paths compatible)
-      try {
-        wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
-      } catch (e) { /* ignore */ }
-    
-      // 2) apply an inline transform so the current wrapper rotates immediately
-      //    keep the translate(-50%,-50%) centering used elsewhere
-      try {
-        wrapper.style.transform = `translate(-50%, -50%) rotate(${domino.trayOrientation}deg)`;
-      } catch (e) { /* ignore */ }
-    
-      // 3) force a layout read so the browser paints the new transform before we re-render
-      //    this avoids the "shape changes then orientation only on mouseup" glitch
-      try {
-        void wrapper.getBoundingClientRect();
-      } catch (e) { /* ignore */ }
-    
-      // 4) schedule the tray re-render on the next animation frame so the rotation is visible
-      //    (this also keeps your existing renderTray behavior intact)
+
+      // Ensure the wrapper (if still present) has the CSS var for immediate render
+      try { wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`); } catch (e) { /* ignore */ }
+
+      // Schedule re-render on next frame so the rotation transition is visible
       try {
         requestAnimationFrame(() => {
           try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
+          // Clear any inline transform left on the old wrapper to avoid stale transforms
+          try { wrapper.style.removeProperty('transform'); } catch (e) { /* ignore */ }
         });
       } catch (e) {
-        // fallback: immediate render if requestAnimationFrame not available
+        // fallback: immediate render
         try { renderTray(puzzleJson, dominos, trayEl); } catch (err) { console.warn("renderTray failed after tray rotation:", err); }
+        try { wrapper.style.removeProperty('transform'); } catch (e) { /* ignore */ }
       }
-    
-      // Reset double-click tracking so subsequent clicks are fresh
+
+      // Reset double-click tracking
       lastClickTime = 0;
       lastClickDominoId = null;
       return;
@@ -369,7 +361,6 @@ function endDragHandler(
     if (isDblClick && !fromTray) {
       console.log(`endDrag: detected board double-click on domino ${domino.id}`);
       // If you have a board double-click handler elsewhere, it can be triggered here.
-      // We simply reset the double-click state and return.
       lastClickTime = 0;
       lastClickDominoId = null;
       return;
