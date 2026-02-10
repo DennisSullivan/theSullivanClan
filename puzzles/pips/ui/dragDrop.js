@@ -303,10 +303,7 @@ function endDragHandler(
     // TRAY single-click: commit rotation on pointerup (no preview on pointerdown)
     if (fromTray) {
       const oldAngle = typeof domino.trayOrientation === "number" ? domino.trayOrientation : 0;
-      const newAngle = (oldAngle + 90) % 360;
-
-      // Commit model
-      domino.trayOrientation = newAngle;
+      domino.trayOrientation = oldAngle + 90;
 
       console.log(
         "%cTRAY ROTATE (MODEL COMMIT)",
