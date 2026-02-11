@@ -540,4 +540,14 @@ function finalize(
   renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(puzzleJson, dominos, trayEl);
   syncCheck(dominos, grid);
+  // after syncCheck(dominos, grid);
+  (function assertSync(dominos, grid) {
+    const list = dominos instanceof Map ? Array.from(dominos.values()) : dominos;
+    for (const d of list) {
+      if (d.row0 == null) continue;
+      if (grid[d.row0][d.col0] !== String(d.id) || grid[d.row1][d.col1] !== String(d.id)) {
+        console.warn("ASSERT-SYNC-FAIL", d.id, { domino: d, gridCell0: grid[d.row0][d.col0], gridCell1: grid[d.row1][d.col1] });
+      }
+    }
+  })(dominos, grid);
 }
