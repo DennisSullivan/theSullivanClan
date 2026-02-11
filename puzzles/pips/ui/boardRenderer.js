@@ -1,20 +1,21 @@
 // FILE: ui/boardRenderer.js
-// PURPOSE: Geometry-driven renderer for dominos on the board.
-// NOTES (conversational): This renderer follows the CSS model in board.css.
-// It creates .domino-wrapper.on-board elements, sets --row/--col/--angle,
-// and builds .half[data-pip] with .pip children so CSS pip selectors work.
+// PURPOSE: Render placed dominos on the board with pip DOM and CSS variables.
+// NOTES (conversational): This renderer builds the exact DOM structure and attributes
+// the CSS expects: .domino-wrapper.on-board, --row/--col/--angle, .half[data-pip],
+// and seven .pip elements inside each half. It is defensive about property names
+// (value0/value1 or half0/half1) and logs a small diagnostic if a domino lacks pip data.
 
- /**
-  * renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
-  * Purpose: Render the entire board grid and all placed dominos.
-  * Use: Call whenever the engine geometry (domino.row* or col*) or grid changes.
-  * The function is intentionally simple: it clears boardEl and rebuilds DOM from geometry.
-  */
+/**
+ * renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
+ * Purpose: Rebuild the board DOM from model geometry.
+ * Use: Call after any placement/mutation. This function is pure rendering only;
+ * it does not mutate model state.
+ */
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   if (!boardEl) return;
   if (!boardEl.style.position) boardEl.style.position = "relative";
 
-  // Clear and rebuild
+  // Clear board
   boardEl.innerHTML = "";
 
   const rows = grid.length;
@@ -35,22 +36,11 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     }
   }
 
-  /**
-   * createPips()
-   * Purpose: Build the seven pip elements used by the CSS pip selectors.
-   * Use: appended into each half so CSS rules like .half[data-pip="3"] .p1 { opacity: 1 } work.
-   */
+  // Helper: create seven pip elements (p1..p7)
   function createPips() {
     const container = document.createElement("div");
     container.className = "pip-grid";
-    container.style.display = "grid";
-    container.style.gridTemplateRows = "1fr 1fr 1fr";
-    container.style.gridTemplateColumns = "1fr 1fr 1fr";
-    container.style.width = "100%";
-    container.style.height = "100%";
-    container.style.alignItems = "center";
-    container.style.justifyItems = "center";
-
+    // Keep layout minimal; CSS will position .pip elements.
     for (let i = 1; i <= 7; i++) {
       const p = document.createElement("div");
       p.className = `pip p${i}`;
@@ -59,17 +49,17 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     return container;
   }
 
-  // Render each placed domino from geometry
-  for (const domino of dominos.values ? dominos.values() : dominos) {
+  // Render each placed domino
+  const list = dominos.values ? Array.from(dominos.values()) : dominos;
+  for (const domino of list) {
     // Skip tray dominos
     if (domino.row0 == null || domino.col0 == null) continue;
 
-    // Wrapper: CSS-driven positioning and rotation
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper on-board";
     wrapper.dataset.dominoId = domino.id;
 
-    // Orientation derived from geometry
+    // Orientation from geometry
     const isVertical = domino.col0 === domino.col1;
     const angle = isVertical ? 90 : 0;
     wrapper.style.setProperty("--angle", `${angle}deg`);
@@ -84,22 +74,49 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const inner = document.createElement("div");
     inner.className = "domino on-board";
 
+    // Resolve pip values: prefer value0/value1, fall back to half0/half1, else 0
+    const pip0 = (typeof domino.value0 !== "undefined") ? domino.value0
+               : (typeof domino.half0 !== "undefined") ? domino.half0
+               : 0;
+    const pip1 = (typeof domino.value1 !== "undefined") ? domino.value1
+               : (typeof domino.half1 !== "undefined") ? domino.half1
+               : 0;
+
+    // Half 0
     const half0 = document.createElement("div");
     half0.className = "half half0";
-    // Use value0/value1 if present; fall back to half0/half1 naming if your model uses that.
-    half0.dataset.pip = String(domino.value0 ?? domino.half0 ?? 0);
+    // Ensure data-pip is a string (CSS attribute selectors expect strings)
+    half0.dataset.pip = String(pip0);
     half0.appendChild(createPips());
+    // Optional visible label for debugging (hidden by default in CSS)
+    const lbl0 = document.createElement("div");
+    lbl0.className = "pip-label";
+    lbl0.textContent = String(pip0);
+    lbl0.style.display = "none";
+    half0.appendChild(lbl0);
 
+    // Half 1
     const half1 = document.createElement("div");
     half1.className = "half half1";
-    half1.dataset.pip = String(domino.value1 ?? domino.half1 ?? 0);
+    half1.dataset.pip = String(pip1);
     half1.appendChild(createPips());
+    const lbl1 = document.createElement("div");
+    lbl1.className = "pip-label";
+    lbl1.textContent = String(pip1);
+    lbl1.style.display = "none";
+    half1.appendChild(lbl1);
 
     inner.appendChild(half0);
     inner.appendChild(half1);
     wrapper.appendChild(inner);
 
-    // Append to board; CSS positions/rotates using --row/--col/--angle
+    // Append wrapper to board; CSS positions/rotates using --row/--col/--angle
     boardEl.appendChild(wrapper);
+
+    // Small diagnostic if both halves are zero (helps find model naming mismatches)
+    if ((String(pip0) === "0" && String(pip1) === "0") && (domino.value0 == null && domino.value1 == null && domino.half0 == null && domino.half1 == null)) {
+      // eslint-disable-next-line no-console
+      console.debug(`boardRenderer: domino ${domino.id} has no pip fields (value0/value1/half0/half1).`, domino);
+    }
   }
 }
