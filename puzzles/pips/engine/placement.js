@@ -167,53 +167,56 @@ export function isPlacementValid(domino, grid) {
  * On success it updates domino.row* or col* and writes grid occupancy and returns true.
  * On failure it leaves the domino unchanged and returns false.
  */
-// Helper: clear any grid cells that reference this domino id
+// engine/placement.js — atomic placement helpers (drop-in)
+
 function _clearDominoFromGrid(domino, grid) {
   const idStr = String(domino.id);
   for (let r = 0; r < grid.length; r++) {
     for (let c = 0; c < grid[0].length; c++) {
-      if (grid[r][c] === idStr) grid[r][c] = null;
+      const cell = grid[r][c];
+      if (cell && String(cell.dominoId) === idStr) grid[r][c] = null;
     }
   }
 }
 
-// Place a domino from tray onto board at (row,col) using clickedHalf orientation.
-// Returns true if placed, false otherwise.
+/**
+ * placeDomino(domino, row, col, grid, clickedHalf)
+ * Attempts to place a domino so that one half is anchored at (row,col).
+ * Returns true on success, false if no candidate fits.
+ */
 export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
-  // Determine candidate geometry based on clickedHalf and orientation rules.
-  // This logic must match your game's rules; below is a robust example that
-  // tries the two orientations anchored at (row,col).
   const rows = grid.length;
   const cols = grid[0].length;
   const idStr = String(domino.id);
 
-  // Candidate pairs to try (r0,c0,r1,c1)
+  // Candidate anchors: try to place domino so one half is at (row,col)
+  // Each candidate: [r0,c0,r1,c1]
   const candidates = [
-    // horizontal: left->right anchored at clickedHalf
-    [row, col, row, col + 1],
-    [row, col - 1, row, col],
-    // vertical: top->bottom
-    [row, col, row + 1, col],
-    [row - 1, col, row, col]
+    [row, col, row, col + 1],   // horizontal, anchor left half
+    [row, col - 1, row, col],   // horizontal, anchor right half
+    [row, col, row + 1, col],   // vertical, anchor top half
+    [row - 1, col, row, col]    // vertical, anchor bottom half
   ];
 
-  // Try candidates in order; validate bounds and emptiness
-  for (const cand of candidates) {
-    const [r0, c0, r1, c1] = cand;
+  for (const [r0, c0, r1, c1] of candidates) {
+    // bounds check
     if (r0 < 0 || r1 < 0 || c0 < 0 || c1 < 0) continue;
     if (r0 >= rows || r1 >= rows || c0 >= cols || c1 >= cols) continue;
 
-    // Check occupancy: allow if cells are null or already occupied by this domino
-    const ok0 = grid[r0][c0] === null || grid[r0][c0] === idStr;
-    const ok1 = grid[r1][c1] === null || grid[r1][c1] === idStr;
+    const cell0 = grid[r0][c0];
+    const cell1 = grid[r1][c1];
+
+    // allow placement if cells are empty or already occupied by this domino
+    const ok0 = cell0 === null || (cell0.dominoId && String(cell0.dominoId) === idStr);
+    const ok1 = cell1 === null || (cell1.dominoId && String(cell1.dominoId) === idStr);
     if (!ok0 || !ok1) continue;
 
-    // Commit atomically: clear previous references, then set new ones
+    // Commit atomically: clear previous refs, then write both cells
     _clearDominoFromGrid(domino, grid);
-    grid[r0][c0] = idStr;
-    grid[r1][c1] = idStr;
+    grid[r0][c0] = { dominoId: idStr, half: 0 };
+    grid[r1][c1] = { dominoId: idStr, half: 1 };
 
-    // Update domino geometry in model
+    // Update model after grid commit
     domino.row0 = r0; domino.col0 = c0;
     domino.row1 = r1; domino.col1 = c1;
 
@@ -224,20 +227,24 @@ export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
   return false;
 }
 
-// Move a domino already on the board to a new anchor (row,col)
+/**
+ * moveDomino(domino, row, col, grid)
+ * Moves an already-placed domino to a new anchor. Reuses placeDomino logic.
+ */
 export function moveDomino(domino, row, col, grid) {
-  // Similar to placeDomino but allow moving from board; same atomic rules
   return placeDomino(domino, row, col, grid, 0);
 }
 
-// Remove domino back to tray: clear grid references and null geometry
+/**
+ * removeDominoToTray(domino, grid)
+ * Clears any grid references for the domino and nulls its geometry.
+ */
 export function removeDominoToTray(domino, grid) {
   try {
     _clearDominoFromGrid(domino, grid);
   } finally {
-    domino.row0 = null;
-    domino.col0 = null;
-    domino.row1 = null;
-    domino.col1 = null;
+    domino.row0 = null; domino.col0 = null;
+    domino.row1 = null; domino.col1 = null;
   }
 }
+
