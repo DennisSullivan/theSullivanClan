@@ -285,7 +285,36 @@ function endDragHandler(
     dbg("post-cleanup inspect failed", err);
   }
 
-  const hits = document.elementsFromPoint(e.clientX, e.clientY);
+  // Use the center of the clicked half for hit testing (prefer clone half if present).
+  let hitX = e.clientX, hitY = e.clientY;
+  try {
+    const halfSelector = `.half${dragState.clickedHalf ?? 0}`;
+    // Prefer clone's half (visual), fall back to original wrapper's half
+    let halfEl = null;
+    if (dragState && dragState.clone) halfEl = dragState.clone.querySelector(halfSelector);
+    if (!halfEl && wrapper) halfEl = wrapper.querySelector(halfSelector);
+  
+    if (halfEl) {
+      const r = halfEl.getBoundingClientRect();
+      hitX = r.left + r.width / 2;
+      hitY = r.top  + r.height / 2;
+    } else if (dragState && dragState.clone) {
+      // If half not found but clone exists, use clone center
+      const r = dragState.clone.getBoundingClientRect();
+      hitX = r.left + r.width / 2;
+      hitY = r.top  + r.height / 2;
+    } else if (wrapper) {
+      // Fallback to wrapper center
+      const r = wrapper.getBoundingClientRect();
+      hitX = r.left + r.width / 2;
+      hitY = r.top  + r.height / 2;
+    }
+  } catch (err) {
+    // fallback to pointer if anything goes wrong
+    hitX = e.clientX; hitY = e.clientY;
+  }
+  
+  const hits = document.elementsFromPoint(Math.round(hitX), Math.round(hitY));
 
   let dropTarget = null;
   let cell = null;
