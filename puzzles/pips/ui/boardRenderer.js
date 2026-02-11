@@ -7,7 +7,7 @@
  /**
   * renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   * Purpose: Render the entire board grid and all placed dominos.
-  * Use: Call whenever the engine geometry (domino.row*/col*) or grid changes.
+  * Use: Call whenever the engine geometry (domino.row* or col*) or grid changes.
   * The function is intentionally simple: it clears boardEl and rebuilds DOM from geometry.
   */
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
