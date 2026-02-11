@@ -1,28 +1,35 @@
-// ============================================================
-// FILE: dragDrop.js
+// FILE: ui/dragDrop.js
 // PURPOSE: Enables drag-and-drop interactions for dominos.
-// NOTES:
-//   - Visual dragging composes rotation via translate(-50%,-50%) rotate(var(--angle))
-//   - Wrapper stays in tray slot (no collapse)
-//   - Engine placement unchanged
-//   - Rotation-mode callbacks supported via endDrag.fire()
-//   - Robust hit testing using a non-interactive visual clone
-//   - Temporary debug instrumentation included (DBG logs)
-// ============================================================
+// NOTES (conversational): This module wires pointer events to the placement engine.
+// It creates a non-interactive visual clone for dragging, records where the user
+// grabbed the domino (clicked-half center), and uses that same grab point on drop
+// to deterministically map the drop to a board cell. Functions are documented
+// above each definition in plain conversational style.
 
 import { placeDomino, moveDomino, removeDominoToTray } from "../engine/placement.js";
 import { syncCheck } from "../engine/syncCheck.js";
 import { renderBoard } from "./boardRenderer.js";
 import { renderTray } from "./trayRenderer.js";
+
 let pendingTrayRerender = null;
 
 // -----------------------------
 // Debug helpers (temporary)
 // -----------------------------
+/**
+ * dbg(...args)
+ * Purpose: Lightweight debug logger used throughout this file.
+ * Use: Keeps console output compact and tagged so you can grep DBG lines.
+ */
 function dbg(...args) {
   try { console.log("%cDBG", "background:#222;color:#ffd700;padding:2px 4px;", ...args); } catch(e){}
 }
 
+/**
+ * dbgDominoState(domino)
+ * Purpose: Return a small, stable snapshot of a domino for debug logs.
+ * Use: Called when we want to print domino geometry without dumping the whole object.
+ */
 function dbgDominoState(domino) {
   return {
     id: domino?.id,
@@ -36,7 +43,11 @@ function dbgDominoState(domino) {
   };
 }
 
-// Expose a quick inspector to the console
+/**
+ * window.__debugDump(dominos, grid)
+ * Purpose: Quick inspector you can call from the console to see state.
+ * Use: Pass the dominos collection and grid to print a compact snapshot.
+ */
 window.__debugDump = function(dominos, grid) {
   try {
     const list = (dominos instanceof Map)
@@ -51,6 +62,11 @@ window.__debugDump = function(dominos, grid) {
 // ============================================================
 // Rotation-mode callback registry
 // ============================================================
+/**
+ * endDrag
+ * Purpose: Registry for callbacks that want to observe the end of a drag.
+ * Use: registerCallback(fn) to be notified with (domino, row, col, grid).
+ */
 export const endDrag = {
   callbacks: [],
   registerCallback(fn) {
@@ -73,6 +89,11 @@ const DBLCLICK_THRESHOLD_MS = 250;
 // ------------------------------------------------------------
 // Helper: cleanup drag state (remove clone, restore wrapper)
 // ------------------------------------------------------------
+/**
+ * cleanupDragState(dragState)
+ * Purpose: Remove the visual clone and restore wrapper visibility.
+ * Use: Called at the end of a drag or when cancelling.
+ */
 function cleanupDragState(dragState) {
   if (!dragState) return;
   try {
@@ -95,6 +116,11 @@ function cleanupDragState(dragState) {
 // ------------------------------------------------------------
 // enableDrag
 // ------------------------------------------------------------
+/**
+ * enableDrag(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
+ * Purpose: Attach pointerdown handlers to board and tray to start drags.
+ * Use: Call once during initialization with DOM elements and model references.
+ */
 export function enableDrag(
   puzzleJson,
   dominos,
@@ -117,6 +143,12 @@ export function enableDrag(
 // ------------------------------------------------------------
 // startDrag
 // ------------------------------------------------------------
+/**
+ * startDrag(e, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
+ * Purpose: Begin a drag when the user presses on a domino.
+ * Use: Creates a dragState object, records where the user grabbed the domino
+ *      (pointer -> clicked-half offset), and installs global pointer listeners.
+ */
 function startDrag(
   e,
   puzzleJson,
@@ -143,7 +175,7 @@ function startDrag(
   // Ensure wrapper carries the domino id
   wrapper.dataset.dominoId = domino.id;
 
-  // ⭐ NEW: Sync wrapper rotation before any drag logic
+  // Sync wrapper rotation before any drag logic (tray orientation)
   if (trayEl.contains(wrapper)) {
     wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
   }
@@ -168,11 +200,32 @@ function startDrag(
     clone: null,
     offsetX: 0,
     offsetY: 0,
+    pointerToHalf: null, // will be set below
     _handlers: null
   };
 
+  // If dragging from tray, ensure wrapper reflects tray orientation
   if (dragState.fromTray) {
     wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
+  }
+
+  // Record the pointer -> clicked-half offset at drag start.
+  // Purpose: use the same grab point on drop so hit testing matches user intent.
+  try {
+    const halfSelector = `.half${clickedHalf}`;
+    // Prefer wrapper's half element (it exists now)
+    const halfElement = wrapper.querySelector(halfSelector) || target.closest(halfSelector);
+    if (halfElement) {
+      const hr = halfElement.getBoundingClientRect();
+      dragState.pointerToHalf = {
+        dx: e.clientX - (hr.left + hr.width / 2),
+        dy: e.clientY - (hr.top  + hr.height / 2)
+      };
+    } else {
+      dragState.pointerToHalf = { dx: 0, dy: 0 };
+    }
+  } catch (err) {
+    dragState.pointerToHalf = { dx: 0, dy: 0 };
   }
 
   const moveHandler = (ev) => onDrag(ev, dragState);
@@ -213,6 +266,12 @@ function startDrag(
 // ------------------------------------------------------------
 // onDrag
 // ------------------------------------------------------------
+/**
+ * onDrag(e, dragState)
+ * Purpose: Track pointer movement during a drag, create the visual clone when movement threshold is exceeded,
+ * and update the clone position while dragging.
+ * Use: Internal; installed by startDrag.
+ */
 function onDrag(e, dragState) {
   const dx = e.clientX - dragState.startX;
   const dy = e.clientY - dragState.startY;
@@ -245,20 +304,12 @@ function onDrag(e, dragState) {
 /**
  * endDragHandler(e, dragState, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl, moveHandler, upHandler)
  *
- * FILE: ui/dragDrop.js
- * PURPOSE: Finalize a drag operation for a domino.
+ * Purpose: Finalize a drag operation for a domino.
+ * Use: This function stops listeners, removes the clone, maps the clicked-half grab point
+ *      into a board cell deterministically (using the pointer->half offset captured at start),
+ *      and then calls the placement/move/remove logic. It logs compact diagnostics when mapping fails.
  *
- * Conversational notes:
- * This function stops global listeners, removes the visual clone, and decides
- * where the user dropped the piece. It uses the *clicked half's center* (prefers
- * the clone half when dragging) and deterministically maps that point into the
- * board grid (row/col). It then either places the domino on the board, returns
- * it to the tray, or handles click/rotation semantics. The implementation is
- * defensive and logs compact diagnostics when the clicked-half center cannot be
- * mapped to a board cell.
- *
- * Drop-in: Replace the existing endDragHandler function body in ui/dragDrop.js
- * with this function (keep the same signature).
+ * Drop-in: This function replaces the previous endDragHandler implementation.
  */
 function endDragHandler(
   e,
@@ -282,11 +333,9 @@ function endDragHandler(
     clickedHalf: dragState.clickedHalf
   });
 
-  // Remove global listeners immediately
   window.removeEventListener("pointermove", moveHandler);
   window.removeEventListener("pointerup", upHandler);
 
-  // Clean up visuals (clone removal, restore wrapper)
   cleanupDragState(dragState);
 
   const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
@@ -301,19 +350,17 @@ function endDragHandler(
     dbg("post-cleanup inspect failed", err);
   }
 
-  // -------------------- CLICK (no move) --------------------
+  // CLICK handling (no move)
   if (!moved) {
     const now = performance.now ? performance.now() : Date.now();
     const isSameDomino = lastClickDominoId === domino.id;
     const isDblClick = isSameDomino && (now - lastClickTime <= DBLCLICK_THRESHOLD_MS);
 
     if (fromTray) {
-      // Rotate in tray on click
       const oldAngle = domino.trayOrientation;
       domino.trayOrientation = (oldAngle || 0) + 90;
       if (wrapper) wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
 
-      // Re-render tray after transition completes (best-effort)
       let waitMs = 160;
       try {
         const cs = window.getComputedStyle(wrapper);
@@ -354,37 +401,39 @@ function endDragHandler(
     return;
   }
 
-  // -------------------- DRAG handling --------------------
+  // DRAG handling
   const cameFromBoard = domino.row0 !== null;
 
-  // -------------------- HIT TEST: clicked-half center -> deterministic mapping --------------------
-  // Compute clicked-half center (prefer clone's half, else wrapper's half).
+  // HIT TEST: use the original pointer->half offset captured at drag start
   let hitX = e.clientX, hitY = e.clientY;
   try {
-    const halfSelector = `.half${dragState.clickedHalf ?? 0}`;
-    let halfEl = null;
-    if (dragState && dragState.clone) halfEl = dragState.clone.querySelector(halfSelector);
-    if (!halfEl && wrapper) halfEl = wrapper.querySelector(halfSelector);
-
-    if (!halfEl) {
-      // Diagnostic: missing half element (shouldn't happen normally)
-      dbg("hit-test error: clicked half element not found", { clickedHalf: dragState.clickedHalf, hasClone: !!dragState.clone, wrapperExists: !!wrapper });
-      // Use pointer coords for diagnostic logs below; treat as miss if outside board.
-      hitX = e.clientX; hitY = e.clientY;
+    if (dragState && dragState.pointerToHalf) {
+      // pointerToHalf.dx = pointerAtStart - halfCenterAtStart
+      // So halfCenterNow = pointerNow - dx
+      hitX = e.clientX - (dragState.pointerToHalf.dx || 0);
+      hitY = e.clientY - (dragState.pointerToHalf.dy || 0);
     } else {
-      const hr = halfEl.getBoundingClientRect();
-      hitX = hr.left + hr.width / 2;
-      hitY = hr.top + hr.height / 2;
+      // Fallback: compute half center from clone or wrapper
+      const halfSelector = `.half${dragState.clickedHalf ?? 0}`;
+      let halfEl = null;
+      if (dragState && dragState.clone) halfEl = dragState.clone.querySelector(halfSelector);
+      if (!halfEl && wrapper) halfEl = wrapper.querySelector(halfSelector);
+      if (halfEl) {
+        const hr = halfEl.getBoundingClientRect();
+        hitX = hr.left + hr.width / 2;
+        hitY = hr.top  + hr.height / 2;
+      } else {
+        hitX = e.clientX; hitY = e.clientY;
+      }
     }
   } catch (err) {
-    dbg("hit-test exception computing half center", { err: String(err) });
+    dbg("hit-test exception computing half center (endDrag)", { err: String(err) });
     hitX = e.clientX; hitY = e.clientY;
   }
 
-  // Map the clicked-half center into board grid coordinates deterministically.
+  // Map clicked-half center into board coordinates deterministically
   const boardRect = boardEl.getBoundingClientRect();
 
-  // If clicked-half center is outside the board bounding box, treat as outside.
   if (hitX < boardRect.left || hitX > boardRect.right || hitY < boardRect.top || hitY > boardRect.bottom) {
     dbg("clicked-half center outside board rect", {
       hitPoint: { x: Math.round(hitX), y: Math.round(hitY) },
@@ -402,26 +451,22 @@ function endDragHandler(
     return;
   }
 
-  // Determine cell size and gap from the rendered grid
   const sampleCell = boardEl.querySelector(".board-cell");
   const cols = grid[0].length;
   const rows = grid.length;
   const cellSize = sampleCell ? sampleCell.offsetWidth : (boardRect.width / cols);
 
-  // Read CSS gaps (column-gap / row-gap) if present; fall back to zero.
   const csBoard = window.getComputedStyle(boardEl);
   const gapX = parseFloat(csBoard.columnGap || csBoard.getPropertyValue("column-gap") || "0") || 0;
   const gapY = parseFloat(csBoard.rowGap || csBoard.getPropertyValue("row-gap") || "0") || 0;
   const stepX = cellSize + gapX;
   const stepY = cellSize + gapY;
 
-  // Compute row/col by integer division of the relative coordinates
   const relX = hitX - boardRect.left;
   const relY = hitY - boardRect.top;
   const col = Math.floor(relX / stepX);
   const row = Math.floor(relY / stepY);
 
-  // Out of bounds -> treat as outside
   if (row < 0 || row >= rows || col < 0 || col >= cols) {
     dbg("clicked-half mapped outside grid indices", { row, col, rows, cols, hitPoint: { x: Math.round(hitX), y: Math.round(hitY) } });
     endDrag.fire(domino, null, null, grid);
@@ -431,7 +476,6 @@ function endDragHandler(
     return;
   }
 
-  // Locate the DOM cell element for debug/visual use
   const cell = boardEl.querySelector(`.board-cell[data-row="${row}"][data-col="${col}"]`);
   if (!cell) {
     dbg("mapped cell element not found", { row, col, hitPoint: { x: Math.round(hitX), y: Math.round(hitY) } });
@@ -442,7 +486,7 @@ function endDragHandler(
     return;
   }
 
-  // Optional: detect if the clicked-half center is over the tray (rare) by checking elementsFromPoint.
+  // Optional: detect tray under the clicked-half center (rare)
   let dropTarget = null;
   try {
     const hits = document.elementsFromPoint(Math.round(hitX), Math.round(hitY));
@@ -451,11 +495,9 @@ function endDragHandler(
       if (el.closest?.(".tray")) { dropTarget = el; break; }
     }
   } catch (err) {
-    // elementsFromPoint can throw in some environments; ignore and proceed with mapped cell.
     dropTarget = null;
   }
 
-  // -------------------- Handle tray drop --------------------
   if (dropTarget && trayEl.contains(dropTarget)) {
     endDrag.fire(domino, null, null, grid);
     dbg("drop onto tray target — returning to tray", { id: domino.id });
@@ -464,7 +506,7 @@ function endDragHandler(
     return;
   }
 
-  // -------------------- Handle board cell drop --------------------
+  // Proceed with placement using mapped row/col
   const mappedRow = row;
   const mappedCol = col;
 
@@ -516,10 +558,14 @@ function endDragHandler(
   return;
 }
 
-
 // ------------------------------------------------------------
 // beginRealDrag
 // ------------------------------------------------------------
+/**
+ * beginRealDrag(dragState, e)
+ * Purpose: Create a non-interactive visual clone of the wrapper and position it under the pointer.
+ * Use: Called once when the pointer has moved enough to be considered a drag.
+ */
 function beginRealDrag(dragState, e) {
   const wrapper = dragState.wrapper;
   const rect = wrapper.getBoundingClientRect();
@@ -550,6 +596,8 @@ function beginRealDrag(dragState, e) {
     const wrapperCenterX = rect.left + rect.width / 2;
     const wrapperCenterY = rect.top + rect.height / 2;
 
+    // offsetX/Y are used to keep the clone centered under the pointer in the same way
+    // the wrapper was when the drag started.
     dragState.offsetX = e.clientX - wrapperCenterX;
     dragState.offsetY = e.clientY - wrapperCenterY;
 
@@ -561,11 +609,9 @@ function beginRealDrag(dragState, e) {
       cloneInner.style.transform = innerTransform;
     }
 
-    // Always use the wrapper’s computed transform, even if it reports "none"
     const computed = window.getComputedStyle(wrapper);
     const computedTransform = computed.transform;
     
-    // If computedTransform is "none", build the correct transform manually
     if (computedTransform && computedTransform !== "none") {
         clone.style.transform = computedTransform;
     } else {
@@ -602,6 +648,11 @@ function beginRealDrag(dragState, e) {
 // ------------------------------------------------------------
 // finalize
 // ------------------------------------------------------------
+/**
+ * finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl)
+ * Purpose: Re-render board and tray and run sync checks after any state mutation.
+ * Use: Called after placement, removal, or rotation operations complete.
+ */
 function finalize(
   puzzleJson,
   dominos,
@@ -618,40 +669,39 @@ function finalize(
   renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
   renderTray(puzzleJson, dominos, trayEl);
   syncCheck(dominos, grid);
-  // after syncCheck(dominos, grid);
-(function assertSync(dominos, grid) {
-  try {
-    if (!grid || !Array.isArray(grid) || !Array.isArray(grid[0])) return;
-    const list = dominos instanceof Map ? Array.from(dominos.values()) : Array.isArray(dominos) ? dominos : [];
-    const rows = grid.length;
-    const cols = grid[0].length;
 
-    for (const d of list) {
-      if (!d || d.row0 == null || d.col0 == null || d.row1 == null || d.col1 == null) continue;
+  // Inline assert-sync for developer convenience
+  (function assertSync(dominos, grid) {
+    try {
+      if (!grid || !Array.isArray(grid) || !Array.isArray(grid[0])) return;
+      const list = dominos instanceof Map ? Array.from(dominos.values()) : Array.isArray(dominos) ? dominos : [];
+      const rows = grid.length;
+      const cols = grid[0].length;
 
-      const inBounds0 = d.row0 >= 0 && d.row0 < rows && d.col0 >= 0 && d.col0 < cols;
-      const inBounds1 = d.row1 >= 0 && d.row1 < rows && d.col1 >= 0 && d.col1 < cols;
+      for (const d of list) {
+        if (!d || d.row0 == null || d.col0 == null || d.row1 == null || d.col1 == null) continue;
 
-      if (!inBounds0 || !inBounds1) {
-        console.warn("ASSERT-SYNC-OUT-OF-BOUNDS", d.id, { domino: d, rows, cols });
-        continue;
+        const inBounds0 = d.row0 >= 0 && d.row0 < rows && d.col0 >= 0 && d.col0 < cols;
+        const inBounds1 = d.row1 >= 0 && d.row1 < rows && d.col1 >= 0 && d.col1 < cols;
+
+        if (!inBounds0 || !inBounds1) {
+          console.warn("ASSERT-SYNC-OUT-OF-BOUNDS", d.id, { domino: d, rows, cols });
+          continue;
+        }
+
+        const idStr = String(d.id);
+        const g0 = grid[d.row0][d.col0];
+        const g1 = grid[d.row1][d.col1];
+
+        const ok0 = g0 && String(g0.dominoId) === idStr && g0.half === 0;
+        const ok1 = g1 && String(g1.dominoId) === idStr && g1.half === 1;
+
+        if (!ok0 || !ok1) {
+          console.warn("ASSERT-SYNC-FAIL", d.id, { domino: d, gridCell0: g0, gridCell1: g1 });
+        }
       }
-
-      const idStr = String(d.id);
-      const g0 = grid[d.row0][d.col0];
-      const g1 = grid[d.row1][d.col1];
-
-      // Expect objects of the form { dominoId, half }
-      const ok0 = g0 && String(g0.dominoId) === idStr && g0.half === 0;
-      const ok1 = g1 && String(g1.dominoId) === idStr && g1.half === 1;
-
-      if (!ok0 || !ok1) {
-        console.warn("ASSERT-SYNC-FAIL", d.id, { domino: d, gridCell0: g0, gridCell1: g1 });
-      }
+    } catch (err) {
+      console.error("ASSERT-SYNC-ERROR", err);
     }
-  } catch (err) {
-    console.error("ASSERT-SYNC-ERROR", err);
-  }
-})(dominos, grid);
-
+  })(dominos, grid);
 }
