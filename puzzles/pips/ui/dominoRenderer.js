@@ -1,7 +1,9 @@
 // FILE: ui/dominoRenderer.js
 // PURPOSE: Build DOM for a single domino (used by tray and board renderers).
-// NOTES: Defensive resolution of pip values across many model shapes.
-// Always creates seven .pip elements per half and sets data-pip as a string.
+// NOTES:
+//  - Prefers canonical model fields pip0/pip1 (from engine/domino.js).
+//  - Also accepts arrays (pips, values) and legacy keys for compatibility.
+//  - Always creates seven .pip elements per half and sets data-pip as a string.
 
 function resolvePipFromKeys(domino, keys) {
   for (const k of keys) {
@@ -40,8 +42,10 @@ function normalizePipValue(v) {
 
 /**
  * renderDomino(domino, wrapper)
- * - domino: model object
+ * - domino: model object (expected canonical fields: pip0, pip1)
  * - wrapper: DOM element provided by caller (will be cleared and populated)
+ *
+ * This function is pure rendering only; it does not mutate the domino model.
  */
 export function renderDomino(domino, wrapper) {
   if (!wrapper) return;
@@ -50,9 +54,14 @@ export function renderDomino(domino, wrapper) {
   wrapper.innerHTML = "";
 
   // Candidate shapes to check
-  // Arrays first
+  // 1) canonical fields pip0/pip1
   let pip0 = undefined, pip1 = undefined;
-  if (domino && Array.isArray(domino.pips) && domino.pips.length >= 2) {
+  if (domino && (typeof domino.pip0 !== "undefined" || typeof domino.pip1 !== "undefined")) {
+    pip0 = domino.pip0;
+    pip1 = domino.pip1;
+  }
+  // 2) arrays (pips / values / v)
+  else if (domino && Array.isArray(domino.pips) && domino.pips.length >= 2) {
     pip0 = domino.pips[0];
     pip1 = domino.pips[1];
   } else if (domino && Array.isArray(domino.values) && domino.values.length >= 2) {
@@ -62,7 +71,7 @@ export function renderDomino(domino, wrapper) {
     pip0 = domino.v[0];
     pip1 = domino.v[1];
   } else {
-    // Key-based fallbacks
+    // 3) key-based fallbacks (legacy)
     const keys0 = ["value0", "half0", "p0", "v0", "a", "left", "first", "low"];
     const keys1 = ["value1", "half1", "p1", "v1", "b", "right", "second", "high"];
     pip0 = resolvePipFromKeys(domino, keys0);
@@ -114,7 +123,6 @@ export function renderDomino(domino, wrapper) {
 
   // Diagnostic: if both pips are zero but model contains numeric fields, log compactly once
   if (pip0 === 0 && pip1 === 0) {
-    // Check if model contains any numeric-like fields that might indicate different naming
     const numericFields = [];
     if (domino && typeof domino === "object") {
       for (const k of Object.keys(domino)) {
