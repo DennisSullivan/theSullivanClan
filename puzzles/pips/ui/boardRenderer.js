@@ -1,22 +1,26 @@
-// ============================================================
-// FILE: boardRenderer.js
-// PURPOSE: Robust, geometry-driven renderer for dominos.
-// NOTES:
-//  - Orientation derived from geometry (row/col pairs).
-//  - Uses pixel positioning with an explicit positioning context.
-//  - Wrapper is absolutely positioned and centered on the domino center.
-//  - Wrapper size and inner layout adapt to horizontal/vertical dominos.
-// ============================================================
+// FILE: ui/boardRenderer.js
+// PURPOSE: Geometry-driven renderer for dominos on the board.
+// NOTES (conversational): This renderer follows the CSS model in board.css.
+// It creates .domino-wrapper.on-board elements, sets --row/--col/--angle,
+// and builds .half[data-pip] with .pip children so CSS pip selectors work.
+
+ /**
+  * renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
+  * Purpose: Render the entire board grid and all placed dominos.
+  * Use: Call whenever the engine geometry (domino.row*/col*) or grid changes.
+  * The function is intentionally simple: it clears boardEl and rebuilds DOM from geometry.
+  */
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   if (!boardEl) return;
   if (!boardEl.style.position) boardEl.style.position = "relative";
 
+  // Clear and rebuild
   boardEl.innerHTML = "";
 
   const rows = grid.length;
   const cols = grid[0].length;
 
-  // Create grid cells
+  // Build grid cells (visual background)
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const cell = document.createElement("div");
@@ -31,7 +35,11 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     }
   }
 
-  // Helper: create pip grid inside a half
+  /**
+   * createPips()
+   * Purpose: Build the seven pip elements used by the CSS pip selectors.
+   * Use: appended into each half so CSS rules like .half[data-pip="3"] .p1 { opacity: 1 } work.
+   */
   function createPips() {
     const container = document.createElement("div");
     container.className = "pip-grid";
@@ -51,20 +59,22 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     return container;
   }
 
-  // Render dominos using CSS-variable anchoring expected by board.css
+  // Render each placed domino from geometry
   for (const domino of dominos.values ? dominos.values() : dominos) {
+    // Skip tray dominos
     if (domino.row0 == null || domino.col0 == null) continue;
 
+    // Wrapper: CSS-driven positioning and rotation
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper on-board";
     wrapper.dataset.dominoId = domino.id;
 
-    // Orientation from geometry
+    // Orientation derived from geometry
     const isVertical = domino.col0 === domino.col1;
     const angle = isVertical ? 90 : 0;
     wrapper.style.setProperty("--angle", `${angle}deg`);
 
-    // Anchor at the minimum row/col of the two halves (CSS uses --row/--col)
+    // Anchor at the minimum row/col of the two halves (board.css expects this)
     const anchorRow = Math.min(domino.row0, domino.row1);
     const anchorCol = Math.min(domino.col0, domino.col1);
     wrapper.style.setProperty("--row", String(anchorRow));
@@ -76,6 +86,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
 
     const half0 = document.createElement("div");
     half0.className = "half half0";
+    // Use value0/value1 if present; fall back to half0/half1 naming if your model uses that.
     half0.dataset.pip = String(domino.value0 ?? domino.half0 ?? 0);
     half0.appendChild(createPips());
 
@@ -88,6 +99,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     inner.appendChild(half1);
     wrapper.appendChild(inner);
 
+    // Append to board; CSS positions/rotates using --row/--col/--angle
     boardEl.appendChild(wrapper);
   }
 }
