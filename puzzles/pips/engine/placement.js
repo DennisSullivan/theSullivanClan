@@ -189,41 +189,44 @@ export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
   const cols = grid[0].length;
   const idStr = String(domino.id);
 
-  // Candidate anchors: try to place domino so one half is at (row,col)
-  // Each candidate: [r0,c0,r1,c1]
-  const candidates = [
-    [row, col, row, col + 1],   // horizontal, anchor left half
-    [row, col - 1, row, col],   // horizontal, anchor right half
-    [row, col, row + 1, col],   // vertical, anchor top half
-    [row - 1, col, row, col]    // vertical, anchor bottom half
-  ];
+  const inside = (r, c) => r >= 0 && c >= 0 && r < rows && c < cols;
+
+  // Build candidates so the clicked half is anchored at (row,col)
+  const candidates = [];
+  if (clickedHalf === 0) {
+    candidates.push([row, col,     row, col + 1]); // right
+    candidates.push([row, col,     row + 1, col]); // down
+    candidates.push([row, col,     row, col - 1]); // left
+    candidates.push([row, col,     row - 1, col]); // up
+  } else {
+    // clickedHalf === 1: ensure half1 == (row,col)
+    candidates.push([row, col + 1, row, col]);     // right
+    candidates.push([row - 1, col, row, col]);     // down
+    candidates.push([row, col - 1, row, col]);     // left
+    candidates.push([row + 1, col, row, col]);     // up
+  }
 
   for (const [r0, c0, r1, c1] of candidates) {
-    // bounds check
-    if (r0 < 0 || r1 < 0 || c0 < 0 || c1 < 0) continue;
-    if (r0 >= rows || r1 >= rows || c0 >= cols || c1 >= cols) continue;
+    if (!inside(r0, c0) || !inside(r1, c1)) continue;
 
     const cell0 = grid[r0][c0];
     const cell1 = grid[r1][c1];
 
-    // allow placement if cells are empty or already occupied by this domino
     const ok0 = cell0 === null || (cell0.dominoId && String(cell0.dominoId) === idStr);
     const ok1 = cell1 === null || (cell1.dominoId && String(cell1.dominoId) === idStr);
     if (!ok0 || !ok1) continue;
 
-    // Commit atomically: clear previous refs, then write both cells
+    // Commit atomically
     _clearDominoFromGrid(domino, grid);
     grid[r0][c0] = { dominoId: idStr, half: 0 };
     grid[r1][c1] = { dominoId: idStr, half: 1 };
 
-    // Update model after grid commit
     domino.row0 = r0; domino.col0 = c0;
     domino.row1 = r1; domino.col1 = c1;
 
     return true;
   }
 
-  // No candidate fit
   return false;
 }
 
