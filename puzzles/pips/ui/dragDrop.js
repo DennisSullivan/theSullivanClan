@@ -245,14 +245,20 @@ function onDrag(e, dragState) {
 /**
  * endDragHandler(e, dragState, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl, moveHandler, upHandler)
  *
- * Purpose (conversational): This is the single place that finalizes a drag operation.
- * It stops listeners, removes the visual clone, decides where the user dropped the piece,
- * and then either places the domino on the board, returns it to the tray, or rotates it
- * on a click. It uses the *clicked half's center* (clone half if present, otherwise wrapper half)
- * as the canonical hit-test point so the drop decision matches where the user grabbed the piece.
+ * FILE: ui/dragDrop.js
+ * PURPOSE: Finalize a drag operation for a domino.
  *
- * Use: Drop-in replacement for the existing endDragHandler in ui/dragDrop.js.
- * Keep the same signature; paste over the old function body.
+ * Conversational notes:
+ * This function stops global listeners, removes the visual clone, and decides
+ * where the user dropped the piece. It uses the *clicked half's center* (prefers
+ * the clone half when dragging) and deterministically maps that point into the
+ * board grid (row/col). It then either places the domino on the board, returns
+ * it to the tray, or handles click/rotation semantics. The implementation is
+ * defensive and logs compact diagnostics when the clicked-half center cannot be
+ * mapped to a board cell.
+ *
+ * Drop-in: Replace the existing endDragHandler function body in ui/dragDrop.js
+ * with this function (keep the same signature).
  */
 function endDragHandler(
   e,
@@ -295,19 +301,19 @@ function endDragHandler(
     dbg("post-cleanup inspect failed", err);
   }
 
-  // ---------- CLICK (no move) handling ----------
+  // -------------------- CLICK (no move) --------------------
   if (!moved) {
     const now = performance.now ? performance.now() : Date.now();
     const isSameDomino = lastClickDominoId === domino.id;
     const isDblClick = isSameDomino && (now - lastClickTime <= DBLCLICK_THRESHOLD_MS);
 
     if (fromTray) {
-      // rotate in tray on click
+      // Rotate in tray on click
       const oldAngle = domino.trayOrientation;
-      domino.trayOrientation = oldAngle + 90;
-      wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
+      domino.trayOrientation = (oldAngle || 0) + 90;
+      if (wrapper) wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
 
-      // compute transition wait and re-render tray after rotation completes
+      // Re-render tray after transition completes (best-effort)
       let waitMs = 160;
       try {
         const cs = window.getComputedStyle(wrapper);
@@ -325,7 +331,7 @@ function endDragHandler(
           max = Math.max(max, d + dl);
         }
         if (max > 0) waitMs = Math.ceil(max) + 20;
-      } catch {}
+      } catch (e) {}
 
       pendingTrayRerender = setTimeout(() => {
         renderTray(puzzleJson, dominos, trayEl);
@@ -348,11 +354,11 @@ function endDragHandler(
     return;
   }
 
-  // ---------- DRAG handling ----------
+  // -------------------- DRAG handling --------------------
   const cameFromBoard = domino.row0 !== null;
 
-  // ---------- HIT TEST: use clicked-half center only ----------
-  // Compute the clicked-half center (prefer clone's half, else wrapper's half).
+  // -------------------- HIT TEST: clicked-half center -> deterministic mapping --------------------
+  // Compute clicked-half center (prefer clone's half, else wrapper's half).
   let hitX = e.clientX, hitY = e.clientY;
   try {
     const halfSelector = `.half${dragState.clickedHalf ?? 0}`;
@@ -361,132 +367,155 @@ function endDragHandler(
     if (!halfEl && wrapper) halfEl = wrapper.querySelector(halfSelector);
 
     if (!halfEl) {
-      // Diagnostic: missing half element (shouldn't happen in normal DOM)
+      // Diagnostic: missing half element (shouldn't happen normally)
       dbg("hit-test error: clicked half element not found", { clickedHalf: dragState.clickedHalf, hasClone: !!dragState.clone, wrapperExists: !!wrapper });
-      // Use pointer coordinates for the diagnostic log below, but we will treat this as a miss.
+      // Use pointer coords for diagnostic logs below; treat as miss if outside board.
       hitX = e.clientX; hitY = e.clientY;
     } else {
       const hr = halfEl.getBoundingClientRect();
       hitX = hr.left + hr.width / 2;
-      hitY = hr.top  + hr.height / 2;
+      hitY = hr.top + hr.height / 2;
     }
   } catch (err) {
     dbg("hit-test exception computing half center", { err: String(err) });
     hitX = e.clientX; hitY = e.clientY;
   }
 
-  // Use the clicked-half center only (no silent fallback).
-  const hits = document.elementsFromPoint(Math.round(hitX), Math.round(hitY));
+  // Map the clicked-half center into board grid coordinates deterministically.
+  const boardRect = boardEl.getBoundingClientRect();
 
-  // Find a board cell among hits
-  let cell = null;
-  for (const el of hits) {
-    if (!el) continue;
-    const maybeCell = el.closest?.(".board-cell");
-    if (maybeCell) { cell = maybeCell; break; }
-  }
-
-  // If no board cell found, log diagnostic and return to tray (preserve previous behavior).
-  if (!cell) {
-    const topEl = hits && hits.length ? hits[0] : null;
-    dbg("clicked-half center missed board-cell", {
-      clickedHalf: dragState.clickedHalf,
+  // If clicked-half center is outside the board bounding box, treat as outside.
+  if (hitX < boardRect.left || hitX > boardRect.right || hitY < boardRect.top || hitY > boardRect.bottom) {
+    dbg("clicked-half center outside board rect", {
       hitPoint: { x: Math.round(hitX), y: Math.round(hitY) },
-      topElementTag: topEl ? topEl.tagName : null,
-      topElementClasses: topEl ? topEl.className : null,
-      topElementId: topEl ? topEl.id : null
+      boardRect: {
+        left: Math.round(boardRect.left),
+        top: Math.round(boardRect.top),
+        right: Math.round(boardRect.right),
+        bottom: Math.round(boardRect.bottom)
+      }
     });
-
     endDrag.fire(domino, null, null, grid);
     dbg("drop outside board — returning to tray", { id: domino.id });
     removeDominoToTray(domino, grid);
-    dbg("after removeDominoToTray (outside)", { domino: dbgDominoState(domino) });
     finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
 
-  // If we have a cell, compute dropTarget (tray) from the same hits list if present
-  let dropTarget = null;
-  for (const el of hits) {
-    if (!el) continue;
-    if (el.closest?.(".tray")) { dropTarget = el; break; }
+  // Determine cell size and gap from the rendered grid
+  const sampleCell = boardEl.querySelector(".board-cell");
+  const cols = grid[0].length;
+  const rows = grid.length;
+  const cellSize = sampleCell ? sampleCell.offsetWidth : (boardRect.width / cols);
+
+  // Read CSS gaps (column-gap / row-gap) if present; fall back to zero.
+  const csBoard = window.getComputedStyle(boardEl);
+  const gapX = parseFloat(csBoard.columnGap || csBoard.getPropertyValue("column-gap") || "0") || 0;
+  const gapY = parseFloat(csBoard.rowGap || csBoard.getPropertyValue("row-gap") || "0") || 0;
+  const stepX = cellSize + gapX;
+  const stepY = cellSize + gapY;
+
+  // Compute row/col by integer division of the relative coordinates
+  const relX = hitX - boardRect.left;
+  const relY = hitY - boardRect.top;
+  const col = Math.floor(relX / stepX);
+  const row = Math.floor(relY / stepY);
+
+  // Out of bounds -> treat as outside
+  if (row < 0 || row >= rows || col < 0 || col >= cols) {
+    dbg("clicked-half mapped outside grid indices", { row, col, rows, cols, hitPoint: { x: Math.round(hitX), y: Math.round(hitY) } });
+    endDrag.fire(domino, null, null, grid);
+    dbg("drop outside board — returning to tray", { id: domino.id });
+    removeDominoToTray(domino, grid);
+    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+    return;
   }
 
-  // ---------- Handle tray drop ----------
+  // Locate the DOM cell element for debug/visual use
+  const cell = boardEl.querySelector(`.board-cell[data-row="${row}"][data-col="${col}"]`);
+  if (!cell) {
+    dbg("mapped cell element not found", { row, col, hitPoint: { x: Math.round(hitX), y: Math.round(hitY) } });
+    endDrag.fire(domino, null, null, grid);
+    dbg("drop outside board — returning to tray", { id: domino.id });
+    removeDominoToTray(domino, grid);
+    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+    return;
+  }
+
+  // Optional: detect if the clicked-half center is over the tray (rare) by checking elementsFromPoint.
+  let dropTarget = null;
+  try {
+    const hits = document.elementsFromPoint(Math.round(hitX), Math.round(hitY));
+    for (const el of hits) {
+      if (!el) continue;
+      if (el.closest?.(".tray")) { dropTarget = el; break; }
+    }
+  } catch (err) {
+    // elementsFromPoint can throw in some environments; ignore and proceed with mapped cell.
+    dropTarget = null;
+  }
+
+  // -------------------- Handle tray drop --------------------
   if (dropTarget && trayEl.contains(dropTarget)) {
     endDrag.fire(domino, null, null, grid);
     dbg("drop onto tray target — returning to tray", { id: domino.id });
     removeDominoToTray(domino, grid);
-    dbg("after removeDominoToTray (tray target)", { domino: dbgDominoState(domino) });
     finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
     return;
   }
 
-  // ---------- Handle board cell drop ----------
-  if (cell) {
-    const row = parseInt(cell.dataset.row, 10);
-    const col = parseInt(cell.dataset.col, 10);
+  // -------------------- Handle board cell drop --------------------
+  const mappedRow = row;
+  const mappedCol = col;
 
-    endDrag.fire(domino, row, col, grid);
+  endDrag.fire(domino, mappedRow, mappedCol, grid);
+  dbg("attempting placement (mapped)", { domino: dbgDominoState(domino), row: mappedRow, col: mappedCol, clickedHalf, cameFromBoard });
 
-    dbg("attempting placement", { domino: dbgDominoState(domino), row, col, clickedHalf, cameFromBoard });
-
-    let ok = false;
-    try {
-      if (!cameFromBoard) {
-        ok = placeDomino(domino, row, col, grid, clickedHalf);
-      } else {
-        ok = moveDomino(domino, row, col, grid);
-      }
-    } catch (err) {
-      dbg("placement threw exception", { err });
-      try { removeDominoToTray(domino, grid); } catch (e) { dbg("removeDominoToTray failed after exception", e); }
-      finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-      throw err;
+  let ok = false;
+  try {
+    if (!cameFromBoard) {
+      ok = placeDomino(domino, mappedRow, mappedCol, grid, clickedHalf);
+    } else {
+      ok = moveDomino(domino, mappedRow, mappedCol, grid);
     }
-
-    dbg("placement result", { id: domino.id, ok, dominoAfter: dbgDominoState(domino) });
-
-    if (!ok) {
-      dbg("placement failed — returning to tray", { id: domino.id });
-      try {
-        removeDominoToTray(domino, grid);
-      } catch (err) {
-        dbg("removeDominoToTray error", err);
-      }
-    }
-
-    try {
-      dbg("before finalize dominos snapshot", {
-        dominosCount: dominos instanceof Map ? dominos.size : dominos.length,
-        containsDomino: dominos instanceof Map ? dominos.has(String(domino.id)) : dominos.some(d => String(d.id) === String(domino.id))
-      });
-    } catch (err) {
-      dbg("before finalize snapshot failed", err);
-    }
-
+  } catch (err) {
+    dbg("placement threw exception", { err });
+    try { removeDominoToTray(domino, grid); } catch (e) { dbg("removeDominoToTray failed after exception", e); }
     finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-
-    try {
-      dbg("after finalize dominos snapshot", {
-        dominosCount: dominos instanceof Map ? dominos.size : dominos.length,
-        containsDomino: dominos instanceof Map ? dominos.has(String(domino.id)) : dominos.some(d => String(d.id) === String(domino.id)),
-        dominoState: dbgDominoState(domino)
-      });
-    } catch (err) {
-      dbg("after finalize snapshot failed", err);
-    }
-
-    return;
+    throw err;
   }
 
-  // ---------- Fallback: treat as drop outside ----------
-  endDrag.fire(domino, null, null, grid);
-  dbg("drop outside board — returning to tray", { id: domino.id });
-  removeDominoToTray(domino, grid);
-  dbg("after removeDominoToTray (outside)", { domino: dbgDominoState(domino) });
+  dbg("placement result", { id: domino.id, ok, dominoAfter: dbgDominoState(domino) });
+
+  if (!ok) {
+    dbg("placement failed — returning to tray", { id: domino.id });
+    try { removeDominoToTray(domino, grid); } catch (err) { dbg("removeDominoToTray error", err); }
+  }
+
+  try {
+    dbg("before finalize dominos snapshot", {
+      dominosCount: dominos instanceof Map ? dominos.size : dominos.length,
+      containsDomino: dominos instanceof Map ? dominos.has(String(domino.id)) : dominos.some(d => String(d.id) === String(domino.id))
+    });
+  } catch (err) {
+    dbg("before finalize snapshot failed", err);
+  }
+
   finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+
+  try {
+    dbg("after finalize dominos snapshot", {
+      dominosCount: dominos instanceof Map ? dominos.size : dominos.length,
+      containsDomino: dominos instanceof Map ? dominos.has(String(domino.id)) : dominos.some(d => String(d.id) === String(domino.id)),
+      dominoState: dbgDominoState(domino)
+    });
+  } catch (err) {
+    dbg("after finalize snapshot failed", err);
+  }
+
+  return;
 }
+
 
 // ------------------------------------------------------------
 // beginRealDrag
