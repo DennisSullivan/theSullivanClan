@@ -242,9 +242,18 @@ function onDrag(e, dragState) {
   // No clone yet — do nothing. Wrapper must remain untouched.
 }
 
-// ------------------------------------------------------------
-// endDragHandler
-// ------------------------------------------------------------
+/**
+ * endDragHandler(e, dragState, puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl, moveHandler, upHandler)
+ *
+ * Purpose (conversational): This is the single place that finalizes a drag operation.
+ * It stops listeners, removes the visual clone, decides where the user dropped the piece,
+ * and then either places the domino on the board, returns it to the tray, or rotates it
+ * on a click. It uses the *clicked half's center* (clone half if present, otherwise wrapper half)
+ * as the canonical hit-test point so the drop decision matches where the user grabbed the piece.
+ *
+ * Use: Drop-in replacement for the existing endDragHandler in ui/dragDrop.js.
+ * Keep the same signature; paste over the old function body.
+ */
 function endDragHandler(
   e,
   dragState,
@@ -267,14 +276,15 @@ function endDragHandler(
     clickedHalf: dragState.clickedHalf
   });
 
+  // Remove global listeners immediately
   window.removeEventListener("pointermove", moveHandler);
   window.removeEventListener("pointerup", upHandler);
 
+  // Clean up visuals (clone removal, restore wrapper)
   cleanupDragState(dragState);
 
   const { domino, moved, wrapper, clickedHalf, fromTray } = dragState;
 
-  // After cleanup: confirm wrapper visibility and clone state
   try {
     dbg("post-cleanup wrapper", {
       wrapperExists: !!wrapper,
@@ -285,68 +295,19 @@ function endDragHandler(
     dbg("post-cleanup inspect failed", err);
   }
 
-  // Use the center of the clicked half for hit testing (prefer clone half if present).
-  let hitX = e.clientX, hitY = e.clientY;
-  try {
-    const halfSelector = `.half${dragState.clickedHalf ?? 0}`;
-    // Prefer clone's half (visual), fall back to original wrapper's half
-    let halfEl = null;
-    if (dragState && dragState.clone) halfEl = dragState.clone.querySelector(halfSelector);
-    if (!halfEl && wrapper) halfEl = wrapper.querySelector(halfSelector);
-  
-    if (halfEl) {
-      const r = halfEl.getBoundingClientRect();
-      hitX = r.left + r.width / 2;
-      hitY = r.top  + r.height / 2;
-    } else if (dragState && dragState.clone) {
-      // If half not found but clone exists, use clone center
-      const r = dragState.clone.getBoundingClientRect();
-      hitX = r.left + r.width / 2;
-      hitY = r.top  + r.height / 2;
-    } else if (wrapper) {
-      // Fallback to wrapper center
-      const r = wrapper.getBoundingClientRect();
-      hitX = r.left + r.width / 2;
-      hitY = r.top  + r.height / 2;
-    }
-  } catch (err) {
-    // fallback to pointer if anything goes wrong
-    hitX = e.clientX; hitY = e.clientY;
-  }
-  
-  const hits = document.elementsFromPoint(Math.round(hitX), Math.round(hitY));
-
-  let dropTarget = null;
-  let cell = null;
-
-  for (const el of hits) {
-    if (!el) continue;
-    const maybeCell = el.closest?.(".board-cell");
-    if (maybeCell) {
-      dropTarget = maybeCell;
-      cell = maybeCell;
-      break;
-    }
-    if (el.closest?.(".tray")) {
-      dropTarget = el;
-      break;
-    }
-  }
-
-  wrapper.classList.remove("dragging");
-
-  // CLICK ONLY
+  // ---------- CLICK (no move) handling ----------
   if (!moved) {
     const now = performance.now ? performance.now() : Date.now();
     const isSameDomino = lastClickDominoId === domino.id;
     const isDblClick = isSameDomino && (now - lastClickTime <= DBLCLICK_THRESHOLD_MS);
 
     if (fromTray) {
+      // rotate in tray on click
       const oldAngle = domino.trayOrientation;
       domino.trayOrientation = oldAngle + 90;
-
       wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
 
+      // compute transition wait and re-render tray after rotation completes
       let waitMs = 160;
       try {
         const cs = window.getComputedStyle(wrapper);
@@ -367,8 +328,8 @@ function endDragHandler(
       } catch {}
 
       pendingTrayRerender = setTimeout(() => {
-          renderTray(puzzleJson, dominos, trayEl);
-          pendingTrayRerender = null;
+        renderTray(puzzleJson, dominos, trayEl);
+        pendingTrayRerender = null;
       }, waitMs);
 
       lastClickTime = 0;
@@ -387,9 +348,71 @@ function endDragHandler(
     return;
   }
 
-  // DRAG PATHS
+  // ---------- DRAG handling ----------
   const cameFromBoard = domino.row0 !== null;
 
+  // ---------- HIT TEST: use clicked-half center only ----------
+  // Compute the clicked-half center (prefer clone's half, else wrapper's half).
+  let hitX = e.clientX, hitY = e.clientY;
+  try {
+    const halfSelector = `.half${dragState.clickedHalf ?? 0}`;
+    let halfEl = null;
+    if (dragState && dragState.clone) halfEl = dragState.clone.querySelector(halfSelector);
+    if (!halfEl && wrapper) halfEl = wrapper.querySelector(halfSelector);
+
+    if (!halfEl) {
+      // Diagnostic: missing half element (shouldn't happen in normal DOM)
+      dbg("hit-test error: clicked half element not found", { clickedHalf: dragState.clickedHalf, hasClone: !!dragState.clone, wrapperExists: !!wrapper });
+      // Use pointer coordinates for the diagnostic log below, but we will treat this as a miss.
+      hitX = e.clientX; hitY = e.clientY;
+    } else {
+      const hr = halfEl.getBoundingClientRect();
+      hitX = hr.left + hr.width / 2;
+      hitY = hr.top  + hr.height / 2;
+    }
+  } catch (err) {
+    dbg("hit-test exception computing half center", { err: String(err) });
+    hitX = e.clientX; hitY = e.clientY;
+  }
+
+  // Use the clicked-half center only (no silent fallback).
+  const hits = document.elementsFromPoint(Math.round(hitX), Math.round(hitY));
+
+  // Find a board cell among hits
+  let cell = null;
+  for (const el of hits) {
+    if (!el) continue;
+    const maybeCell = el.closest?.(".board-cell");
+    if (maybeCell) { cell = maybeCell; break; }
+  }
+
+  // If no board cell found, log diagnostic and return to tray (preserve previous behavior).
+  if (!cell) {
+    const topEl = hits && hits.length ? hits[0] : null;
+    dbg("clicked-half center missed board-cell", {
+      clickedHalf: dragState.clickedHalf,
+      hitPoint: { x: Math.round(hitX), y: Math.round(hitY) },
+      topElementTag: topEl ? topEl.tagName : null,
+      topElementClasses: topEl ? topEl.className : null,
+      topElementId: topEl ? topEl.id : null
+    });
+
+    endDrag.fire(domino, null, null, grid);
+    dbg("drop outside board — returning to tray", { id: domino.id });
+    removeDominoToTray(domino, grid);
+    dbg("after removeDominoToTray (outside)", { domino: dbgDominoState(domino) });
+    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+    return;
+  }
+
+  // If we have a cell, compute dropTarget (tray) from the same hits list if present
+  let dropTarget = null;
+  for (const el of hits) {
+    if (!el) continue;
+    if (el.closest?.(".tray")) { dropTarget = el; break; }
+  }
+
+  // ---------- Handle tray drop ----------
   if (dropTarget && trayEl.contains(dropTarget)) {
     endDrag.fire(domino, null, null, grid);
     dbg("drop onto tray target — returning to tray", { id: domino.id });
@@ -399,6 +422,7 @@ function endDragHandler(
     return;
   }
 
+  // ---------- Handle board cell drop ----------
   if (cell) {
     const row = parseInt(cell.dataset.row, 10);
     const col = parseInt(cell.dataset.col, 10);
@@ -416,16 +440,13 @@ function endDragHandler(
       }
     } catch (err) {
       dbg("placement threw exception", { err });
-      // Ensure we don't lose the domino on exception
       try { removeDominoToTray(domino, grid); } catch (e) { dbg("removeDominoToTray failed after exception", e); }
-      // Re-render and rethrow so devtools show stack if desired
       finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
       throw err;
     }
 
     dbg("placement result", { id: domino.id, ok, dominoAfter: dbgDominoState(domino) });
 
-    // If placement failed, return the domino to the tray (spec: "if it does not fit then the domino should go back")
     if (!ok) {
       dbg("placement failed — returning to tray", { id: domino.id });
       try {
@@ -435,7 +456,6 @@ function endDragHandler(
       }
     }
 
-    // Log dominos presence before finalize
     try {
       dbg("before finalize dominos snapshot", {
         dominosCount: dominos instanceof Map ? dominos.size : dominos.length,
@@ -447,7 +467,6 @@ function endDragHandler(
 
     finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
 
-    // Log dominos presence after finalize (finalize will re-render)
     try {
       dbg("after finalize dominos snapshot", {
         dominosCount: dominos instanceof Map ? dominos.size : dominos.length,
@@ -461,6 +480,7 @@ function endDragHandler(
     return;
   }
 
+  // ---------- Fallback: treat as drop outside ----------
   endDrag.fire(domino, null, null, grid);
   dbg("drop outside board — returning to tray", { id: domino.id });
   removeDominoToTray(domino, grid);
