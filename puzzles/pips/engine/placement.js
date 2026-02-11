@@ -219,16 +219,19 @@ export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
   // Build candidates so the clicked half is anchored at (row,col)
   const candidates = [];
   if (clickedHalf === 0) {
+    // clicked cell should be half0
     candidates.push([row, col,     row, col + 1]); // right
     candidates.push([row, col,     row + 1, col]); // down
     candidates.push([row, col,     row, col - 1]); // left
     candidates.push([row, col,     row - 1, col]); // up
   } else {
-    // clickedHalf === 1: ensure half1 == (row,col)
-    candidates.push([row, col + 1, row, col]);     // right
-    candidates.push([row - 1, col, row, col]);     // down
-    candidates.push([row, col - 1, row, col]);     // left
-    candidates.push([row + 1, col, row, col]);     // up
+    // clicked cell should be half1
+    // NOTE: we want the *first* candidate to place the other half to the LEFT
+    // of the clicked cell (user expectation when clicking the right half).
+    candidates.push([row, col - 1, row, col]);     // horizontal: other half left
+    candidates.push([row - 1, col, row, col]);     // vertical: other half above
+    candidates.push([row, col + 1, row, col]);     // horizontal: other half right
+    candidates.push([row + 1, col, row, col]);     // vertical: other half below
   }
 
   for (const [r0, c0, r1, c1] of candidates) {
