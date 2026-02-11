@@ -1,14 +1,43 @@
-// engine/placement.js
-// Drop-in replacement focused on safe rotation, commit, and basic placement.
+// FILE: engine/placement.js
+// PURPOSE: Placement and rotation helpers for domino geometry and grid occupancy.
+// NOTES (conversational): This module is the single place that mutates domino geometry
+// and the grid. Functions here are careful to validate bounds and to commit atomically.
+// Keep changes minimal: callers compute desired anchor and pass clickedHalf into placeDomino.
 
 import { isInside } from "./grid.js";
 
 /**
- * Rotate a domino on the board 90 degrees clockwise around the given pivot half.
- * This function snapshots previous geometry (if not already snapshotted) so callers
- * can call commitRotation(domino, grid) to validate and persist the rotation.
- *
- * pivotHalf: 0 or 1 indicating which half is the pivot.
+ * resolveDomino(dominos, id)
+ * Purpose: Flexible resolver for a domino by id from a Map or Array.
+ * Use: internal helper for diagnostics or callers that need a domino object.
+ */
+function resolveDomino(dominos, id) {
+  if (!dominos) return undefined;
+  if (dominos instanceof Map) {
+    if (dominos.has(id)) return dominos.get(id);
+    const s = String(id);
+    if (dominos.has(s)) return dominos.get(s);
+    const n = Number(id);
+    if (!Number.isNaN(n) && dominos.has(n)) return dominos.get(n);
+    return undefined;
+  }
+  const sId = String(id);
+  return dominos.find(d => String(d.id) === sId);
+}
+
+/**
+ * idsEqual(a, b)
+ * Purpose: Type-agnostic id comparison.
+ * Use: compare grid.dominoId to domino.id without worrying about string/number types.
+ */
+function idsEqual(a, b) {
+  return String(a) === String(b);
+}
+
+/**
+ * rotateDominoOnBoard(domino, pivotHalf = 0)
+ * Purpose: Apply a geometry-only 90° clockwise rotation around pivotHalf.
+ * Use: caller should snapshot before calling commitRotation to persist or revert.
  */
 export function rotateDominoOnBoard(domino, pivotHalf = 0) {
   if (!domino || domino.row0 === null) return;
@@ -55,8 +84,9 @@ export function rotateDominoOnBoard(domino, pivotHalf = 0) {
 }
 
 /**
- * Rotate a tray domino visually by 90 degrees clockwise.
- * This only updates the model's trayOrientation and does not touch the grid.
+ * rotateDominoInTray(domino)
+ * Purpose: Visually rotate a tray domino by 90° clockwise (model-only trayOrientation).
+ * Use: purely visual; does not touch grid geometry.
  */
 export function rotateDominoInTray(domino) {
   if (!domino) return;
@@ -65,11 +95,9 @@ export function rotateDominoInTray(domino) {
 }
 
 /**
- * Commit a previously applied geometry-only rotation.
- * Validates bounds and occupancy and writes the new occupancy into grid.
- * If validation fails, restores the previous geometry snapshot and returns false.
- *
- * Returns true on success, false on failure.
+ * commitRotation(domino, grid)
+ * Purpose: Validate and persist a previously applied geometry-only rotation.
+ * Use: call after rotateDominoOnBoard; returns true on success, false on failure.
  */
 export function commitRotation(domino, grid) {
   if (!domino || domino.row0 === null) return false;
@@ -134,6 +162,11 @@ export function commitRotation(domino, grid) {
   return true;
 }
 
+/**
+ * cleanupPrevSnapshot(domino)
+ * Purpose: Remove temporary rotation snapshot fields from a domino.
+ * Use: internal cleanup after commit or revert.
+ */
 function cleanupPrevSnapshot(domino) {
   delete domino._prevRow0;
   delete domino._prevCol0;
@@ -142,33 +175,24 @@ function cleanupPrevSnapshot(domino) {
 }
 
 /**
- * Validate whether the domino's current geometry is a legal placement
- * (bounds + empty cells).
+ * isPlacementValid(domino, grid)
+ * Purpose: Quick validator to check whether domino's current geometry fits (bounds + empty).
+ * Use: callers can use this to pre-check before commit.
  */
 export function isPlacementValid(domino, grid) {
   if (!domino) return false;
   const r0 = domino.row0, c0 = domino.col0, r1 = domino.row1, c1 = domino.col1;
   if (!isInside(grid, r0, c0) || !isInside(grid, r1, c1)) return false;
-  if (grid[r0][c0] !== null) return false;
-  if (grid[r1][c1] !== null) return false;
+  if (grid[r0][c0] !== null && !(grid[r0][c0] && String(grid[r0][c0].dominoId) === String(domino.id))) return false;
+  if (grid[r1][c1] !== null && !(grid[r1][c1] && String(grid[r1][c1].dominoId) === String(domino.id))) return false;
   return true;
 }
 
 /**
- * Attempt to place a domino onto the board.
- *
- * clickedHalf indicates which half the user clicked when dropping:
- * - 0 means the target (row,col) should be half0
- * - 1 means the target should be half1
- *
- * The function tries the four cardinal orientations in this order:
- *  - right, down, left, up (relative to the clicked half)
- *
- * On success it updates domino.row* or col* and writes grid occupancy and returns true.
- * On failure it leaves the domino unchanged and returns false.
+ * _clearDominoFromGrid(domino, grid)
+ * Purpose: Remove any grid cells that reference this domino id.
+ * Use: internal helper used before committing new occupancy.
  */
-// engine/placement.js — atomic placement helpers (drop-in)
-
 function _clearDominoFromGrid(domino, grid) {
   const idStr = String(domino.id);
   for (let r = 0; r < grid.length; r++) {
@@ -180,9 +204,10 @@ function _clearDominoFromGrid(domino, grid) {
 }
 
 /**
- * placeDomino(domino, row, col, grid, clickedHalf)
- * Attempts to place a domino so that one half is anchored at (row,col).
- * Returns true on success, false if no candidate fits.
+ * placeDomino(domino, row, col, grid, clickedHalf = 0)
+ * Purpose: Attempt to place a domino so that the clicked half is anchored at (row,col).
+ * Use: Called by drag/drop. Tries orientations in order: right, down, left, up (relative to clicked half).
+ * Returns: true on success (grid and domino geometry updated), false if no fit.
  */
 export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
   const rows = grid.length;
@@ -232,7 +257,8 @@ export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
 
 /**
  * moveDomino(domino, row, col, grid)
- * Moves an already-placed domino to a new anchor. Reuses placeDomino logic.
+ * Purpose: Move an already-placed domino to a new anchor. Reuses placeDomino logic.
+ * Use: called when dragging a domino that came from the board.
  */
 export function moveDomino(domino, row, col, grid) {
   return placeDomino(domino, row, col, grid, 0);
@@ -240,7 +266,8 @@ export function moveDomino(domino, row, col, grid) {
 
 /**
  * removeDominoToTray(domino, grid)
- * Clears any grid references for the domino and nulls its geometry.
+ * Purpose: Remove domino occupancy from grid and reset geometry to tray (nulls).
+ * Use: called when returning a domino to the tray.
  */
 export function removeDominoToTray(domino, grid) {
   try {
@@ -250,4 +277,3 @@ export function removeDominoToTray(domino, grid) {
     domino.row1 = null; domino.col1 = null;
   }
 }
-
