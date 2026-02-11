@@ -541,13 +541,35 @@ function finalize(
   renderTray(puzzleJson, dominos, trayEl);
   syncCheck(dominos, grid);
   // after syncCheck(dominos, grid);
-  (function assertSync(dominos, grid) {
-    const list = dominos instanceof Map ? Array.from(dominos.values()) : dominos;
+(function assertSync(dominos, grid) {
+  try {
+    if (!grid || !Array.isArray(grid) || !Array.isArray(grid[0])) return;
+    const list = dominos instanceof Map ? Array.from(dominos.values()) : Array.isArray(dominos) ? dominos : [];
+    const rows = grid.length;
+    const cols = grid[0].length;
+
     for (const d of list) {
-      if (d.row0 == null) continue;
-      if (grid[d.row0][d.col0] !== String(d.id) || grid[d.row1][d.col1] !== String(d.id)) {
-        console.warn("ASSERT-SYNC-FAIL", d.id, { domino: d, gridCell0: grid[d.row0][d.col0], gridCell1: grid[d.row1][d.col1] });
+      if (!d || d.row0 == null || d.col0 == null || d.row1 == null || d.col1 == null) continue;
+
+      const inBounds0 = d.row0 >= 0 && d.row0 < rows && d.col0 >= 0 && d.col0 < cols;
+      const inBounds1 = d.row1 >= 0 && d.row1 < rows && d.col1 >= 0 && d.col1 < cols;
+
+      if (!inBounds0 || !inBounds1) {
+        console.warn("ASSERT-SYNC-OUT-OF-BOUNDS", d.id, { domino: d, rows, cols });
+        continue;
+      }
+
+      const idStr = String(d.id);
+      const g0 = grid[d.row0][d.col0];
+      const g1 = grid[d.row1][d.col1];
+
+      if (g0 !== idStr || g1 !== idStr) {
+        console.warn("ASSERT-SYNC-FAIL", d.id, { domino: d, gridCell0: g0, gridCell1: g1 });
       }
     }
-  })(dominos, grid);
+  } catch (err) {
+    console.error("ASSERT-SYNC-ERROR", err);
+  }
+})(dominos, grid);
+
 }
