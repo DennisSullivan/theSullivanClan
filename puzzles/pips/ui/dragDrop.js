@@ -160,7 +160,7 @@ function startDrag(
   boardEl,
   trayEl
 ) {
-  const target = e.target.closest(".domino");
+const target = e.target.closest(".domino, .domino-wrapper");
   if (!target) return;
 
   const wrapper = target.closest(".domino-wrapper");
