@@ -18,6 +18,8 @@
   --domino-nudge-y: 0px;
 }
 
+.pip-grid { display: contents; }
+
 /* -------------------------
    Wrapper (neutral)
    ------------------------- */
