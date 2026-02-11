@@ -1,90 +1,221 @@
-/* FILE: ui/domino.css
-   Purpose: 3x3 pip grid and die-face mapping for .half[data-pip="N"]
-   Drop-in: paste into your main stylesheet or import as domino.css
-*/
+/* ============================================================
+   FILE: domino.css
+   PURPOSE: Merged domino visuals (preserve your vars + nudge)
+   NOTES: Keeps your original structure and variables; fixes pip
+          grid positions and die-face selectors to render like dice.
+   ============================================================ */
 
-/* Container for the 3x3 pip layout */
-.pip-grid {
+/* Safety defaults if variables are missing (won't override your root) */
+:root {
+  --_fallback-cell-size: 48px;
+  --_fallback-cell-gap: 4px;
+  --_fallback-domino-thickness: 1px;
+  --_fallback-color-domino-bg: #ffffff;
+  --_fallback-color-domino-border: #aaa;
+  --_fallback-color-pip: #222;
+  --_fallback-transition-fast: 120ms ease-out;
+  --domino-nudge-x: 0px;
+  --domino-nudge-y: 0px;
+}
+
+/* -------------------------
+   Wrapper (neutral)
+   ------------------------- */
+.domino-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  pointer-events: auto;
+
+  transform: translate(-50%, -50%) rotate(var(--angle, 0deg));
+  transition: transform 150ms ease-out;
+  transform-origin: center center;
+}
+
+/* -------------------------
+   Domino core (fills wrapper exactly)
+   ------------------------- */
+.domino {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  background: var(--color-domino-bg, var(--_fallback-color-domino-bg));
+  border: var(--domino-thickness, var(--_fallback-domino-thickness)) solid var(--color-domino-border, var(--_fallback-color-domino-border));
+  border-radius: 4px;
+  box-sizing: border-box;
+  transform-origin: center center;
+  pointer-events: auto;
+  padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.08);
+}
+
+/* -------------------------
+   Apply static visual nudge to inner domino
+   ------------------------- */
+.domino.on-board {
+  transform: translate(var(--domino-nudge-x, 2px), var(--domino-nudge-y, 2px));
+  transform-origin: center center;
+  box-sizing: border-box;
+}
+
+.domino-wrapper.dragging .domino {
+  transform: translate(0, 0) !important;
+}
+
+/* -------------------------
+   Halves: 3x3 pip grid, no gap
+   ------------------------- */
+.domino .half {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  gap: 0.15rem;
-  width: 2.4rem;    /* adjust to match domino size */
-  height: 2.4rem;   /* adjust to match domino size */
-  box-sizing: border-box;
-  align-items: center;
   justify-items: center;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  font-size: 0;
+  border-right: 1px solid var(--color-domino-border, var(--_fallback-color-domino-border));
+  box-sizing: border-box;
 }
 
-/* Map pip classes to grid cells */
-.pip.p1 { grid-column: 1; grid-row: 1; } /* top-left */
-.pip.p2 { grid-column: 3; grid-row: 1; } /* top-right */
-.pip.p3 { grid-column: 1; grid-row: 2; } /* middle-left */
-.pip.p4 { grid-column: 3; grid-row: 2; } /* middle-right */
-.pip.p5 { grid-column: 1; grid-row: 3; } /* bottom-left */
-.pip.p6 { grid-column: 3; grid-row: 3; } /* bottom-right */
-.pip.p7 { grid-column: 2; grid-row: 2; } /* center */
+.domino .half1 {
+  border-right: none;
+}
 
-/* Base pip appearance */
-.pip {
-  width: 0.45rem;
-  height: 0.45rem;
+/* -------------------------
+   Pips (NYT proportions) — keep sizing tied to cell size
+   ------------------------- */
+.domino .pip {
+  width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.095);
+  height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.095);
+  background: var(--color-pip, var(--_fallback-color-pip));
   border-radius: 50%;
-  background: #111;
   opacity: 0;
-  transition: opacity 120ms ease, transform 120ms ease;
+  transition: opacity var(--transition-fast, var(--_fallback-transition-fast));
   justify-self: center;
   align-self: center;
 }
 
-/* Optional: slightly larger center pip for readability */
-.pip.p7 { width: 0.5rem; height: 0.5rem; }
+/* -------------------------
+   Correct 3x3 mapping for pip classes
+   Use grid-row / grid-column explicitly for clarity
+   p1 top-left, p2 top-right, p3 middle-left, p4 middle-right,
+   p5 bottom-left, p6 bottom-right, p7 center
+   ------------------------- */
+.p1 { grid-column: 1; grid-row: 1; } /* top-left */
+.p2 { grid-column: 3; grid-row: 1; } /* top-right */
+.p3 { grid-column: 1; grid-row: 2; } /* middle-left */
+.p4 { grid-column: 3; grid-row: 2; } /* middle-right */
+.p5 { grid-column: 1; grid-row: 3; } /* bottom-left */
+.p6 { grid-column: 3; grid-row: 3; } /* bottom-right */
+.p7 { grid-column: 2; grid-row: 2; } /* center */
 
-/* Ensure half container doesn't collapse and centers the grid */
-.half {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  padding: 0.15rem;
-}
+/* Slightly larger center pip for readability (optional) */
+.p7 { width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.105); height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.105); }
 
-/* Die-face visibility rules (standard dice mapping) */
+/* -------------------------
+   Die-face visibility rules (standard dice mapping)
+   These selectors match the canonical renderer output:
+   .half[data-pip="N"] .pX
+   ------------------------- */
 /* 0: none */
-.half[data-pip="0"] .pip { opacity: 0; }
+.domino .half[data-pip="0"] .pip { opacity: 0; }
 
 /* 1: center */
-.half[data-pip="1"] .p7 { opacity: 1; }
+.domino .half[data-pip="1"] .p7 { opacity: 1; }
 
 /* 2: top-left + bottom-right */
-.half[data-pip="2"] .p1,
-.half[data-pip="2"] .p6 { opacity: 1; }
+.domino .half[data-pip="2"] .p1,
+.domino .half[data-pip="2"] .p6 { opacity: 1; }
 
 /* 3: top-left + center + bottom-right */
-.half[data-pip="3"] .p1,
-.half[data-pip="3"] .p7,
-.half[data-pip="3"] .p6 { opacity: 1; }
+.domino .half[data-pip="3"] .p1,
+.domino .half[data-pip="3"] .p7,
+.domino .half[data-pip="3"] .p6 { opacity: 1; }
 
 /* 4: four corners */
-.half[data-pip="4"] .p1,
-.half[data-pip="4"] .p2,
-.half[data-pip="4"] .p5,
-.half[data-pip="4"] .p6 { opacity: 1; }
+.domino .half[data-pip="4"] .p1,
+.domino .half[data-pip="4"] .p2,
+.domino .half[data-pip="4"] .p5,
+.domino .half[data-pip="4"] .p6 { opacity: 1; }
 
 /* 5: four corners + center */
-.half[data-pip="5"] .p1,
-.half[data-pip="5"] .p2,
-.half[data-pip="5"] .p5,
-.half[data-pip="5"] .p6,
-.half[data-pip="5"] .p7 { opacity: 1; }
+.domino .half[data-pip="5"] .p1,
+.domino .half[data-pip="5"] .p2,
+.domino .half[data-pip="5"] .p5,
+.domino .half[data-pip="5"] .p6,
+.domino .half[data-pip="5"] .p7 { opacity: 1; }
 
 /* 6: three left + three right (no center) */
-.half[data-pip="6"] .p1,
-.half[data-pip="6"] .p3,
-.half[data-pip="6"] .p5,
-.half[data-pip="6"] .p2,
-.half[data-pip="6"] .p4,
-.half[data-pip="6"] .p6 { opacity: 1; }
+.domino .half[data-pip="6"] .p1,
+.domino .half[data-pip="6"] .p3,
+.domino .half[data-pip="6"] .p5,
+.domino .half[data-pip="6"] .p2,
+.domino .half[data-pip="6"] .p4,
+.domino .half[data-pip="6"] .p6 { opacity: 1; }
 
-/* Theme tweaks (optional) */
-.half .pip { background: var(--pip-color, #111); }
+/* -------------------------
+   Visual states (preserve your original classes)
+   ------------------------- */
+.domino.in-tray {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+}
+
+.domino.on-board {
+  box-shadow: none;
+}
+
+/* clone used during dragging — preserve your original rules */
+.domino-clone {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+  z-index: 9999;
+  pointer-events: none;
+  user-select: none;
+  touch-action: none;
+  display: block;
+  box-sizing: border-box;
+  background: inherit;
+  border-radius: inherit;
+  border: inherit;
+  box-shadow: inherit;
+  transition: transform 160ms cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+}
+
+/* Prevent the original wrapper from scaling while we use a clone */
+.domino-wrapper.dragging {
+  transform: none !important;
+}
+
+/* -------------------------
+   Mobile scaling
+   ------------------------- */
+@media (max-width: 600px) {
+  .domino .pip {
+    width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
+    height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
+  }
+
+  .domino {
+    padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
+  }
+
+  .domino .half {
+    gap: 0;
+  }
+}
+
+/* -------------------------
+   Debug helpers (preserve)
+   ------------------------- */
+.domino-wrapper.on-board.debug-outline { outline: 1px dashed rgba(255,0,0,0.6); }
+.domino.on-board.debug-outline { outline: 1px solid rgba(0,255,0,0.6); }
+.board-cell.debug-outline { outline: 1px dotted rgba(0,0,255,0.25); }
+
+/* Theme hook (preserve your variable usage) */
+.domino .pip { background: var(--color-pip, var(--_fallback-color-pip)); }
