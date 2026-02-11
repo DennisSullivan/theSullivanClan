@@ -1,30 +1,18 @@
 // FILE: ui/dominoRenderer.js
-// PURPOSE: Build DOM for a single domino (used by tray and other renderers).
-// NOTES (conversational): This module produces the exact DOM structure and attributes
-// the CSS expects: a .domino element with two .half children, each having a
-// string-valued data-pip attribute and seven .pip elements. It is defensive about
-// model property names so it works with different puzzle JSON shapes.
+// PURPOSE: Build DOM for a single domino (used by tray and board renderers).
+// NOTES: Defensive resolution of pip values across many model shapes.
+// Always creates seven .pip elements per half and sets data-pip as a string.
 
-/**
- * resolvePip(domino, candidates)
- * Purpose: Return the first defined pip value from a list of candidate property names.
- * Use: Internal helper to tolerate different domino model shapes.
- */
-function resolvePip(domino, candidates) {
-  for (const key of candidates) {
-    if (domino == null) break;
-    if (Object.prototype.hasOwnProperty.call(domino, key) && domino[key] != null) {
-      return domino[key];
+function resolvePipFromKeys(domino, keys) {
+  for (const k of keys) {
+    if (!domino) break;
+    if (Object.prototype.hasOwnProperty.call(domino, k) && domino[k] != null) {
+      return domino[k];
     }
   }
-  return 0;
+  return undefined;
 }
 
-/**
- * createPips()
- * Purpose: Create the seven .pip elements used by CSS selectors.
- * Use: appended into each half so CSS rules like .half[data-pip="3"] .p1 { opacity: 1 } work.
- */
 function createPips() {
   const container = document.createElement("div");
   container.className = "pip-grid";
@@ -37,25 +25,61 @@ function createPips() {
 }
 
 /**
+ * normalizePipValue(v)
+ * Ensure pip values are numeric or stringified numeric; fallback to 0.
+ */
+function normalizePipValue(v) {
+  if (v == null) return 0;
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+/**
  * renderDomino(domino, wrapper)
- * Purpose: Render a domino into the provided wrapper element (in-tray or on-board).
- * Use: Pure rendering; does not mutate the domino model. Ensures data-pip is a string
- * and that .pip elements exist. Wrapper should be an empty container created by caller.
+ * - domino: model object
+ * - wrapper: DOM element provided by caller (will be cleared and populated)
  */
 export function renderDomino(domino, wrapper) {
   if (!wrapper) return;
 
-  // Clear wrapper
+  // Clear wrapper content (caller may reuse wrapper)
   wrapper.innerHTML = "";
 
-  // Defensive pip resolution: common property name variants
-  const candidates0 = ["value0", "half0", "a", "left", "p0", "v0"];
-  const candidates1 = ["value1", "half1", "b", "right", "p1", "v1"];
+  // Candidate shapes to check
+  // Arrays first
+  let pip0 = undefined, pip1 = undefined;
+  if (domino && Array.isArray(domino.pips) && domino.pips.length >= 2) {
+    pip0 = domino.pips[0];
+    pip1 = domino.pips[1];
+  } else if (domino && Array.isArray(domino.values) && domino.values.length >= 2) {
+    pip0 = domino.values[0];
+    pip1 = domino.values[1];
+  } else if (domino && Array.isArray(domino.v) && domino.v.length >= 2) {
+    pip0 = domino.v[0];
+    pip1 = domino.v[1];
+  } else {
+    // Key-based fallbacks
+    const keys0 = ["value0", "half0", "p0", "v0", "a", "left", "first", "low"];
+    const keys1 = ["value1", "half1", "p1", "v1", "b", "right", "second", "high"];
+    pip0 = resolvePipFromKeys(domino, keys0);
+    pip1 = resolvePipFromKeys(domino, keys1);
 
-  const pip0 = resolvePip(domino, candidates0);
-  const pip1 = resolvePip(domino, candidates1);
+    // Some models use nested objects like domino.values = { left: x, right: y }
+    if ((pip0 === undefined || pip1 === undefined) && domino && typeof domino.values === "object" && domino.values !== null) {
+      pip0 = pip0 === undefined ? resolvePipFromKeys(domino.values, ["0", "left", "a", "first"]) : pip0;
+      pip1 = pip1 === undefined ? resolvePipFromKeys(domino.values, ["1", "right", "b", "second"]) : pip1;
+    }
+  }
 
-  // Build inner domino structure
+  // Final normalization to numeric (or 0)
+  pip0 = normalizePipValue(pip0);
+  pip1 = normalizePipValue(pip1);
+
+  // Build DOM
   const inner = document.createElement("div");
   inner.className = "domino";
 
@@ -63,7 +87,6 @@ export function renderDomino(domino, wrapper) {
   half0.className = "half half0";
   half0.dataset.pip = String(pip0);
   half0.appendChild(createPips());
-  // hidden textual fallback for debugging
   const lbl0 = document.createElement("div");
   lbl0.className = "pip-label";
   lbl0.textContent = String(pip0);
@@ -84,16 +107,26 @@ export function renderDomino(domino, wrapper) {
   inner.appendChild(half1);
   wrapper.appendChild(inner);
 
-  // Accessibility: set an aria-label summarizing the pip values
+  // Accessibility label
   try {
     wrapper.setAttribute("aria-label", `Domino ${domino?.id ?? ""} ${String(pip0)}-${String(pip1)}`);
   } catch (e) {}
 
-  // Small debug hint: if both pips are zero but model had other fields, log once
-  if (String(pip0) === "0" && String(pip1) === "0") {
-    // If the domino actually had numeric zeros intentionally, this is fine.
-    // If not, this log helps find model naming mismatches.
-    // eslint-disable-next-line no-console
-    console.debug(`dominoRenderer: rendered domino ${domino?.id ?? "(no id)"} as 0-0 (check model fields)`);
+  // Diagnostic: if both pips are zero but model contains numeric fields, log compactly once
+  if (pip0 === 0 && pip1 === 0) {
+    // Check if model contains any numeric-like fields that might indicate different naming
+    const numericFields = [];
+    if (domino && typeof domino === "object") {
+      for (const k of Object.keys(domino)) {
+        const v = domino[k];
+        if (typeof v === "number" && v !== 0) numericFields.push(k);
+        if (typeof v === "string" && /^\d+$/.test(v) && Number(v) !== 0) numericFields.push(k);
+        if (Array.isArray(v) && v.some(x => typeof x === "number" && x !== 0)) numericFields.push(k);
+      }
+    }
+    if (numericFields.length > 0) {
+      // eslint-disable-next-line no-console
+      console.debug(`dominoRenderer: domino ${domino?.id ?? "(no id)"} rendered as 0-0 but model has numeric fields: ${numericFields.slice(0,5).join(", ")}`);
+    }
   }
 }
