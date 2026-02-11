@@ -563,7 +563,11 @@ function finalize(
       const g0 = grid[d.row0][d.col0];
       const g1 = grid[d.row1][d.col1];
 
-      if (g0 !== idStr || g1 !== idStr) {
+      // Expect objects of the form { dominoId, half }
+      const ok0 = g0 && String(g0.dominoId) === idStr && g0.half === 0;
+      const ok1 = g1 && String(g1.dominoId) === idStr && g1.half === 1;
+
+      if (!ok0 || !ok1) {
         console.warn("ASSERT-SYNC-FAIL", d.id, { domino: d, gridCell0: g0, gridCell1: g1 });
       }
     }
