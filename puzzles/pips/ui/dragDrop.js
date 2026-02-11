@@ -166,7 +166,7 @@ const target = e.target.closest(".domino, .domino-wrapper");
   const wrapper = target.closest(".domino-wrapper");
   if (!wrapper) return;
 
-  const dominoId = target.dataset.id;
+  const dominoId = wrapper.dataset.dominoId;
   const domino = (dominos instanceof Map)
     ? dominos.get(dominoId)
     : dominos.find(d => String(d.id) === String(dominoId));
