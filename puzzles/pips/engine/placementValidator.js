@@ -164,12 +164,15 @@ export function attachPlacementValidator(appRoot, puzzle) {
   });
 
   // ------------------------------------------------------------
-  // Board rotate request (double-click)
-  // Event: 'pips:board-rotate-request' with detail { id, pivotHalf }
+  // BOARD rotate request (deferred commit)
+  // Event: 'pips:board-rotate-request' with detail { id, pivotHalf, prev }
   // ------------------------------------------------------------
   appRoot.addEventListener("pips:board-rotate-request", (ev) => {
-    const { id, pivotHalf } = ev.detail || {};
-    if (!id) return;
+    const { id, pivotHalf, prev } = ev.detail || {};
+    if (!id) {
+      ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-reject", { detail: { id, reason: "missing-id" } }));
+      return;
+    }
 
     const d = dominos instanceof Map ? dominos.get(id) : dominos.find(x => String(x.id) === String(id));
     if (!d) {
@@ -177,53 +180,51 @@ export function attachPlacementValidator(appRoot, puzzle) {
       return;
     }
 
-    // Snapshot prev geometry for history
-    const prev = { r0: d.row0, c0: d.col0, r1: d.row1, c1: d.col1 };
-
-    // Apply geometry-only rotation (placement.rotateDominoOnBoard does snapshot internally)
-    rotateDominoOnBoard(d, pivotHalf);
-
-    // Try to commit rotation (commitRotation validates bounds/occupancy and writes grid)
+    // At this point the UI has already applied geometry-only rotations to d.
+    // Attempt to commit that geometry atomically.
     const ok = commitRotation(d, grid);
+
     if (!ok) {
-      // commitRotation restores previous geometry; emit reject
-      ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-reject", { detail: { id, reason: "illegal-rotation" } }));
+      // commitRotation should have restored geometry if it failed, but ensure we restore prev snapshot if provided.
+      if (prev && typeof prev.r0 !== "undefined") {
+        d.row0 = prev.r0; d.col0 = prev.c0; d.row1 = prev.r1; d.col1 = prev.c1;
+        if (typeof prev.r0 === "number" && typeof prev.c0 === "number") {
+          grid[prev.r0][prev.c0] = { dominoId: d.id, half: 0 };
+        }
+        if (typeof prev.r1 === "number" && typeof prev.c1 === "number") {
+          grid[prev.r1][prev.c1] = { dominoId: d.id, half: 1 };
+        }
+      }
+
+      ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-reject", { detail: { id: d.id, reason: "illegal-rotation" } }));
       return;
     }
 
-    // Validate blocked/regions after rotation
+    // Validate blocked cells and region rules after commit
     const vr = validateBlockedAndRegions();
     if (!vr.ok) {
-      // rollback: restore previous geometry by removing and re-placing prev coords
-      // Simple approach: remove current occupancy then restore prev coords into grid
+      // rollback: remove current occupancy then restore prev coords
       removeDominoToTray(d, grid);
-      // restore geometry in object
-      d.row0 = prev.r0; d.col0 = prev.c0; d.row1 = prev.r1; d.col1 = prev.c1;
-      // write back to grid if prev coords were on-board
-      if (typeof prev.r0 === "number" && typeof prev.c0 === "number") {
-        grid[prev.r0][prev.c0] = { dominoId: d.id, half: 0 };
-      }
-      if (typeof prev.r1 === "number" && typeof prev.c1 === "number") {
-        grid[prev.r1][prev.c1] = { dominoId: d.id, half: 1 };
+      if (prev && typeof prev.r0 !== "undefined") {
+        d.row0 = prev.r0; d.col0 = prev.c0; d.row1 = prev.r1; d.col1 = prev.c1;
+        if (typeof prev.r0 === "number" && typeof prev.c0 === "number") {
+          grid[prev.r0][prev.c0] = { dominoId: d.id, half: 0 };
+        }
+        if (typeof prev.r1 === "number" && typeof prev.c1 === "number") {
+          grid[prev.r1][prev.c1] = { dominoId: d.id, half: 1 };
+        }
+      } else {
+        d.row0 = null; d.col0 = null; d.row1 = null; d.col1 = null;
       }
 
-      ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-reject", { detail: { id, reason: vr.reason, info: vr } }));
+      ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-reject", { detail: { id: d.id, reason: vr.reason, info: vr } }));
       return;
     }
 
-    // Success: record rotate action
-    recordAction(history, { type: "rotate", id: d.id, prev, next: { r0: d.row0, c0: d.col0, r1: d.row1, c1: d.col1 } });
-    ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-commit", { detail: { id: d.id } }));
-  });
-
-  // ------------------------------------------------------------
-  // Optional: tray rotate event (single click) — already applied by controller
-  // Event: 'pips:tray-rotate' with detail { id, from, to }
-  // ------------------------------------------------------------
-  appRoot.addEventListener("pips:tray-rotate", (ev) => {
-    // No-op by default. If you want tray-rotate undo, record here.
-    // Example:
-    // const { id, from, to } = ev.detail || {};
-    // recordAction(history, { type: 'rotate-tray', id, prev: from, next: to });
+    // Success: record rotate action in history and emit commit
+    const next = { r0: d.row0, c0: d.col0, r1: d.row1, c1: d.col1 };
+    const prevForHistory = prev && typeof prev.r0 !== "undefined" ? prev : { r0: next.r0, c0: next.c0, r1: next.r1, c1: next.c1 };
+    recordAction(history, { type: "rotate", id: d.id, prev: prevForHistory, next });
+    ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-commit", { detail: { id: d.id, prev: prevForHistory, next } }));
   });
 }
