@@ -74,13 +74,8 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const inner = document.createElement("div");
     inner.className = "domino on-board";
 
-    // Resolve pip values: prefer value0/value1, fall back to half0/half1, else 0
-    const pip0 = (typeof domino.value0 !== "undefined") ? domino.value0
-               : (typeof domino.half0 !== "undefined") ? domino.half0
-               : 0;
-    const pip1 = (typeof domino.value1 !== "undefined") ? domino.value1
-               : (typeof domino.half1 !== "undefined") ? domino.half1
-               : 0;
+    const pip0 = domino.pip0;
+    const pip1 = domino.pip1;
 
     // Half 0
     const half0 = document.createElement("div");
