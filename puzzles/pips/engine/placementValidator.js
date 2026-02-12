@@ -200,25 +200,32 @@ export function attachPlacementValidator(appRoot, puzzle) {
       return;
     }
 
-    // Validate blocked cells and region rules after commit
-    const vr = validateBlockedAndRegions();
-    if (!vr.ok) {
-      // rollback: remove current occupancy then restore prev coords
-      removeDominoToTray(d, grid);
-      if (prev && typeof prev.r0 !== "undefined") {
-        d.row0 = prev.r0; d.col0 = prev.c0; d.row1 = prev.r1; d.col1 = prev.c1;
-        if (typeof prev.r0 === "number" && typeof prev.c0 === "number") {
-          grid[prev.r0][prev.c0] = { dominoId: d.id, half: 0 };
-        }
-        if (typeof prev.r1 === "number" && typeof prev.c1 === "number") {
-          grid[prev.r1][prev.c1] = { dominoId: d.id, half: 1 };
-        }
-      } else {
-        d.row0 = null; d.col0 = null; d.row1 = null; d.col1 = null;
-      }
+    // Validate blocked cells after commit (region rules are intentionally NOT checked here)
+    if (blocked) {
+      for (let r = 0; r < grid.length; r++) {
+        for (let c = 0; c < (grid[0] ? grid[0].length : 0); c++) {
+          const cell = grid[r][c];
+          if (!cell) continue;
+          if (blocked.has(`${r},${c}`)) {
+            // rollback: remove current occupancy then restore prev coords
+            removeDominoToTray(d, grid);
+            if (prev && typeof prev.r0 !== "undefined") {
+              d.row0 = prev.r0; d.col0 = prev.c0; d.row1 = prev.r1; d.col1 = prev.c1;
+              if (typeof prev.r0 === "number" && typeof prev.c0 === "number") {
+                grid[prev.r0][prev.c0] = { dominoId: d.id, half: 0 };
+              }
+              if (typeof prev.r1 === "number" && typeof prev.c1 === "number") {
+                grid[prev.r1][prev.c1] = { dominoId: d.id, half: 1 };
+              }
+            } else {
+              d.row0 = null; d.col0 = null; d.row1 = null; d.col1 = null;
+            }
 
-      ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-reject", { detail: { id: d.id, reason: vr.reason, info: vr } }));
-      return;
+            ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-reject", { detail: { id: d.id, reason: "blocked" } }));
+            return;
+          }
+        }
+      }
     }
 
     // Success: record rotate action in history and emit commit
