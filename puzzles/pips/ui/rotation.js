@@ -1,155 +1,186 @@
-// ============================================================
-// FILE: rotation.js
-// PURPOSE: Full rotation-mode system for dominos.
+// FILE: ui/rotation.js
+// PURPOSE: Rotation session state machine for dominos.
 // NOTES:
-//   - Double-click enters rotation mode on board dominos.
-//   - Double-click on tray rotates tray domino visually.
-//   - While in rotation mode, rotations are geometry-only.
-//   - When rotation mode completes, commitRotation(domino, grid)
-//     is called to validate and atomically apply the rotated geometry.
-//   - Canceling restores original geometry.
-// ============================================================
+//  - Double-click enters rotation session (geometry-only).
+//  - Subsequent double-clicks rotate geometry-only.
+//  - Session ends on pointerdown outside a domino, pointerdown that begins a drag,
+//    or when endDrag.fire is invoked (drag release).
+//  - On session end we emit a single 'pips:board-rotate-request' event with
+//    the domino id and the pre-session snapshot. The placement validator
+//    is responsible for commitRotation, region/blocked validation, history.
 
 import {
   rotateDominoOnBoard,
-  rotateDominoInTray,
-  commitRotation
 } from "../engine/placement.js";
 
-// ------------------------------------------------------------
-// Internal rotation-mode state
-// ------------------------------------------------------------
-let rotatingDomino = null;
+/* Rotation session state */
+let rotatingDomino = null;      // domino object currently in session
+let rotatingPrev = null;        // snapshot { r0,c0,r1,c1 }
+let rotatingPivot = 0;          // pivot half used for last rotate
+let rotatingRender = null;      // renderPuzzle reference (for convenience)
+let rotatingBoardEl = null;     // board element (for pointer hit tests)
 
-// ------------------------------------------------------------
-// initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag)
-// - dominos: Map or collection of domino objects
-// - trayEl, boardEl: DOM elements
-// - renderPuzzle: function that re-renders board + tray
-// - endDrag: rotation-mode uses endDrag.fire to commit on drop
-// ------------------------------------------------------------
+/**
+ * initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag)
+ * - dominos: Map or collection of domino objects
+ * - trayEl, boardEl: DOM elements
+ * - renderPuzzle: function that re-renders board + tray
+ * - endDrag: rotation-mode uses endDrag.fire to commit on drop
+ */
 export function initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag) {
-  if (!trayEl || !boardEl || !renderPuzzle || !endDrag) {
+  if (!boardEl || !renderPuzzle || !endDrag) {
     console.warn("initRotation: missing required args");
     return;
   }
 
-  // ==========================================================
-  // TRAY DOUBLE-CLICK → rotate tray domino (no rotation mode)
-  // ==========================================================
+  rotatingRender = renderPuzzle;
+  rotatingBoardEl = boardEl;
+
+  // ----------------------------------------------------------
+  // TRAY double-click rotates tray domino visually (no session)
+  // Keep tray behavior simple: rotate model.trayOrientation and re-render.
+  // ----------------------------------------------------------
   trayEl.addEventListener("dblclick", (event) => {
-    const dominoEl = event.target.closest(".domino");
-    if (!dominoEl) return;
+    const wrapper = event.target.closest(".domino-wrapper");
+    if (!wrapper) return;
 
-    const id = dominoEl.dataset.id;
-    const domino = (dominos instanceof Map) ? dominos.get(id) : dominos.find(d => String(d.id) === String(id));
-    if (!domino || domino.row0 !== null) return;
+    const id = wrapper.dataset.dominoId ?? wrapper.dataset.id;
+    if (!id) return;
 
-    rotateDominoInTray(domino);
+    const domino = (dominos instanceof Map) ? dominos.get(id) : (Array.isArray(dominos) ? dominos.find(d => String(d.id) === String(id)) : undefined);
+    if (!domino) return;
+    if (domino.row0 !== null) return; // only tray dominos
+
+    // rotate visual orientation in model (controller/validator may record history)
+    domino.trayOrientation = (typeof domino.trayOrientation === "number" ? domino.trayOrientation : 0) + 90;
+    domino.trayOrientation = domino.trayOrientation % 360;
+
+    // re-render
     renderPuzzle();
   });
 
-  // ==========================================================
-  // BOARD DOUBLE-CLICK → enter rotation mode or rotate again
-  // ==========================================================
+  // ----------------------------------------------------------
+  // BOARD double-click enters or continues rotation session
+  // ----------------------------------------------------------
   boardEl.addEventListener("dblclick", (event) => {
-    const dominoEl = event.target.closest(".domino");
-    if (!dominoEl) return;
+    // Find the wrapper (we rely on wrapper.dataset.dominoId to be present)
+    const wrapper = event.target.closest(".domino-wrapper");
+    if (!wrapper) return;
 
-    const id = dominoEl.dataset.id;
-    const domino = (dominos instanceof Map) ? dominos.get(id) : dominos.find(d => String(d.id) === String(id));
-    if (!domino || domino.row0 === null) return;
+    const id = wrapper.dataset.dominoId ?? wrapper.dataset.id;
+    if (!id) return;
 
-    // Determine pivot half robustly
+    const domino = (dominos instanceof Map) ? dominos.get(id) : (Array.isArray(dominos) ? dominos.find(d => String(d.id) === String(id)) : undefined);
+    if (!domino) return;
+    if (domino.row0 === null) return; // only board dominos
+
+    // Determine pivot half robustly from clicked element
     const halfEl = event.target.closest(".half");
     let pivotHalf = 0;
     if (halfEl) {
-      if (halfEl.classList.contains("half1")) pivotHalf = 1;
-      else if (halfEl.classList.contains("half0")) pivotHalf = 0;
-      else {
-        const halves = Array.from(halfEl.parentElement.querySelectorAll('.half'));
-        pivotHalf = halves.indexOf(halfEl) === 1 ? 1 : 0;
+      pivotHalf = halfEl.classList.contains("half1") ? 1 : 0;
+    } else {
+      // fallback: if wrapper has two halves, assume left is 0
+      const halves = wrapper.querySelectorAll(".half");
+      if (halves && halves.length >= 2) {
+        pivotHalf = Array.from(halves).indexOf(event.target.closest(".half")) === 1 ? 1 : 0;
       }
     }
 
-    // Enter rotation mode if not already rotating this domino
+    // Enter session if not already rotating this domino
     if (rotatingDomino !== domino) {
+      // start session: snapshot previous geometry
       rotatingDomino = domino;
-
-      // Snapshot previous geometry on the domino so commitRotation can restore if needed
-      domino._prevRow0 = domino.row0;
-      domino._prevCol0 = domino.col0;
-      domino._prevRow1 = domino.row1;
-      domino._prevCol1 = domino.col1;
+      rotatingPrev = {
+        r0: domino.row0,
+        c0: domino.col0,
+        r1: domino.row1,
+        c1: domino.col1
+      };
+      rotatingPivot = pivotHalf;
+    } else {
+      // continue session; update pivot to the most recent
+      rotatingPivot = pivotHalf;
     }
 
-    // Geometry-only rotate (user can rotate past bounds/obstructions)
+    // Apply geometry-only rotation (rotateDominoOnBoard mutates geometry only)
     rotateDominoOnBoard(domino, pivotHalf);
 
-    // Re-render to show geometry-only rotation
+    // Re-render to show preview geometry
     renderPuzzle();
   });
 
-  // ==========================================================
-  // OUTSIDE CLICK → cancel rotation mode
-  // ==========================================================
-  document.addEventListener("mousedown", (event) => {
+  // ----------------------------------------------------------
+  // Pointerdown outside a domino cancels rotation session (session end)
+  // Also pointerdown that begins a drag should end the session.
+  // We listen on document for pointerdown and decide whether to end session.
+  // ----------------------------------------------------------
+  document.addEventListener("pointerdown", (event) => {
     if (!rotatingDomino) return;
-    if (event.target.closest(".domino")) return;
 
-    // Cancel rotation and restore snapshot
-    cancelRotation(renderPuzzle);
+    // If pointerdown is inside the same domino wrapper, do nothing (user may be interacting)
+    const insideSame = !!event.target.closest?.(".domino-wrapper") && event.target.closest(".domino-wrapper").dataset.dominoId === String(rotatingDomino.id);
+    if (insideSame) {
+      // If pointerdown is on a different control inside the same domino, we still keep session.
+      return;
+    }
+
+    // Otherwise end the rotation session and request validation/commit
+    endRotationSession();
   });
 
-  // ==========================================================
-  // endDrag → commit rotation (validate placement)
-  // The endDrag callback receives (domino, row, col, grid)
-  // ==========================================================
+  // ----------------------------------------------------------
+  // endDrag callback: when a drag ends, if it concerns the rotating domino,
+  // we should end the rotation session (this covers "release after a drag").
+  // endDrag.fire(domino, row, col, grid) will call our registered callback.
+  // ----------------------------------------------------------
   endDrag.registerCallback((domino, row, col, grid) => {
     if (!rotatingDomino) return;
     if (rotatingDomino !== domino) return;
 
-    // Attempt to commit the rotated geometry atomically.
-    // commitRotation will validate bounds/occupancy and restore previous geometry
-    // if the commit fails. It returns true on success, false on failure.
-    const ok = commitRotation(domino, grid);
-
-    // Clear rotation-mode state regardless of success
-    rotatingDomino = null;
-
-    // Re-render to reflect final state
-    renderPuzzle();
-
-    if (!ok) {
-      // Optional: brief console hint for debugging; UI can show a toast instead.
-      console.warn(`rotation: commit failed for domino ${domino.id}; geometry restored`);
-    }
+    // End session and request validation/commit
+    endRotationSession();
   });
 }
 
-// ------------------------------------------------------------
-// cancelRotation
-// Restores the domino geometry snapshot and clears rotation state.
-// ------------------------------------------------------------
-function cancelRotation(renderPuzzle) {
+/**
+ * endRotationSession()
+ * Ends the current rotation session (if any) and emits a single
+ * 'pips:board-rotate-request' CustomEvent on document with detail:
+ *   { id, prev: { r0,c0,r1,c1 } }
+ *
+ * The placement validator listens for this event, calls commitRotation,
+ * validates regions/blocked, records history, and emits commit/reject events.
+ */
+function endRotationSession() {
   if (!rotatingDomino) return;
 
   const d = rotatingDomino;
+  const prev = rotatingPrev ? { ...rotatingPrev } : { r0: d.row0, c0: d.col0, r1: d.row1, c1: d.col1 };
 
-  if (typeof d._prevRow0 !== 'undefined') {
-    d.row0 = d._prevRow0;
-    d.col0 = d._prevCol0;
-    d.row1 = d._prevRow1;
-    d.col1 = d._prevCol1;
-  }
+  // Emit request for validator to commit/validate
+  const ev = new CustomEvent("pips:board-rotate-request", {
+    detail: {
+      id: d.id,
+      pivotHalf: rotatingPivot,
+      prev
+    },
+    bubbles: true,
+    cancelable: false
+  });
+  // Dispatch on document so attachPlacementValidator's appRoot listener will catch it
+  document.dispatchEvent(ev);
 
-  // Cleanup snapshot metadata
-  delete d._prevRow0;
-  delete d._prevCol0;
-  delete d._prevRow1;
-  delete d._prevCol1;
-
+  // Clear session state
   rotatingDomino = null;
+  rotatingPrev = null;
+  rotatingPivot = 0;
 
-  renderPuzzle();
+  // Re-render to reflect final model state (validator may change model asynchronously)
+  if (typeof rotatingRender === "function") {
+    // Defer a tick to allow validator to mutate model and then render
+    setTimeout(() => {
+      try { rotatingRender(); } catch (e) { /* swallow render errors */ }
+    }, 0);
+  }
 }
