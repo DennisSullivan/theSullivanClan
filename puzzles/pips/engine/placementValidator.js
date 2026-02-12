@@ -67,7 +67,9 @@ export function attachPlacementValidator(appRoot, puzzle) {
   normalizeRegionRules(regions);
 
   // Helper: run blocked + region checks after grid reflects tentative geometry
-  function validateBlockedAndRegions() {
+  // Helper: run blocked + region checks after grid reflects tentative geometry
+  // If checkRegions is false, only blocked-cell checks are performed.
+  function validateBlockedAndRegions(checkRegions = true) {
     // blocked cells
     for (let r = 0; r < grid.length; r++) {
       for (let c = 0; c < grid[0].length; c++) {
@@ -77,6 +79,8 @@ export function attachPlacementValidator(appRoot, puzzle) {
         }
       }
     }
+
+    if (!checkRegions) return { ok: true };
 
     // region rules
     const regionResults = evaluateAllRegions(grid, regionMap, regions);
@@ -109,7 +113,7 @@ export function attachPlacementValidator(appRoot, puzzle) {
     }
 
     // Validate blocked/regions
-    const vr = validateBlockedAndRegions();
+    const vr = validateBlockedAndRegions(false);
     if (!vr.ok) {
       // rollback: remove from board (return to tray)
       removeDominoToTray(d, grid);
