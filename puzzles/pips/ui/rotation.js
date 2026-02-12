@@ -184,3 +184,9 @@ function endRotationSession() {
     }, 0);
   }
 }
+
+// End rotation session on pointerup (release after drag) if active.
+// initRotation already handles pointerdown and endDrag.registerCallback.
+document.addEventListener("pointerup", (ev) => {
+  if (rotatingDomino) endRotationSession();
+});
