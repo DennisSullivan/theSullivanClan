@@ -94,71 +94,89 @@ export function rotateDominoInTray(domino) {
   domino.trayOrientation = (old + 90) % 360;
 }
 
-/**
- * commitRotation(domino, grid)
- * Purpose: Validate and persist a previously applied geometry-only rotation.
- * Use: call after rotateDominoOnBoard; returns true on success, false on failure.
- */
+// Commit a domino's current geometry into the grid atomically.
+// Returns true on success, false on failure (no partial grid writes).
 export function commitRotation(domino, grid) {
-  if (!domino || domino.row0 === null) return false;
+  // Helper: check numeric coords
+  function isNum(n) { return typeof n === "number" && !Number.isNaN(n); }
 
-  // Read snapshot; if missing, create a defensive snapshot from current geometry
-  let prevRow0 = domino._prevRow0;
-  let prevCol0 = domino._prevCol0;
-  let prevRow1 = domino._prevRow1;
-  let prevCol1 = domino._prevCol1;
-  if (typeof prevRow0 === "undefined") {
-    prevRow0 = domino._prevRow0 = domino.row0;
-    prevCol0 = domino._prevCol0 = domino.col0;
-    prevRow1 = domino._prevRow1 = domino.row1;
-    prevCol1 = domino._prevCol1 = domino.col1;
+  // Build the list of new target cells from domino geometry
+  const newCells = [];
+  if (domino.row0 === null || domino.row0 === undefined) {
+    // Domino is being returned to tray: we will clear any old occupancy.
+    // Find old cells to clear below and perform clear.
+  } else {
+    if (!isNum(domino.row0) || !isNum(domino.col0) || !isNum(domino.row1) || !isNum(domino.col1)) {
+      return false;
+    }
+    newCells.push({ r: domino.row0, c: domino.col0, half: 0 });
+    newCells.push({ r: domino.row1, c: domino.col1, half: 1 });
   }
 
-  const newRow0 = domino.row0;
-  const newCol0 = domino.col0;
-  const newRow1 = domino.row1;
-  const newCol1 = domino.col1;
+  const rows = grid.length;
+  const cols = grid[0] ? grid[0].length : 0;
 
-  // Bounds
-  if (!isInside(grid, newRow0, newCol0) || !isInside(grid, newRow1, newCol1)) {
-    // restore
-    domino.row0 = prevRow0;
-    domino.col0 = prevCol0;
-    domino.row1 = prevRow1;
-    domino.col1 = prevCol1;
-    cleanupPrevSnapshot(domino);
-    return false;
+  // Validate new cells (bounds and occupancy) without mutating grid
+  for (const nc of newCells) {
+    if (nc.r < 0 || nc.r >= rows || nc.c < 0 || nc.c >= cols) {
+      return false; // out of bounds
+    }
+    const cell = grid[nc.r][nc.c];
+    if (cell && String(cell.dominoId) !== String(domino.id)) {
+      // Occupied by another domino — cannot commit
+      return false;
+    }
   }
 
-  // Helper: cell free or already occupied by this domino
-  const cellFreeOrSelf = (r, c) => {
-    const cell = grid[r][c];
-    return cell === null || (cell && String(cell.dominoId) === String(domino.id));
-  };
-
-  if (!cellFreeOrSelf(newRow0, newCol0) || !cellFreeOrSelf(newRow1, newCol1)) {
-    // restore
-    domino.row0 = prevRow0;
-    domino.col0 = prevCol0;
-    domino.row1 = prevRow1;
-    domino.col1 = prevCol1;
-    cleanupPrevSnapshot(domino);
-    return false;
+  // Determine old cells to clear. Prefer explicit snapshot if present.
+  const oldCells = [];
+  if (typeof domino._prevRow0 !== "undefined" && typeof domino._prevCol0 !== "undefined" &&
+      typeof domino._prevRow1 !== "undefined" && typeof domino._prevCol1 !== "undefined") {
+    // Use snapshot
+    if (isNum(domino._prevRow0) && isNum(domino._prevCol0)) oldCells.push({ r: domino._prevRow0, c: domino._prevCol0 });
+    if (isNum(domino._prevRow1) && isNum(domino._prevCol1)) oldCells.push({ r: domino._prevRow1, c: domino._prevCol1 });
+  } else {
+    // Fallback: scan grid for any cells referencing this domino id
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = grid[r][c];
+        if (cell && String(cell.dominoId) === String(domino.id)) {
+          oldCells.push({ r, c });
+        }
+      }
+    }
   }
 
-  // Clear previous occupancy only if it references this domino
-  if (isInside(grid, prevRow0, prevCol0) && grid[prevRow0][prevCol0] && String(grid[prevRow0][prevCol0].dominoId) === String(domino.id)) {
-    grid[prevRow0][prevCol0] = null;
-  }
-  if (isInside(grid, prevRow1, prevCol1) && grid[prevRow1][prevCol1] && String(grid[prevRow1][prevCol1].dominoId) === String(domino.id)) {
-    grid[prevRow1][prevCol1] = null;
+  // At this point validation passed. Perform the swap atomically:
+  // 1) Clear old cells
+  for (const oc of oldCells) {
+    if (oc.r >= 0 && oc.r < rows && oc.c >= 0 && oc.c < cols) {
+      // Only clear if the cell still references this domino
+      const cell = grid[oc.r][oc.c];
+      if (cell && String(cell.dominoId) === String(domino.id)) {
+        grid[oc.r][oc.c] = null;
+      }
+    }
   }
 
-  // Write new occupancy
-  grid[newRow0][newCol0] = { dominoId: domino.id, half: 0 };
-  grid[newRow1][newCol1] = { dominoId: domino.id, half: 1 };
+  // 2) If domino is being returned to tray, we're done
+  if (domino.row0 === null || domino.row0 === undefined) {
+    return true;
+  }
 
-  cleanupPrevSnapshot(domino);
+  // 3) Write new cells
+  for (const nc of newCells) {
+    grid[nc.r][nc.c] = { dominoId: domino.id, half: nc.half };
+  }
+
+  // Cleanup snapshot metadata if present (optional)
+  if (typeof domino._prevRow0 !== "undefined") {
+    delete domino._prevRow0;
+    delete domino._prevCol0;
+    delete domino._prevRow1;
+    delete domino._prevCol1;
+  }
+
   return true;
 }
 
