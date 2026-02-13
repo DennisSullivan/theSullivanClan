@@ -287,3 +287,28 @@ export function placeDomino(domino, row, col, grid, clickedHalf = 0) {
 
   return false;
 }
+
+/**
+ * moveDomino(domino, row, col, grid)
+ * Backwards-compatible wrapper for callers expecting moveDomino.
+ * Semantics: attempt to place the domino with half0 anchored at (row,col).
+ * Returns true on success, false otherwise.
+ */
+export function moveDomino(domino, row, col, grid) {
+  // Try the four anchors where half0 == (row,col)
+  const candidates = [
+    [row, col,     row, col + 1], // right
+    [row, col,     row + 1, col], // down
+    [row, col,     row, col - 1], // left
+    [row, col,     row - 1, col]  // up
+  ];
+
+  for (const [r0, c0, r1, c1] of candidates) {
+    try {
+      if (placeDominoAnchor(domino, r0, c0, r1, c1, grid)) return true;
+    } catch (e) {
+      // Defensive: ignore and try next candidate
+    }
+  }
+  return false;
+}
