@@ -196,6 +196,12 @@
   transform: none !important;
 }
 
+.domino-wrapper.on-board.dragging {
+  display: block !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
 /* -------------------------
    Mobile scaling
    ------------------------- */
