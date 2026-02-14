@@ -54,7 +54,7 @@
    ------------------------- */
 .domino.on-board {
   transform: translate(var(--domino-nudge-x, 2px), var(--domino-nudge-y, 2px));
-  transform-origin: center center;
+  transform-origin: top left;
   box-sizing: border-box;
 }
 
