@@ -17,7 +17,7 @@
  *  - dominos: Map or array of domino objects with row0/col0/row1/col1/pip0/pip1.
  *  - grid: 2D array defining board size.
  *  - regionMap: 2D array of region ids (or null).
- *  - blocked: 2D boolean array of blocked cells (optional).
+ *  - blocked: Set of "r,c" strings or falsy.
  *  - regions: currently unused here but kept for future overlays.
  *  - boardEl: DOM element that will contain the board.
  */
@@ -49,9 +49,12 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   // 1. Render board background cells
   // ------------------------------------------------------------
   for (let r = 0; r < rows; r++) {
-    // Defensive: if a row is missing, log and skip.
     if (!Array.isArray(grid[r])) {
-      console.warn("renderBoard: grid row is not an array; skipping row", { rowIndex: r, row: grid[r] });
+      // This should not happen; log loudly so we can see it.
+      console.error("renderBoard: grid row is not an array; skipping row", {
+        rowIndex: r,
+        row: grid[r]
+      });
       continue;
     }
 
@@ -67,7 +70,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       }
 
       // Blocked cells if blocked map is present.
-      if (blocked && blocked[r] && blocked[r][c]) {
+      if (blocked && blocked.has && blocked.has(`${r},${c}`)) {
         cell.classList.add("blocked");
       }
 
@@ -105,7 +108,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
 
     // Defensive: ensure required fields exist.
     if (d.id == null) {
-      console.warn("renderBoard: domino missing id; skipping", d);
+      console.error("renderBoard: domino missing id; skipping", d);
       continue;
     }
 
@@ -134,9 +137,9 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       cssCol = Math.min(d.col0, d.col1);
     }
 
-    // Defensive: if geometry is inconsistent, log it.
+    // If both row and col differ, geometry is inconsistent.
     if (d.row0 !== d.row1 && d.col0 !== d.col1) {
-      console.warn("renderBoard: domino is not strictly horizontal or vertical", {
+      console.error("renderBoard: domino is not strictly horizontal or vertical", {
         id: d.id,
         row0: d.row0,
         col0: d.col0,
