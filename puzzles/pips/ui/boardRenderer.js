@@ -57,6 +57,8 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper on-board";
     wrapper.dataset.dominoId = d.id;
+
+    wrapper.classList.add("debug-box");
     
     // Debug: confirm wrapper classes
     console.log("WRAPPER CLASSES:", wrapper.className);
@@ -88,6 +90,8 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     // ------------------------------------------------------------
     const inner = document.createElement("div");
     inner.className = "domino on-board";
+    
+    inner.classList.add("debug-box");
 
     const half0 = document.createElement("div");
     half0.className = "half half0";
