@@ -2,96 +2,165 @@
 // FILE: history.js
 // PURPOSE: Implements undo/redo for all domino actions.
 // NOTES:
-//   - Pure data, no DOM logic.
+//   - Pure data module: no DOM, no UI, no rendering.
 //   - Each action is explicit and self-contained.
-//   - Supports: place, move, rotate, return-to-tray.
+//   - Supports: place, move, rotate, return.
+//   - Medium diagnostics for impossible branches.
 // ============================================================
 
 // ------------------------------------------------------------
 // initHistory()
-// RETURNS:
-//   { undoStack: [], redoStack: [] }
 // ------------------------------------------------------------
+
+/**
+ * initHistory()
+ * Creates a fresh history object with empty undo/redo stacks.
+ *
+ * RETURNS:
+ *   { undoStack: [], redoStack: [] }
+ *
+ * NOTES:
+ *   - This is the canonical initializer used by puzzle loader.
+ */
 export function initHistory() {
   return {
     undoStack: [],
     redoStack: []
   };
 }
-// ------------------------------------------------------------
-// createHistory()
-// Creates a new history stack.
-// RETURNS:
-//   { undoStack: [], redoStack: [] }
-// ------------------------------------------------------------
-export function createHistory() {
-  return {
-    undoStack: [],
-    redoStack: []
-  };
-}
 
+// ------------------------------------------------------------
+// createHistory() — alias of initHistory()
+// ------------------------------------------------------------
+
+/**
+ * createHistory()
+ * Backwards-compatible alias for initHistory().
+ */
+export function createHistory() {
+  return initHistory();
+}
 
 // ------------------------------------------------------------
 // recordAction(history, action)
-// Pushes an action onto the undo stack and clears redo.
-// INPUTS:
-//   history - { undoStack, redoStack }
-//   action  - explicit action object
-// NOTES:
-//   - action must contain enough info to reverse itself.
 // ------------------------------------------------------------
-export function recordAction(history, action) {
-  history.undoStack.push(action);
-  history.redoStack.length = 0; // clear redo
-}
 
+/**
+ * recordAction(history, action)
+ * Pushes an action onto the undo stack and clears redo.
+ *
+ * EXPECTS:
+ *   - history: { undoStack, redoStack }
+ *   - action: explicit object describing the change
+ *
+ * BEHAVIOR:
+ *   - Adds action to undoStack.
+ *   - Clears redoStack (standard undo/redo semantics).
+ *
+ * DIAGNOSTICS:
+ *   - Logs if history object is malformed.
+ */
+export function recordAction(history, action) {
+  if (!history || !Array.isArray(history.undoStack) || !Array.isArray(history.redoStack)) {
+    console.error("recordAction: invalid history object", history);
+    return;
+  }
+
+  history.undoStack.push(action);
+  history.redoStack.length = 0;
+
+  console.log("HISTORY: recorded action", action);
+}
 
 // ------------------------------------------------------------
 // undo(history, dominos, grid)
-// Undoes the most recent action.
-// INPUTS:
-//   history - history object
-//   dominos - Map<id,Domino>
-//   grid    - occupancy map
-// RETURNS:
-//   true if undo succeeded, false if nothing to undo
 // ------------------------------------------------------------
+
+/**
+ * undo(history, dominos, grid)
+ * Undoes the most recent action.
+ *
+ * EXPECTS:
+ *   - history: { undoStack, redoStack }
+ *   - dominos: Map<id,Domino>
+ *   - grid: occupancy map
+ *
+ * RETURNS:
+ *   true  → undo succeeded
+ *   false → nothing to undo
+ *
+ * DIAGNOSTICS:
+ *   - Logs if action refers to missing domino.
+ */
 export function undo(history, dominos, grid) {
-  if (history.undoStack.length === 0) return false;
+  if (!history || history.undoStack.length === 0) {
+    console.warn("HISTORY: undo requested but stack is empty");
+    return false;
+  }
 
   const action = history.undoStack.pop();
   applyInverseAction(action, dominos, grid);
 
   history.redoStack.push(action);
+
+  console.log("HISTORY: undo applied", action);
   return true;
 }
 
-
 // ------------------------------------------------------------
 // redo(history, dominos, grid)
-// Re-applies the most recently undone action.
 // ------------------------------------------------------------
+
+/**
+ * redo(history, dominos, grid)
+ * Re-applies the most recently undone action.
+ *
+ * RETURNS:
+ *   true  → redo succeeded
+ *   false → nothing to redo
+ */
 export function redo(history, dominos, grid) {
-  if (history.redoStack.length === 0) return false;
+  if (!history || history.redoStack.length === 0) {
+    console.warn("HISTORY: redo requested but stack is empty");
+    return false;
+  }
 
   const action = history.redoStack.pop();
   applyForwardAction(action, dominos, grid);
 
   history.undoStack.push(action);
+
+  console.log("HISTORY: redo applied", action);
   return true;
 }
 
-
 // ------------------------------------------------------------
 // applyForwardAction(action, dominos, grid)
-// Executes an action normally.
 // ------------------------------------------------------------
+
+/**
+ * applyForwardAction(action, dominos, grid)
+ * Applies an action in the forward direction (redo or initial apply).
+ *
+ * SUPPORTED ACTION TYPES:
+ *   - place
+ *   - move
+ *   - rotate
+ *   - return
+ *
+ * DIAGNOSTICS:
+ *   - Logs if domino is missing.
+ *   - Logs if action type is unknown.
+ */
 function applyForwardAction(action, dominos, grid) {
   const d = dominos.get(action.id);
 
-  switch (action.type) {
+  if (!d) {
+    console.error("applyForwardAction: domino not found", action);
+    return;
+  }
 
+  switch (action.type) {
     // ----------------------------------------
     // place: tray → board
     // { type:"place", id, r0,c0,r1,c1, prevTrayOrientation }
@@ -117,7 +186,7 @@ function applyForwardAction(action, dominos, grid) {
 
     // ----------------------------------------
     // rotate: pivot-based rotation
-    // { type:"rotate", id, prev: {r0,c0,r1,c1}, next:{r0,c0,r1,c1} }
+    // { type:"rotate", id, prev:{...}, next:{...} }
     // ----------------------------------------
     case "rotate":
       d.row0 = action.next.r0;
@@ -128,7 +197,7 @@ function applyForwardAction(action, dominos, grid) {
 
     // ----------------------------------------
     // return: board → tray
-    // { type:"return", id, prev:{r0,c0,r1,c1,pivotHalf} }
+    // { type:"return", id, prev:{...} }
     // ----------------------------------------
     case "return":
       d.row0 = null;
@@ -137,19 +206,40 @@ function applyForwardAction(action, dominos, grid) {
       d.col1 = null;
       d.pivotHalf = null;
       break;
+
+    default:
+      console.error("applyForwardAction: unknown action type", action);
+      break;
   }
 }
 
-
 // ------------------------------------------------------------
 // applyInverseAction(action, dominos, grid)
-// Reverses an action for undo.
 // ------------------------------------------------------------
+
+/**
+ * applyInverseAction(action, dominos, grid)
+ * Reverses an action for undo.
+ *
+ * SUPPORTED ACTION TYPES:
+ *   - place
+ *   - move
+ *   - rotate
+ *   - return
+ *
+ * DIAGNOSTICS:
+ *   - Logs if domino is missing.
+ *   - Logs if action type is unknown.
+ */
 function applyInverseAction(action, dominos, grid) {
   const d = dominos.get(action.id);
 
-  switch (action.type) {
+  if (!d) {
+    console.error("applyInverseAction: domino not found", action);
+    return;
+  }
 
+  switch (action.type) {
     // ----------------------------------------
     // undo place → return to tray
     // ----------------------------------------
@@ -192,6 +282,9 @@ function applyInverseAction(action, dominos, grid) {
       d.col1 = action.prev.c1;
       d.pivotHalf = action.prev.pivotHalf;
       break;
+
+    default:
+      console.error("applyInverseAction: unknown action type", action);
+      break;
   }
 }
-
