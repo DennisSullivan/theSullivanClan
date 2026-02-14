@@ -57,6 +57,10 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper on-board";
     wrapper.dataset.dominoId = d.id;
+    
+    // Debug: confirm wrapper classes
+    console.log("WRAPPER CLASSES:", wrapper.className);
+
 
     // ------------------------------------------------------------
     // Orientation + bounding box
