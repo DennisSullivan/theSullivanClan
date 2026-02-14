@@ -294,6 +294,9 @@ function endDragHandler(
     return;
   }
 
+  // ⭐ Force layout so halves have real size
+  clone.offsetWidth;
+
   // Compute half centers from clone
   const half0 = clone.querySelector(".half0");
   const half1 = clone.querySelector(".half1");
@@ -305,9 +308,6 @@ function endDragHandler(
     return;
   }
 
-  // ⭐ Force layout so halves have real size
-  clone.offsetWidth;
-  
   const h0r = half0.getBoundingClientRect();
   const h1r = half1.getBoundingClientRect();
 
@@ -437,6 +437,11 @@ function beginRealDrag(dragState, e) {
     const angleVarRaw = comp.getPropertyValue("--angle")?.trim();
     const angleVar = angleVarRaw || "0deg";
     clone.style.setProperty("--angle", angleVar);
+
+    // ⭐ If dragging from tray, remove tray centering transform
+    if (clone.classList.contains("in-tray")) {
+      clone.style.transform = `rotate(${angleVar})`;
+    }
 
     // Compute wrapper center
     const wrapperCenterX = rect.left + rect.width / 2;
