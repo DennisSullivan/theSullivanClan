@@ -32,6 +32,12 @@
   pointer-events: auto;
 }
 
+.domino-wrapper.on-board {
+  display: block;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
 /* -------------------------
    Domino core (fills wrapper exactly)
    ------------------------- */
@@ -53,7 +59,7 @@
    Apply static visual nudge to inner domino
    ------------------------- */
 .domino.on-board {
-  transform: translate(var(--domino-nudge-x, 2px), var(--domino-nudge-y, 2px));
+  transform: translate(var(--domino-nudge-x, 0px), var(--domino-nudge-y, 0px));
   transform-origin: top left;
   box-sizing: border-box;
 }
