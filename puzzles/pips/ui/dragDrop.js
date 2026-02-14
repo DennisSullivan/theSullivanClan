@@ -229,164 +229,31 @@ function onDrag(e, dragState) {
 /* ------------------------------------------------------------
  * endDragHandler
  * ------------------------------------------------------------ */
-function endDragHandler(
-  e,
-  dragState,
-  puzzleJson,
-  dominos,
-  grid,
-  regionMap,
-  blocked,
-  regions,
-  boardEl,
-  trayEl,
-  moveHandler,
-  upHandler
-) {
-  dbg("endDragHandler ENTER", { clientX: e.clientX, clientY: e.clientY });
-  dbg("dragState summary", {
-    domino: dbgDominoState(dragState.domino),
-    moved: dragState.moved,
-    fromTray: dragState.fromTray
-  });
+function endDragHandler(ev) {
+  const { domino, wrapper, clone, fromTray, moved } = dragState;
 
-  window.removeEventListener("pointermove", moveHandler);
-  window.removeEventListener("pointerup", upHandler);
+  if (!domino) return;
 
-  const { domino, moved, wrapper, fromTray } = dragState;
-
-  dbg("post-cleanup wrapper (pre-cleanup)", {
-    wrapperExists: !!wrapper,
-    wrapperVisibility: wrapper ? wrapper.style.visibility : undefined,
-    cloneExists: !!dragState.clone
-  });
-
-  // CLICK (no move)
-  if (!moved) {
-    // Tray click = rotate tray orientation
-    if (fromTray) {
-      const oldAngle = domino.trayOrientation;
-      domino.trayOrientation = (oldAngle || 0) + 90;
-      if (wrapper) wrapper.style.setProperty("--angle", `${domino.trayOrientation}deg`);
-
-      let waitMs = 160;
-      try {
-        const cs = window.getComputedStyle(wrapper);
-        const dur = cs.transitionDuration || "";
-        const delay = cs.transitionDelay || "";
-        const toMs = (s) =>
-          s.endsWith("ms") ? parseFloat(s) :
-          s.endsWith("s") ? parseFloat(s) * 1000 : 0;
-        const durations = dur.split(",").map(s => s.trim());
-        const delays = delay.split(",").map(s => s.trim());
-        let max = 0;
-        for (let i = 0; i < durations.length; i++) {
-          const d = toMs(durations[i] || "0s");
-          const dl = toMs(delays[i] || "0s");
-          max = Math.max(max, d + dl);
-        }
-        if (max > 0) waitMs = Math.ceil(max) + 20;
-      } catch (e) {}
-
-      pendingTrayRerender = setTimeout(() => {
-        renderTray(puzzleJson, dominos, trayEl);
-        pendingTrayRerender = null;
-      }, waitMs);
-
-      return;
-    }
-
-    // Board click = rotation session handled elsewhere
-    return;
+  // Remove clone
+  if (clone && clone.parentNode) {
+    clone.parentNode.removeChild(clone);
   }
 
-  // DRAG handling
-  const clone = dragState.clone;
-  if (!clone) {
-    dbg("No clone at drag end — returning to tray");
-    removeDominoToTray(domino, grid);
-    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-    return;
+  // If the domino was NOT moved out of the tray, restore visibility
+  if (fromTray && !moved) {
+    wrapper.style.visibility = "";
   }
 
-  // ⭐ Force layout so halves have real size
-  clone.offsetWidth;
-
-  // Compute half centers from clone
-  const half0 = clone.querySelector(".half0");
-  const half1 = clone.querySelector(".half1");
-
-  if (!half0 || !half1) {
-    dbg("Clone missing halves — returning to tray");
-    removeDominoToTray(domino, grid);
-    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-    return;
+  // If the domino WAS moved (placed on board), keep wrapper hidden
+  // BoardRenderer will create a new wrapper for the placed domino
+  if (fromTray && moved) {
+    wrapper.style.visibility = "hidden";
   }
 
-  const h0r = half0.getBoundingClientRect();
-  const h1r = half1.getBoundingClientRect();
-half0.style.outline = "2px solid red";
-half1.style.outline = "2px solid blue";
-
-  const half0Center = { x: h0r.left + h0r.width / 2, y: h0r.top + h0r.height / 2 };
-  const half1Center = { x: h1r.left + h1r.width / 2, y: h1r.top + h1r.height / 2 };
-
-  dbg("clone half centers", { half0Center, half1Center });
-  
-  drawDebugDot(half0Center.x, half0Center.y, "red");
-  drawDebugDot(half1Center.x, half1Center.y, "blue");
-
-  // Map centers to board cells
-  const mapped0 = mapPixelToCell(half0Center.x, half0Center.y, boardEl, grid);
-  const mapped1 = mapPixelToCell(half1Center.x, half1Center.y, boardEl, grid);
-
-  dbg("mapped cells", { mapped0, mapped1 });
-
-  if (!mapped0 || !mapped1) {
-    dbg("One or both halves outside board — returning to tray");
-    removeDominoToTray(domino, grid);
-    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-    return;
-  }
-
-  // Validate adjacency
-  const dr = Math.abs(mapped0.r - mapped1.r);
-  const dc = Math.abs(mapped0.c - mapped1.c);
-  const adjacent = (dr + dc === 1);
-
-  if (!adjacent) {
-    dbg("Halves not adjacent — returning to tray");
-    removeDominoToTray(domino, grid);
-    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-    return;
-  }
-
-  // Validate occupancy
-  const cell0 = grid[mapped0.r][mapped0.c];
-  const cell1 = grid[mapped1.r][mapped1.c];
-  const idStr = String(domino.id);
-
-  const ok0 = !cell0 || String(cell0.dominoId) === idStr;
-  const ok1 = !cell1 || String(cell1.dominoId) === idStr;
-
-  if (!ok0 || !ok1) {
-    dbg("Occupied target — returning to tray");
-    removeDominoToTray(domino, grid);
-    finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-    return;
-  }
-
-  // Commit placement
-  const ok = placeDominoAnchor(domino, mapped0.r, mapped0.c, mapped1.r, mapped1.c, grid);
-
-  dbg("placement result", { id: domino.id, ok, dominoAfter: dbgDominoState(domino) });
-
-  if (!ok) {
-    dbg("placement failed — returning to tray");
-    removeDominoToTray(domino, grid);
-  }
-
-  finalize(puzzleJson, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
+  // Reset drag state
+  dragState.domino = null;
+  dragState.clone = null;
+  dragState.wrapper = null;
 }
 
 /* ------------------------------------------------------------
@@ -424,87 +291,27 @@ function mapPixelToCell(x, y, boardEl, grid) {
 /* ------------------------------------------------------------
  * beginRealDrag
  * ------------------------------------------------------------ */
-function beginRealDrag(dragState, e) {
-  const wrapper = dragState.wrapper;
-  const rect = wrapper.getBoundingClientRect();
+function beginRealDrag(domino, wrapper, startX, startY) {
+  dragState.domino = domino;
+  dragState.fromTray = wrapper.classList.contains("in-tray");
+  dragState.moved = false;
 
-  try {
-    const clone = wrapper.cloneNode(true);
+  // Hide the original wrapper immediately
+  wrapper.style.visibility = "hidden";
 
-    // ⭐ CRITICAL: copy ALL classes from wrapper so CSS layout applies
-    clone.className = wrapper.className;
+  // Create clone
+  const clone = wrapper.cloneNode(true);
+  clone.classList.remove("in-tray");
+  clone.classList.add("domino-clone");
+  clone.style.visibility = "visible";
+  clone.style.position = "fixed";
+  clone.style.left = `${startX}px`;
+  clone.style.top = `${startY}px`;
 
-    // Add clone marker (does not affect layout)
-    clone.classList.add("domino-clone");
+  document.body.appendChild(clone);
 
-    // Explicit size (clone is no longer in the grid)
-    clone.style.width = `${wrapper.offsetWidth}px`;
-    clone.style.height = `${wrapper.offsetHeight}px`;
-
-    const comp = window.getComputedStyle(wrapper);
-
-    // Preserve visual styling
-    clone.style.background = comp.backgroundColor;
-    clone.style.border = comp.border;
-    clone.style.borderRadius = comp.borderRadius;
-    clone.style.boxShadow = comp.boxShadow;
-    clone.style.padding = comp.padding;
-    clone.style.color = comp.color;
-    clone.style.boxSizing = comp.boxSizing;
-    clone.style.transformOrigin = comp.transformOrigin;
-
-    // Preserve angle variable
-    const angleVarRaw = comp.getPropertyValue("--angle")?.trim();
-    const angleVar = angleVarRaw || "0deg";
-    clone.style.setProperty("--angle", angleVar);
-
-    // ⭐ If dragging from tray, remove tray centering transform
-    if (clone.classList.contains("in-tray")) {
-      clone.style.transform = `rotate(${angleVar})`;
-    }
-
-    // Compute wrapper center
-    const wrapperCenterX = rect.left + rect.width / 2;
-    const wrapperCenterY = rect.top + rect.height / 2;
-
-    dragState.offsetX = e.clientX - wrapperCenterX;
-    dragState.offsetY = e.clientY - wrapperCenterY;
-
-    // Preserve inner .domino transform
-    const inner = wrapper.querySelector(".domino");
-    const cloneInner = clone.querySelector(".domino");
-    if (inner && cloneInner) {
-      const compInner = window.getComputedStyle(inner);
-      const innerTransform = compInner.transform !== "none" ? compInner.transform : "";
-      cloneInner.style.transform = innerTransform;
-    }
-
-    // Position clone in viewport
-    clone.style.left = `${wrapperCenterX}px`;
-    clone.style.top = `${wrapperCenterY}px`;
-    clone.style.position = "fixed";
-    clone.style.pointerEvents = "none";
-    clone.style.zIndex = "9999";
-
-    document.body.appendChild(clone);
-
-    // Hide original wrapper while dragging
-    wrapper.classList.add("dragging");
-    wrapper.style.visibility = "hidden";
-    wrapper.style.pointerEvents = "none";
-
-    dragState.clone = clone;
-
-    dbg("beginRealDrag clone appended", {
-      id: dragState.domino.id,
-      wrapperRect: rect,
-      cloneRect: clone.getBoundingClientRect(),
-      angleVar
-    });
-  } catch (err) {
-    console.warn("beginRealDrag: clone creation failed", err);
-    dragState.clone = null;
-  }
+  dragState.clone = clone;
+  dragState.wrapper = wrapper;
 }
 
 /* ------------------------------------------------------------
