@@ -408,6 +408,13 @@ function beginRealDrag(dragState, e) {
   try {
     const clone = wrapper.cloneNode(true);
     clone.classList.add("domino-clone");
+    
+    // CRITICAL FIX: ensure clone gets the layout CSS of a real domino wrapper
+    clone.classList.add("domino-wrapper");
+    
+    // Preserve board/tray context if present
+    if (wrapper.classList.contains("on-board")) clone.classList.add("on-board");
+    if (wrapper.classList.contains("in-tray")) clone.classList.add("in-tray");
 
     clone.style.width = `${wrapper.offsetWidth}px`;
     clone.style.height = `${wrapper.offsetHeight}px`;
