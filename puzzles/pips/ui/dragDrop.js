@@ -62,8 +62,8 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
     // Move clone
     if (dragState.clone) {
       dragState.moved = true;
-      dragState.clone.style.left = `${ev.clientX}px`;
-      dragState.clone.style.top = `${ev.clientY}px`;
+      clone.style.left = `${ev.clientX - clone.offsetWidth / 2}px`;
+      clone.style.top = `${ev.clientY - clone.offsetHeight / 2}px`;
 
       console.log("DRAG: cloneMove", {
         id: domino.id,
@@ -126,31 +126,40 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
       id: domino.id,
       fromTray: dragState.fromTray
     });
-
+  
     wrapper.style.visibility = "hidden";
     console.log("DRAG: wrapper hidden", { id: domino.id });
-
+  
     const clone = wrapper.cloneNode(true);
+  
+    // ⭐ Measure size so we can center the clone under the pointer
+    const w = wrapper.offsetWidth;
+    const h = wrapper.offsetHeight;
+  
     // Remove tray transforms so clone is full size
     clone.style.transform = "none";
     clone.style.removeProperty("transform-origin");
-    
+  
     // Force natural size
-    clone.style.width = wrapper.offsetWidth + "px";
-    clone.style.height = wrapper.offsetHeight + "px";
+    clone.style.width = w + "px";
+    clone.style.height = h + "px";
+  
     clone.classList.remove("in-tray");
     clone.classList.add("domino-clone");
-
+  
     clone.style.position = "fixed";
-    clone.style.left = `${startX}px`;
-    clone.style.top = `${startY}px`;
+  
+    // ⭐ Center the clone under the pointer
+    clone.style.left = `${startX - w / 2}px`;
+    clone.style.top = `${startY - h / 2}px`;
+  
     clone.style.visibility = "visible";
     clone.style.pointerEvents = "none";
     clone.style.zIndex = 9999;
-
+  
     document.body.appendChild(clone);
     dragState.clone = clone;
-
+  
     console.log("DRAG: clone created", {
       id: domino.id,
       x: startX,
