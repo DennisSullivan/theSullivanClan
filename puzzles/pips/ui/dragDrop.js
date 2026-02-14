@@ -1,8 +1,6 @@
 // ============================================================
 // FILE: dragDrop.js
-// PURPOSE: Clean, minimal drag system for tray → board moves.
-//          Clone follows cursor; original wrapper hidden until
-//          drop outcome is known. No geometry or placement logic.
+// PURPOSE: Clean drag system with medium‑verbosity diagnostics.
 // ============================================================
 
 export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
@@ -17,7 +15,7 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
   };
 
   // ------------------------------------------------------------
-  // Pointer down: detect wrapper + domino
+  // Pointer down
   // ------------------------------------------------------------
   function pointerDown(ev) {
     const wrapper = ev.target.closest(".domino-wrapper");
@@ -35,11 +33,18 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
     dragState.startX = ev.clientX;
     dragState.startY = ev.clientY;
 
+    console.log("DRAG: pointerDown", {
+      id,
+      fromTray: dragState.fromTray,
+      startX: dragState.startX,
+      startY: dragState.startY
+    });
+
     wrapper.setPointerCapture(ev.pointerId);
   }
 
   // ------------------------------------------------------------
-  // Pointer move: begin real drag on first movement
+  // Pointer move
   // ------------------------------------------------------------
   function pointerMove(ev) {
     const { domino, wrapper, clone, startX, startY } = dragState;
@@ -48,8 +53,9 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
     const dx = ev.clientX - startX;
     const dy = ev.clientY - startY;
 
-    // Threshold to begin real drag
-    if (!dragState.clone && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+    // Begin real drag
+    if (!clone && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+      console.log("DRAG: threshold passed → beginRealDrag", { dx, dy });
       beginRealDrag(domino, wrapper, startX, startY);
     }
 
@@ -58,32 +64,52 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
       dragState.moved = true;
       dragState.clone.style.left = `${ev.clientX}px`;
       dragState.clone.style.top = `${ev.clientY}px`;
+
+      console.log("DRAG: cloneMove", {
+        id: domino.id,
+        x: ev.clientX,
+        y: ev.clientY
+      });
     }
   }
 
   // ------------------------------------------------------------
-  // Pointer up: finalize drag
+  // Pointer up
   // ------------------------------------------------------------
   function pointerUp(ev) {
     const { domino, wrapper, clone, fromTray, moved } = dragState;
     if (!domino || !wrapper) return;
 
+    console.log("DRAG: pointerUp", {
+      id: domino.id,
+      fromTray,
+      moved
+    });
+
     // Remove clone
     if (clone && clone.parentNode) {
       clone.parentNode.removeChild(clone);
+      console.log("DRAG: clone removed");
     }
 
     // If not moved, restore tray wrapper
     if (fromTray && !moved) {
       wrapper.style.visibility = "";
+      console.log("DRAG: restored tray wrapper (no movement)");
     }
 
-    // If moved, perform drop
+    // If moved, fire drop event
     if (moved) {
       const dropX = ev.clientX;
       const dropY = ev.clientY;
+
+      console.log("DRAG: firing pips:drop", {
+        id: domino.id,
+        dropX,
+        dropY
+      });
+
       onDrop(domino, dropX, dropY);
-      // wrapper stays hidden; boardRenderer will create a new one
     }
 
     // Reset
@@ -93,10 +119,16 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
   }
 
   // ------------------------------------------------------------
-  // Begin real drag: hide original, create clone
+  // Begin real drag
   // ------------------------------------------------------------
   function beginRealDrag(domino, wrapper, startX, startY) {
+    console.log("DRAG: beginRealDrag", {
+      id: domino.id,
+      fromTray: dragState.fromTray
+    });
+
     wrapper.style.visibility = "hidden";
+    console.log("DRAG: wrapper hidden", { id: domino.id });
 
     const clone = wrapper.cloneNode(true);
     clone.classList.remove("in-tray");
@@ -111,6 +143,12 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
 
     document.body.appendChild(clone);
     dragState.clone = clone;
+
+    console.log("DRAG: clone created", {
+      id: domino.id,
+      x: startX,
+      y: startY
+    });
   }
 
   // ------------------------------------------------------------
@@ -124,4 +162,6 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
 
   boardEl.addEventListener("pointerup", pointerUp);
   trayEl.addEventListener("pointerup", pointerUp);
+
+  console.log("DRAG: installDragDrop complete");
 }
