@@ -202,6 +202,14 @@
   align-items: flex-start !important;
 }
 
+.domino-wrapper.on-board.debug-box {
+  outline: 2px solid magenta !important;
+}
+
+.domino.on-board.debug-box {
+  outline: 2px solid cyan !important;
+}
+
 /* -------------------------
    Mobile scaling
    ------------------------- */
