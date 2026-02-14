@@ -59,7 +59,7 @@
    Apply static visual nudge to inner domino
    ------------------------- */
 .domino.on-board {
-  transform: translate(var(--domino-nudge-x, 4px), var(--domino-nudge-y, 4px));
+  transform: translate(var(--domino-nudge-x, 8px), var(--domino-nudge-y, 8px));
   transform-origin: top left;
   box-sizing: border-box;
 }
