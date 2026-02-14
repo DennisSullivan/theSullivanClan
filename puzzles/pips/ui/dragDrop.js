@@ -32,6 +32,23 @@ function dbgDominoState(domino) {
   };
 }
 
+function drawDebugDot(x, y, color = "red") {
+  const dot = document.createElement("div");
+  dot.style.position = "fixed";
+  dot.style.left = `${x - 4}px`;
+  dot.style.top = `${y - 4}px`;
+  dot.style.width = "8px";
+  dot.style.height = "8px";
+  dot.style.borderRadius = "50%";
+  dot.style.background = color;
+  dot.style.zIndex = "999999";
+  dot.style.pointerEvents = "none";
+  document.body.appendChild(dot);
+
+  // auto-remove after 2 seconds
+  setTimeout(() => dot.remove(), 2000);
+}
+
 /* ------------------------------------------------------------
  * endDrag callback registry (unchanged)
  * ------------------------------------------------------------ */
@@ -308,11 +325,16 @@ function endDragHandler(
 
   const h0r = half0.getBoundingClientRect();
   const h1r = half1.getBoundingClientRect();
+half0.style.outline = "2px solid red";
+half1.style.outline = "2px solid blue";
 
   const half0Center = { x: h0r.left + h0r.width / 2, y: h0r.top + h0r.height / 2 };
   const half1Center = { x: h1r.left + h1r.width / 2, y: h1r.top + h1r.height / 2 };
 
   dbg("clone half centers", { half0Center, half1Center });
+  
+  drawDebugDot(half0Center.x, half0Center.y, "red");
+  drawDebugDot(half1Center.x, half1Center.y, "blue");
 
   // Map centers to board cells
   const mapped0 = mapPixelToCell(half0Center.x, half0Center.y, boardEl, grid);
