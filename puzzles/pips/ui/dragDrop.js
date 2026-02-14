@@ -236,11 +236,9 @@ function endDragHandler(
   window.removeEventListener("pointermove", moveHandler);
   window.removeEventListener("pointerup", upHandler);
 
-  cleanupDragState(dragState);
-
   const { domino, moved, wrapper, fromTray } = dragState;
 
-  dbg("post-cleanup wrapper", {
+  dbg("post-cleanup wrapper (pre-cleanup)", {
     wrapperExists: !!wrapper,
     wrapperVisibility: wrapper ? wrapper.style.visibility : undefined,
     cloneExists: !!dragState.clone
