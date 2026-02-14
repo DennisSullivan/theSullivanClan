@@ -131,6 +131,13 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
     console.log("DRAG: wrapper hidden", { id: domino.id });
 
     const clone = wrapper.cloneNode(true);
+    // Remove tray transforms so clone is full size
+    clone.style.transform = "none";
+    clone.style.removeProperty("transform-origin");
+    
+    // Force natural size
+    clone.style.width = wrapper.offsetWidth + "px";
+    clone.style.height = wrapper.offsetHeight + "px";
     clone.classList.remove("in-tray");
     clone.classList.add("domino-clone");
 
