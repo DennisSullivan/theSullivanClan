@@ -1,11 +1,7 @@
 /* ============================================================
    FILE: board.css
-   PURPOSE: Board layout + wrapper sizing that includes cell gap
-            + static nudge to align painted domino seam with grid
-   NOTES:
-     - Assumes --cell-size, --cell-gap, --domino-thickness are defined here
-     - Domino wrapper footprint includes the inter-cell gap so .domino 100% fills it
-     - A static nudge is applied via CSS variables to align painted pixels
+   PURPOSE: Board layout + correct wrapper sizing for horizontal
+            and vertical dominos + static nudge alignment.
    ============================================================ */
 
 /* 1. ROOT VARIABLES */
@@ -29,9 +25,10 @@
 
   --transition-fast: 120ms ease-out;
 
-  /* Static nudge computed from geometry:
-     nudge = (cell-gap / 2) + (grid-border / 2) - (domino-border / 2)
-     With defaults: (4px/2) + (1px/2) - (1px/2) = 2px */
+  /* Static nudge:
+     (cell-gap/2) + (grid-border/2) - (domino-border/2)
+     With defaults: (4/2) + (1/2) - (1/2) = 2px
+  */
   --domino-nudge-x: 2px;
   --domino-nudge-y: 2px;
 }
@@ -83,43 +80,52 @@
   background: transparent;
 }
 
-/* Optional region outline overlay (keeps outlines visible around dominos) */
 .region-outline {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 50; /* above cells, below dominos (domino z-index: 100) */
+  z-index: 50;
   border: 2px solid rgba(0,0,0,0.06);
   box-sizing: border-box;
-  outline: none;
 }
 
-/* 5. DOMINO WRAPPER (BOARD POSITIONING)
-   Note: width includes the inter-cell gap so a horizontal domino spans two cells exactly.
-   A static translate nudge is applied to align painted pixels; rotation is applied via --angle. */
+/* ============================================================
+   5. DOMINO WRAPPER (BOARD POSITIONING)
+   ============================================================ */
+
 .domino-wrapper.on-board {
   position: absolute;
-
-  /* horizontal footprint: two cells plus the gap between them */
-  width: calc(var(--cell-size) * 2 + var(--cell-gap));
-  height: var(--cell-size);
-
-  left: calc(var(--col) * (var(--cell-size) + var(--cell-gap)));
-  top:  calc(var(--row) * (var(--cell-size) + var(--cell-gap)));
-
   pointer-events: auto;
   z-index: 100;
   transform-origin: center center;
 
-  /* translate then rotate; --angle set by renderer (deg) */
-  transform: translate(var(--domino-nudge-x, 2px), var(--domino-nudge-y, 2px)) rotate(var(--angle, 0deg));
-  box-sizing: border-box;
+  /* Base placement from renderer */
+  left: calc(var(--col) * (var(--cell-size) + var(--cell-gap)));
+  top:  calc(var(--row) * (var(--cell-size) + var(--cell-gap)));
+
+  /* Nudge + rotation */
+  transform:
+    translate(var(--domino-nudge-x), var(--domino-nudge-y))
+    rotate(var(--angle));
 }
 
+/* --- Correct wrapper footprint by orientation --- */
 
-/* Remove nudge while dragging to avoid cursor/ghost mismatch */
+/* Horizontal (angle = 0deg) */
+.domino-wrapper.on-board[style*="--angle: 0deg"] {
+  width: calc(var(--cell-size) * 2 + var(--cell-gap));
+  height: var(--cell-size);
+}
+
+/* Vertical (angle = 90deg) */
+.domino-wrapper.on-board[style*="--angle: 90deg"] {
+  width: var(--cell-size);
+  height: calc(var(--cell-size) * 2 + var(--cell-gap));
+}
+
+/* Remove nudge while dragging */
 .domino-wrapper.on-board.dragging {
-  transform: rotate(var(--angle, 0deg));
+  transform: rotate(var(--angle));
 }
 
 .domino-wrapper.dragging {
@@ -127,12 +133,15 @@
   pointer-events: none;
 }
 
-/* 6. DOMINO SIZE ON BOARD */
+/* ============================================================
+   6. DOMINO SIZE ON BOARD
+   ============================================================ */
+
 .domino.on-board {
   position: absolute;
   width: 100%;
   height: 100%;
-  box-sizing: border-box; /* ensure borders included in size */
+  box-sizing: border-box;
   transform-origin: center center;
 }
 
@@ -142,7 +151,10 @@
   height: 100%;
 }
 
-/* 7. PIP SYSTEM (NYT‑STYLE) */
+/* ============================================================
+   7. PIP SYSTEM (NYT‑STYLE)
+   ============================================================ */
+
 .domino .pip {
   width: calc(var(--cell-size) * 0.095);
   height: calc(var(--cell-size) * 0.095);
@@ -152,7 +164,6 @@
   transition: opacity var(--transition-fast);
 }
 
-/* pip positions */
 .p1 { grid-area: 2 / 2; }
 .p2 { grid-area: 1 / 1; }
 .p3 { grid-area: 3 / 3; }
@@ -161,7 +172,6 @@
 .p6 { grid-area: 2 / 1; }
 .p7 { grid-area: 2 / 3; }
 
-/* pip patterns */
 .domino .half[data-pip="1"] .p1 { opacity: 1; }
 .domino .half[data-pip="2"] .p2,
 .domino .half[data-pip="2"] .p3 { opacity: 1; }
@@ -184,7 +194,10 @@
 .domino .half[data-pip="6"] .p6,
 .domino .half[data-pip="6"] .p7 { opacity: 1; }
 
-/* 8. MOBILE SCALING */
+/* ============================================================
+   8. MOBILE SCALING
+   ============================================================ */
+
 @media (max-width: 600px) {
   :root { --cell-size: 36px; }
 
@@ -203,7 +216,18 @@
   }
 }
 
-/* 9. Debug helpers (toggle classes in DevTools) */
-.domino-wrapper.on-board.debug-outline { outline: 1px dashed rgba(255,0,0,0.6); }
-.domino.on-board.debug-outline { outline: 1px solid rgba(0,255,0,0.6); }
-.board-cell.debug-outline { outline: 1px dotted rgba(0,0,255,0.25); }
+/* ============================================================
+   9. DEBUG HELPERS
+   ============================================================ */
+
+.domino-wrapper.on-board.debug-outline {
+  outline: 1px dashed rgba(255,0,0,0.6);
+}
+
+.domino.on-board.debug-outline {
+  outline: 1px solid rgba(0,255,0,0.6);
+}
+
+.board-cell.debug-outline {
+  outline: 1px dotted rgba(0,0,255,0.25);
+}
