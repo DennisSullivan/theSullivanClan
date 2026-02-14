@@ -39,6 +39,31 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   console.log("ROT: initRotation complete");
 
   // ----------------------------------------------------------
+  // TRAY single-click rotates tray domino (spec-compliant)
+  // ----------------------------------------------------------
+  trayEl.addEventListener("click", (event) => {
+    const wrapper = event.target.closest(".domino-wrapper");
+    if (!wrapper) return;
+  
+    const id = wrapper.dataset.dominoId ?? wrapper.dataset.id;
+    if (!id) return;
+  
+    const domino = dominos.get(id);
+    if (!domino) return;
+    if (domino.row0 !== null) return; // only tray dominos
+  
+    // Rotate 90° clockwise
+    domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
+  
+    console.log("ROT: tray rotate (single-click)", {
+      id,
+      newOrientation: domino.trayOrientation
+    });
+  
+    renderPuzzle();
+  });
+
+  // ----------------------------------------------------------
   // TRAY double-click rotates tray domino visually (no session)
   // ----------------------------------------------------------
   trayEl.addEventListener("dblclick", (event) => {
