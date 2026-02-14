@@ -30,10 +30,6 @@
   align-items: center;
   box-sizing: border-box;
   pointer-events: auto;
-
-  transform: translate(-50%, -50%) rotate(var(--angle, 0deg));
-  transition: transform 150ms ease-out;
-  transform-origin: center center;
 }
 
 /* -------------------------
