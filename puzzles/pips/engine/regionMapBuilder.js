@@ -1,156 +1,107 @@
 // ============================================================
-// FILE: domino.js
-// PURPOSE: Define the canonical Domino model and helpers.
+// FILE: regionMapBuilder.js
+// PURPOSE: Build a 2D regionMap array from puzzle region data.
 // NOTES:
-//   - Pure data module: no DOM, no UI.
-//   - Domino geometry is always row0/col0 and row1/col1.
-//   - MASTER_TRAY defines canonical tray ordering.
+//   - regionMap[row][col] = regionId (integer) or -1 for none.
+//   - Supports explicit cell lists OR rectangle definitions.
+//   - Pure engine logic: no DOM, no UI.
 //   - Medium diagnostics for impossible branches.
 // ============================================================
 
-// Canonical tray ordering for 0–6 domino set.
-export const MASTER_TRAY = [
-  "00","01","02","03","04","05","06",
-  "11","12","13","14","15","16",
-  "22","23","24","25","26",
-  "33","34","35","36",
-  "44","45","46",
-  "55","56",
-  "66"
-];
-
 /**
- * isValidDominoId(id)
- * Returns true if id is a valid "ab" string with 0 ≤ a ≤ b ≤ 6.
- */
-export function isValidDominoId(id) {
-  if (typeof id !== "string" || !/^[0-6][0-6]$/.test(id)) return false;
-  const a = Number(id[0]);
-  const b = Number(id[1]);
-  return a <= b;
-}
-
-/**
- * getPipsFromId(id)
- * Returns { pip0, pip1 } for a valid domino id.
- */
-export function getPipsFromId(id) {
-  return {
-    pip0: Number(id[0]),
-    pip1: Number(id[1])
-  };
-}
-
-/**
- * getHomeSlot(id)
- * Returns the index of the domino in MASTER_TRAY.
- */
-export function getHomeSlot(id) {
-  return MASTER_TRAY.indexOf(id);
-}
-
-/**
- * createDomino(id)
- * Constructs a canonical domino model object.
+ * buildRegionMap(width, height, regions)
+ * Constructs a 2D regionMap array.
+ *
+ * EXPECTS:
+ *   - width, height: puzzle dimensions
+ *   - regions: array of region definitions:
+ *       { id, cells:[{row,col},...] }
+ *       OR
+ *       { id, top, left, width, height }
  *
  * RETURNS:
- *   {
- *     id, pip0, pip1,
- *     row0, col0, row1, col1,
- *     trayOrientation,
- *     pivotHalf
- *   }
+ *   regionMap: 2D array of region IDs (or -1)
  *
  * DIAGNOSTICS:
- *   - Throws if id is invalid.
+ *   - Logs invalid region definitions.
+ *   - Logs out‑of‑bounds cells.
  */
-export function createDomino(id) {
-  if (!isValidDominoId(id)) {
-    throw new Error(`Invalid domino ID: ${id}`);
+export function buildRegionMap(width, height, regions) {
+  // Initialize all cells to -1 (no region)
+  const regionMap = Array.from({ length: height }, () => new Array(width).fill(-1));
+
+  if (!Array.isArray(regions)) {
+    console.error("buildRegionMap: regions is not an array", regions);
+    return regionMap;
   }
 
-  const { pip0, pip1 } = getPipsFromId(id);
+  for (const region of regions) {
+    if (!region || typeof region.id === "undefined") {
+      console.error("buildRegionMap: region missing id", region);
+      continue;
+    }
 
-  return {
-    id,
-    pip0,
-    pip1,
-    row0: null,
-    col0: null,
-    row1: null,
-    col1: null,
-    trayOrientation: 0,
-    pivotHalf: null
-  };
-}
+    const { id } = region;
 
-/**
- * isOnBoard(domino)
- * Returns true if both halves have non-null coordinates.
- */
-export function isOnBoard(domino) {
-  return (
-    domino.row0 !== null &&
-    domino.col0 !== null &&
-    domino.row1 !== null &&
-    domino.col1 !== null
-  );
-}
+    // ----------------------------------------------------------
+    // Case 1: explicit cell list
+    // ----------------------------------------------------------
+    if (Array.isArray(region.cells)) {
+      for (const cell of region.cells) {
+        const { row, col } = cell;
 
-/**
- * clearBoardState(domino, grid)
- * Removes the domino from the grid and resets geometry.
- */
-export function clearBoardState(domino, grid) {
-  if (isOnBoard(domino)) {
-    grid[domino.row0][domino.col0] = null;
-    grid[domino.row1][domino.col1] = null;
+        if (
+          typeof row !== "number" ||
+          typeof col !== "number" ||
+          Number.isNaN(row) ||
+          Number.isNaN(col)
+        ) {
+          console.error("buildRegionMap: invalid cell coordinates", { region, cell });
+          continue;
+        }
+
+        if (row < 0 || row >= height || col < 0 || col >= width) {
+          console.warn("buildRegionMap: cell out of bounds", { region, cell });
+          continue;
+        }
+
+        regionMap[row][col] = id;
+      }
+      continue;
+    }
+
+    // ----------------------------------------------------------
+    // Case 2: rectangle definition
+    // ----------------------------------------------------------
+    if (
+      typeof region.top === "number" &&
+      typeof region.left === "number" &&
+      typeof region.width === "number" &&
+      typeof region.height === "number"
+    ) {
+      const { top, left, width: w, height: h } = region;
+
+      for (let r = top; r < top + h; r++) {
+        for (let c = left; c < left + w; c++) {
+          if (r < 0 || r >= height || c < 0 || c >= width) {
+            console.warn("buildRegionMap: rectangle cell out of bounds", {
+              region,
+              r,
+              c
+            });
+            continue;
+          }
+          regionMap[r][c] = id;
+        }
+      }
+      continue;
+    }
+
+    // ----------------------------------------------------------
+    // Unknown region format
+    // ----------------------------------------------------------
+    console.error("buildRegionMap: region has no recognized format", region);
   }
 
-  domino.row0 = null;
-  domino.col0 = null;
-  domino.row1 = null;
-  domino.col1 = null;
-  domino.pivotHalf = null;
-}
-
-/**
- * setCells(domino, r0, c0, r1, c1, grid)
- * Writes the domino into the grid at the given coordinates.
- * WARNING:
- *   - Does not validate occupancy or bounds.
- *   - Caller must ensure correctness.
- */
-export function setCells(domino, r0, c0, r1, c1, grid) {
-  if (isOnBoard(domino)) {
-    grid[domino.row0][domino.col0] = null;
-    grid[domino.row1][domino.col1] = null;
-  }
-
-  domino.row0 = r0;
-  domino.col0 = c0;
-  domino.row1 = r1;
-  domino.col1 = c1;
-
-  grid[r0][c0] = { dominoId: domino.id, half: 0 };
-  grid[r1][c1] = { dominoId: domino.id, half: 1 };
-}
-
-/**
- * getCells(domino)
- * Returns an array of the two cell coordinates.
- */
-export function getCells(domino) {
-  return [
-    { row: domino.row0, col: domino.col0 },
-    { row: domino.row1, col: domino.col1 }
-  ];
-}
-
-/**
- * cloneDomino(domino)
- * Deep‑clones a domino object.
- */
-export function cloneDomino(domino) {
-  return JSON.parse(JSON.stringify(domino));
+  return regionMap;
 }
