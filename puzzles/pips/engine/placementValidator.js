@@ -1,7 +1,12 @@
-// engine/placementValidator.js
-// Centralized placement/rotation validator and history wiring.
-// This version is updated for explicit-anchor placement (r0,c0,r1,c1).
-// No use of placeDomino() remains.
+// ============================================================
+// FILE: placementValidator.js
+// PURPOSE: Centralized placement/rotation validator and history wiring.
+// NOTES:
+//   - Uses explicit anchor placement (r0,c0,r1,c1).
+//   - Validates blocked cells and region rules.
+//   - Manages rotation sessions and emits normalized pips:* events.
+//   - Listens to both old and new event names for backward compatibility.
+// ============================================================
 
 import {
   placeDominoAnchor,
@@ -13,10 +18,32 @@ import {
 import { evaluateAllRegions } from "./regionRules.js";
 import { recordAction } from "./history.js";
 
-/* ------------------------------------------------------------
- * Rule parsing helpers (unchanged)
- * ------------------------------------------------------------ */
+// Helper to register the same handler for multiple event names.
+function onEvents(target, names, handler) {
+  names.forEach((name) => target.addEventListener(name, handler));
+}
 
+// Helper to dispatch the same detail under multiple event names.
+function dispatchEvents(target, names, detail) {
+  names.forEach((name) => {
+    target.dispatchEvent(
+      new CustomEvent(name, {
+        detail,
+        bubbles: true
+      })
+    );
+  });
+}
+
+// ------------------------------------------------------------
+// Rule parsing helpers
+// ------------------------------------------------------------
+
+/**
+ * parseRuleString(ruleStr)
+ * Parses a region rule string like "<= 3" or ">=2" or "5" into
+ * a normalized object { op, value }. Returns null if invalid.
+ */
 function parseRuleString(ruleStr) {
   if (ruleStr == null) return null;
   const s = String(ruleStr).trim();
@@ -27,44 +54,85 @@ function parseRuleString(ruleStr) {
   return { op, value };
 }
 
+/**
+ * normalizeRegionRules(regions)
+ * Walks the regions array and normalizes region.rule into
+ * { op, value } objects where possible.
+ */
 function normalizeRegionRules(regions) {
   if (!Array.isArray(regions)) return;
   for (const region of regions) {
     if (!region.rule) continue;
-    if (typeof region.rule === "object" && typeof region.rule.op === "string" && typeof region.rule.value === "number") {
+
+    // Already normalized.
+    if (
+      typeof region.rule === "object" &&
+      typeof region.rule.op === "string" &&
+      typeof region.rule.value === "number"
+    ) {
       continue;
     }
+
+    // Plain number.
     if (typeof region.rule === "number" || /^\s*-?\d+\s*$/.test(String(region.rule))) {
       region.rule = { op: "=", value: Number(region.rule) };
       continue;
     }
+
+    // String rule.
     if (typeof region.rule === "string") {
       const parsed = parseRuleString(region.rule);
-      if (parsed) region.rule = parsed;
+      if (parsed) {
+        region.rule = parsed;
+      } else {
+        console.error("normalizeRegionRules: could not parse rule string", region.rule);
+      }
     }
   }
 }
 
-/* ------------------------------------------------------------
- * attachPlacementValidator
- * ------------------------------------------------------------ */
+// ------------------------------------------------------------
+// attachPlacementValidator
+// ------------------------------------------------------------
 
+/**
+ * attachPlacementValidator(appRoot, puzzle)
+ * Wires up all placement and rotation validation logic:
+ *  - Listens for drop attempts (board + tray).
+ *  - Validates blocked cells and region rules.
+ *  - Manages rotation sessions and commits/rejects.
+ *  - Records history actions.
+ * Expects:
+ *  - appRoot: DOM node where pips:* events are dispatched.
+ *  - puzzle: { dominos, grid, regionMap, blocked, regions, history }.
+ */
 export function attachPlacementValidator(appRoot, puzzle) {
-  if (!appRoot || !puzzle) throw new Error("attachPlacementValidator: missing args");
+  if (!appRoot || !puzzle) {
+    console.error("attachPlacementValidator: missing args", { appRoot: !!appRoot, puzzle: !!puzzle });
+    throw new Error("attachPlacementValidator: missing args");
+  }
 
   const { dominos, grid, regionMap, blocked, regions, history } = puzzle;
 
   normalizeRegionRules(regions);
 
-  /* ------------------------------------------------------------
-   * Blocked + region validation
-   * ------------------------------------------------------------ */
+  // ----------------------------------------------------------
+  // Blocked + region validation
+  // ----------------------------------------------------------
+
+  /**
+   * validateBlockedAndRegions(checkRegions = true)
+   * Validates:
+   *  - No occupied cell is blocked.
+   *  - If checkRegions is true, all region rules are satisfied.
+   * Returns { ok: true } or { ok: false, reason, ... }.
+   */
   function validateBlockedAndRegions(checkRegions = true) {
-    // blocked cells
+    // Validate blocked cells.
     for (let r = 0; r < grid.length; r++) {
       for (let c = 0; c < grid[0].length; c++) {
         if (!grid[r][c]) continue;
-        if (blocked && blocked.has(`${r},${c}`)) {
+        if (blocked && blocked.has && blocked.has(`${r},${c}`)) {
           return { ok: false, reason: "blocked", cell: { r, c } };
         }
       }
@@ -72,7 +140,7 @@ export function attachPlacementValidator(appRoot, puzzle) {
 
     if (!checkRegions) return { ok: true };
 
-    // region rules
+    // Validate region rules.
     const regionResults = evaluateAllRegions(grid, regionMap, regions);
     for (const rr of regionResults) {
       if (!rr.satisfied) {
@@ -89,9 +157,9 @@ export function attachPlacementValidator(appRoot, puzzle) {
     return { ok: true };
   }
 
-  /* ------------------------------------------------------------
-   * Rotation session state (unchanged)
-   * ------------------------------------------------------------ */
+  // ----------------------------------------------------------
+  // Rotation session state
+  // ----------------------------------------------------------
 
   const rotationState = {
     inSession: false,
@@ -101,8 +169,16 @@ export function attachPlacementValidator(appRoot, puzzle) {
     snapshot: null
   };
 
+  /**
+   * startRotationSession(domino, pivotHalf = 0)
+   * Starts a rotation session for a given domino, capturing its
+   * pre-session geometry as a snapshot.
+   */
   function startRotationSession(domino, pivotHalf = 0) {
-    if (!domino) return false;
+    if (!domino) {
+      console.error("startRotationSession: missing domino");
+      return false;
+    }
     rotationState.inSession = true;
     rotationState.activeDominoId = String(domino.id);
     rotationState.pivotHalf = pivotHalf;
@@ -113,24 +189,64 @@ export function attachPlacementValidator(appRoot, puzzle) {
       row1: domino.row1,
       col1: domino.col1
     };
+    console.log("ROTVAL: session start", {
+      id: rotationState.activeDominoId,
+      pivotHalf,
+      snapshot: rotationState.snapshot
+    });
     return true;
   }
 
+  /**
+   * rotateSessionGeometry(pivotHalf)
+   * Applies a geometry-only rotation to the active domino in the
+   * current rotation session.
+   */
   function rotateSessionGeometry(pivotHalf) {
-    if (!rotationState.inSession) return false;
+    if (!rotationState.inSession) {
+      console.error("rotateSessionGeometry: called with no active session");
+      return false;
+    }
     const id = rotationState.activeDominoId;
-    const d = dominos instanceof Map
-      ? dominos.get(id)
-      : (dominos || []).find(x => String(x.id) === id);
-    if (!d) return false;
+    const d =
+      dominos instanceof Map
+        ? dominos.get(id)
+        : (dominos || []).find((x) => String(x.id) === id);
+
+    if (!d) {
+      console.error("rotateSessionGeometry: active domino not found", { id });
+      return false;
+    }
 
     rotateDominoOnBoard(d, pivotHalf);
     rotationState.pivotHalf = pivotHalf;
+
+    console.log("ROTVAL: geometry rotate", {
+      id,
+      pivotHalf,
+      new: {
+        row0: d.row0,
+        col0: d.col0,
+        row1: d.row1,
+        col1: d.col1
+      }
+    });
+
     return true;
   }
 
+  /**
+   * commitRotationAtomic(domino, gridRef)
+   * Applies the rotated geometry to the grid in an atomic way:
+   *  - Validates bounds, occupancy, and blocked cells.
+   *  - Clears old cells and writes new ones if valid.
+   * Returns { ok: true } or { ok: false, reason, ... }.
+   */
   function commitRotationAtomic(domino, gridRef) {
-    if (!domino) return { ok: false, reason: "invalid" };
+    if (!domino) {
+      console.error("commitRotationAtomic: missing domino");
+      return { ok: false, reason: "invalid" };
+    }
     const rows = gridRef.length;
     const cols = gridRef[0]?.length || 0;
 
@@ -139,17 +255,19 @@ export function attachPlacementValidator(appRoot, puzzle) {
       { r: domino.row1, c: domino.col1, half: 1 }
     ];
 
-    // validate coords
+    // Validate coords.
     for (const t of targets) {
       if (typeof t.r !== "number" || typeof t.c !== "number") {
+        console.error("commitRotationAtomic: non-numeric coords", t);
         return { ok: false, reason: "invalid-coords" };
       }
       if (t.r < 0 || t.r >= rows || t.c < 0 || t.c >= cols) {
+        console.warn("commitRotationAtomic: out-of-bounds target", t);
         return { ok: false, reason: "out-of-bounds" };
       }
     }
 
-    // collect old cells
+    // Collect old cells.
     const oldCells = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -160,37 +278,60 @@ export function attachPlacementValidator(appRoot, puzzle) {
       }
     }
 
-    // occupancy + blocked
+    // Occupancy + blocked.
     for (const t of targets) {
       const occ = gridRef[t.r][t.c];
       if (occ && String(occ.dominoId) !== String(domino.id)) {
+        console.warn("commitRotationAtomic: target occupied by another domino", {
+          target: t,
+          occupant: occ.dominoId
+        });
         return { ok: false, reason: "occupied", cell: { r: t.r, c: t.c, occupant: occ.dominoId } };
       }
-      if (blocked && blocked.has(`${t.r},${t.c}`)) {
+      if (blocked && blocked.has && blocked.has(`${t.r},${t.c}`)) {
+        console.warn("commitRotationAtomic: target is blocked", t);
         return { ok: false, reason: "blocked", cell: { r: t.r, c: t.c } };
       }
     }
 
-    // atomic swap
-    oldCells.forEach(oc => { gridRef[oc.r][oc.c] = null; });
-    targets.forEach(tc => { gridRef[tc.r][tc.c] = { dominoId: domino.id, half: tc.half }; });
+    // Atomic swap.
+    oldCells.forEach((oc) => {
+      gridRef[oc.r][oc.c] = null;
+    });
+    targets.forEach((tc) => {
+      gridRef[tc.r][tc.c] = { dominoId: domino.id, half: tc.half };
+    });
 
     return { ok: true };
   }
 
+  /**
+   * endRotationSession(trigger)
+   * Ends the current rotation session (if any), attempts to commit
+   * the rotated geometry, and emits commit/reject events.
+   */
   function endRotationSession(trigger) {
-    if (!rotationState.inSession) return { ok: false, reason: "no-session" };
+    if (!rotationState.inSession) {
+      console.warn("endRotationSession: called with no active session", { trigger });
+      return { ok: false, reason: "no-session" };
+    }
 
     const id = rotationState.activeDominoId;
-    const d = dominos instanceof Map
-      ? dominos.get(id)
-      : (dominos || []).find(x => String(x.id) === id);
+    const d =
+      dominos instanceof Map
+        ? dominos.get(id)
+        : (dominos || []).find((x) => String(x.id) === id);
 
     if (!d) {
+      console.error("endRotationSession: active domino not found", { id });
       rotationState.inSession = false;
       rotationState.activeDominoId = null;
       rotationState.snapshot = null;
       rotationState.pivotHalf = null;
+      dispatchEvents(document, ["pips:rotate:reject:board", "pips:board-rotate-reject"], {
+        id,
+        reason: "missing-domino"
+      });
       return { ok: false, reason: "missing-domino" };
     }
 
@@ -199,23 +340,31 @@ export function attachPlacementValidator(appRoot, puzzle) {
 
     const res = commitRotationAtomic(d, grid);
     if (!res.ok) {
-      // revert
+      // Revert geometry.
       if (prev) {
-        d.row0 = prev.row0; d.col0 = prev.col0;
-        d.row1 = prev.row1; d.col1 = prev.col1;
+        d.row0 = prev.row0;
+        d.col0 = prev.col0;
+        d.row1 = prev.row1;
+        d.col1 = prev.col1;
       }
+
       rotationState.inSession = false;
       rotationState.activeDominoId = null;
       rotationState.snapshot = null;
       rotationState.pivotHalf = null;
 
-      document.dispatchEvent(new CustomEvent("pips:board-rotate-reject", {
-        detail: { id: d.id, reason: res.reason, info: res }
-      }));
+      console.warn("endRotationSession: rotation rejected", { id: d.id, reason: res.reason });
+
+      dispatchEvents(document, ["pips:rotate:reject:board", "pips:board-rotate-reject"], {
+        id: d.id,
+        reason: res.reason,
+        info: res
+      });
+
       return { ok: false, reason: res.reason };
     }
 
-    // success
+    // Success: record history and emit commit.
     recordAction(history, { type: "rotate", id: d.id, prev, next });
 
     rotationState.inSession = false;
@@ -223,53 +372,79 @@ export function attachPlacementValidator(appRoot, puzzle) {
     rotationState.snapshot = null;
     rotationState.pivotHalf = null;
 
-    document.dispatchEvent(new CustomEvent("pips:board-rotate-commit", {
-      detail: { id: d.id, prev, next }
-    }));
-    document.dispatchEvent(new CustomEvent("pips:state-updated"));
+    console.log("endRotationSession: rotation committed", { id: d.id, prev, next });
+
+    dispatchEvents(document, ["pips:rotate:commit:board", "pips:board-rotate-commit"], {
+      id: d.id,
+      prev,
+      next
+    });
+    dispatchEvents(document, ["pips:state:update", "pips:state-updated"], {});
 
     return { ok: true, prev, next };
   }
 
-  /* ------------------------------------------------------------
-   * EXPLICIT-ANCHOR BOARD DROP (NEW)
-   * ------------------------------------------------------------ */
+  // ----------------------------------------------------------
+  // EXPLICIT-ANCHOR BOARD DROP
+  // ----------------------------------------------------------
 
-  appRoot.addEventListener("pips:drop-attempt-board", (ev) => {
+  /**
+   * Board drop handler
+   * Listens for attempts to place a domino on the board and
+   * validates blocked cells (regions are checked separately).
+   * Listens to both old and new event names:
+   *  - pips:drop-attempt-board
+   *  - pips:drop:attempt:board
+   */
+  function handleBoardDropAttempt(ev) {
     const { id, r0, c0, r1, c1 } = ev.detail || {};
-    if (!id) return;
+    if (!id) {
+      console.error("handleBoardDropAttempt: missing id in event detail", ev.detail);
+      return;
+    }
 
-    const d = dominos instanceof Map
-      ? dominos.get(id)
-      : dominos.find(x => String(x.id) === String(id));
+    const d =
+      dominos instanceof Map
+        ? dominos.get(id)
+        : dominos.find((x) => String(x.id) === String(id));
 
     if (!d) {
-      ev.target.dispatchEvent(new CustomEvent("pips:drop-reject", {
-        detail: { id, reason: "unknown-domino" }
-      }));
+      console.error("handleBoardDropAttempt: unknown domino", { id });
+      dispatchEvents(ev.target, ["pips:drop:reject:board", "pips:drop-reject"], {
+        id,
+        reason: "unknown-domino"
+      });
       return;
     }
 
-    // Explicit placement
     const placed = placeDominoAnchor(d, r0, c0, r1, c1, grid);
     if (!placed) {
-      ev.target.dispatchEvent(new CustomEvent("pips:drop-reject", {
-        detail: { id, reason: "no-space" }
-      }));
+      console.warn("handleBoardDropAttempt: no space for domino", { id, r0, c0, r1, c1 });
+      dispatchEvents(ev.target, ["pips:drop:reject:board", "pips:drop-reject"], {
+        id,
+        reason: "no-space"
+      });
       return;
     }
 
-    // Blocked + region validation (blocked only here)
+    // Blocked + region validation (blocked only here).
     const vr = validateBlockedAndRegions(false);
     if (!vr.ok) {
+      console.warn("handleBoardDropAttempt: blocked validation failed; reverting", {
+        id,
+        reason: vr.reason,
+        info: vr
+      });
       removeDominoToTray(d, grid);
-      ev.target.dispatchEvent(new CustomEvent("pips:drop-reject", {
-        detail: { id, reason: vr.reason, info: vr }
-      }));
+      dispatchEvents(ev.target, ["pips:drop:reject:board", "pips:drop-reject"], {
+        id,
+        reason: vr.reason,
+        info: vr
+      });
       return;
     }
 
-    // Success
+    // Success.
     recordAction(history, {
       type: "place",
       id: d.id,
@@ -280,28 +455,58 @@ export function attachPlacementValidator(appRoot, puzzle) {
       prevTrayOrientation: d.trayOrientation
     });
 
-    ev.target.dispatchEvent(new CustomEvent("pips:drop-commit", {
-      detail: { id: d.id, r0: d.row0, c0: d.col0, r1: d.row1, c1: d.col1 }
-    }));
-  });
+    console.log("handleBoardDropAttempt: drop committed", {
+      id: d.id,
+      r0: d.row0,
+      c0: d.col0,
+      r1: d.row1,
+      c1: d.col1
+    });
 
-  /* ------------------------------------------------------------
-   * Tray drop (unchanged)
-   * ------------------------------------------------------------ */
+    dispatchEvents(ev.target, ["pips:drop:commit:board", "pips:drop-commit"], {
+      id: d.id,
+      r0: d.row0,
+      c0: d.col0,
+      r1: d.row1,
+      c1: d.col1
+    });
+  }
 
-  appRoot.addEventListener("pips:drop-attempt-tray", (ev) => {
+  onEvents(appRoot, ["pips:drop-attempt-board", "pips:drop:attempt:board"], handleBoardDropAttempt);
+
+  // ----------------------------------------------------------
+  // Tray drop
+  // ----------------------------------------------------------
+
+  /**
+   * Tray drop handler
+   * Handles returning a domino to the tray and recording history.
+   * Listens to:
+   *  - pips:drop-attempt-tray
+   *  - pips:drop:attempt:tray
+   */
+  function handleTrayDropAttempt(ev) {
     const { id, slot } = ev.detail || {};
-    if (!id) return;
+    if (!id) {
+      console.error("handleTrayDropAttempt: missing id in event detail", ev.detail);
+      return;
+    }
 
-    const d = dominos instanceof Map
-      ? dominos.get(id)
-      : dominos.find(x => String(x.id) === String(id));
-    if (!d) return;
+    const d =
+      dominos instanceof Map
+        ? dominos.get(id)
+        : dominos.find((x) => String(x.id) === String(id));
+    if (!d) {
+      console.error("handleTrayDropAttempt: unknown domino", { id });
+      return;
+    }
 
     if (d.row0 !== null && typeof d.row0 !== "undefined") {
       const prev = {
-        r0: d.row0, c0: d.col0,
-        r1: d.row1, c1: d.col1,
+        r0: d.row0,
+        c0: d.col0,
+        r1: d.row1,
+        c1: d.col1,
         pivotHalf: d.pivotHalf ?? 0
       };
       removeDominoToTray(d, grid);
@@ -310,52 +515,89 @@ export function attachPlacementValidator(appRoot, puzzle) {
 
     d.trayOrientation = 0;
 
-    ev.target.dispatchEvent(new CustomEvent("pips:drop-commit-tray", {
-      detail: { id: d.id, slot }
-    }));
-  });
+    console.log("handleTrayDropAttempt: domino returned to tray", { id: d.id, slot });
 
-  /* ------------------------------------------------------------
-   * Invalid drop (unchanged)
-   * ------------------------------------------------------------ */
+    dispatchEvents(ev.target, ["pips:drop:commit:tray", "pips:drop-commit-tray"], {
+      id: d.id,
+      slot
+    });
+  }
 
-  appRoot.addEventListener("pips:drop-invalid", (ev) => {
+  onEvents(appRoot, ["pips:drop-attempt-tray", "pips:drop:attempt:tray"], handleTrayDropAttempt);
+
+  // ----------------------------------------------------------
+  // Invalid drop
+  // ----------------------------------------------------------
+
+  /**
+   * Invalid drop handler
+   * Handles drops that are considered invalid and returns the
+   * domino to the tray.
+   * Listens to:
+   *  - pips:drop-invalid
+   *  - pips:drop:reject:invalid
+   */
+  function handleInvalidDrop(ev) {
     const { id } = ev.detail || {};
-    if (!id) return;
+    if (!id) {
+      console.error("handleInvalidDrop: missing id in event detail", ev.detail);
+      return;
+    }
 
-    const d = dominos instanceof Map
-      ? dominos.get(id)
-      : dominos.find(x => String(x.id) === String(id));
-    if (!d) return;
+    const d =
+      dominos instanceof Map
+        ? dominos.get(id)
+        : dominos.find((x) => String(x.id) === String(id));
+    if (!d) {
+      console.error("handleInvalidDrop: unknown domino", { id });
+      return;
+    }
 
     removeDominoToTray(d, grid);
     d.trayOrientation = 0;
 
-    ev.target.dispatchEvent(new CustomEvent("pips:drop-reject", {
-      detail: { id, reason: "invalid" }
-    }));
-  });
+    console.warn("handleInvalidDrop: drop rejected as invalid; domino returned to tray", { id });
 
-  /* ------------------------------------------------------------
-   * Rotation session triggers (unchanged)
-   * ------------------------------------------------------------ */
+    dispatchEvents(ev.target, ["pips:drop:reject:invalid", "pips:drop-invalid"], {
+      id,
+      reason: "invalid"
+    });
+  }
 
-  appRoot.addEventListener("pips:board-rotate-request", (ev) => {
+  onEvents(appRoot, ["pips:drop-invalid", "pips:drop:reject:invalid"], handleInvalidDrop);
+
+  // ----------------------------------------------------------
+  // Rotation session triggers
+  // ----------------------------------------------------------
+
+  /**
+   * Rotation request handler
+   * Handles board rotation requests from the UI.
+   * Listens to:
+   *  - pips:board-rotate-request
+   *  - pips:rotate:request:board
+   */
+  function handleBoardRotateRequest(ev) {
     const { id, pivotHalf } = ev.detail || {};
     if (!id) {
-      ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-reject", {
-        detail: { id, reason: "missing-id" }
-      }));
+      console.error("handleBoardRotateRequest: missing id in event detail", ev.detail);
+      dispatchEvents(ev.target, ["pips:rotate:reject:board", "pips:board-rotate-reject"], {
+        id,
+        reason: "missing-id"
+      });
       return;
     }
 
-    const d = dominos instanceof Map
-      ? dominos.get(id)
-      : dominos.find(x => String(x.id) === String(id));
+    const d =
+      dominos instanceof Map
+        ? dominos.get(id)
+        : dominos.find((x) => String(x.id) === String(id));
     if (!d) {
-      ev.target.dispatchEvent(new CustomEvent("pips:board-rotate-reject", {
-        detail: { id, reason: "unknown-domino" }
-      }));
+      console.error("handleBoardRotateRequest: unknown domino", { id });
+      dispatchEvents(ev.target, ["pips:rotate:reject:board", "pips:board-rotate-reject"], {
+        id,
+        reason: "unknown-domino"
+      });
       return;
     }
 
@@ -369,23 +611,49 @@ export function attachPlacementValidator(appRoot, puzzle) {
       return;
     }
 
+    // Switching from one rotating domino to another.
     endRotationSession("switch");
     startRotationSession(d, pivotHalf ?? 0);
-  });
+  }
 
+  onEvents(appRoot, ["pips:board-rotate-request", "pips:rotate:request:board"], handleBoardRotateRequest);
+
+  /**
+   * Click handler to end rotation session when clicking elsewhere.
+   * Listens to:
+   *  - click (generic DOM click with optional detail.id)
+   */
   appRoot.addEventListener("click", (ev) => {
     const clickedId = ev.detail && ev.detail.id;
-    if (rotationState.inSession &&
-        String(clickedId) !== String(rotationState.activeDominoId)) {
+    if (
+      rotationState.inSession &&
+      String(clickedId) !== String(rotationState.activeDominoId)
+    ) {
+      console.log("Rotation: click outside active domino → end session");
       endRotationSession("click");
     }
   });
 
+  /**
+   * Drag-start handler to end rotation session when a drag begins.
+   * Listens to:
+   *  - pips:drag-start (unchanged name; drag system owns this)
+   */
   appRoot.addEventListener("pips:drag-start", () => {
-    if (rotationState.inSession) endRotationSession("dragstart");
+    if (rotationState.inSession) {
+      console.log("Rotation: drag-start → end session");
+      endRotationSession("dragstart");
+    }
   });
 
+  /**
+   * Pointerup handler to end rotation session on release.
+   * This is a safety net to avoid stuck sessions.
+   */
   appRoot.addEventListener("pointerup", () => {
-    if (rotationState.inSession) endRotationSession("pointerup");
+    if (rotationState.inSession) {
+      console.log("Rotation: pointerup → end session");
+      endRotationSession("pointerup");
+    }
   });
 }
