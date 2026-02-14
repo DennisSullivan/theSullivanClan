@@ -12,7 +12,7 @@
 import { loadPuzzle } from "./engine/loader.js";
 import { renderBoard } from "./ui/boardRenderer.js";
 import { renderTray } from "./ui/trayRenderer.js";
-import { enableDrag, endDrag } from "./ui/dragDrop.js";
+import { installDragDrop } from "./ui/dragDrop.js";
 import { initRotation } from "./ui/rotation.js";
 import { syncCheck } from "./engine/syncCheck.js";
 import { renderRegions } from "./ui/regionRenderer.js";
@@ -84,11 +84,19 @@ export function startPuzzle(puzzleJson) {
     // Attach placement validator so it can observe pips:* events emitted by dragDrop
     attachPlacementValidator(appRoot, state);
 
-    // Enable drag/drop (dragDrop emits pips:* events that the validator listens for)
-    enableDrag(puzzleDef, dominos, grid, regionMap, blocked, regions, boardEl, trayEl);
-
-    // Enable rotation mode (uses renderPuzzle and endDrag callbacks)
-    initRotation(dominos, trayEl, boardEl, renderPuzzle, endDrag);
+    // Enable drag/drop
+    installDragDrop(boardEl, trayEl, dominos, (domino, x, y) => {
+      // This is the drop callback: boardRenderer handles placement
+      // You already have placementValidator listening to pips:* events
+      // so we simply forward the drop coordinates.
+      const event = new CustomEvent("pips:drop", {
+        detail: { domino, x, y }
+      });
+      boardEl.dispatchEvent(event);
+    });
+    
+    // Enable rotation mode (rotation no longer depends on dragDrop)
+    initRotation(dominos, trayEl, boardEl, renderPuzzle);
   }, 0);
 
   // Expose for debugging and manual re-render
