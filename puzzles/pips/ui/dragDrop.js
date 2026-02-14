@@ -407,20 +407,20 @@ function beginRealDrag(dragState, e) {
 
   try {
     const clone = wrapper.cloneNode(true);
-    clone.classList.add("domino-clone");
-    
-    // CRITICAL FIX: ensure clone gets the layout CSS of a real domino wrapper
-    clone.classList.add("domino-wrapper");
-    
-    // Preserve board/tray context if present
-    if (wrapper.classList.contains("on-board")) clone.classList.add("on-board");
-    if (wrapper.classList.contains("in-tray")) clone.classList.add("in-tray");
 
+    // ⭐ CRITICAL: copy ALL classes from wrapper so CSS layout applies
+    clone.className = wrapper.className;
+
+    // Add clone marker (does not affect layout)
+    clone.classList.add("domino-clone");
+
+    // Explicit size (clone is no longer in the grid)
     clone.style.width = `${wrapper.offsetWidth}px`;
     clone.style.height = `${wrapper.offsetHeight}px`;
 
     const comp = window.getComputedStyle(wrapper);
 
+    // Preserve visual styling
     clone.style.background = comp.backgroundColor;
     clone.style.border = comp.border;
     clone.style.borderRadius = comp.borderRadius;
@@ -430,16 +430,19 @@ function beginRealDrag(dragState, e) {
     clone.style.boxSizing = comp.boxSizing;
     clone.style.transformOrigin = comp.transformOrigin;
 
+    // Preserve angle variable
     const angleVarRaw = comp.getPropertyValue("--angle")?.trim();
     const angleVar = angleVarRaw || "0deg";
     clone.style.setProperty("--angle", angleVar);
 
+    // Compute wrapper center
     const wrapperCenterX = rect.left + rect.width / 2;
     const wrapperCenterY = rect.top + rect.height / 2;
 
     dragState.offsetX = e.clientX - wrapperCenterX;
     dragState.offsetY = e.clientY - wrapperCenterY;
 
+    // Preserve inner .domino transform
     const inner = wrapper.querySelector(".domino");
     const cloneInner = clone.querySelector(".domino");
     if (inner && cloneInner) {
@@ -448,15 +451,7 @@ function beginRealDrag(dragState, e) {
       cloneInner.style.transform = innerTransform;
     }
 
-    const computed = window.getComputedStyle(wrapper);
-    const computedTransform = computed.transform;
-
-    if (computedTransform && computedTransform !== "none") {
-      clone.style.transform = computedTransform;
-    } else {
-      clone.style.transform = `translate(-50%, -50%) rotate(${angleVar})`;
-    }
-
+    // Position clone in viewport
     clone.style.left = `${wrapperCenterX}px`;
     clone.style.top = `${wrapperCenterY}px`;
     clone.style.position = "fixed";
@@ -465,6 +460,7 @@ function beginRealDrag(dragState, e) {
 
     document.body.appendChild(clone);
 
+    // Hide original wrapper while dragging
     wrapper.classList.add("dragging");
     wrapper.style.visibility = "hidden";
     wrapper.style.pointerEvents = "none";
