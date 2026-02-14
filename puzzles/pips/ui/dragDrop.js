@@ -305,6 +305,9 @@ function endDragHandler(
     return;
   }
 
+  // ⭐ Force layout so halves have real size
+  clone.offsetWidth;
+  
   const h0r = half0.getBoundingClientRect();
   const h1r = half1.getBoundingClientRect();
 
