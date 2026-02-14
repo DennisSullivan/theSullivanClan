@@ -62,7 +62,7 @@ export function renderTray(puzzleJson, dominos, trayEl) {
 
     // Skip dominos without a valid homeSlot.
     if (typeof d.homeSlot !== "number") {
-      console.warn("renderTray: domino missing homeSlot; skipping", { id, domino: d });
+      console.error("renderTray: domino missing homeSlot; skipping", { id, domino: d });
       continue;
     }
 
