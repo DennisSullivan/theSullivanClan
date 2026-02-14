@@ -136,8 +136,9 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
     const w = wrapper.offsetWidth;
     const h = wrapper.offsetHeight;
   
-    // Remove tray transforms so clone is full size
-    clone.style.transform = "none";
+    // Apply the domino's actual orientation (0, 90, 180, 270)
+    const angle = domino.orientation || 0;
+    clone.style.transform = `rotate(${angle}deg)`;
     clone.style.removeProperty("transform-origin");
   
     // Force natural size
