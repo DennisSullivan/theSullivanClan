@@ -54,7 +54,7 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
     const dy = ev.clientY - startY;
 
     // Begin real drag
-    if (!clone && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+    if (!clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
       console.log("DRAG: threshold passed → beginRealDrag", { dx, dy });
       beginRealDrag(domino, wrapper, startX, startY);
     }
