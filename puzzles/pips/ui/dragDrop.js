@@ -56,7 +56,7 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
     // Begin real drag
     if (!clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
       console.log("DRAG: threshold passed → beginRealDrag", { dx, dy });
-      beginRealDrag(domino, wrapper, startX, startY);
+      beginRealDrag(wrapper, startX, startY);
     }
 
     // Move clone
@@ -121,51 +121,35 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
   // ------------------------------------------------------------
   // Begin real drag
   // ------------------------------------------------------------
-  function beginRealDrag(domino, wrapper, startX, startY) {
-    console.log("DRAG: beginRealDrag", {
-      id: domino.id,
-      fromTray: dragState.fromTray
-    });
-  
+  function beginRealDrag(wrapper, startX, startY) {
     wrapper.style.visibility = "hidden";
-    console.log("DRAG: wrapper hidden", { id: domino.id });
-  
+
     const clone = wrapper.cloneNode(true);
-  
-    // ⭐ Measure size so we can center the clone under the pointer
+
+    // Measure natural size
     const w = wrapper.offsetWidth;
     const h = wrapper.offsetHeight;
-  
-    // Apply the domino's actual orientation (0, 90, 180, 270)
-    const angle = domino.orientation || 0;
-    clone.style.transform = `rotate(${angle}deg)`;
-    clone.style.removeProperty("transform-origin");
-  
-    // Force natural size
-    clone.style.width = w + "px";
-    clone.style.height = h + "px";
-  
+
+    // No rotation — clone is a pure visual ghost
+    clone.style.transform = "none";
+
     clone.classList.remove("in-tray");
     clone.classList.add("domino-clone");
-  
+
     clone.style.position = "fixed";
-  
-    // ⭐ Center the clone under the pointer
+
+    // Center clone under pointer
     clone.style.left = `${startX - w / 2}px`;
     clone.style.top = `${startY - h / 2}px`;
-  
+
     clone.style.visibility = "visible";
     clone.style.pointerEvents = "none";
     clone.style.zIndex = 9999;
-  
+
     document.body.appendChild(clone);
     dragState.clone = clone;
-  
-    console.log("DRAG: clone created", {
-      id: domino.id,
-      x: startX,
-      y: startY
-    });
+
+    console.log("DRAG: clone created");
   }
 
   // ------------------------------------------------------------
