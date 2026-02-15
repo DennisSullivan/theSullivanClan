@@ -5,31 +5,20 @@
 //  - Double-click enters rotation session (geometry-only).
 //  - Subsequent double-clicks rotate geometry-only.
 //  - Session ends on pointerdown outside the domino or pointerup.
-//  - On session end we emit 'pips:board-rotate-request' with
-//    the domino id and the pre-session snapshot.
+//  - On session end we emit 'pips:board-rotate-request'.
 // ============================================================
 
 import { rotateDominoOnBoard } from "../engine/placement.js";
 
-/* Rotation session state */
-let rotatingDomino = null;      // domino object currently in session
-let rotatingPrev = null;        // snapshot { r0,c0,r1,c1 }
-let rotatingPivot = 0;          // pivot half used for last rotate
-let rotatingRender = null;      // renderPuzzle reference
-let rotatingBoardEl = null;     // board element
+let rotatingDomino = null;
+let rotatingPrev = null;
+let rotatingPivot = 0;
+let rotatingRender = null;
+let rotatingBoardEl = null;
 
-/**
- * initRotation(dominos, trayEl, boardEl, renderPuzzle)
- * - dominos: Map of domino objects
- * - trayEl, boardEl: DOM elements
- * - renderPuzzle: function that re-renders board + tray
- */
 export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   if (!boardEl || !renderPuzzle) {
-    console.warn("initRotation: missing required args", {
-      boardEl: !!boardEl,
-      renderPuzzle: !!renderPuzzle
-    });
+    console.warn("initRotation: missing required args");
     return;
   }
 
@@ -39,40 +28,13 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   console.log("ROT: initRotation complete");
 
   // ----------------------------------------------------------
-  // TRAY single-click rotates tray domino (spec-compliant)
+  // TRAY single-click rotates tray domino visually
   // ----------------------------------------------------------
   trayEl.addEventListener("click", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
-  
-    const id = wrapper.dataset.dominoId ?? wrapper.dataset.id;
-    if (!id) return;
-  
-    const domino = dominos.get(id);
-    if (!domino) return;
-    if (domino.row0 !== null) return; // only tray dominos
-  
-    // Rotate 90° clockwise
-    domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
-  
-    console.log("ROT: tray rotate (single-click)", {
-      id,
-      newOrientation: domino.trayOrientation
-    });
-  
-    renderPuzzle();
-  });
 
-  // ----------------------------------------------------------
-  // TRAY double-click rotates tray domino visually (no session)
-  // ----------------------------------------------------------
-  trayEl.addEventListener("dblclick", (event) => {
-    const wrapper = event.target.closest(".domino-wrapper");
-    if (!wrapper) return;
-
-    const id = wrapper.dataset.dominoId ?? wrapper.dataset.id;
-    if (!id) return;
-
+    const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
     if (!domino) return;
     if (domino.row0 !== null) return; // only tray dominos
@@ -94,19 +56,14 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
 
-    const id = wrapper.dataset.dominoId ?? wrapper.dataset.id;
-    if (!id) return;
-
+    const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
     if (!domino) return;
     if (domino.row0 === null) return; // only board dominos
 
     // Determine pivot half
     const halfEl = event.target.closest(".half");
-    let pivotHalf = 0;
-    if (halfEl) {
-      pivotHalf = halfEl.classList.contains("half1") ? 1 : 0;
-    }
+    const pivotHalf = halfEl?.classList.contains("half1") ? 1 : 0;
 
     // Start or continue session
     if (rotatingDomino !== domino) {
@@ -147,7 +104,7 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   });
 
   // ----------------------------------------------------------
-  // Pointerdown outside the rotating domino ends the session
+  // Pointerdown outside ends the session
   // ----------------------------------------------------------
   document.addEventListener("pointerdown", (event) => {
     if (!rotatingDomino) return;
@@ -163,7 +120,7 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   });
 
   // ----------------------------------------------------------
-  // Pointerup also ends the session (release after drag)
+  // Pointerup ends the session
   // ----------------------------------------------------------
   document.addEventListener("pointerup", () => {
     if (rotatingDomino) {
@@ -173,11 +130,6 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   });
 }
 
-/**
- * endRotationSession()
- * Emits 'pips:board-rotate-request' with:
- *   { id, pivotHalf, prev }
- */
 function endRotationSession() {
   if (!rotatingDomino) return;
 
@@ -202,7 +154,6 @@ function endRotationSession() {
   rotatingPrev = null;
   rotatingPivot = 0;
 
-  // Allow validator to update model before rendering
   setTimeout(() => {
     try {
       rotatingRender();
