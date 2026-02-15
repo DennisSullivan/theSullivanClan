@@ -97,7 +97,7 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
 
-    if (dragState.moved && wrapper && id) {
+    if (dragState.moved && id) {
       emitPlacementProposal(wrapper, id);
     }
 
