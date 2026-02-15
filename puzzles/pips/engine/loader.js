@@ -18,7 +18,14 @@ import { buildRegionMap } from "./regionMapBuilder.js";
 // Loads a puzzle definition and returns an engine-ready object.
 // ------------------------------------------------------------
 export function loadPuzzle(json) {
-  const { boardRows, boardCols } = json;
+  // Accept both canonical (boardRows/boardCols) and legacy (width/height)
+  const boardRows = json.boardRows ?? json.height;
+  const boardCols = json.boardCols ?? json.width;
+
+  if (typeof boardRows !== "number" || typeof boardCols !== "number") {
+    throw new Error("Puzzle missing boardRows/boardCols or width/height");
+  }
+
 
   // Create empty grid
   const grid = createGrid(boardCols, boardRows);
