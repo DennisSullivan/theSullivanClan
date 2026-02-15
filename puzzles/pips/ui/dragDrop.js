@@ -57,6 +57,7 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
     clone.style.zIndex = 9999;
 
     document.body.appendChild(clone);
+    clone.style.visibility = "visible";
     dragState.clone = clone;
 
     console.log("DRAG: clone created");
