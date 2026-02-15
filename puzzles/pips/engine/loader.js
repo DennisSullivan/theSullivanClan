@@ -6,25 +6,22 @@
 //   - No DOM logic.
 //   - Validates dominos, starting placements, regions, blocked.
 //   - Builds regionMap and canonical Domino objects.
-//   - Initializes history and rules.
 //   - Assigns each domino a stable homeSlot based on puzzle order.
 // ============================================================
 
 import { MASTER_TRAY, createDomino, isValidDominoId } from "./domino.js";
 import { createGrid, areAdjacent } from "./grid.js";
 import { buildRegionMap } from "./regionMapBuilder.js";
-import { initHistory } from "./history.js";
-
 
 // ------------------------------------------------------------
 // loadPuzzle(json)
 // Loads a puzzle definition and returns an engine-ready object.
 // ------------------------------------------------------------
 export function loadPuzzle(json) {
-  const { width, height } = json;
+  const { boardRows, boardCols } = json;
 
   // Create empty grid
-  const grid = createGrid(width, height);
+  const grid = createGrid(boardCols, boardRows);
 
   // Normalize blocked cells into "r,c" strings
   const blocked = new Set();
@@ -39,24 +36,17 @@ export function loadPuzzle(json) {
   applyStartingDominos(json.startingDominos || [], dominos, grid);
 
   // Build region map
-  const regionMap = buildRegionMap(width, height, json.regions);
-
-  // Initialize history
-  const history = initHistory();
+  const regionMap = buildRegionMap(boardRows, boardCols, json.regionMap);
 
   return {
-    width,
-    height,
+    boardRows,
+    boardCols,
     dominos,
     grid,
     regionMap,
-    blocked,
-    rules: json.rules || [],
-    regions: json.regions,
-    history
+    blocked
   };
 }
-
 
 // ------------------------------------------------------------
 // loadDominos(idList)
@@ -88,12 +78,7 @@ function loadDominos(idList) {
   for (const id of idList) {
     const d = createDomino(id);
 
-    // --------------------------------------------------------
-    // NEW: Stable tray slot assignment
-    // --------------------------------------------------------
     d.homeSlot = index++;
-
-    // NEW: Ensure trayOrientation exists (future-proof)
     d.trayOrientation = 0;
 
     map.set(id, d);
@@ -101,7 +86,6 @@ function loadDominos(idList) {
 
   return map;
 }
-
 
 // ------------------------------------------------------------
 // applyStartingDominos(startingList, dominos, grid)
