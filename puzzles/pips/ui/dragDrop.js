@@ -23,8 +23,11 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
   // pointerDown
   // ------------------------------------------------------------
   function pointerDown(ev) {
-    const wrapper = ev.target.closest(".domino-wrapper");
-    if (!wrapper) return;
+  const wrapper = ev.target.closest(".domino-wrapper");
+  if (!wrapper) return;
+  
+  // Defensive: only allow drag from tray or placed domino wrappers
+  if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
 
     dragState.active = true;
     dragState.wrapper = wrapper;
