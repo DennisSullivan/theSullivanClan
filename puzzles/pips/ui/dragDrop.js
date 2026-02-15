@@ -8,7 +8,7 @@
 //   - Emits PlacementProposal on drop
 // ============================================================
 
-export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
+export function installDragDrop(boardEl, trayEl, rows, cols) {
 
   const dragState = {
     active: false,
@@ -151,8 +151,6 @@ function emitPlacementProposal(node, id) {
 
   const boardRect = boardEl.getBoundingClientRect();
   const rect = node.getBoundingClientRect();
-  const rows = grid.rows;
-  const cols = grid.cols;
   
   const cellWidth  = boardRect.width  / cols;
   const cellHeight = boardRect.height / rows;
