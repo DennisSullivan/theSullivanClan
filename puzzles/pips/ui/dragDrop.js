@@ -99,6 +99,13 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
       hasClone: !!dragState.clone
     });
 
+    if (dragState.clone) {
+      dragState.clone.style.left =
+        `${ev.clientX - dragState.clone.offsetWidth / 2}px`;
+      dragState.clone.style.top =
+        `${ev.clientY - dragState.clone.offsetHeight / 2}px`;
+    }
+
     // existing code follows…
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
