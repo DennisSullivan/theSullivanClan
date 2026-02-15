@@ -110,6 +110,20 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
 
+console.log("DRAG: pointerUp coords", { x: ev.clientX, y: ev.clientY });
+
+if (dragState.clone) {
+  console.log("DRAG: clone rect BEFORE sync", dragState.clone.getBoundingClientRect());
+
+  dragState.clone.style.left = `${ev.clientX - dragState.clone.offsetWidth / 2}px`;
+  dragState.clone.style.top  = `${ev.clientY - dragState.clone.offsetHeight / 2}px`;
+
+  // Force style/layout flush so rect reflects the new left/top immediately
+  dragState.clone.getBoundingClientRect();
+
+  console.log("DRAG: clone rect AFTER sync", dragState.clone.getBoundingClientRect());
+}
+
     if (dragState.moved && id) {
       emitPlacementProposal(wrapper, id);
     }
