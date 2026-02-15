@@ -119,89 +119,122 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
   // ------------------------------------------------------------
   // PlacementProposal construction
   // ------------------------------------------------------------
-  function emitPlacementProposal(wrapper, id) {
-    const boardRect = boardEl.getBoundingClientRect();
-    const rect = wrapper.getBoundingClientRect();
-    
-    const halfRects = [
-      {
-        left: rect.left,
-        right: rect.left + rect.width / 2,
-        top: rect.top,
-        bottom: rect.bottom,
-        width: rect.width / 2,
-        height: rect.height
-      },
-      {
-        left: rect.left + rect.width / 2,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-        width: rect.width / 2,
-        height: rect.height
-      }
-    ];
+function emitPlacementProposal(node, id) {
+  if (!node) {
+    console.warn("emitPlacementProposal: missing node");
+    return;
+  }
 
-    // --- Return-to-tray rule ---
-    for (const r of halfRects) {
-      if (
-        r.right  <= boardRect.left ||
-        r.left   >= boardRect.right ||
-        r.bottom <= boardRect.top ||
-        r.top    >= boardRect.bottom
-      ) {
-        document.dispatchEvent(new CustomEvent("pips:drop:tray", {
-          detail: { id }
-        }));
-        return;
-      }
+  const boardRect = boardEl.getBoundingClientRect();
+  const rect = node.getBoundingClientRect();
+
+  console.log("DRAG: emitPlacementProposal geometry", {
+    id,
+    rect,
+    boardRect
+  });
+
+  // ------------------------------------------------------------
+  // Return-to-tray rule: fully outside board
+  // ------------------------------------------------------------
+  if (
+    rect.right  <= boardRect.left ||
+    rect.left   >= boardRect.right ||
+    rect.bottom <= boardRect.top ||
+    rect.top    >= boardRect.bottom
+  ) {
+    console.log("DRAG: emitPlacementProposal → tray (outside board)");
+    document.dispatchEvent(new CustomEvent("pips:drop:tray", {
+      detail: { id }
+    }));
+    return;
+  }
+
+  // ------------------------------------------------------------
+  // Split geometry into two halves (horizontal domino)
+  // ------------------------------------------------------------
+  const halfWidth = rect.width / 2;
+
+  const halfRects = [
+    {
+      left: rect.left,
+      right: rect.left + halfWidth,
+      top: rect.top,
+      bottom: rect.bottom,
+      width: halfWidth,
+      height: rect.height
+    },
+    {
+      left: rect.left + halfWidth,
+      right: rect.right,
+      top: rect.top,
+      bottom: rect.bottom,
+      width: halfWidth,
+      height: rect.height
     }
+  ];
 
-    // --- Compute target cells + overlap ---
-    const targets = halfRects.map(r => {
-      const cx = (r.left + r.right) / 2;
-      const cy = (r.top + r.bottom) / 2;
+  // ------------------------------------------------------------
+  // Compute target cells + overlap
+  // ------------------------------------------------------------
+  const targets = halfRects.map((r, i) => {
+    const cx = (r.left + r.right) / 2;
+    const cy = (r.top + r.bottom) / 2;
 
-      const relX = cx - boardRect.left;
-      const relY = cy - boardRect.top;
+    const relX = cx - boardRect.left;
+    const relY = cy - boardRect.top;
 
-      const col = Math.floor(relX / cellWidth);
-      const row = Math.floor(relY / cellHeight);
+    const col = Math.floor(relX / cellWidth);
+    const row = Math.floor(relY / cellHeight);
 
-      const cellLeft   = boardRect.left + col * cellWidth;
-      const cellTop    = boardRect.top  + row * cellHeight;
-      const cellRight  = cellLeft + cellWidth;
-      const cellBottom = cellTop  + cellHeight;
+    const cellLeft   = boardRect.left + col * cellWidth;
+    const cellTop    = boardRect.top  + row * cellHeight;
+    const cellRight  = cellLeft + cellWidth;
+    const cellBottom = cellTop  + cellHeight;
 
-      const overlapW = Math.max(0, Math.min(r.right, cellRight) - Math.max(r.left, cellLeft));
-      const overlapH = Math.max(0, Math.min(r.bottom, cellBottom) - Math.max(r.top, cellTop));
-      const overlapArea = overlapW * overlapH;
-      const halfArea = r.width * r.height;
+    const overlapW = Math.max(0, Math.min(r.right, cellRight) - Math.max(r.left, cellLeft));
+    const overlapH = Math.max(0, Math.min(r.bottom, cellBottom) - Math.max(r.top, cellTop));
+    const overlapArea = overlapW * overlapH;
+    const halfArea = r.width * r.height;
 
-      return { row, col, overlap: overlapArea / halfArea };
+    const overlap = overlapArea / halfArea;
+
+    console.log(`DRAG: half ${i} overlap`, {
+      row, col, overlap
     });
 
-    if (targets.some(t => t.overlap <= 0.5)) {
-      document.dispatchEvent(new CustomEvent("pips:drop:tray", {
-        detail: { id }
-      }));
-      return;
-    }
+    return { row, col, overlap };
+  });
 
-    // --- Emit PlacementProposal ---
-    document.dispatchEvent(new CustomEvent("pips:drop:proposal", {
-      detail: {
-        proposal: {
-          id,
-          kind: "drop",
-          row0: targets[0].row,
-          col0: targets[0].col,
-          row1: targets[1].row,
-          col1: targets[1].col
-        }
-      }
+  // ------------------------------------------------------------
+  // Overlap rule (>50%)
+  // ------------------------------------------------------------
+  if (targets.some(t => t.overlap <= 0.5)) {
+    console.log("DRAG: emitPlacementProposal → tray (insufficient overlap)");
+    document.dispatchEvent(new CustomEvent("pips:drop:tray", {
+      detail: { id }
     }));
+    return;
   }
+
+  // ------------------------------------------------------------
+  // Emit PlacementProposal
+  // ------------------------------------------------------------
+  console.log("DRAG: emitPlacementProposal → proposal", targets);
+
+  document.dispatchEvent(new CustomEvent("pips:drop:proposal", {
+    detail: {
+      proposal: {
+        id,
+        kind: "drop",
+        row0: targets[0].row,
+        col0: targets[0].col,
+        row1: targets[1].row,
+        col1: targets[1].col
+      }
+    }
+  }));
+}
 
   // ------------------------------------------------------------
   // Wiring
