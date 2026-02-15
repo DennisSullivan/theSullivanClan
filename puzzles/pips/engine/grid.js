@@ -1,168 +1,191 @@
 // ============================================================
-// FILE: grid.js
-// PURPOSE: Implements the canonical grid occupancy system.
+// FILE: ui/dragDrop.js
+// PURPOSE: Drag/drop interaction → PlacementProposal emitter.
 // NOTES:
-//   - The grid stores only { dominoId, half } or null.
-//   - No orientation flags, no DOM logic.
-//   - All adjacency and legality checks are pure functions.
+//   - Clone-based drag
+//   - No engine mutation
+//   - Geometry-only responsibility
+//   - Emits PlacementProposal on drop
 // ============================================================
 
+export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
 
-// ------------------------------------------------------------
-// createGrid(width, height)
-// Creates an empty grid of the given size.
-// RETURNS:
-//   2D array: grid[row][col] = null
-// ------------------------------------------------------------
-export function createGrid(width, height) {
-  const grid = [];
-  for (let r = 0; r < height; r++) {
-    const row = new Array(width).fill(null);
-    grid.push(row);
+  const dragState = {
+    active: false,
+    wrapper: null,
+    clone: null,
+    startX: 0,
+    startY: 0,
+    moved: false
+  };
+
+  // ------------------------------------------------------------
+  // pointerDown
+  // ------------------------------------------------------------
+  function pointerDown(ev) {
+    const wrapper = ev.target.closest(".domino-wrapper");
+    if (!wrapper) return;
+
+    dragState.active = true;
+    dragState.wrapper = wrapper;
+    dragState.startX = ev.clientX;
+    dragState.startY = ev.clientY;
+    dragState.moved = false;
   }
-  return grid;
-}
 
+  // ------------------------------------------------------------
+  // beginRealDrag
+  // ------------------------------------------------------------
+  function beginRealDrag(wrapper, x, y) {
+    wrapper.style.visibility = "hidden";
 
-// ------------------------------------------------------------
-// isInside(grid, row, col)
-// Returns true if (row,col) is within the grid bounds.
-// ------------------------------------------------------------
-export function isInside(grid, row, col) {
-  return (
-    row >= 0 &&
-    col >= 0 &&
-    row < grid.length &&
-    col < grid[0].length
-  );
-}
+    const clone = wrapper.cloneNode(true);
+    const rect = wrapper.getBoundingClientRect();
 
+    clone.style.position = "fixed";
+    clone.style.left = `${x - rect.width / 2}px`;
+    clone.style.top  = `${y - rect.height / 2}px`;
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    clone.style.pointerEvents = "none";
+    clone.style.zIndex = 9999;
 
-// ------------------------------------------------------------
-// getCell(grid, row, col)
-// Returns the cell contents or null if out of bounds.
-// ------------------------------------------------------------
-export function getCell(grid, row, col) {
-  if (!isInside(grid, row, col)) return null;
-  return grid[row][col];
-}
-
-
-// ------------------------------------------------------------
-// setCell(grid, row, col, dominoId, half)
-// Places a half of a domino into a cell.
-// INPUTS:
-//   dominoId - string "XY"
-//   half     - 0 or 1
-// NOTES:
-//   - Does NOT validate adjacency or legality.
-//   - Engine handles those checks.
-// ------------------------------------------------------------
-export function setCell(grid, row, col, dominoId, half) {
-  grid[row][col] = { dominoId, half };
-}
-
-
-// ------------------------------------------------------------
-// clearCell(grid, row, col)
-// Removes any domino half from the cell.
-// ------------------------------------------------------------
-export function clearCell(grid, row, col) {
-  if (isInside(grid, row, col)) {
-    grid[row][col] = null;
+    document.body.appendChild(clone);
+    dragState.clone = clone;
   }
-}
 
+  // ------------------------------------------------------------
+  // pointerMove
+  // ------------------------------------------------------------
+  function pointerMove(ev) {
+    if (!dragState.active) return;
 
-// ------------------------------------------------------------
-// placeDomino(grid, domino)
-// Writes both halves of a domino into the grid.
-// INPUTS:
-//   domino - canonical Domino object with row0/col0 and row1/col1
-// NOTES:
-//   - Does NOT validate legality.
-//   - Assumes coordinates are already correct.
-// ------------------------------------------------------------
-export function placeDomino(grid, domino) {
-  setCell(grid, domino.row0, domino.col0, domino.id, 0);
-  setCell(grid, domino.row1, domino.col1, domino.id, 1);
-}
+    const dx = ev.clientX - dragState.startX;
+    const dy = ev.clientY - dragState.startY;
 
+    if (!dragState.clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
+      beginRealDrag(dragState.wrapper, dragState.startX, dragState.startY);
+    }
 
-// ------------------------------------------------------------
-// removeDomino(grid, domino)
-// Clears both halves of a domino from the grid.
-// ------------------------------------------------------------
-export function removeDomino(grid, domino) {
-  clearCell(grid, domino.row0, domino.col0);
-  clearCell(grid, domino.row1, domino.col1);
-}
+    if (!dragState.clone) return;
 
+    dragState.moved = true;
+    dragState.clone.style.left = `${ev.clientX - dragState.clone.offsetWidth / 2}px`;
+    dragState.clone.style.top  = `${ev.clientY - dragState.clone.offsetHeight / 2}px`;
+  }
 
-// ------------------------------------------------------------
-// isCellFree(grid, row, col)
-// Returns true if the cell is inside the grid and empty.
-// ------------------------------------------------------------
-export function isCellFree(grid, row, col) {
-  return isInside(grid, row, col) && grid[row][col] === null;
-}
+  // ------------------------------------------------------------
+  // pointerUp
+  // ------------------------------------------------------------
+  function pointerUp(ev) {
+    if (!dragState.active) return;
 
+    const wrapper = dragState.wrapper;
+    const id = wrapper?.dataset.dominoId;
 
-// ------------------------------------------------------------
-// areAdjacent(r0,c0, r1,c1)
-// Returns true if the two cells are orthogonally adjacent.
-// ------------------------------------------------------------
-export function areAdjacent(r0, c0, r1, c1) {
-  const dr = Math.abs(r0 - r1);
-  const dc = Math.abs(c0 - c1);
-  return (dr + dc === 1); // Manhattan distance = 1
-}
+    if (dragState.clone) dragState.clone.remove();
+    if (wrapper) wrapper.style.visibility = "visible";
 
+    if (dragState.moved && wrapper && id) {
+      emitPlacementProposal(wrapper, id);
+    }
 
-// ------------------------------------------------------------
-// canPlaceDomino(grid, domino, r0, c0, r1, c1)
-// Checks if a domino can be placed at the given coordinates.
-// RETURNS:
-//   true/false
-// NOTES:
-//   - Validates bounds
-//   - Validates adjacency
-//   - Validates emptiness
-// ------------------------------------------------------------
-export function canPlaceDomino(grid, domino, r0, c0, r1, c1) {
-  // Must be inside grid
-  if (!isInside(grid, r0, c0)) return false;
-  if (!isInside(grid, r1, c1)) return false;
+    dragState.active = false;
+    dragState.wrapper = null;
+    dragState.clone = null;
+    dragState.moved = false;
+  }
 
-  // Must be adjacent
-  if (!areAdjacent(r0, c0, r1, c1)) return false;
+  // ------------------------------------------------------------
+  // PlacementProposal construction
+  // ------------------------------------------------------------
+  function emitPlacementProposal(wrapper, id) {
+    const boardRect = boardEl.getBoundingClientRect();
+    const halves = wrapper.querySelectorAll(".half");
 
-  // Both cells must be free
-  if (!isCellFree(grid, r0, c0)) return false;
-  if (!isCellFree(grid, r1, c1)) return false;
+    if (halves.length !== 2) return;
 
-  return true;
-}
+    const halfRects = Array.from(halves).map(h => h.getBoundingClientRect());
 
-
-// ------------------------------------------------------------
-// findDominoCells(grid, dominoId)
-// Returns the two cells occupied by a domino.
-// RETURNS:
-//   [ {row,col,half}, {row,col,half} ] or []
-// NOTES:
-//   - Useful for sync checking and debugging.
-// ------------------------------------------------------------
-export function findDominoCells(grid, dominoId) {
-  const result = [];
-  for (let r = 0; r < grid.length; r++) {
-    for (let c = 0; c < grid[0].length; c++) {
-      const cell = grid[r][c];
-      if (cell && cell.dominoId === dominoId) {
-        result.push({ row: r, col: c, half: cell.half });
+    // --- Return-to-tray rule (drag) ---
+    for (const r of halfRects) {
+      if (
+        r.right  <= boardRect.left ||
+        r.left   >= boardRect.right ||
+        r.bottom <= boardRect.top ||
+        r.top    >= boardRect.bottom
+      ) {
+        document.dispatchEvent(new CustomEvent("pips:drop:tray", {
+          detail: { id }
+        }));
+        return;
       }
     }
-  }
-  return result;
-}
 
+    // --- Compute target cells + overlap ---
+    const targets = halfRects.map(r => {
+      const cx = (r.left + r.right) / 2;
+      const cy = (r.top + r.bottom) / 2;
+
+      const relX = cx - boardRect.left;
+      const relY = cy - boardRect.top;
+
+      const col = Math.floor(relX / cellWidth);
+      const row = Math.floor(relY / cellHeight);
+
+      const cellLeft   = boardRect.left + col * cellWidth;
+      const cellTop    = boardRect.top  + row * cellHeight;
+      const cellRight  = cellLeft + cellWidth;
+      const cellBottom = cellTop  + cellHeight;
+
+      const overlapW = Math.max(0, Math.min(r.right, cellRight) - Math.max(r.left, cellLeft));
+      const overlapH = Math.max(0, Math.min(r.bottom, cellBottom) - Math.max(r.top, cellTop));
+      const overlapArea = overlapW * overlapH;
+      const halfArea = r.width * r.height;
+
+      return { row, col, overlap: overlapArea / halfArea };
+    });
+
+    if (targets.some(t => t.overlap <= 0.5)) {
+      document.dispatchEvent(new CustomEvent("pips:drop:tray", {
+        detail: { id }
+      }));
+      return;
+    }
+
+    // --- Emit PlacementProposal ---
+    document.dispatchEvent(new CustomEvent("pips:drop:proposal", {
+      detail: {
+        proposal: {
+          id,
+          kind: "drop",
+          row0: targets[0].row,
+          col0: targets[0].col,
+          row1: targets[1].row,
+          col1: targets[1].col,
+          halves: halfRects.map(r => ({
+            x: r.left,
+            y: r.top,
+            width: r.width,
+            height: r.height
+          })),
+          boardBounds: {
+            left: boardRect.left,
+            top: boardRect.top,
+            right: boardRect.right,
+            bottom: boardRect.bottom
+          }
+        }
+      }
+    }));
+  }
+
+  // ------------------------------------------------------------
+  // Wiring
+  // ------------------------------------------------------------
+  boardEl.addEventListener("pointerdown", pointerDown);
+  trayEl.addEventListener("pointerdown", pointerDown);
+  boardEl.addEventListener("pointermove", pointerMove);
+  trayEl.addEventListener("pointermove", pointerMove);
+  document.addEventListener("pointerup", pointerUp);
+}
