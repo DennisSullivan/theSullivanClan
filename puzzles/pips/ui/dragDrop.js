@@ -177,8 +177,7 @@ console.log("DEBUG: wrapper.innerHTML before clone =", wrapper.innerHTML);
   boardEl.addEventListener("pointermove", pointerMove);
   trayEl.addEventListener("pointermove", pointerMove);
 
-  boardEl.addEventListener("pointerup", pointerUp);
-  trayEl.addEventListener("pointerup", pointerUp);
+  document.addEventListener("pointerup", pointerUp);
 
   console.log("DRAG: installDragDrop complete");
 }
