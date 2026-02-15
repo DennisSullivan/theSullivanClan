@@ -150,6 +150,7 @@ console.log("DEBUG: wrapper.innerHTML before clone =", wrapper.innerHTML);
     clone.style.position = "fixed";
     clone.style.visibility = "hidden";   // hide until layout is stable
     clone.style.pointerEvents = "none";
+    clone.querySelectorAll("*").forEach(el => el.style.pointerEvents = "none");
     clone.style.zIndex = 9999;
   
     document.body.appendChild(clone);
