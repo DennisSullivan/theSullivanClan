@@ -85,15 +85,12 @@ export function startPuzzle(puzzleJson) {
     installPlacementValidator(appRoot, state);
 
     // Enable drag/drop
-    installDragDrop(boardEl, trayEl, dominos, (domino, x, y) => {
-      // This callback is where raw pointer drop coordinates arrive.
-      // Higher-level code (not shown here) is responsible for translating
-      // (domino, x, y) into explicit anchor events like pips:drop:attempt:board.
-      const event = new CustomEvent("pips:drop", {
-        detail: { domino, x, y }
-      });
-      boardEl.dispatchEvent(event);
-    });
+    installDragDrop(
+      boardEl,
+      trayEl,
+      puzzleDef.cellWidth,
+      puzzleDef.cellHeight
+    );
 
     // Enable rotation mode (rotation no longer depends on dragDrop)
     initRotation(dominos, trayEl, boardEl, renderPuzzle);
