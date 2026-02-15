@@ -124,6 +124,7 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
   function beginRealDrag(wrapper, startX, startY) {
     wrapper.style.visibility = "hidden";
   
+console.log("DEBUG: wrapper.innerHTML before clone =", wrapper.innerHTML);
     const clone = wrapper.cloneNode(true);
   
     // Measure natural size
