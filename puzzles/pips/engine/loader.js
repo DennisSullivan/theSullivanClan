@@ -36,16 +36,18 @@ export function loadPuzzle(json) {
   applyStartingDominos(json.startingDominos || [], dominos, grid);
 
   // Build region map
-  const regionMap = buildRegionMap(boardRows, boardCols, json.regionMap);
+  const regionMap = buildRegionMap(boardRows, boardCols, json.regions || []);
 
   return {
-    boardRows,
-    boardCols,
-    dominos,
-    grid,
-    regionMap,
-    blocked
-  };
+  boardRows,
+  boardCols,
+  dominos,
+  grid,
+  regionMap,
+  blocked,
+  regions: json.regions || []
+};
+
 }
 
 // ------------------------------------------------------------
