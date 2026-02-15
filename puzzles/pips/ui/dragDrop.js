@@ -243,6 +243,7 @@ function emitPlacementProposal(node, id) {
   trayEl.addEventListener("pointerdown", pointerDown);
   boardEl.addEventListener("pointermove", pointerMove);
   trayEl.addEventListener("pointermove", pointerMove);
+  document.addEventListener("pointermove", pointerMove);
   document.addEventListener("pointerup", pointerUp);
 
   console.log("DRAG: installDragDrop complete");
