@@ -40,7 +40,7 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
       startY: dragState.startY
     });
 
-    wrapper.setPointerCapture(ev.pointerId);
+//    wrapper.setPointerCapture(ev.pointerId);
   }
 
   // ------------------------------------------------------------
