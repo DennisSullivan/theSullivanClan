@@ -46,43 +46,35 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
   // ------------------------------------------------------------
   // Pointer move
   // ------------------------------------------------------------
-  function pointerMove(ev) {
-console.log("DEBUG PM:", dragState.clone, ev.clientX, ev.clientY);
-    const { domino, wrapper, clone, startX, startY } = dragState;
-    if (!domino || !wrapper) return;
+function pointerMove(ev) {
+  const { domino, wrapper, startX, startY } = dragState;
+  if (!domino || !wrapper) return;
 
-    const dx = ev.clientX - startX;
-    const dy = ev.clientY - startY;
+  const dx = ev.clientX - startX;
+  const dy = ev.clientY - startY;
 
-    // Begin real drag
-    if (!clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
-      console.log("DRAG: threshold passed → beginRealDrag", { dx, dy });
-      beginRealDrag(wrapper, startX, startY);
-    }
-
-const liveClone = dragState.clone;
-console.log("DEBUG LIVE:", liveClone);
-
-if (liveClone) {
-  dragState.moved = true;
-  liveClone.style.left = `${ev.clientX - liveClone.offsetWidth / 2}px`;
-  liveClone.style.top  = `${ev.clientY - liveClone.offsetHeight / 2}px`;
-}
-
-    // Move clone
-    if (dragState.clone) {
-console.log("DEBUG BEFORE STYLE:", clone);
-      dragState.moved = true;
-      clone.style.left = `${ev.clientX - clone.offsetWidth / 2}px`;
-      clone.style.top = `${ev.clientY - clone.offsetHeight / 2}px`;
-
-      console.log("DRAG: cloneMove", {
-        id: domino.id,
-        x: ev.clientX,
-        y: ev.clientY
-      });
-    }
+  // Begin real drag
+  if (!dragState.clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
+    console.log("DRAG: threshold passed → beginRealDrag", { dx, dy });
+    beginRealDrag(wrapper, startX, startY);
   }
+
+  // Always read the live clone AFTER beginRealDrag may have run
+  const liveClone = dragState.clone;
+  console.log("DEBUG LIVE:", liveClone);
+
+  if (liveClone) {
+    dragState.moved = true;
+    liveClone.style.left = `${ev.clientX - liveClone.offsetWidth / 2}px`;
+    liveClone.style.top  = `${ev.clientY - liveClone.offsetHeight / 2}px`;
+
+    console.log("DRAG: cloneMove", {
+      id: domino.id,
+      x: ev.clientX,
+      y: ev.clientY
+    });
+  }
+}
 
   // ------------------------------------------------------------
   // Pointer up
