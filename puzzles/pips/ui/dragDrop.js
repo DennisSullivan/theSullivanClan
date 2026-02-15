@@ -97,12 +97,12 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
 
-    if (dragState.clone) dragState.clone.remove();
-    if (wrapper) wrapper.style.visibility = "visible";
-
     if (dragState.moved && wrapper && id) {
       emitPlacementProposal(wrapper, id);
     }
+
+    if (dragState.clone) dragState.clone.remove();
+    if (wrapper) wrapper.style.visibility = "visible";
 
     dragState.active = false;
     dragState.wrapper = null;
