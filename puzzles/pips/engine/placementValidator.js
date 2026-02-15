@@ -131,6 +131,43 @@ export function installPlacementValidator(appRoot, puzzle) {
   normalizeRegionRules(regions);
 
   // ------------------------------------------------------------
+  // PlacementProposal adapter
+  // PURPOSE:
+  //   Bridge intent-based drag/drop proposals into the existing
+  //   pips:drop:attempt:* validation pipeline without changing
+  //   any downstream logic.
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:drop:proposal", ev => {
+    const { proposal } = ev.detail || {};
+    if (!proposal) return;
+
+    const { id, row0, col0, row1, col1 } = proposal;
+
+    dispatchEvents(appRoot, ["pips:drop:attempt:board"], {
+      id,
+      r0: row0,
+      c0: col0,
+      r1: row1,
+      c1: col1
+    });
+  });
+
+  // ------------------------------------------------------------
+  // Tray return adapter
+  // PURPOSE:
+  //   Handle drag-invalid drops that must return to tray.
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:drop:tray", ev => {
+    const { id } = ev.detail || {};
+    if (!id) return;
+
+    dispatchEvents(appRoot, ["pips:drop:attempt:tray"], {
+      id,
+      slot: null
+    });
+  });
+
+  // ------------------------------------------------------------
   // validateBlockedOnly()
   // PURPOSE:
   //   Check that no occupied grid cell is marked blocked. This is
