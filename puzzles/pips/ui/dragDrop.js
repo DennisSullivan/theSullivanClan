@@ -121,11 +121,26 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
   // ------------------------------------------------------------
   function emitPlacementProposal(wrapper, id) {
     const boardRect = boardEl.getBoundingClientRect();
-    const halves = wrapper.querySelectorAll(".half");
-
-    if (halves.length !== 2) return;
-
-    const halfRects = Array.from(halves).map(h => h.getBoundingClientRect());
+    const rect = wrapper.getBoundingClientRect();
+    
+    const halfRects = [
+      {
+        left: rect.left,
+        right: rect.left + rect.width / 2,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width / 2,
+        height: rect.height
+      },
+      {
+        left: rect.left + rect.width / 2,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width / 2,
+        height: rect.height
+      }
+    ];
 
     // --- Return-to-tray rule ---
     for (const r of halfRects) {
