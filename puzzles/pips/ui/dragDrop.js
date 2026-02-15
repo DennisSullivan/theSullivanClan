@@ -123,32 +123,38 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
   // ------------------------------------------------------------
   function beginRealDrag(wrapper, startX, startY) {
     wrapper.style.visibility = "hidden";
-
+  
     const clone = wrapper.cloneNode(true);
-
+  
     // Measure natural size
     const w = wrapper.offsetWidth;
     const h = wrapper.offsetHeight;
-
-    // No rotation — clone is a pure visual ghost
+  
+    // Explicitly size the clone so it is not tiny
+    clone.style.width = `${w}px`;
+    clone.style.height = `${h}px`;
+  
     clone.style.transform = "none";
-
     clone.classList.remove("in-tray");
     clone.classList.add("domino-clone");
-
+  
     clone.style.position = "fixed";
-
-    // Center clone under pointer
-    clone.style.left = `${startX - w / 2}px`;
-    clone.style.top = `${startY - h / 2}px`;
-
-    clone.style.visibility = "visible";
+    clone.style.visibility = "hidden";   // hide until layout is stable
     clone.style.pointerEvents = "none";
     clone.style.zIndex = 9999;
-
+  
     document.body.appendChild(clone);
+  
+    // Force layout so clone subtree is fully realized
+    clone.getBoundingClientRect();
+  
+    // Now safe to position and show
+    clone.style.left = `${startX - w / 2}px`;
+    clone.style.top  = `${startY - h / 2}px`;
+    clone.style.visibility = "visible";
+  
     dragState.clone = clone;
-
+  
     console.log("DRAG: clone created");
   }
 
