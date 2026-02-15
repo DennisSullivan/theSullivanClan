@@ -47,7 +47,8 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
   // ------------------------------------------------------------
   function beginRealDrag(wrapper, x, y) {
     wrapper.style.visibility = "hidden";
-
+    dragState.moved = true;
+    
     const clone = wrapper.cloneNode(true);
     const rect = wrapper.getBoundingClientRect();
 
