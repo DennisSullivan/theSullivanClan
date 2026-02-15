@@ -55,6 +55,9 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
     clone.style.position = "fixed";
     clone.style.left = `${x - rect.width / 2}px`;
     clone.style.top  = `${y - rect.height / 2}px`;
+    clone.style.transform = "none";   // ← CRITICAL
+    clone.style.margin = "0";         // ← CRITICAL
+    clone.style.inset = "auto";       // ← CRITICAL
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
     clone.style.pointerEvents = "none";
@@ -125,7 +128,7 @@ if (dragState.clone) {
 }
 
     if (dragState.moved && id) {
-      emitPlacementProposal(wrapper, id);
+      emitPlacementProposal(dragState.clone, id);
     }
 
     if (dragState.clone) dragState.clone.remove();
