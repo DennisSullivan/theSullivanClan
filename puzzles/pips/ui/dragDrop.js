@@ -18,10 +18,10 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
   // Pointer down
   // ------------------------------------------------------------
   function pointerDown(ev) {
-console.log("DEBUG capture before:", wrapper.hasPointerCapture(ev.pointerId));
     const wrapper = ev.target.closest(".domino-wrapper");
     if (!wrapper) return;
 
+console.log("DEBUG capture before:", wrapper.hasPointerCapture(ev.pointerId));
 try {
   wrapper.releasePointerCapture(ev.pointerId);
 } catch (e) {}
