@@ -1,43 +1,40 @@
 // ============================================================
 // FILE: boardRenderer.js
-// PURPOSE: Render all placed dominos and the board background.
+// PURPOSE: Render board background + wrapper positions only.
 // NOTES:
 //   - Pure renderer: no state mutation.
-//   - Uses CSS variables (--row, --col, --angle) for geometry.
-//   - Assumes board.css owns wrapper footprint + rotation.
+//   - No angle transforms; geometry is canonical.
+//   - Delegates all domino visuals to dominoRenderer.js.
 // ============================================================
+
+import { renderDomino } from "./dominoRenderer.js";
 
 /**
  * renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
- * Renders the full board:
- *  - Background cells (with region + blocked classes).
- *  - One wrapper per placed domino.
- *  - Each wrapper gets CSS variables for row/col/angle.
- * Expects:
- *  - dominos: Map or array of domino objects with row0/col0/row1/col1/pip0/pip1.
- *  - grid: 2D array defining board size.
- *  - regionMap: 2D array of region ids (or null).
- *  - blocked: Set of "r,c" strings or falsy.
- *  - regions: currently unused here but kept for future overlays.
- *  - boardEl: DOM element that will contain the board.
+ * Renders:
+ *   1. Background cells (region + blocked classes)
+ *   2. One wrapper per placed domino
+ *   3. Delegates domino visuals to renderDomino()
+ *
+ * PURE FUNCTION:
+ *   - Does not mutate engine state.
+ *   - Only updates DOM inside boardEl.
  */
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
-  // Defensive guard: boardEl must exist.
   if (!boardEl) {
-    console.error("renderBoard: boardEl is null/undefined. Cannot render board.");
+    console.error("renderBoard: boardEl is null/undefined.");
     return;
   }
 
-  // Ensure board is positioned for absolutely positioned wrappers.
-  if (!boardEl.style.position) {
-    boardEl.style.position = "relative";
-  }
-
-  // Defensive guard: grid must be a non-empty 2D array.
   if (!Array.isArray(grid) || grid.length === 0 || !Array.isArray(grid[0])) {
     console.error("renderBoard: invalid grid structure", grid);
     boardEl.innerHTML = "";
     return;
+  }
+
+  // Ensure absolute positioning context
+  if (!boardEl.style.position) {
+    boardEl.style.position = "relative";
   }
 
   boardEl.innerHTML = "";
@@ -46,30 +43,21 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   const cols = grid[0].length;
 
   // ------------------------------------------------------------
-  // 1. Render board background cells
+  // 1. Render background cells
   // ------------------------------------------------------------
   for (let r = 0; r < rows; r++) {
-    if (!Array.isArray(grid[r])) {
-      // This should not happen; log loudly so we can see it.
-      console.error("renderBoard: grid row is not an array; skipping row", {
-        rowIndex: r,
-        row: grid[r]
-      });
-      continue;
-    }
-
     for (let c = 0; c < cols; c++) {
       const cell = document.createElement("div");
       cell.className = "board-cell";
       cell.dataset.row = String(r);
       cell.dataset.col = String(c);
 
-      // Region coloring if regionMap is present.
+      // Region coloring
       if (regionMap && regionMap[r] && regionMap[r][c] != null) {
         cell.classList.add(`region-${regionMap[r][c]}`);
       }
 
-      // Blocked cells if blocked map is present.
+      // Blocked cells
       if (blocked && blocked.has && blocked.has(`${r},${c}`)) {
         cell.classList.add("blocked");
       }
@@ -78,20 +66,8 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     }
   }
 
-  // Helper: create seven pip elements inside a pip-grid container.
-  function createPips() {
-    const container = document.createElement("div");
-    container.className = "pip-grid";
-    for (let i = 1; i <= 7; i++) {
-      const p = document.createElement("div");
-      p.className = `pip p${i}`;
-      container.appendChild(p);
-    }
-    return container;
-  }
-
   // ------------------------------------------------------------
-  // 2. Render each placed domino
+  // 2. Render each placed domino wrapper
   // ------------------------------------------------------------
   const list = dominos && dominos.values ? Array.from(dominos.values()) : dominos;
 
@@ -101,12 +77,11 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   }
 
   for (const d of list) {
-    // Skip dominos that are not on the board.
+    // Skip tray dominos
     if (d.row0 == null || d.col0 == null || d.row1 == null || d.col1 == null) {
       continue;
     }
 
-    // Defensive: ensure required fields exist.
     if (d.id == null) {
       console.error("renderBoard: domino missing id; skipping", d);
       continue;
@@ -117,60 +92,18 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.dataset.dominoId = String(d.id);
 
     // ----------------------------------------------------------
-    // Orientation + bounding box
+    // Position wrapper at the top-left of the domino's bounding box
     // ----------------------------------------------------------
-    const vertical = (d.col0 === d.col1);
-
-    let cssRow;
-    let cssCol;
-    let angle;
-
-    if (vertical) {
-      // Vertical: same column, rows differ.
-      angle = 90;
-      cssRow = Math.min(d.row0, d.row1);
-      cssCol = d.col0;
-    } else {
-      // Horizontal: same row, columns differ.
-      angle = 0;
-      cssRow = d.row0;
-      cssCol = Math.min(d.col0, d.col1);
-    }
-
-    // If both row and col differ, geometry is inconsistent.
-    if (d.row0 !== d.row1 && d.col0 !== d.col1) {
-      console.error("renderBoard: domino is not strictly horizontal or vertical", {
-        id: d.id,
-        row0: d.row0,
-        col0: d.col0,
-        row1: d.row1,
-        col1: d.col1
-      });
-    }
+    const cssRow = Math.min(d.row0, d.row1);
+    const cssCol = Math.min(d.col0, d.col1);
 
     wrapper.style.setProperty("--row", String(cssRow));
     wrapper.style.setProperty("--col", String(cssCol));
-    wrapper.style.setProperty("--angle", `${angle}deg`);
 
     // ----------------------------------------------------------
-    // Inner domino + halves
+    // Delegate visual rendering to dominoRenderer.js
     // ----------------------------------------------------------
-    const inner = document.createElement("div");
-    inner.className = "domino on-board";
-
-    const half0 = document.createElement("div");
-    half0.className = "half half0";
-    half0.dataset.pip = String(d.pip0);
-    half0.appendChild(createPips());
-
-    const half1 = document.createElement("div");
-    half1.className = "half half1";
-    half1.dataset.pip = String(d.pip1);
-    half1.appendChild(createPips());
-
-    inner.appendChild(half0);
-    inner.appendChild(half1);
-    wrapper.appendChild(inner);
+    renderDomino(d, wrapper);
 
     boardEl.appendChild(wrapper);
   }
