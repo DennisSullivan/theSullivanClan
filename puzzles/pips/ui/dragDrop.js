@@ -47,6 +47,7 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
   // Pointer move
   // ------------------------------------------------------------
   function pointerMove(ev) {
+console.log("DEBUG PM:", dragState.clone, ev.clientX, ev.clientY);
     const { domino, wrapper, clone, startX, startY } = dragState;
     if (!domino || !wrapper) return;
 
@@ -59,8 +60,18 @@ export function installDragDrop(boardEl, trayEl, dominos, onDrop) {
       beginRealDrag(wrapper, startX, startY);
     }
 
+const liveClone = dragState.clone;
+console.log("DEBUG LIVE:", liveClone);
+
+if (liveClone) {
+  dragState.moved = true;
+  liveClone.style.left = `${ev.clientX - liveClone.offsetWidth / 2}px`;
+  liveClone.style.top  = `${ev.clientY - liveClone.offsetHeight / 2}px`;
+}
+
     // Move clone
     if (dragState.clone) {
+console.log("DEBUG BEFORE STYLE:", clone);
       dragState.moved = true;
       clone.style.left = `${ev.clientX - clone.offsetWidth / 2}px`;
       clone.style.top = `${ev.clientY - clone.offsetHeight / 2}px`;
