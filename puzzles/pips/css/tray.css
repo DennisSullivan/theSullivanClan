@@ -24,7 +24,7 @@
 
 .tray-slot {
   width: calc(var(--cell-size) * 2);   /* horizontal domino footprint */
-  height: calc(var(--cell-size) * 2);  /* one cell tall */
+  height: calc(var(--cell-size) * 2);  /* vertical domino footprint */
   position: relative;                  /* containing block for wrapper */
   box-sizing: content-box;
   padding: 0;
