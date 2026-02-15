@@ -92,6 +92,14 @@ export function installDragDrop(boardEl, trayEl, cellWidth, cellHeight) {
   // pointerUp
   // ------------------------------------------------------------
   function pointerUp(ev) {
+    console.log("DRAG: pointerUp ENTER", {
+      active: dragState.active,
+      moved: dragState.moved,
+      hasWrapper: !!dragState.wrapper,
+      hasClone: !!dragState.clone
+    });
+
+    // existing code follows…
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
 
