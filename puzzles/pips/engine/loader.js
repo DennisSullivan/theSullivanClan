@@ -10,7 +10,7 @@
 // ============================================================
 
 import { MASTER_TRAY, createDomino, isValidDominoId } from "./domino.js";
-import { createGrid, areAdjacent } from "./grid.js";
+import { createGrid } from "./grid.js";
 import { buildRegionMap } from "./regionMapBuilder.js";
 
 // ------------------------------------------------------------
