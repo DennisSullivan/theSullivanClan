@@ -18,7 +18,7 @@ import { syncCheck } from "./engine/syncCheck.js";
 import { renderRegions } from "./ui/regionRenderer.js";
 import { renderBlockedCells } from "./ui/blockedRenderer.js";
 import { renderRegionBadges } from "./ui/badgeRenderer.js";
-import { attachPlacementValidator } from "./engine/placementValidator.js";
+import { installPlacementValidator } from "./engine/placementValidator.js";
 
 /**
  * validatePuzzle(p)
@@ -46,7 +46,7 @@ export function startPuzzle(puzzleJson) {
   // Keep an immutable copy of the original JSON for renderers that expect it
   const puzzleDef = JSON.parse(JSON.stringify(puzzleJson));
 
-  // Build engine state (dominos Map, grid, regionMap, blocked Set, regions, history)
+  // Build engine state (dominos Map, grid, regionMap, blocked Set, regions)
   const state = loadPuzzle(puzzleJson);
 
   const {
@@ -81,20 +81,20 @@ export function startPuzzle(puzzleJson) {
   setTimeout(() => {
     renderPuzzle();
 
-    // Attach placement validator so it can observe pips:* events emitted by dragDrop
-    attachPlacementValidator(appRoot, state);
+    // Install placement validator so it can observe canonical pips:* events
+    installPlacementValidator(appRoot, state);
 
     // Enable drag/drop
     installDragDrop(boardEl, trayEl, dominos, (domino, x, y) => {
-      // This is the drop callback: boardRenderer handles placement
-      // You already have placementValidator listening to pips:* events
-      // so we simply forward the drop coordinates.
+      // This callback is where raw pointer drop coordinates arrive.
+      // Higher-level code (not shown here) is responsible for translating
+      // (domino, x, y) into explicit anchor events like pips:drop:attempt:board.
       const event = new CustomEvent("pips:drop", {
         detail: { domino, x, y }
       });
       boardEl.dispatchEvent(event);
     });
-    
+
     // Enable rotation mode (rotation no longer depends on dragDrop)
     initRotation(dominos, trayEl, boardEl, renderPuzzle);
   }, 0);
