@@ -89,6 +89,10 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
   // pointerMove
   // ------------------------------------------------------------
   function pointerMove(ev) {
+  if (!dragState.clone && !dragState.moved) {
+    dragState.startX = ev.clientX;
+    dragState.startY = ev.clientY;
+}
     if (!dragState.clone) return;
     dragState.clone.style.left = `${ev.clientX}px`;
     dragState.clone.style.top  = `${ev.clientY}px`;
