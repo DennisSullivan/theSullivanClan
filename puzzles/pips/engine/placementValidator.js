@@ -401,123 +401,65 @@ export function installPlacementValidator(appRoot, puzzle) {
   // ------------------------------------------------------------
   // endRotationSession(trigger)
   // PURPOSE:
-  //   End the current rotation session, attempt to commit the
-  //   rotated geometry, and emit commit or reject events. Revert
-  //   geometry on failure.
-  // RETURNS:
-  //   { ok: true, prev, next } or { ok: false, reason }
+  //   End the current rotation session and attempt an atomic commit
+  //   of the rotated geometry. All legality checks are delegated to
+  //   commitRotationAtomic(). On failure, geometry is reverted to
+  //   the pre-session snapshot.
+  // CONTRACT:
+  //   - No geometry validation occurs here.
+  //   - commitRotationAtomic() is the sole legality gate.
+  //   - Rotation sessions that end due to dragstart defer validation.
   // ------------------------------------------------------------
   function endRotationSession(trigger) {
-    // ------------------------------------------------------------
-    // Rotation commit validation
-    // PURPOSE:
-    //   Enforce placement invariants when a rotation session ends
-    //   without transitioning into drag.
-    // ------------------------------------------------------------
-    if (trigger !== "dragstart") {
-      const { r0, c0, r1, c1 } = rotationState.domino;
-    
-      const coords = [r0, c0, r1, c1];
-    
-      // Must all be finite integers
-      if (!coords.every(n => Number.isInteger(n))) {
-        revertRotationSession();
-        dispatchEvents(appRoot, ["pips:rotate:reject"], {
-          id: rotationState.activeDominoId,
-          reason: "invalid-coordinates"
-        });
-        return;
-      }
-    
-      // Must occupy two distinct cells
-      if (r0 === r1 && c0 === c1) {
-        revertRotationSession();
-        dispatchEvents(appRoot, ["pips:rotate:reject"], {
-          id: rotationState.activeDominoId,
-          reason: "identical-cells"
-        });
-        return;
-      }
-    
-      // Must be orthogonally adjacent
-      const dr = Math.abs(r0 - r1);
-      const dc = Math.abs(c0 - c1);
-      if (dr + dc !== 1) {
-        revertRotationSession();
-        dispatchEvents(appRoot, ["pips:rotate:reject"], {
-          id: rotationState.activeDominoId,
-          reason: "non-adjacent"
-        });
-        return;
-      }
-    
-      // Bounds validation
-      const rows = grid.length;
-      const cols = grid[0]?.length ?? 0;
-    
-      const inBounds =
-        r0 >= 0 && r0 < rows &&
-        c0 >= 0 && c0 < cols &&
-        r1 >= 0 && r1 < rows &&
-        c1 >= 0 && c1 < cols;
-    
-      if (!inBounds) {
-        revertRotationSession();
-        dispatchEvents(appRoot, ["pips:rotate:reject"], {
-          id: rotationState.activeDominoId,
-          reason: "out-of-bounds"
-        });
-        return;
-      }
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
     if (!rotationState.inSession) {
       console.warn("endRotationSession: no active session", { trigger });
       return { ok: false, reason: "no-session" };
     }
-
+  
     const id = rotationState.activeDominoId;
     const d =
       dominos instanceof Map
         ? dominos.get(id)
         : (dominos || []).find(x => String(x.id) === id);
-
+  
     if (!d) {
       console.error("endRotationSession: active domino not found", { id });
+  
       rotationState.inSession = false;
       rotationState.activeDominoId = null;
       rotationState.snapshot = null;
       rotationState.pivotHalf = null;
-
+  
       dispatchEvents(document, ["pips:board-rotate-reject"], {
         id,
         reason: "missing-domino"
       });
-
+  
       return { ok: false, reason: "missing-domino" };
     }
-
+  
     const prev = rotationState.snapshot;
     const next = { r0: d.row0, c0: d.col0, r1: d.row1, c1: d.col1 };
-
+  
+    // ------------------------------------------------------------
+    // Deferred validation: dragstart ends the session without commit
+    // ------------------------------------------------------------
+    if (trigger === "dragstart") {
+      rotationState.inSession = false;
+      rotationState.activeDominoId = null;
+      rotationState.snapshot = null;
+      rotationState.pivotHalf = null;
+  
+      console.log("ROTVAL: session ended due to dragstart; validation deferred", {
+        id
+      });
+  
+      return { ok: true, deferred: true };
+    }
+  
+    // ------------------------------------------------------------
+    // Atomic commit attempt
+    // ------------------------------------------------------------
     const res = commitRotationAtomic(d, grid);
     if (!res.ok) {
       if (prev) {
@@ -526,33 +468,33 @@ export function installPlacementValidator(appRoot, puzzle) {
         d.row1 = prev.row1;
         d.col1 = prev.col1;
       }
-
+  
       rotationState.inSession = false;
       rotationState.activeDominoId = null;
       rotationState.snapshot = null;
       rotationState.pivotHalf = null;
-
+  
       dispatchEvents(document, ["pips:board-rotate-reject"], {
         id: d.id,
         reason: res.reason,
         info: res
       });
-
+  
       return { ok: false, reason: res.reason };
     }
-
+  
     rotationState.inSession = false;
     rotationState.activeDominoId = null;
     rotationState.snapshot = null;
     rotationState.pivotHalf = null;
-
+  
     dispatchEvents(document, ["pips:board-rotate-commit"], {
       id: d.id,
       prev,
       next
     });
     dispatchEvents(document, ["pips:state:update"], {});
-
+  
     return { ok: true, prev, next };
   }
 
