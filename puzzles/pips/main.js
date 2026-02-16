@@ -80,6 +80,23 @@ export function startPuzzle(puzzleJson) {
   // Initial render + wiring (deferred to allow DOM to settle)
   setTimeout(() => {
     renderPuzzle();
+    
+  // ------------------------------------------------------------
+  // Re-render on canonical state updates
+  // The engine/validator is the authority; when it says state
+  // changed, we redraw board + tray from grid truth.
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:state:update", () => {
+    console.log("MAIN: pips:state:update → renderPuzzle()");
+    renderPuzzle();
+  });
+
+  // Optional: if your validator emits an explicit tray-return event,
+  // re-render on that too so the UI always snaps back cleanly.
+  appRoot.addEventListener("pips:drop:tray", () => {
+    console.log("MAIN: pips:drop:tray → renderPuzzle()");
+    renderPuzzle();
+  });
 
     // Install placement validator so it can observe canonical pips:* events
     installPlacementValidator(appRoot, state);
