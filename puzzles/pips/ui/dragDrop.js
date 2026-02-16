@@ -48,26 +48,44 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
   function beginRealDrag(wrapper, x, y) {
     wrapper.style.visibility = "hidden";
     dragState.moved = true;
-    
+  
     const clone = wrapper.cloneNode(true);
     const rect = wrapper.getBoundingClientRect();
-
+  
+    // ----------------------------------------------------------
+    // Apply geometry-first positioning
+    // ----------------------------------------------------------
     clone.style.position = "fixed";
     clone.style.left = `${x - rect.width / 2}px`;
     clone.style.top  = `${y - rect.height / 2}px`;
-    clone.style.transform = "none";   // ← CRITICAL
-    clone.style.margin = "0";         // ← CRITICAL
-    clone.style.inset = "auto";       // ← CRITICAL
+    clone.style.margin = "0";
+    clone.style.inset = "auto";
     clone.style.width = `${rect.width}px`;
     clone.style.height = `${rect.height}px`;
     clone.style.pointerEvents = "none";
     clone.style.zIndex = 9999;
-
+  
+    // ----------------------------------------------------------
+    // CRITICAL FIX:
+    // Mirror tray rotation onto the clone wrapper so its
+    // bounding box matches visual orientation.
+    // ----------------------------------------------------------
+    const orientation = getComputedStyle(wrapper)
+      .getPropertyValue("--tray-orientation")
+      .trim();
+  
+    if (orientation) {
+      clone.style.transform = `rotate(${orientation})`;
+      clone.style.transformOrigin = "center center";
+    } else {
+      clone.style.transform = "none";
+    }
+  
     document.body.appendChild(clone);
     clone.style.visibility = "visible";
     dragState.clone = clone;
-
-    console.log("DRAG: clone created");
+  
+    console.log("DRAG: clone created (orientation-aware)");
   }
 
   // ------------------------------------------------------------
