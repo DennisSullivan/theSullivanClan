@@ -56,8 +56,6 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
     // Apply geometry-first positioning
     // ----------------------------------------------------------
     clone.style.position = "fixed";
-    clone.style.left = `${x - rect.width / 2}px`;
-    clone.style.top  = `${y - rect.height / 2}px`;
     clone.style.margin = "0";
     clone.style.inset = "auto";
     clone.style.width = `${rect.width}px`;
@@ -91,21 +89,9 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
   // pointerMove
   // ------------------------------------------------------------
   function pointerMove(ev) {
-    if (!dragState.active) return;
-
-    const dx = ev.clientX - dragState.startX;
-    const dy = ev.clientY - dragState.startY;
-
-    if (!dragState.clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
-      console.log("DRAG: threshold passed → beginRealDrag", { dx, dy });
-      beginRealDrag(dragState.wrapper, dragState.startX, dragState.startY);
-    }
-
     if (!dragState.clone) return;
-
-    dragState.moved = true;
-    dragState.clone.style.left = `${ev.clientX - dragState.clone.offsetWidth / 2}px`;
-    dragState.clone.style.top  = `${ev.clientY - dragState.clone.offsetHeight / 2}px`;
+    dragState.clone.style.left = `${ev.clientX}px`;
+    dragState.clone.style.top  = `${ev.clientY}px`;
   }
 
   // ------------------------------------------------------------
@@ -116,33 +102,14 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
       active: dragState.active,
       moved: dragState.moved,
       hasWrapper: !!dragState.wrapper,
-      hasClone: !!dragState.clone
+      hasClone: !!
     });
-
-    if (dragState.clone) {
-      dragState.clone.style.left =
-        `${ev.clientX - dragState.clone.offsetWidth / 2}px`;
-      dragState.clone.style.top =
-        `${ev.clientY - dragState.clone.offsetHeight / 2}px`;
-    }
 
     // existing code follows…
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
 
 console.log("DRAG: pointerUp coords", { x: ev.clientX, y: ev.clientY });
-
-if (dragState.clone) {
-  console.log("DRAG: clone rect BEFORE sync", dragState.clone.getBoundingClientRect());
-
-  dragState.clone.style.left = `${ev.clientX - dragState.clone.offsetWidth / 2}px`;
-  dragState.clone.style.top  = `${ev.clientY - dragState.clone.offsetHeight / 2}px`;
-
-  // Force style/layout flush so rect reflects the new left/top immediately
-  dragState.clone.getBoundingClientRect();
-
-  console.log("DRAG: clone rect AFTER sync", dragState.clone.getBoundingClientRect());
-}
 
     if (dragState.moved && id) {
       emitPlacementProposal(dragState.clone, id);
