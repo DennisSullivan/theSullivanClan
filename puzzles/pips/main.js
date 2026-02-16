@@ -70,7 +70,7 @@ export function startPuzzle(puzzleJson) {
   // renderPuzzle is passed to rotation mode and used for re-renders
   function renderPuzzle() {
     renderBoard(dominos, grid, regionMap, blocked, regions, boardEl);
-    renderTray(puzzleDef, dominos, trayEl);
+    renderTray(puzzleDef, dominos, trayEl, grid);
     renderRegions(regionMap, boardEl);
     renderBlockedCells(blocked, boardEl);
     renderRegionBadges(regions, boardEl);
