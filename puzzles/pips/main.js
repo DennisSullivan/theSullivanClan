@@ -88,8 +88,8 @@ export function startPuzzle(puzzleJson) {
     installDragDrop(
       boardEl,
       trayEl,
-      puzzleDef.cellHeight
-      puzzleDef.cellWidth,
+      puzzleDef.cellHeight,
+      puzzleDef.cellWidth
     );
 
     // Enable rotation mode (rotation no longer depends on dragDrop)
