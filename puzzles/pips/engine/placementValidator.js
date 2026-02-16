@@ -336,67 +336,108 @@ export function installPlacementValidator(appRoot, puzzle) {
     return true;
   }
 
-  // ------------------------------------------------------------
-  // commitRotationAtomic(domino, gridRef)
-  // PURPOSE:
-  //   Attempt to atomically commit rotated geometry to the grid.
-  //   Validates bounds, occupancy, and blocked cells. If valid,
-  //   it clears old cells and writes new ones.
-  // RETURNS:
-  //   { ok: true } or { ok: false, reason, ... }
-  // ------------------------------------------------------------
-  function commitRotationAtomic(domino, gridRef) {
-    if (!domino) {
-      console.error("commitRotationAtomic: missing domino");
-      return { ok: false, reason: "invalid" };
-    }
-
-    const rows = gridRef.length;
-    const cols = gridRef[0]?.length || 0;
-
-    const targets = [
-      { r: domino.row0, c: domino.col0, half: 0 },
-      { r: domino.row1, c: domino.col1, half: 1 }
-    ];
-
-    for (const t of targets) {
-      if (t.r < 0 || t.r >= rows || t.c < 0 || t.c >= cols) {
-        console.warn("commitRotationAtomic: out-of-bounds", t);
-        return { ok: false, reason: "out-of-bounds" };
-      }
-    }
-
-    const oldCells = [];
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const g = gridRef[r][c];
-        if (g && String(g.dominoId) === String(domino.id)) {
-          oldCells.push({ r, c, half: g.half });
-        }
-      }
-    }
-
-    for (const t of targets) {
-      const occ = gridRef[t.r][t.c];
-      if (occ && String(occ.dominoId) !== String(domino.id)) {
-        return {
-          ok: false,
-          reason: "occupied",
-          cell: { r: t.r, c: t.c, occupant: occ.dominoId }
-        };
-      }
-      if (blocked && blocked.has && blocked.has(`${t.r},${t.c}`)) {
-        return { ok: false, reason: "blocked", cell: { r: t.r, c: t.c } };
-      }
-    }
-
-    oldCells.forEach(oc => (gridRef[oc.r][oc.c] = null));
-    targets.forEach(tc => {
-      gridRef[tc.r][tc.c] = { dominoId: domino.id, half: tc.half };
-    });
-
-    return { ok: true };
+// ------------------------------------------------------------
+// commitRotationAtomic(domino, gridRef)
+// PURPOSE:
+//   Attempt to atomically commit rotated geometry to the grid.
+//   This is the sole legality gate for rotation commits.
+// CONTRACT:
+//   - Enforces shape, adjacency, bounds, occupancy, and blocked rules.
+//   - Either fully commits or leaves the board unchanged.
+// TRUTH:
+//    This function is the sole authority for rotation legality.
+//    If it returns ok, the board state is legal.
+// ------------------------------------------------------------
+function commitRotationAtomic(domino, gridRef) {
+  if (!domino) {
+    console.error("commitRotationAtomic: missing domino");
+    return { ok: false, reason: "invalid" };
   }
+
+  const r0 = domino.row0;
+  const c0 = domino.col0;
+  const r1 = domino.row1;
+  const c1 = domino.col1;
+
+  const coords = [r0, c0, r1, c1];
+
+  // ------------------------------------------------------------
+  // Shape validation
+  // ------------------------------------------------------------
+
+  // Must all be finite integers
+  if (!coords.every(n => Number.isInteger(n))) {
+    return { ok: false, reason: "invalid-coordinates" };
+  }
+
+  // Must occupy two distinct cells
+  if (r0 === r1 && c0 === c1) {
+    return { ok: false, reason: "identical-cells" };
+  }
+
+  // Must be orthogonally adjacent
+  const dr = Math.abs(r0 - r1);
+  const dc = Math.abs(c0 - c1);
+  if (dr + dc !== 1) {
+    return { ok: false, reason: "non-adjacent" };
+  }
+
+  // ------------------------------------------------------------
+  // Bounds validation
+  // ------------------------------------------------------------
+  const rows = gridRef.length;
+  const cols = gridRef[0]?.length || 0;
+
+  if (
+    r0 < 0 || r0 >= rows || c0 < 0 || c0 >= cols ||
+    r1 < 0 || r1 >= rows || c1 < 0 || c1 >= cols
+  ) {
+    return { ok: false, reason: "out-of-bounds" };
+  }
+
+  // ------------------------------------------------------------
+  // Occupancy + blocked validation
+  // ------------------------------------------------------------
+  const targets = [
+    { r: r0, c: c0, half: 0 },
+    { r: r1, c: c1, half: 1 }
+  ];
+
+  const oldCells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const g = gridRef[r][c];
+      if (g && String(g.dominoId) === String(domino.id)) {
+        oldCells.push({ r, c });
+      }
+    }
+  }
+
+  for (const t of targets) {
+    const occ = gridRef[t.r][t.c];
+    if (occ && String(occ.dominoId) !== String(domino.id)) {
+      return {
+        ok: false,
+        reason: "occupied",
+        cell: { r: t.r, c: t.c, occupant: occ.dominoId }
+      };
+    }
+
+    if (blocked && blocked.has && blocked.has(`${t.r},${t.c}`)) {
+      return { ok: false, reason: "blocked", cell: { r: t.r, c: t.c } };
+    }
+  }
+
+  // ------------------------------------------------------------
+  // Atomic commit
+  // ------------------------------------------------------------
+  oldCells.forEach(oc => (gridRef[oc.r][oc.c] = null));
+  targets.forEach(tc => {
+    gridRef[tc.r][tc.c] = { dominoId: domino.id, half: tc.half };
+  });
+
+  return { ok: true };
+}
 
   // ------------------------------------------------------------
   // endRotationSession(trigger)
