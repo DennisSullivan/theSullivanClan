@@ -102,9 +102,8 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
       active: dragState.active,
       moved: dragState.moved,
       hasWrapper: !!dragState.wrapper,
-      hasClone: !!
+      hasClone: !!dragState.clone
     });
-
     // existing code follows…
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
