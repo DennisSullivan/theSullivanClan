@@ -70,10 +70,11 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
     // Mirror tray rotation onto the clone wrapper so its
     // bounding box matches visual orientation.
     // ----------------------------------------------------------
-    const orientation = getComputedStyle(wrapper)
-      .getPropertyValue("--tray-orientation")
-      .trim();
-  
+    const inner = wrapper.querySelector(".domino");
+    const orientation = inner
+      ? getComputedStyle(inner).transform
+      : "";
+
     if (orientation) {
       clone.style.transform = `rotate(${orientation})`;
       clone.style.transformOrigin = "center center";
