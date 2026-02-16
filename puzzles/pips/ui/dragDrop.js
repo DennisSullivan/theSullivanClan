@@ -89,11 +89,19 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
   // pointerMove
   // ------------------------------------------------------------
   function pointerMove(ev) {
-  if (!dragState.clone && !dragState.moved) {
-    dragState.startX = ev.clientX;
-    dragState.startY = ev.clientY;
-}
+    if (!dragState.active) return;
+  
+    const dx = ev.clientX - dragState.startX;
+    const dy = ev.clientY - dragState.startY;
+  
+    if (!dragState.clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
+      console.log("DRAG: threshold passed → beginRealDrag", { dx, dy });
+      beginRealDrag(dragState.wrapper, dragState.startX, dragState.startY);
+    }
+  
     if (!dragState.clone) return;
+  
+    dragState.moved = true;
     dragState.clone.style.left = `${ev.clientX}px`;
     dragState.clone.style.top  = `${ev.clientY}px`;
   }
