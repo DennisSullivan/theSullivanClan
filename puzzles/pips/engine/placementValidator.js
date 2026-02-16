@@ -382,6 +382,87 @@ export function installPlacementValidator(appRoot, puzzle) {
   //   { ok: true, prev, next } or { ok: false, reason }
   // ------------------------------------------------------------
   function endRotationSession(trigger) {
+    // ------------------------------------------------------------
+    // Rotation commit validation
+    // PURPOSE:
+    //   Enforce placement invariants when a rotation session ends
+    //   without transitioning into drag.
+    // ------------------------------------------------------------
+    if (trigger !== "dragstart") {
+      const { r0, c0, r1, c1 } = rotationState.domino;
+    
+      const coords = [r0, c0, r1, c1];
+    
+      // Must all be finite integers
+      if (!coords.every(n => Number.isInteger(n))) {
+        revertRotationSession();
+        dispatchEvents(appRoot, ["pips:rotate:reject"], {
+          id: rotationState.activeDominoId,
+          reason: "invalid-coordinates"
+        });
+        return;
+      }
+    
+      // Must occupy two distinct cells
+      if (r0 === r1 && c0 === c1) {
+        revertRotationSession();
+        dispatchEvents(appRoot, ["pips:rotate:reject"], {
+          id: rotationState.activeDominoId,
+          reason: "identical-cells"
+        });
+        return;
+      }
+    
+      // Must be orthogonally adjacent
+      const dr = Math.abs(r0 - r1);
+      const dc = Math.abs(c0 - c1);
+      if (dr + dc !== 1) {
+        revertRotationSession();
+        dispatchEvents(appRoot, ["pips:rotate:reject"], {
+          id: rotationState.activeDominoId,
+          reason: "non-adjacent"
+        });
+        return;
+      }
+    
+      // Bounds validation
+      const rows = grid.length;
+      const cols = grid[0]?.length ?? 0;
+    
+      const inBounds =
+        r0 >= 0 && r0 < rows &&
+        c0 >= 0 && c0 < cols &&
+        r1 >= 0 && r1 < rows &&
+        c1 >= 0 && c1 < cols;
+    
+      if (!inBounds) {
+        revertRotationSession();
+        dispatchEvents(appRoot, ["pips:rotate:reject"], {
+          id: rotationState.activeDominoId,
+          reason: "out-of-bounds"
+        });
+        return;
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
     if (!rotationState.inSession) {
       console.warn("endRotationSession: no active session", { trigger });
       return { ok: false, reason: "no-session" };
