@@ -8,7 +8,7 @@
 //   - Emits PlacementProposal on drop
 // ============================================================
 
-export function installDragDrop(boardEl, trayEl, rows, cols) {
+export function installDragDrop({boardEl, trayEl, rows, cols}) {
 
   const dragState = {
     active: false,
