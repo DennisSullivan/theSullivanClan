@@ -82,6 +82,21 @@ export function startPuzzle(puzzleJson) {
     renderPuzzle();
     
   // ------------------------------------------------------------
+  // Re-render when the engine reports a canonical state update.
+  // This is the only place where UI redraws after placement.
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:state:update", () => {
+    console.log("MAIN: pips:state:update → renderPuzzle()");
+    renderPuzzle();
+  });
+
+  // Optional but recommended: ensure tray returns also re-render
+  appRoot.addEventListener("pips:drop:tray", () => {
+    console.log("MAIN: pips:drop:tray → renderPuzzle()");
+    renderPuzzle();
+  });
+
+    // ------------------------------------------------------------
   // Re-render on canonical state updates
   // The engine/validator is the authority; when it says state
   // changed, we redraw board + tray from grid truth.
