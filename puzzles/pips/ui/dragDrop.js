@@ -75,12 +75,10 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
       ? getComputedStyle(inner).transform
       : "";
 
-    if (orientation) {
-      clone.style.transform = `rotate(${orientation})`;
-      clone.style.transformOrigin = "center center";
-    } else {
-      clone.style.transform = "none";
-    }
+    clone.style.left = `${x}px`;
+    clone.style.top  = `${y}px`;
+    clone.style.transform = `${orientation} translate(-50%, -50%)`;
+    clone.style.transformOrigin = "center center";
   
     document.body.appendChild(clone);
     clone.style.visibility = "visible";
