@@ -1,28 +1,45 @@
 // ============================================================
 // FILE: boardRenderer.js
-// PURPOSE: Render board background + wrapper positions only.
+// PURPOSE: Render the board background and all placed dominos
+//          using grid occupancy as the sole source of truth.
 // NOTES:
-//   - Pure renderer: no state mutation.
-//   - No angle transforms; geometry is canonical.
-//   - Delegates all domino visuals to dominoRenderer.js.
+//   - Pure renderer: never mutates engine state.
+//   - Board membership is derived from the grid, not domino fields.
+//   - Exactly one wrapper is rendered per domino present in the grid.
+//   - Visual details are delegated to dominoRenderer.js.
 // ============================================================
 
 import { renderDomino } from "./dominoRenderer.js";
+import { findDominoCells } from "../engine/grid.js";
 
-/**
- * renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
- * Renders:
- *   1. Background cells (region + blocked classes)
- *   2. One wrapper per placed domino
- *   3. Delegates domino visuals to renderDomino()
- *
- * PURE FUNCTION:
- *   - Does not mutate engine state.
- *   - Only updates DOM inside boardEl.
- */
+// ------------------------------------------------------------
+// renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
+// Renders the entire board in three conceptual passes:
+//
+//   1. Background board cells (regions + blocked markers)
+//   2. One wrapper per domino present in the grid
+//   3. Delegates domino visuals to renderDomino()
+//
+// This function deliberately derives board membership from
+// grid occupancy rather than domino metadata. If a domino
+// occupies any grid cell, it is rendered exactly once.
+//
+// INPUTS:
+//   dominos   - Map or iterable of canonical domino objects
+//   grid      - canonical grid occupancy structure
+//   regionMap - region id per cell (optional)
+//   blocked   - Set of blocked cell keys (optional)
+//   regions   - region metadata (unused here, passed through)
+//   boardEl   - DOM element that owns the board
+//
+// GUARANTEES:
+//   - Board rendering reflects engine truth exactly.
+//   - No tray dominos appear on the board.
+//   - No duplicate wrappers are created.
+// ------------------------------------------------------------
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   if (!boardEl) {
-    console.error("renderBoard: boardEl is null/undefined.");
+    console.error("renderBoard: boardEl is null or undefined.");
     return;
   }
 
@@ -32,7 +49,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     return;
   }
 
-  // Ensure absolute positioning context
+  // Ensure absolute positioning context for wrappers.
   if (!boardEl.style.position) {
     boardEl.style.position = "relative";
   }
@@ -42,9 +59,9 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   const rows = grid.length;
   const cols = grid[0].length;
 
-  // ------------------------------------------------------------
-  // 1. Render background cells
-  // ------------------------------------------------------------
+  // ----------------------------------------------------------
+  // 1. Render background board cells
+  // ----------------------------------------------------------
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const cell = document.createElement("div");
@@ -52,12 +69,12 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       cell.dataset.row = String(r);
       cell.dataset.col = String(c);
 
-      // Region coloring
+      // Apply region coloring if provided.
       if (regionMap && regionMap[r] && regionMap[r][c] != null) {
         cell.classList.add(`region-${regionMap[r][c]}`);
       }
 
-      // Blocked cells
+      // Apply blocked marker if present.
       if (blocked && blocked.has && blocked.has(`${r},${c}`)) {
         cell.classList.add("blocked");
       }
@@ -66,43 +83,42 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     }
   }
 
-  // ------------------------------------------------------------
-  // 2. Render each placed domino wrapper
-  // ------------------------------------------------------------
-  const list = dominos && dominos.values ? Array.from(dominos.values()) : dominos;
+  // ----------------------------------------------------------
+  // 2. Render one wrapper per domino present in the grid
+  // ----------------------------------------------------------
+  const list = dominos instanceof Map ? dominos : new Map(dominos);
 
-  if (!Array.isArray(list)) {
-    console.error("renderBoard: dominos is neither a Map nor an array", dominos);
-    return;
-  }
-
-  for (const d of list) {
-    // Skip tray dominos
-    if (d.row0 == null || d.col0 == null || d.row1 == null || d.col1 == null) {
-      continue;
-    }
+  for (const [id, d] of list) {
+    // Ask the grid whether this domino occupies any cells.
+    // If it does not, it belongs in the tray and must not
+    // appear on the board.
+    const cells = findDominoCells(grid, String(d.id));
+    if (cells.length === 0) continue;
 
     if (d.id == null) {
       console.error("renderBoard: domino missing id; skipping", d);
       continue;
     }
 
+    // Determine the top-left anchor of the domino's bounding box.
+    // This ensures consistent wrapper positioning regardless of
+    // orientation.
+    let minRow = Infinity;
+    let minCol = Infinity;
+
+    for (const cell of cells) {
+      minRow = Math.min(minRow, cell.row);
+      minCol = Math.min(minCol, cell.col);
+    }
+
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper on-board";
     wrapper.dataset.dominoId = String(d.id);
 
-    // ----------------------------------------------------------
-    // Position wrapper at the top-left of the domino's bounding box
-    // ----------------------------------------------------------
-    const cssRow = Math.min(d.row0, d.row1);
-    const cssCol = Math.min(d.col0, d.col1);
+    wrapper.style.setProperty("--row", String(minRow));
+    wrapper.style.setProperty("--col", String(minCol));
 
-    wrapper.style.setProperty("--row", String(cssRow));
-    wrapper.style.setProperty("--col", String(cssCol));
-
-    // ----------------------------------------------------------
-    // Delegate visual rendering to dominoRenderer.js
-    // ----------------------------------------------------------
+    // Delegate visual construction to the domino renderer.
     renderDomino(d, wrapper);
 
     boardEl.appendChild(wrapper);
