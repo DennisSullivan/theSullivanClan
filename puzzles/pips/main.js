@@ -85,12 +85,12 @@ export function startPuzzle(puzzleJson) {
     installPlacementValidator(appRoot, state);
 
     // Enable drag/drop
-    installDragDrop(
+    installDragDrop({
       boardEl,
       trayEl,
       puzzleDef.cellHeight,
       puzzleDef.cellWidth
-    );
+                    });
 
     // Enable rotation mode (rotation no longer depends on dragDrop)
     initRotation(dominos, trayEl, boardEl, renderPuzzle);
