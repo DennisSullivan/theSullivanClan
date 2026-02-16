@@ -1,11 +1,37 @@
 // ============================================================
 // FILE: placementValidator.js
-// PURPOSE:
-//   Central place for placement and rotation validation logic.
-//   Listens for drop attempts and rotation requests, validates
-//   geometry and blocked cells, manages rotation sessions, and
-//   emits canonical pips:* events. Region rules are evaluated
-//   only when the user explicitly requests a solution check.
+// ============================================================================
+// PLACEMENT & ROTATION VALIDATION CONTRACT
+//
+// This module is the sole authority for determining whether a domino
+// placement or rotation may be committed to the board.
+//
+// SPEC-LEVEL INVARIANTS:
+// - A board domino is defined by exactly two distinct, orthogonally
+//   adjacent grid cells.
+// - Orientation is derived from cell positions; no anchor or angle
+//   is stored.
+// - All legality decisions are made only at explicit commit boundaries.
+//
+// COMMIT BOUNDARIES:
+// 1. Board drop
+// 2. Rotation session end that does NOT transition into drag
+//
+// DEFERRED VALIDATION:
+// - During an active rotation session, geometry may be temporarily
+//   invalid (overlapping, out-of-bounds, non-adjacent).
+// - If a rotation session ends due to drag start, validation is
+//   deferred until the subsequent drop.
+//
+// OUTCOMES AT COMMIT:
+// - If the proposed geometry is invalid, the domino reverts to its
+//   last committed board position.
+// - If valid, the placement or rotation is committed atomically.
+//
+// No other module may assume placement legality or mutate board state
+// without passing through this validator.
+// ============================================================================
+//
 // NOTES:
 //   - Uses only // style comments.
 //   - Every function has a short conversational header explaining
