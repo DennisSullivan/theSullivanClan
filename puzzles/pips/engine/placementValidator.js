@@ -460,6 +460,61 @@ export function installPlacementValidator(appRoot, puzzle) {
   // ------------------------------------------------------------
   function handleBoardDropAttempt(ev) {
     const { id, r0, c0, r1, c1 } = ev.detail || {};
+
+    // ------------------------------------------------------------
+    // PlacementProposal validation (shape + adjacency)
+    // PURPOSE:
+    //   Enforce spec-level invariants before attempting placement.
+    // ------------------------------------------------------------
+    const coords = [r0, c0, r1, c1];
+    
+    // Must all be finite integers
+    if (!coords.every(n => Number.isInteger(n))) {
+      console.warn("PLACEMENT REJECTED: non-integer coordinates", {
+        id, r0, c0, r1, c1
+      });
+    
+      dispatchEvents(ev.target, ["pips:drop:reject:board"], {
+        id,
+        reason: "invalid-coordinates",
+        detail: { r0, c0, r1, c1 }
+      });
+      return;
+    }
+    
+    // Must occupy two distinct cells
+    if (r0 === r1 && c0 === c1) {
+      console.warn("PLACEMENT REJECTED: identical cells", {
+        id, r0, c0
+      });
+    
+      dispatchEvents(ev.target, ["pips:drop:reject:board"], {
+        id,
+        reason: "identical-cells"
+      });
+      return;
+    }
+    
+    // Must be orthogonally adjacent
+    const dr = Math.abs(r0 - r1);
+    const dc = Math.abs(c0 - c1);
+    if (dr + dc !== 1) {
+      console.warn("PLACEMENT REJECTED: non-adjacent cells", {
+        id, r0, c0, r1, c1
+      });
+    
+      dispatchEvents(ev.target, ["pips:drop:reject:board"], {
+        id,
+        reason: "non-adjacent"
+      });
+      return;
+    }
+
+
+
+
+    
+    
     if (!id) {
       console.error("handleBoardDropAttempt: missing id", ev.detail);
       return;
