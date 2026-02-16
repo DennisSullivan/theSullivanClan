@@ -510,32 +510,32 @@ export function installPlacementValidator(appRoot, puzzle) {
       return;
     }
 
-// ------------------------------------------------------------
-// Bounds validation
-// PURPOSE:
-//   Ensure both halves land on real board cells before placement.
-// ------------------------------------------------------------
-const rows = grid.length;
-const cols = grid[0]?.length ?? 0;
-
-const inBounds =
-  r0 >= 0 && r0 < rows &&
-  c0 >= 0 && c0 < cols &&
-  r1 >= 0 && r1 < rows &&
-  c1 >= 0 && c1 < cols;
-
-if (!inBounds) {
-  console.warn("PLACEMENT REJECTED: out-of-bounds", {
-    id, r0, c0, r1, c1, rows, cols
-  });
-
-  dispatchEvents(ev.target, ["pips:drop:reject:board"], {
-    id,
-    reason: "out-of-bounds",
-    detail: { r0, c0, r1, c1 }
-  });
-  return;
-}
+    // ------------------------------------------------------------
+    // Bounds validation
+    // PURPOSE:
+    //   Ensure both halves land on real board cells before placement.
+    // ------------------------------------------------------------
+    const rows = grid.length;
+    const cols = grid[0]?.length ?? 0;
+    
+    const inBounds =
+      r0 >= 0 && r0 < rows &&
+      c0 >= 0 && c0 < cols &&
+      r1 >= 0 && r1 < rows &&
+      c1 >= 0 && c1 < cols;
+    
+    if (!inBounds) {
+      console.warn("PLACEMENT REJECTED: out-of-bounds", {
+        id, r0, c0, r1, c1, rows, cols
+      });
+    
+      dispatchEvents(ev.target, ["pips:drop:reject:board"], {
+        id,
+        reason: "out-of-bounds",
+        detail: { r0, c0, r1, c1 }
+      });
+      return;
+    }
 
 
 
