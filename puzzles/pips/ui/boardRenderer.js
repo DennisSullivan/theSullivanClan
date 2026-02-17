@@ -119,8 +119,15 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const isVertical = cells.length === 2 && cells[0].col === cells[1].col;
     wrapper.dataset.orientation = isVertical ? "V" : "H";
     
+    const isVertical = wrapper.dataset.orientation === "V";
+    
     wrapper.style.setProperty("--row", String(minRow));
     wrapper.style.setProperty("--col", String(minCol));
+    
+    if (isVertical) {
+      wrapper.style.setProperty("--domino-nudge-y", "0px");
+      wrapper.style.setProperty("--domino-nudge-x", "0px");
+    }
     
     // Delegate visual construction to the domino renderer.
     renderDomino(d, wrapper);
