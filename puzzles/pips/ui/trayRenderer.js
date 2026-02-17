@@ -97,6 +97,7 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper in-tray";
     wrapper.dataset.dominoId = String(d.id);
+    wrapper.dataset.trayOrientation = String(d.trayOrientation ?? 0);
 
     // Pass tray orientation through a CSS variable so the
     // domino renderer remains geometry-agnostic.
