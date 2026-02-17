@@ -14,28 +14,6 @@ import { findDominoCells } from "../engine/grid.js";
 
 // ------------------------------------------------------------
 // renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
-// Renders the entire board in three conceptual passes:
-//
-//   1. Background board cells (regions + blocked markers)
-//   2. One wrapper per domino present in the grid
-//   3. Delegates domino visuals to ()
-//
-// This function deliberately derives board membership from
-// grid occupancy rather than domino metadata. If a domino
-// occupies any grid cell, it is rendered exactly once.
-//
-// INPUTS:
-//   dominos   - Map or iterable of canonical domino objects
-//   grid      - canonical grid occupancy structure
-//   regionMap - region id per cell (optional)
-//   blocked   - Set of blocked cell keys (optional)
-//   regions   - region metadata (unused here, passed through)
-//   boardEl   - DOM element that owns the board
-//
-// GUARANTEES:
-//   - Board rendering reflects engine truth exactly.
-//   - No tray dominos appear on the board.
-//   - No duplicate wrappers are created.
 // ------------------------------------------------------------
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   if (!boardEl) {
@@ -69,12 +47,10 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       cell.dataset.row = String(r);
       cell.dataset.col = String(c);
 
-      // Apply region coloring if provided.
       if (regionMap && regionMap[r] && regionMap[r][c] != null) {
         cell.classList.add(`region-${regionMap[r][c]}`);
       }
 
-      // Apply blocked marker if present.
       if (blocked && blocked.has && blocked.has(`${r},${c}`)) {
         cell.classList.add("blocked");
       }
@@ -89,9 +65,6 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   const list = dominos instanceof Map ? dominos : new Map(dominos);
 
   for (const [id, d] of list) {
-    // Ask the grid whether this domino occupies any cells.
-    // If it does not, it belongs in the tray and must not
-    // appear on the board.
     const cells = findDominoCells(grid, String(d.id));
     if (cells.length === 0) continue;
 
@@ -100,14 +73,27 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       continue;
     }
 
+    // --------------------------------------------------------
+    // Anchor wrapper to HALF 0 (engine truth)
+    // --------------------------------------------------------
     const half0 = cells.find(c => c.half === 0) || cells[0];
-    
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "domino-wrapper on-board";
+    wrapper.dataset.dominoId = String(d.id);
+
+    // Derive orientation from grid truth
+    const isVertical =
+      cells.length === 2 && cells[0].col === cells[1].col;
+
+    wrapper.dataset.orientation = isVertical ? "V" : "H";
+
     wrapper.style.setProperty("--row", String(half0.row));
     wrapper.style.setProperty("--col", String(half0.col));
-  
-    // Delegate visual construction to the domino renderer.
+
+    // Delegate visual construction
     renderDomino(d, wrapper);
-    
+
     boardEl.appendChild(wrapper);
   }
 }
