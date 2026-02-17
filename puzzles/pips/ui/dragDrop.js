@@ -83,6 +83,16 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       half0Side
     };
 
+    console.assert(
+      geometry && typeof geometry.half0Side === "string",
+      "Drag snapshot must contain half0Side"
+    );
+    
+    console.assert(
+      !("orientation" in geometry),
+      "Orientation must not be stored in drag geometry"
+    );
+
     // ----------------------------------------------------------
     // Create visual clone (no transforms, no inference)
     // ----------------------------------------------------------
