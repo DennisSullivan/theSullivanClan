@@ -57,21 +57,30 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     // Snapshot logical geometry ONCE
     // ----------------------------------------------------------
     const trayOrientation = Number(wrapper.dataset.trayOrientation || 0) % 360;
-
-    const orientation = (trayOrientation === 90 || trayOrientation === 270)
-      ? "V"
-      : "H";
-
-    // half0First:
-    // 0°  → half0 left/top
-    // 90° → half0 top
-    // 180°→ half0 right/bottom
-    // 270°→ half0 bottom
-    const half0First = (trayOrientation === 0 || trayOrientation === 90);
-
+    
+    // Canonical board geometry: half0 relative to half1
+    // No orientation, no rotation stored
+    let half0Side;
+    
+    switch (trayOrientation) {
+      case 0:
+        half0Side = "left";
+        break;
+      case 180:
+        half0Side = "right";
+        break;
+      case 90:
+        half0Side = "top";
+        break;
+      case 270:
+        half0Side = "bottom";
+        break;
+      default:
+        half0Side = "left"; // defensive fallback
+    }
+    
     dragState.geometry = {
-      orientation,
-      half0First
+      half0Side
     };
 
     // ----------------------------------------------------------
