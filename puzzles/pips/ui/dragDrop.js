@@ -237,20 +237,25 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
         ? targets.some(t => t.overlap <= 0.5)
         : targets.some(t => {
             const h = rect.height / 2;
+    
+            const cellTop    = boardRect.top + t.row * cellH;
+            const cellBottom = cellTop + cellH;
+    
             const overlapH = Math.max(
               0,
-              Math.min(t.row * cellH + cellH, rect.bottom) -
-              Math.max(t.row * cellH, rect.top)
+              Math.min(rect.bottom, cellBottom) -
+              Math.max(rect.top, cellTop)
             );
+    
             return overlapH / h <= 0.5;
           })
-    )
- {
+    ) {
       document.dispatchEvent(new CustomEvent("pips:drop:tray", {
         detail: { id }
       }));
       return;
     }
+
 
     // ----------------------------------------------------------
     // Assign half0 / half1 deterministically
