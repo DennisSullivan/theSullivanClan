@@ -119,8 +119,6 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const isVertical = cells.length === 2 && cells[0].col === cells[1].col;
     wrapper.dataset.orientation = isVertical ? "V" : "H";
     
-    const isVertical = wrapper.dataset.orientation === "V";
-    
     wrapper.style.setProperty("--row", String(minRow));
     wrapper.style.setProperty("--col", String(minCol));
     
