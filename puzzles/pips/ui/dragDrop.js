@@ -1,14 +1,13 @@
 // ============================================================
 // FILE: ui/dragDrop.js
 // PURPOSE: Drag/drop interaction → PlacementProposal emitter.
-// NOTES:
-//   - Clone-based drag
-//   - No engine mutation
-//   - Geometry-only responsibility
-//   - Emits PlacementProposal on drop
+// MODEL:
+//   - Visual clone follows pointer (non-authoritative)
+//   - Logical geometry snapshot captured once at drag-start
+//   - Placement uses half0/half1 relationship, not CSS transforms
 // ============================================================
 
-export function installDragDrop({boardEl, trayEl, rows, cols}) {
+export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
   const dragState = {
     active: false,
@@ -16,24 +15,29 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
     clone: null,
     startX: 0,
     startY: 0,
-    moved: false
+    moved: false,
+
+    // ----------------------------------------------------------
+    // Logical geometry snapshot (authoritative for placement)
+    // ----------------------------------------------------------
+    geometry: null
   };
 
   // ------------------------------------------------------------
   // pointerDown
   // ------------------------------------------------------------
   function pointerDown(ev) {
-  const wrapper = ev.target.closest(".domino-wrapper");
-  if (!wrapper) return;
-  
-  // Defensive: only allow drag from tray or placed domino wrappers
-  if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
+    const wrapper = ev.target.closest(".domino-wrapper");
+    if (!wrapper) return;
+
+    if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
 
     dragState.active = true;
     dragState.wrapper = wrapper;
     dragState.startX = ev.clientX;
     dragState.startY = ev.clientY;
     dragState.moved = false;
+    dragState.geometry = null;
 
     console.log("DRAG: pointerDown", {
       id: wrapper.dataset.dominoId,
@@ -48,13 +52,34 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
   function beginRealDrag(wrapper, x, y) {
     wrapper.style.visibility = "hidden";
     dragState.moved = true;
-  
+
+    // ----------------------------------------------------------
+    // Snapshot logical geometry ONCE
+    // ----------------------------------------------------------
+    const trayOrientation = Number(wrapper.dataset.trayOrientation || 0) % 360;
+
+    const orientation = (trayOrientation === 90 || trayOrientation === 270)
+      ? "V"
+      : "H";
+
+    // half0First:
+    // 0°  → half0 left/top
+    // 90° → half0 top
+    // 180°→ half0 right/bottom
+    // 270°→ half0 bottom
+    const half0First = (trayOrientation === 0 || trayOrientation === 90);
+
+    dragState.geometry = {
+      orientation,
+      half0First
+    };
+
+    // ----------------------------------------------------------
+    // Create visual clone (no transforms, no inference)
+    // ----------------------------------------------------------
     const clone = wrapper.cloneNode(true);
     const rect = wrapper.getBoundingClientRect();
-  
-    // ----------------------------------------------------------
-    // Apply geometry-first positioning
-    // ----------------------------------------------------------
+
     clone.style.position = "fixed";
     clone.style.margin = "0";
     clone.style.inset = "auto";
@@ -62,27 +87,15 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
     clone.style.height = `${rect.height}px`;
     clone.style.pointerEvents = "none";
     clone.style.zIndex = 9999;
-  
-    // ----------------------------------------------------------
-    // CRITICAL FIX:
-    // Mirror tray rotation onto the clone wrapper so its
-    // bounding box matches visual orientation.
-    // ----------------------------------------------------------
-    const inner = wrapper.querySelector(".domino");
-    const orientation = inner
-      ? getComputedStyle(inner).transform
-      : "";
-
     clone.style.left = `${x}px`;
-    clone.style.top  = `${y}px`;
-    clone.style.transform = `${orientation} translate(-50%, -50%)`;
+    clone.style.top = `${y}px`;
+    clone.style.transform = "translate(-50%, -50%)";
     clone.style.transformOrigin = "center center";
-  
+
     document.body.appendChild(clone);
-    clone.style.visibility = "visible";
     dragState.clone = clone;
-  
-    console.log("DRAG: clone created (orientation-aware)");
+
+    console.log("DRAG: clone created", dragState.geometry);
   }
 
   // ------------------------------------------------------------
@@ -90,18 +103,17 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
   // ------------------------------------------------------------
   function pointerMove(ev) {
     if (!dragState.active) return;
-  
+
     const dx = ev.clientX - dragState.startX;
     const dy = ev.clientY - dragState.startY;
-  
+
     if (!dragState.clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
       console.log("DRAG: threshold passed → beginRealDrag", { dx, dy });
       beginRealDrag(dragState.wrapper, dragState.startX, dragState.startY);
     }
-  
+
     if (!dragState.clone) return;
-  
-    dragState.moved = true;
+
     dragState.clone.style.left = `${ev.clientX}px`;
     dragState.clone.style.top  = `${ev.clientY}px`;
   }
@@ -113,17 +125,14 @@ export function installDragDrop({boardEl, trayEl, rows, cols}) {
     console.log("DRAG: pointerUp ENTER", {
       active: dragState.active,
       moved: dragState.moved,
-      hasWrapper: !!dragState.wrapper,
       hasClone: !!dragState.clone
     });
-    // existing code follows…
+
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
 
-console.log("DRAG: pointerUp coords", { x: ev.clientX, y: ev.clientY });
-
-    if (dragState.moved && id) {
-      emitPlacementProposal(dragState.clone, id);
+    if (dragState.moved && id && dragState.clone) {
+      emitPlacementProposal(dragState.clone, id, dragState.geometry);
     }
 
     if (dragState.clone) dragState.clone.remove();
@@ -132,139 +141,109 @@ console.log("DRAG: pointerUp coords", { x: ev.clientX, y: ev.clientY });
     dragState.active = false;
     dragState.wrapper = null;
     dragState.clone = null;
+    dragState.geometry = null;
     dragState.moved = false;
   }
 
   // ------------------------------------------------------------
   // PlacementProposal construction
   // ------------------------------------------------------------
-function emitPlacementProposal(node, id) {
-  if (!node) {
-    console.warn("emitPlacementProposal: missing node");
-    return;
-  }
+  function emitPlacementProposal(node, id, geometry) {
+    if (!node || !geometry) return;
 
-  const boardRect = boardEl.getBoundingClientRect();
-  const rect = node.getBoundingClientRect();
-  
-  const cellWidth  = boardRect.width  / cols;
-  const cellHeight = boardRect.height / rows;
+    const boardRect = boardEl.getBoundingClientRect();
+    const rect = node.getBoundingClientRect();
 
-  console.log("DRAG: emitPlacementProposal geometry", {
-    id,
-    rect,
-    boardRect
-  });
+    const cellW = boardRect.width / cols;
+    const cellH = boardRect.height / rows;
 
-  // ------------------------------------------------------------
-  // Return-to-tray rule: fully outside board
-  // ------------------------------------------------------------
-  if (
-    rect.right  <= boardRect.left ||
-    rect.left   >= boardRect.right ||
-    rect.bottom <= boardRect.top ||
-    rect.top    >= boardRect.bottom
-  ) {
-    console.log("DRAG: emitPlacementProposal → tray (outside board)");
-    document.dispatchEvent(new CustomEvent("pips:drop:tray", {
-      detail: { id }
-    }));
-    return;
-  }
-
-  // ------------------------------------------------------------
-  // Split geometry into two halves (horizontal domino)
-  // ------------------------------------------------------------
-  const halfWidth = rect.width / 2;
-
-  const halfRects = [
-    {
-      left: rect.left,
-      right: rect.left + halfWidth,
-      top: rect.top,
-      bottom: rect.bottom,
-      width: halfWidth,
-      height: rect.height
-    },
-    {
-      left: rect.left + halfWidth,
-      right: rect.right,
-      top: rect.top,
-      bottom: rect.bottom,
-      width: halfWidth,
-      height: rect.height
+    // ----------------------------------------------------------
+    // Return-to-tray rule: fully outside board
+    // ----------------------------------------------------------
+    if (
+      rect.right  <= boardRect.left ||
+      rect.left   >= boardRect.right ||
+      rect.bottom <= boardRect.top ||
+      rect.top    >= boardRect.bottom
+    ) {
+      document.dispatchEvent(new CustomEvent("pips:drop:tray", {
+        detail: { id }
+      }));
+      return;
     }
-  ];
 
-  // ------------------------------------------------------------
-  // Compute target cells + overlap
-  // ------------------------------------------------------------
-  const targets = halfRects.map((r, i) => {
-    const cx = (r.left + r.right) / 2;
-    const cy = (r.top + r.bottom) / 2;
+    // ----------------------------------------------------------
+    // Split geometry by SNAPSHOT orientation
+    // ----------------------------------------------------------
+    let halfRects;
 
-    const relX = cx - boardRect.left;
-    const relY = cy - boardRect.top;
+    if (geometry.orientation === "H") {
+      const w = rect.width / 2;
+      halfRects = [
+        { left: rect.left, right: rect.left + w, top: rect.top, bottom: rect.bottom },
+        { left: rect.left + w, right: rect.right, top: rect.top, bottom: rect.bottom }
+      ];
+    } else {
+      const h = rect.height / 2;
+      halfRects = [
+        { left: rect.left, right: rect.right, top: rect.top, bottom: rect.top + h },
+        { left: rect.left, right: rect.right, top: rect.top + h, bottom: rect.bottom }
+      ];
+    }
 
-    const col = Math.floor(relX / cellWidth);
-    const row = Math.floor(relY / cellHeight);
+    // ----------------------------------------------------------
+    // Compute target cells + overlap
+    // ----------------------------------------------------------
+    const targets = halfRects.map(r => {
+      const cx = (r.left + r.right) / 2;
+      const cy = (r.top + r.bottom) / 2;
 
-    const cellLeft   = boardRect.left + col * cellWidth;
-    const cellTop    = boardRect.top  + row * cellHeight;
-    const cellRight  = cellLeft + cellWidth;
-    const cellBottom = cellTop  + cellHeight;
+      const col = Math.floor((cx - boardRect.left) / cellW);
+      const row = Math.floor((cy - boardRect.top) / cellH);
 
-    const overlapW = Math.max(0, Math.min(r.right, cellRight) - Math.max(r.left, cellLeft));
-    const overlapH = Math.max(0, Math.min(r.bottom, cellBottom) - Math.max(r.top, cellTop));
-    const overlapArea = overlapW * overlapH;
-    const halfArea = r.width * r.height;
+      const cellLeft   = boardRect.left + col * cellW;
+      const cellTop    = boardRect.top  + row * cellH;
+      const cellRight  = cellLeft + cellW;
+      const cellBottom = cellTop  + cellH;
 
-    const overlap = overlapArea / halfArea;
+      const overlapW = Math.max(0, Math.min(r.right, cellRight) - Math.max(r.left, cellLeft));
+      const overlapH = Math.max(0, Math.min(r.bottom, cellBottom) - Math.max(r.top, cellTop));
+      const overlap = (overlapW * overlapH) / ((r.right - r.left) * (r.bottom - r.top));
 
-    console.log(`DRAG: half ${i} overlap`, {
-      row, col, overlap
+      return { row, col, overlap };
     });
 
-    return { row, col, overlap };
-  });
-
-  // ------------------------------------------------------------
-  // Overlap rule (>50%)
-  // ------------------------------------------------------------
-  if (targets.some(t => t.overlap <= 0.5)) {
-    console.log("DRAG: emitPlacementProposal → tray (insufficient overlap)");
-    document.dispatchEvent(new CustomEvent("pips:drop:tray", {
-      detail: { id }
-    }));
-    return;
-  }
-
-  // ------------------------------------------------------------
-  // Emit PlacementProposal
-  // ------------------------------------------------------------
-  console.log("DRAG: emitPlacementProposal → proposal", targets);
-
-  document.dispatchEvent(new CustomEvent("pips:drop:proposal", {
-    detail: {
-      proposal: {
-        id,
-        kind: "drop",
-        row0: targets[0].row,
-        col0: targets[0].col,
-        row1: targets[1].row,
-        col1: targets[1].col
-      }
+    if (targets.some(t => t.overlap <= 0.5)) {
+      document.dispatchEvent(new CustomEvent("pips:drop:tray", {
+        detail: { id }
+      }));
+      return;
     }
-  }));
-}
+
+    // ----------------------------------------------------------
+    // Assign half0 / half1 deterministically
+    // ----------------------------------------------------------
+    const [a, b] = geometry.half0First ? targets : [targets[1], targets[0]];
+
+    document.dispatchEvent(new CustomEvent("pips:drop:proposal", {
+      detail: {
+        proposal: {
+          id,
+          kind: "drop",
+          row0: a.row,
+          col0: a.col,
+          row1: b.row,
+          col1: b.col
+        }
+      }
+    }));
+  }
 
   // ------------------------------------------------------------
   // Wiring
   // ------------------------------------------------------------
   boardEl.addEventListener("pointerdown", pointerDown);
   trayEl.addEventListener("pointerdown", pointerDown);
-  boardEl.addEventListener("pointermove", pointerMove);
-  trayEl.addEventListener("pointermove", pointerMove);
   document.addEventListener("pointermove", pointerMove);
   document.addEventListener("pointerup", pointerUp);
 
