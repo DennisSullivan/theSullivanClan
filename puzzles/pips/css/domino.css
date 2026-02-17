@@ -1,11 +1,9 @@
 /* ============================================================
    FILE: domino.css
-   PURPOSE: Merged domino visuals (preserve your vars + nudge)
-   NOTES: Keeps your original structure and variables; fixes pip
-          grid positions and die-face selectors to render like dice.
+   PURPOSE: Domino rendering + orientation contract
    ============================================================ */
 
-/* Safety defaults if variables are missing (won't override your root) */
+/* Safety defaults */
 :root {
   --_fallback-cell-size: 48px;
   --_fallback-cell-gap: 4px;
@@ -38,15 +36,15 @@
 }
 
 /* -------------------------
-   Domino core (fills wrapper exactly)
+   Domino core
    ------------------------- */
 .domino {
   width: 100%;
   height: 100%;
   display: flex;
-  flex-direction: row;
   background: var(--color-domino-bg, var(--_fallback-color-domino-bg));
-  border: var(--domino-thickness, var(--_fallback-domino-thickness)) solid var(--color-domino-border, var(--_fallback-color-domino-border));
+  border: var(--domino-thickness, var(--_fallback-domino-thickness))
+          solid var(--color-domino-border, var(--_fallback-color-domino-border));
   border-radius: 4px;
   box-sizing: border-box;
   transform-origin: center center;
@@ -54,12 +52,19 @@
   padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.08);
 }
 
-.domino-wrapper.dragging .domino {
-  transform: translate(0, 0) !important;
+/* -------------------------
+   Orientation contract
+   ------------------------- */
+.domino.vertical {
+  flex-direction: column;
+}
+
+.domino:not(.vertical) {
+  flex-direction: row;
 }
 
 /* -------------------------
-   Halves: 3x3 pip grid, no gap
+   Halves (3×3 pip grid)
    ------------------------- */
 .domino .half {
   flex: 1;
@@ -71,16 +76,20 @@
   gap: 0;
   padding: 0;
   font-size: 0;
-  border-right: 1px solid var(--color-domino-border, var(--_fallback-color-domino-border));
   box-sizing: border-box;
 }
 
-.domino .half1 {
-  border-right: none;
+/* Divider orientation */
+.domino.vertical .half + .half {
+  border-top: 1px solid var(--color-domino-border, var(--_fallback-color-domino-border));
+}
+
+.domino:not(.vertical) .half + .half {
+  border-left: 1px solid var(--color-domino-border, var(--_fallback-color-domino-border));
 }
 
 /* -------------------------
-   Pips (NYT proportions) — keep sizing tied to cell size
+   Pips
    ------------------------- */
 .domino .pip {
   width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.095);
@@ -89,16 +98,9 @@
   border-radius: 50%;
   opacity: 0;
   transition: opacity var(--transition-fast, var(--_fallback-transition-fast));
-  justify-self: center;
-  align-self: center;
 }
 
-/* -------------------------
-   Correct 3x3 mapping for pip classes
-   Use grid-row / grid-column explicitly for clarity
-   p1 top-left, p2 top-right, p3 middle-left, p4 middle-right,
-   p5 bottom-left, p6 bottom-right, p7 center
-   ------------------------- */
+/* Pip positions */
 .p1 { grid-area: 2 / 2; }
 .p2 { grid-area: 1 / 1; }
 .p3 { grid-area: 3 / 3; }
@@ -107,43 +109,36 @@
 .p6 { grid-area: 2 / 1; }
 .p7 { grid-area: 2 / 3; }
 
-/* Slightly larger center pip for readability (optional) */
-.p7 { width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.105); height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.105); }
+.p7 {
+  width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.105);
+  height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.105);
+}
 
 /* -------------------------
-   Die-face visibility rules (standard dice mapping)
-   These selectors match the canonical renderer output:
-   .half[data-pip="N"] .pX
+   Die faces
    ------------------------- */
-/* 0: none */
 .domino .half[data-pip="0"] .pip { opacity: 0; }
 
-/* 1: center */
 .domino .half[data-pip="1"] .p1 { opacity: 1; }
 
-/* 2: top-left + bottom-right */
 .domino .half[data-pip="2"] .p2,
 .domino .half[data-pip="2"] .p3 { opacity: 1; }
 
-/* 3: top-left + center + bottom-right */
 .domino .half[data-pip="3"] .p2,
 .domino .half[data-pip="3"] .p1,
 .domino .half[data-pip="3"] .p3 { opacity: 1; }
 
-/* 4: four corners */
 .domino .half[data-pip="4"] .p2,
 .domino .half[data-pip="4"] .p3,
 .domino .half[data-pip="4"] .p4,
 .domino .half[data-pip="4"] .p5 { opacity: 1; }
 
-/* 5: four corners + center */
 .domino .half[data-pip="5"] .p2,
 .domino .half[data-pip="5"] .p3,
 .domino .half[data-pip="5"] .p4,
 .domino .half[data-pip="5"] .p5,
 .domino .half[data-pip="5"] .p1 { opacity: 1; }
 
-/* 6: three left + three right (no center) */
 .domino .half[data-pip="6"] .p2,
 .domino .half[data-pip="6"] .p3,
 .domino .half[data-pip="6"] .p4,
@@ -152,7 +147,7 @@
 .domino .half[data-pip="6"] .p7 { opacity: 1; }
 
 /* -------------------------
-   Visual states (preserve your original classes)
+   Visual states
    ------------------------- */
 .domino.in-tray {
   box-shadow: 0 1px 2px rgba(0,0,0,0.25);
@@ -162,7 +157,7 @@
   box-shadow: none;
 }
 
-/* clone used during dragging — preserve your original rules */
+/* Drag clone */
 .domino-clone {
   position: fixed;
   transform: translate(-50%, -50%);
@@ -181,32 +176,6 @@
   will-change: transform;
 }
 
-.domino-wrapper.on-board.dragging {
-  display: block !important;
-  justify-content: flex-start !important;
-  align-items: flex-start !important;
-}
-
-.domino-wrapper.on-board.debug-box {
-  outline: 2px solid magenta !important;
-}
-
-.domino.on-board.debug-box {
-  outline: 2px solid cyan !important;
-}
-
-.domino {
-  display: flex;
-}
-
-.domino.vertical {
-  flex-direction: column;
-}
-
-.domino:not(.vertical) {
-  flex-direction: row;
-}
-
 /* -------------------------
    Mobile scaling
    ------------------------- */
@@ -219,18 +188,11 @@
   .domino {
     padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
   }
-
-  .domino .half {
-    gap: 0;
-  }
 }
 
 /* -------------------------
-   Debug helpers (preserve)
+   Debug helpers (preserved)
    ------------------------- */
 .domino-wrapper.on-board.debug-outline { outline: 1px dashed rgba(255,0,0,0.6); }
 .domino.on-board.debug-outline { outline: 1px solid rgba(0,255,0,0.6); }
 .board-cell.debug-outline { outline: 1px dotted rgba(0,0,255,0.25); }
-
-/* Theme hook (preserve your variable usage) */
-.domino .pip { background: var(--color-pip, var(--_fallback-color-pip)); }
