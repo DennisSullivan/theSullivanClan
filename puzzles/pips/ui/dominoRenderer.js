@@ -35,6 +35,16 @@ export function renderDomino(domino, wrapper) {
     return;
   }
 
+  console.assert(
+    wrapper.dataset.half0Side,
+    "Renderer requires canonical half0Side"
+  );
+
+  console.assert(
+    !wrapper.dataset.orientation,
+    "Renderer must not receive orientation"
+  );
+
   wrapper.innerHTML = "";
 
   // ------------------------------------------------------------
