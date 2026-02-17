@@ -94,6 +94,14 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     document.body.appendChild(clone);
     dragState.clone = clone;
+    // ----------------------------------------------------------
+    // Ensure clone is visually self-contained when re-parented
+    // ----------------------------------------------------------
+    const inner = clone.querySelector(".domino");
+    if (inner) {
+      inner.style.visibility = "visible";
+      inner.style.opacity = "1";
+    }
 
     console.log("DRAG: clone created", dragState.geometry);
   }
