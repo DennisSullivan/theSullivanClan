@@ -232,7 +232,20 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       targets[1].col = targets[0].col + 1;
     }
 
-    if (targets.some(t => t.overlap <= 0.5)) {
+    if (
+      geometry.orientation === "H"
+        ? targets.some(t => t.overlap <= 0.5)
+        : targets.some(t => {
+            const h = rect.height / 2;
+            const overlapH = Math.max(
+              0,
+              Math.min(t.row * cellH + cellH, rect.bottom) -
+              Math.max(t.row * cellH, rect.top)
+            );
+            return overlapH / h <= 0.5;
+          })
+    ) {
+ {
       document.dispatchEvent(new CustomEvent("pips:drop:tray", {
         detail: { id }
       }));
