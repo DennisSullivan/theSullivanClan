@@ -193,8 +193,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     // Split geometry by SNAPSHOT orientation
     // ----------------------------------------------------------
     let halfRects;
-
-    if (geometry.orientation === "H") {
+    
+    if (isHorizontal) {
       const w = rect.width / 2;
       halfRects = [
         { left: rect.left, right: rect.left + w, top: rect.top, bottom: rect.bottom },
@@ -233,7 +233,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     // ----------------------------------------------------------
     // Enforce adjacency based on orientation
     // ----------------------------------------------------------
-    if (geometry.orientation === "V") {
+    if (!isHorizontal) {
       targets[1].col = targets[0].col;
       targets[1].row = targets[0].row + 1;
     } else {
@@ -242,7 +242,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     }
 
     if (
-      geometry.orientation === "H"
+      isHorizontal
         ? targets.some(t => t.overlap <= 0.5)
         : targets.some(t => {
             const h = rect.height / 2;
@@ -269,7 +269,11 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     // ----------------------------------------------------------
     // Assign half0 / half1 deterministically
     // ----------------------------------------------------------
-    const [a, b] = geometry.half0First ? targets : [targets[1], targets[0]];
+    const half0IsFirst =
+      geometry.half0Side === "left" ||
+      geometry.half0Side === "top";
+    
+    const [a, b] = half0IsFirst ? targets : [targets[1], targets[0]];
 
     document.dispatchEvent(new CustomEvent("pips:drop:proposal", {
       detail: {
