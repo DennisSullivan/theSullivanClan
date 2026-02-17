@@ -221,6 +221,17 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       return { row, col, overlap };
     });
 
+    // ----------------------------------------------------------
+    // Enforce adjacency based on orientation
+    // ----------------------------------------------------------
+    if (geometry.orientation === "V") {
+      targets[1].col = targets[0].col;
+      targets[1].row = targets[0].row + 1;
+    } else {
+      targets[1].row = targets[0].row;
+      targets[1].col = targets[0].col + 1;
+    }
+
     if (targets.some(t => t.overlap <= 0.5)) {
       document.dispatchEvent(new CustomEvent("pips:drop:tray", {
         detail: { id }
