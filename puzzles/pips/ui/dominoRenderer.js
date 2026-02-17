@@ -48,6 +48,15 @@ export function renderDomino(domino, wrapper) {
   // ------------------------------------------------------------
   const inner = document.createElement("div");
   inner.className = "domino";
+  // ------------------------------------------------------------
+  // Orientation (board only)
+  // ------------------------------------------------------------
+  const orientation = wrapper.dataset.orientation;
+  if (orientation === "V") {
+    inner.classList.add("vertical");
+  } else {
+    inner.classList.add("horizontal");
+  }
 
   const half0 = document.createElement("div");
   half0.className = "half half0";
