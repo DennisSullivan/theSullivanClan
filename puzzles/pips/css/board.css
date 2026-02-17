@@ -109,16 +109,12 @@
     rotate(var(--angle));
 }
 
-/* --- Correct wrapper footprint by orientation --- */
-
-/* Horizontal (angle = 0deg) */
-.domino-wrapper.on-board[style*="--angle: 0deg"] {
+.domino-wrapper.on-board[data-orientation="H"] {
   width: calc(var(--cell-size) * 2 + var(--cell-gap));
   height: var(--cell-size);
 }
 
-/* Vertical (angle = 90deg) */
-.domino-wrapper.on-board[style*="--angle: 90deg"] {
+.domino-wrapper.on-board[data-orientation="V"] {
   width: var(--cell-size);
   height: calc(var(--cell-size) * 2 + var(--cell-gap));
 }
