@@ -54,15 +54,6 @@
   padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.08);
 }
 
-/* -------------------------
-   Apply static visual nudge to inner domino
-   ------------------------- */
-.domino.on-board {
-  transform: translate(var(--domino-nudge-x, 0px), var(--domino-nudge-y, 0px));
-  transform-origin: top left;
-  box-sizing: border-box;
-}
-
 .domino-wrapper.dragging .domino {
   transform: translate(0, 0) !important;
 }
@@ -188,11 +179,6 @@
   box-shadow: inherit;
   transition: transform 160ms cubic-bezier(.2,.8,.2,1);
   will-change: transform;
-}
-
-/* Prevent the original wrapper from scaling while we use a clone */
-.domino-wrapper.dragging {
-  transform: none !important;
 }
 
 .domino-wrapper.on-board.dragging {
