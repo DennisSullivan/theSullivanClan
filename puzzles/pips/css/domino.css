@@ -51,6 +51,11 @@
     left 180ms cubic-bezier(.25, .8, .25, 1);
 }
 
+.domino-wrapper.on-board[data-orientation="V"] {
+  width: var(--cell-size, var(--_fallback-cell-size));
+  height: calc(var(--cell-size, var(--_fallback-cell-size)) * 2);
+}
+
 /* -------------------------
    Domino core (fills wrapper exactly)
    ------------------------- */
