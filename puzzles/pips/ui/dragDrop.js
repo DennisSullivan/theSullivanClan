@@ -244,7 +244,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
             );
             return overlapH / h <= 0.5;
           })
-    ) {
+    )
  {
       document.dispatchEvent(new CustomEvent("pips:drop:tray", {
         detail: { id }
