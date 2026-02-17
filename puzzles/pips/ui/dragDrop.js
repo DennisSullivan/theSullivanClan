@@ -184,6 +184,14 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   function emitPlacementProposal(node, id, geometry) {
     if (!node || !geometry) return;
 
+    const isHorizontal =
+      geometry.half0Side === "left" ||
+      geometry.half0Side === "right";
+    
+    console.assert(
+      typeof isHorizontal === "boolean",
+      "Orientation must be derived, not stored"
+    );
     const boardRect = boardEl.getBoundingClientRect();
     const rect = node.getBoundingClientRect();
 
