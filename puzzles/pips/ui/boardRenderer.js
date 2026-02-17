@@ -18,7 +18,7 @@ import { findDominoCells } from "../engine/grid.js";
 //
 //   1. Background board cells (regions + blocked markers)
 //   2. One wrapper per domino present in the grid
-//   3. Delegates domino visuals to renderDomino()
+//   3. Delegates domino visuals to ()
 //
 // This function deliberately derives board membership from
 // grid occupancy rather than domino metadata. If a domino
@@ -114,13 +114,17 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper on-board";
     wrapper.dataset.dominoId = String(d.id);
-
+    
+    // Derive orientation from grid truth
+    const isVertical = cells.length === 2 && cells[0].col === cells[1].col;
+    wrapper.dataset.orientation = isVertical ? "V" : "H";
+    
     wrapper.style.setProperty("--row", String(minRow));
     wrapper.style.setProperty("--col", String(minCol));
-
+    
     // Delegate visual construction to the domino renderer.
     renderDomino(d, wrapper);
-
+    
     boardEl.appendChild(wrapper);
   }
 }
