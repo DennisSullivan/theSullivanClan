@@ -111,6 +111,12 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     clone.style.transform = "translate(-50%, -50%)";
     clone.style.transformOrigin = "center center";
 
+    const style = getComputedStyle(clone);
+    console.assert(
+      !style.transform || style.transform.startsWith("translate"),
+      "Clone wrapper must not be rotated or skewed"
+    );
+
     document.body.appendChild(clone);
     dragState.clone = clone;
     // ----------------------------------------------------------
