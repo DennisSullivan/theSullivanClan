@@ -195,6 +195,18 @@
   outline: 2px solid cyan !important;
 }
 
+.domino {
+  display: flex;
+}
+
+.domino.vertical {
+  flex-direction: column;
+}
+
+.domino:not(.vertical) {
+  flex-direction: row;
+}
+
 /* -------------------------
    Mobile scaling
    ------------------------- */
