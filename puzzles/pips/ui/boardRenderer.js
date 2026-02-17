@@ -100,33 +100,11 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       continue;
     }
 
-    // Determine the top-left anchor of the domino's bounding box.
-    // This ensures consistent wrapper positioning regardless of
-    // orientation.
-    let minRow = Infinity;
-    let minCol = Infinity;
-
-    for (const cell of cells) {
-      minRow = Math.min(minRow, cell.row);
-      minCol = Math.min(minCol, cell.col);
-    }
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "domino-wrapper on-board";
-    wrapper.dataset.dominoId = String(d.id);
+    const half0 = cells.find(c => c.half === 0) || cells[0];
     
-    // Derive orientation from grid truth
-    const isVertical = cells.length === 2 && cells[0].col === cells[1].col;
-    wrapper.dataset.orientation = isVertical ? "V" : "H";
-    
-    wrapper.style.setProperty("--row", String(minRow));
-    wrapper.style.setProperty("--col", String(minCol));
-    
-    if (isVertical) {
-      wrapper.style.setProperty("--domino-nudge-y", "0px");
-      wrapper.style.setProperty("--domino-nudge-x", "0px");
-    }
-    
+    wrapper.style.setProperty("--row", String(half0.row));
+    wrapper.style.setProperty("--col", String(half0.col));
+  
     // Delegate visual construction to the domino renderer.
     renderDomino(d, wrapper);
     
