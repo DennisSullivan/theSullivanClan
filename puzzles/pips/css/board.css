@@ -1,10 +1,12 @@
 /* ============================================================
    FILE: board.css
-   PURPOSE: Board layout + correct wrapper sizing for horizontal
-            and vertical dominos + static nudge alignment.
+   PURPOSE: Board layout + grid‑truth domino placement.
+            Board rendering is orientation‑based, never rotated.
    ============================================================ */
 
-/* 1. ROOT VARIABLES */
+/* ------------------------------------------------------------
+   1. ROOT VARIABLES
+   ------------------------------------------------------------ */
 :root {
   --cell-size: 48px;
   --cell-gap: 4px;
@@ -27,21 +29,23 @@
 
   /* Static nudge:
      (cell-gap/2) + (grid-border/2) - (domino-border/2)
-     With defaults: (4/2) + (1/2) - (1/2) = 2px
+     Defaults → 2px
   */
   --domino-nudge-x: 2px;
   --domino-nudge-y: 2px;
 }
 
-/* 2. BOARD GRID LAYOUT */
+/* ------------------------------------------------------------
+   2. BOARD GRID
+   ------------------------------------------------------------ */
 #board {
   position: relative;
   width: calc((var(--cell-size) + var(--cell-gap)) * 6);
   height: calc((var(--cell-size) + var(--cell-gap)) * 6);
   background: var(--color-bg);
   border: 2px solid #ccc;
-  touch-action: none;
   overflow: hidden;
+  touch-action: none;
 
   display: grid;
   grid-template-columns: repeat(6, calc(var(--cell-size) + var(--cell-gap)));
@@ -49,19 +53,23 @@
 }
 
 .board-cell {
-  border: 1px solid var(--color-grid);
-  box-sizing: border-box;
-  background: transparent;
   position: relative;
+  box-sizing: border-box;
+  border: 1px solid var(--color-grid);
+  background: transparent;
 }
 
-/* 3. REGION COLORS */
+/* ------------------------------------------------------------
+   3. REGION COLORS
+   ------------------------------------------------------------ */
 .board-cell.region-0 { background: var(--color-region-0); }
 .board-cell.region-1 { background: var(--color-region-1); }
 .board-cell.region-2 { background: var(--color-region-2); }
 .board-cell.region-3 { background: var(--color-region-3); }
 
-/* 4. REGION BADGES / OUTLINES */
+/* ------------------------------------------------------------
+   4. REGION BADGES / OUTLINES
+   ------------------------------------------------------------ */
 .badge-layer {
   position: absolute;
   inset: 0;
@@ -89,56 +97,48 @@
   box-sizing: border-box;
 }
 
-/* ============================================================
-   5. DOMINO WRAPPER (BOARD POSITIONING)
-   ============================================================ */
-
+/* ------------------------------------------------------------
+   5. DOMINO WRAPPER — BOARD ONLY
+   ------------------------------------------------------------ */
 .domino-wrapper.on-board {
   position: absolute;
-  pointer-events: auto;
   z-index: 100;
-  transform-origin: center center;
+  pointer-events: auto;
 
-  /* Base placement from renderer */
+  /* Grid‑truth placement */
   left: calc(var(--col) * (var(--cell-size) + var(--cell-gap)));
   top:  calc(var(--row) * (var(--cell-size) + var(--cell-gap)));
 
-  /* Nudge + rotation */
-  transform:
-    translate(var(--domino-nudge-x), var(--domino-nudge-y))
-    rotate(var(--angle));
+  /* Static visual nudge only — NO ROTATION */
+  transform: translate(var(--domino-nudge-x), var(--domino-nudge-y));
 }
 
+/* Horizontal domino footprint */
 .domino-wrapper.on-board[data-orientation="H"] {
   width: calc(var(--cell-size) * 2 + var(--cell-gap));
   height: var(--cell-size);
 }
 
+/* Vertical domino footprint */
 .domino-wrapper.on-board[data-orientation="V"] {
   width: var(--cell-size);
   height: calc(var(--cell-size) * 2 + var(--cell-gap));
 }
 
-/* Remove nudge while dragging */
-.domino-wrapper.on-board.dragging {
-  transform: rotate(var(--angle));
-}
-
+/* Dragging state (board) */
 .domino-wrapper.dragging {
   z-index: 1000;
   pointer-events: none;
 }
 
-/* ============================================================
+/* ------------------------------------------------------------
    6. DOMINO SIZE ON BOARD
-   ============================================================ */
-
+   ------------------------------------------------------------ */
 .domino.on-board {
   position: absolute;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  transform-origin: center center;
 }
 
 .domino.in-tray {
@@ -147,10 +147,9 @@
   height: 100%;
 }
 
-/* ============================================================
+/* ------------------------------------------------------------
    7. PIP SYSTEM (NYT‑STYLE)
-   ============================================================ */
-
+   ------------------------------------------------------------ */
 .domino .pip {
   width: calc(var(--cell-size) * 0.095);
   height: calc(var(--cell-size) * 0.095);
@@ -190,10 +189,9 @@
 .domino .half[data-pip="6"] .p6,
 .domino .half[data-pip="6"] .p7 { opacity: 1; }
 
-/* ============================================================
+/* ------------------------------------------------------------
    8. MOBILE SCALING
-   ============================================================ */
-
+   ------------------------------------------------------------ */
 @media (max-width: 600px) {
   :root { --cell-size: 36px; }
 
@@ -206,16 +204,11 @@
     width: calc(var(--cell-size) * 0.10);
     height: calc(var(--cell-size) * 0.10);
   }
-
-  .domino .half {
-    gap: 0;
-  }
 }
 
-/* ============================================================
+/* ------------------------------------------------------------
    9. DEBUG HELPERS
-   ============================================================ */
-
+   ------------------------------------------------------------ */
 .domino-wrapper.on-board.debug-outline {
   outline: 1px dashed rgba(255,0,0,0.6);
 }
