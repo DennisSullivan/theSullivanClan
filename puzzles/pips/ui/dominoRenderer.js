@@ -35,6 +35,14 @@ export function renderDomino(domino, wrapper) {
     return;
   }
 
+  console.log("RENDERDOMINO ACTIVE", {
+    id: domino?.id,
+    half0Side: wrapper?.dataset?.half0Side,
+    wrapperClass: wrapper?.className
+  });
+  
+  wrapper.style.outline = "3px solid magenta";
+
   console.assert(
     wrapper.dataset.half0Side,
     "Renderer requires canonical half0Side"
