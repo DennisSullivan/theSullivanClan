@@ -300,7 +300,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     
     const [a, b] = half0IsFirst ? targets : [targets[1], targets[0]];
 
-    document.dispatchEvent(new CustomEvent("pips:drop:proposal", {
+    boardEl.dispatchEvent(new CustomEvent("pips:drop:proposal", {
+      bubbles: true,
       detail: {
         proposal: {
           id,
