@@ -6,8 +6,8 @@
 //   - The tray has fixed, non-collapsing slots.
 //   - A domino appears in the tray if and only if it does NOT
 //     occupy any grid cells.
-//   - The grid is canonical; domino metadata is not trusted
-//     for tray/board membership decisions.
+//   - Tray rotation is visual-only (CSS animated).
+//   - Canonical geometry is derived at drag start, not here.
 //   - This module is pure rendering: it never mutates state.
 // ============================================================
 
@@ -16,24 +16,6 @@ import { findDominoCells } from "../engine/grid.js";
 
 // ------------------------------------------------------------
 // renderTray(puzzleJson, dominos, trayEl, grid)
-// Renders all tray slots and places dominos that are not
-// currently present in the grid into their fixed home slots.
-//
-// This function deliberately derives tray membership from
-// grid occupancy rather than domino fields like row0 or
-// location. If a domino occupies any grid cell, it is
-// considered "on the board" and must not appear in the tray.
-//
-// INPUTS:
-//   puzzleJson - original puzzle definition (for slot count)
-//   dominos    - Map or iterable of canonical domino objects
-//   trayEl     - DOM element that owns the tray
-//   grid       - canonical grid occupancy structure
-//
-// GUARANTEES:
-//   - Tray slots never collapse or shift.
-//   - Dominos on the board never appear in the tray.
-//   - Rendering reflects engine truth exactly.
 // ------------------------------------------------------------
 export function renderTray(puzzleJson, dominos, trayEl, grid) {
   if (!trayEl) {
@@ -51,8 +33,6 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
 
   // ----------------------------------------------------------
   // 1. Create fixed tray slots
-  // Each domino has a stable homeSlot assigned at load time.
-  // Slots are always rendered, even if empty.
   // ----------------------------------------------------------
   const slotCount = puzzleJson.dominos.length;
 
@@ -64,15 +44,11 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
   }
 
   // ----------------------------------------------------------
-  // 2. Render dominos that are NOT present in the grid
-  // Grid occupancy is the sole authority for tray membership.
+  // 2. Render dominos NOT present in the grid
   // ----------------------------------------------------------
   const list = dominos instanceof Map ? dominos : new Map(dominos);
 
   for (const [id, d] of list) {
-    // Ask the grid whether this domino occupies any cells.
-    // If it does, it belongs on the board and must not
-    // appear in the tray.
     const cells = findDominoCells(grid, String(d.id));
     if (cells.length > 0) continue;
 
@@ -97,38 +73,21 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
     const wrapper = document.createElement("div");
     wrapper.className = "domino-wrapper in-tray";
     wrapper.dataset.dominoId = String(d.id);
-    wrapper.dataset.trayOrientation = String(d.trayOrientation ?? 0);
 
-    // Pass tray orientation through a CSS variable so the
-    // domino renderer remains geometry-agnostic.
-    if (typeof d.trayOrientation === "number") {
-      wrapper.style.setProperty(
-        "--tray-orientation",
-        `${d.trayOrientation}deg`
-      );
-    }
+    // --------------------------------------------------------
+    // Tray rotation is VISUAL ONLY
+    // Renderer layout remains stable
+    // --------------------------------------------------------
+    wrapper.dataset.half0Side = "left";
 
-    const trayOrientation = ((d.trayOrientation ?? 0) % 360 + 360) % 360;
-    
-    let half0Side;
-    switch (trayOrientation) {
-      case 0:
-        half0Side = "left";
-        break;
-      case 180:
-        half0Side = "right";
-        break;
-      case 90:
-        half0Side = "top";
-        break;
-      case 270:
-        half0Side = "bottom";
-        break;
-      default:
-        half0Side = "left";
-    }
-    
-    wrapper.dataset.half0Side = half0Side;
+    const trayOrientation =
+      ((d.trayOrientation ?? 0) % 360 + 360) % 360;
+
+    wrapper.dataset.trayOrientation = String(trayOrientation);
+    wrapper.style.setProperty(
+      "--tray-orientation",
+      `${trayOrientation}deg`
+    );
 
     renderDomino(d, wrapper);
     slot.appendChild(wrapper);
