@@ -42,23 +42,29 @@ export function loadPuzzle(json) {
   // Apply starting placements
   applyStartingDominos(json.startingDominos || [], dominos, grid);
 
-  state.startingDominoIds = new Set(
-    (json.startingDominos || []).map(d => String(d.id))
-  );
+  // Build region map
+  const regionMap = buildRegionMap(boardRows, boardCols, json.regions || []);
 
   // Build region map
   const regionMap = buildRegionMap(boardRows, boardCols, json.regions || []);
 
-  return {
-  boardRows,
-  boardCols,
-  dominos,
-  grid,
-  regionMap,
-  blocked,
-  regions: json.regions || []
-};
+  // ------------------------------------------------------------
+  // Assemble engine state
+  // ------------------------------------------------------------
+  const state = {
+    boardRows,
+    boardCols,
+    dominos,
+    grid,
+    regionMap,
+    blocked,
+    regions: json.regions || [],
+    startingDominoIds: new Set(
+      (json.startingDominos || []).map(d => String(d.id))
+    )
+  };
 
+  return state;
 }
 
 // ------------------------------------------------------------
