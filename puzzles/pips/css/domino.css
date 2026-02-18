@@ -30,9 +30,9 @@
   pointer-events: auto;
 }
 
-.domino-wrapper.in-tray .domino {
-  transform: rotate(var(--tray-orientation, 0deg));
-  transition: transform 180ms cubic-bezier(.25, .8, .25, 1);
+.domino-wrapper.in-tray {
+  transition: transform 120ms ease-out;
+  transform: rotate(var(--tray-orientation));
 }
 
 /* -------------------------
