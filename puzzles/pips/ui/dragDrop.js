@@ -168,7 +168,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (dragState.moved && id && dragState.clone) {
       console.log("DRAG: pointerUp Good");
       emitPlacementProposal(dragState.clone, id, dragState.geometry);
-    } else (
+    } else {
             console.log("DRAG: pointerUp Bad");
     }
 
