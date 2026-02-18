@@ -78,8 +78,13 @@ export function renderDomino(domino, wrapper) {
   half1.dataset.pip = String(pip1);
   half1.appendChild(createPips());
 
-  inner.appendChild(half0);
-  inner.appendChild(half1);
+  if (half0Side === "right" || half0Side === "bottom") {
+    inner.appendChild(half1);
+    inner.appendChild(half0);
+  } else {
+    inner.appendChild(half0);
+    inner.appendChild(half1);
+  }
   wrapper.appendChild(inner);
 
   // ------------------------------------------------------------
