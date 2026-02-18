@@ -108,6 +108,28 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
       );
     }
 
+    const trayOrientation = ((d.trayOrientation ?? 0) % 360 + 360) % 360;
+    
+    let half0Side;
+    switch (trayOrientation) {
+      case 0:
+        half0Side = "left";
+        break;
+      case 180:
+        half0Side = "right";
+        break;
+      case 90:
+        half0Side = "top";
+        break;
+      case 270:
+        half0Side = "bottom";
+        break;
+      default:
+        half0Side = "left";
+    }
+    
+    wrapper.dataset.half0Side = half0Side;
+
     renderDomino(d, wrapper);
     slot.appendChild(wrapper);
   }
