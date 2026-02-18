@@ -211,10 +211,18 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       rect.bottom <= boardRect.top ||
       rect.top    >= boardRect.bottom
     ) {
-      boardEl.dispatchEvent(new CustomEvent("pips:drop:tray", {
-        detail: { id }
-      }));
-      return;
+    boardEl.dispatchEvent(new CustomEvent("pips:drop:proposal", {
+      bubbles: true,
+      detail: {
+        proposal: {
+          id,
+          row0: a.row,
+          col0: a.col,
+          row1: b.row,
+          col1: b.col
+        }
+      }
+    }));
     }
 
     // ----------------------------------------------------------
@@ -287,10 +295,18 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
             return overlapH / h <= 0.5;
           })
     ) {
-      boardEl.dispatchEvent(new CustomEvent("pips:drop:tray", {
-        detail: { id }
-      }));
-      return;
+    boardEl.dispatchEvent(new CustomEvent("pips:drop:proposal", {
+      bubbles: true,
+      detail: {
+        proposal: {
+          id,
+          row0: a.row,
+          col0: a.col,
+          row1: b.row,
+          col1: b.col
+        }
+      }
+    }));
     }
 
 
