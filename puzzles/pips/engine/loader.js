@@ -42,6 +42,10 @@ export function loadPuzzle(json) {
   // Apply starting placements
   applyStartingDominos(json.startingDominos || [], dominos, grid);
 
+  state.startingDominoIds = new Set(
+    (json.startingDominos || []).map(d => String(d.id))
+  );
+
   // Build region map
   const regionMap = buildRegionMap(boardRows, boardCols, json.regions || []);
 
