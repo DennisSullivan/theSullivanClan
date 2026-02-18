@@ -8,8 +8,6 @@
 //  - On session end we emit 'pips:board-rotate-request'.
 // ============================================================
 
-import { rotateDominoOnBoard } from "../engine/placement.js";
-
 let rotatingDomino = null;
 let rotatingPrev = null;
 let rotatingPivot = 0;
