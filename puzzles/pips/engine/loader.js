@@ -45,9 +45,6 @@ export function loadPuzzle(json) {
   // Build region map
   const regionMap = buildRegionMap(boardRows, boardCols, json.regions || []);
 
-  // Build region map
-  const regionMap = buildRegionMap(boardRows, boardCols, json.regions || []);
-
   // ------------------------------------------------------------
   // Assemble engine state
   // ------------------------------------------------------------
