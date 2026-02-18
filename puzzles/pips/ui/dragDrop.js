@@ -17,7 +17,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     startX: 0,
     startY: 0,
     moved: false,
-    geometry: null
+    geometry: null,
+    pointerId: null
   };
 
   // ------------------------------------------------------------
@@ -28,12 +29,16 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (!wrapper) return;
     if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
 
+    ev.preventDefault();
+    ev.target.setPointerCapture(ev.pointerId);
+
     dragState.active = true;
     dragState.wrapper = wrapper;
     dragState.startX = ev.clientX;
     dragState.startY = ev.clientY;
     dragState.moved = false;
     dragState.geometry = null;
+    dragState.pointerId = ev.pointerId;
   }
 
   // ------------------------------------------------------------
@@ -79,6 +84,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
   function pointerMove(ev) {
     if (!dragState.active) return;
+    if (ev.pointerId !== dragState.pointerId) return;
 
     const dx = ev.clientX - dragState.startX;
     const dy = ev.clientY - dragState.startY;
@@ -96,7 +102,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
   // pointerUp
   // ------------------------------------------------------------
-  function pointerUp() {
+  function pointerUp(ev) {
+    if (ev.pointerId !== dragState.pointerId) return;
+
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
 
@@ -107,11 +115,16 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (dragState.clone) dragState.clone.remove();
     if (wrapper) wrapper.style.visibility = "visible";
 
+    try {
+      ev.target.releasePointerCapture(ev.pointerId);
+    } catch {}
+
     dragState.active = false;
     dragState.wrapper = null;
     dragState.clone = null;
     dragState.geometry = null;
     dragState.moved = false;
+    dragState.pointerId = null;
   }
 
   // ------------------------------------------------------------
@@ -185,8 +198,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
   // Wiring
   // ------------------------------------------------------------
-  boardEl.addEventListener("pointerdown", pointerDown);
-  trayEl.addEventListener("pointerdown", pointerDown);
+  document.addEventListener("pointerdown", pointerDown);
   document.addEventListener("pointermove", pointerMove);
   document.addEventListener("pointerup", pointerUp);
 }
