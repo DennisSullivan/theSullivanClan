@@ -84,12 +84,12 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     };
 
     console.assert(
-      geometry && typeof geometry.half0Side === "string",
+      dragState.geometry && typeof dragState.geometry.half0Side === "string",
       "Drag snapshot must contain half0Side"
     );
     
     console.assert(
-      !("orientation" in geometry),
+      !("orientation" in dragState.geometry),
       "Orientation must not be stored in drag geometry"
     );
 
@@ -113,7 +113,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     const style = getComputedStyle(clone);
     console.assert(
-      !style.transform || style.transform.startsWith("translate"),
+      !style.transform ||
+      style.transform === "none" ||
+      style.transform.includes("matrix(1"),
       "Clone wrapper must not be rotated or skewed"
     );
 
