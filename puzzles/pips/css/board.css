@@ -104,6 +104,8 @@
   position: absolute;
   z-index: 100;
   pointer-events: auto;
+  width: calc(var(--cell-size) * 2);
+  height: var(--cell-size);
 
   /* Grid‑truth placement */
   left: calc(var(--col) * (var(--cell-size) + var(--cell-gap)));
@@ -111,6 +113,18 @@
 
   /* Static visual nudge only — NO ROTATION */
   transform: translate(var(--domino-nudge-x), var(--domino-nudge-y));
+}
+
+.domino-wrapper.on-board {
+  position: absolute;
+  width: calc(var(--cell-size) * 2);
+  height: var(--cell-size);
+}
+
+.domino-wrapper.on-board[data-half0-side="top"],
+.domino-wrapper.on-board[data-half0-side="bottom"] {
+  width: var(--cell-size);
+  height: calc(var(--cell-size) * 2);
 }
 
 /* Horizontal domino footprint */
