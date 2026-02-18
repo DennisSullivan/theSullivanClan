@@ -30,7 +30,7 @@
   pointer-events: auto;
 }
 
-.domino-wrapper.in-tray domino {
+.domino-wrapper.in-tray .domino {
   transition: transform 120ms ease-out;
   transform: rotate(var(--tray-orientation));
 }
