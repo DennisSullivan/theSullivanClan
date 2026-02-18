@@ -169,7 +169,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       console.log("DRAG: pointerUp Good");
       emitPlacementProposal(dragState.clone, id, dragState.geometry);
     } else (
-            console.log("DRAG: pointerUp Bad)");
+            console.log("DRAG: pointerUp Bad");
     }
 
     if (dragState.clone) dragState.clone.remove();
