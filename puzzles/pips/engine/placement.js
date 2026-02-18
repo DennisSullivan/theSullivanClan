@@ -219,6 +219,15 @@ export function placeDominoAnchor(domino, r0, c0, r1, c1, grid) {
     return false;
   }
 
+  // ------------------------------------------------------------
+  // FAILURE RULE: Engine must agree with UI geometry exactly
+  // ------------------------------------------------------------
+  console.assert(
+    Math.abs(r0 - r1) + Math.abs(c0 - c1) === 1,
+    "FATAL: Engine received non-adjacent placement anchors",
+    { r0, c0, r1, c1 }
+  );
+  
   const rows = grid.length;
   const cols = grid[0]?.length || 0;
   const idStr = toIdStr(domino.id);
