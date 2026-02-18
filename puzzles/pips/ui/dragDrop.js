@@ -166,7 +166,10 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const id = wrapper?.dataset.dominoId;
 
     if (dragState.moved && id && dragState.clone) {
+      console.log("DRAG: pointerUp Good");
       emitPlacementProposal(dragState.clone, id, dragState.geometry);
+    } else (
+            console.log("DRAG: pointerUp Bad)");
     }
 
     if (dragState.clone) dragState.clone.remove();
