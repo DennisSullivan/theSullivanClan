@@ -86,20 +86,23 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const isVertical =
       cells.length === 2 && cells[0].col === cells[1].col;
 
+    const cell0 = cells.find(c => c.half === 0);
+    const cell1 = cells.find(c => c.half === 1);
+    
     let half0Side;
     
-    if (cells.length === 2) {
-      const [a, b] = cells;
-    
-      if (a.row === b.row) {
-        half0Side = a.col < b.col ? "left" : "right";
+    if (cell0 && cell1) {
+      if (cell0.row === cell1.row) {
+        half0Side = cell0.col < cell1.col ? "left" : "right";
       } else {
-        half0Side = a.row < b.row ? "top" : "bottom";
+        half0Side = cell0.row < cell1.row ? "top" : "bottom";
       }
     } else {
       half0Side = "left"; // defensive fallback
     }
     
+    wrapper.dataset.half0Side = half0Side;
+   
     wrapper.dataset.half0Side = half0Side;
 
     wrapper.style.setProperty("--row", String(half0.row));
