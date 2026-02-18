@@ -56,8 +56,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     // ----------------------------------------------------------
     // Snapshot logical geometry ONCE
     // ----------------------------------------------------------
-    const trayOrientation = Number(wrapper.dataset.trayOrientation || 0) % 360;
-    
+    const trayOrientation = ((Number(wrapper.dataset.trayOrientation) || 0) % 360 + 360) % 360;
     // Canonical board geometry: half0 relative to half1
     // No orientation, no rotation stored
     let half0Side;
