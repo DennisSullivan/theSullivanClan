@@ -45,7 +45,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // beginRealDrag
   // ------------------------------------------------------------
   function beginRealDrag(wrapper, x, y) {
-    wrapper.style.visibility = "hidden";
+    //wrapper.style.visibility = "hidden";
     dragState.moved = true;
 
     const trayOrientation =
