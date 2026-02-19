@@ -98,10 +98,11 @@
    ------------------------------------------------------------ */
 .badge-layer {
   position: absolute;
-  inset: 0;
   pointer-events: none;
   z-index: 30;
-  transform: translate(-3px, -3px);
+  transform: translate(4px, 4px);
+  width: max-content;
+  height: max-content;
 }
 
 .badge {
