@@ -80,16 +80,9 @@
 }
 
 .board-cell.blocked {
-  visibility: hidden;
+  background: #444;
+  border: 1px solid #444;
   pointer-events: none;
-}
-
-.board-cell.blocked::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  background: var(--color-bg);
-  z-index: 1;
 }
 
 /* ------------------------------------------------------------
