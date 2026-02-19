@@ -79,12 +79,8 @@
   border: none; /* grid lines are drawn by #board */
 }
 
-/* Blocked cells are visually outside the grid */
 .board-cell.blocked {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  pointer-events: none;
+  display: none;
 }
 
 /* ------------------------------------------------------------
