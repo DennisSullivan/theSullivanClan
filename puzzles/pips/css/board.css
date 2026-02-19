@@ -80,7 +80,8 @@
 }
 
 .board-cell.blocked {
-  display: none;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* ------------------------------------------------------------
