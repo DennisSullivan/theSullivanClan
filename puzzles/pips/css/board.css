@@ -84,6 +84,14 @@
   pointer-events: none;
 }
 
+.board-cell.blocked::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: var(--color-bg);
+  z-index: 1;
+}
+
 /* ------------------------------------------------------------
    4. REGION COLORS
    ------------------------------------------------------------ */
