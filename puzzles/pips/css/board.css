@@ -96,15 +96,6 @@
 /* ------------------------------------------------------------
    5. REGION BADGES / OUTLINES
    ------------------------------------------------------------ */
-.badge-layer {
-  position: absolute;
-  pointer-events: none;
-  z-index: 30;
-  transform: translate(4px, 4px);
-  width: max-content;
-  height: max-content;
-}
-
 .badge {
   border: 1px solid;
   border-radius: 3px;
@@ -113,6 +104,15 @@
   line-height: 1;
   color: #222;
   background: transparent;
+}
+
+.badge-layer {
+  position: absolute;
+  pointer-events: none;
+  z-index: 30;
+  transform: translate(4px, 4px);
+  width: max-content;
+  height: max-content;
 }
 
 .region-outline {
