@@ -59,6 +59,13 @@
   background: transparent;
 }
 
+.board-cell.blocked {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+
 /* ------------------------------------------------------------
    3. REGION COLORS
    ------------------------------------------------------------ */
