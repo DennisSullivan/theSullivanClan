@@ -36,13 +36,30 @@
 }
 
 /* ------------------------------------------------------------
-   2. BOARD GRID
+   2. BOARD GRID (GRID LINES LIVE HERE)
    ------------------------------------------------------------ */
 #board {
   position: relative;
   width: calc((var(--cell-size) + var(--cell-gap)) * 6);
   height: calc((var(--cell-size) + var(--cell-gap)) * 6);
-  background: var(--color-bg);
+
+  background:
+    repeating-linear-gradient(
+      to right,
+      var(--color-grid) 0,
+      var(--color-grid) 1px,
+      transparent 1px,
+      transparent calc(var(--cell-size) + var(--cell-gap))
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--color-grid) 0,
+      var(--color-grid) 1px,
+      transparent 1px,
+      transparent calc(var(--cell-size) + var(--cell-gap))
+    ),
+    var(--color-bg);
+
   border: 2px solid #ccc;
   overflow: hidden;
   touch-action: none;
@@ -52,13 +69,17 @@
   grid-template-rows: repeat(6, calc(var(--cell-size) + var(--cell-gap)));
 }
 
+/* ------------------------------------------------------------
+   3. BOARD CELLS
+   ------------------------------------------------------------ */
 .board-cell {
   position: relative;
   box-sizing: border-box;
-  border: 1px solid var(--color-grid);
   background: transparent;
+  border: none; /* grid lines are drawn by #board */
 }
 
+/* Blocked cells are visually outside the grid */
 .board-cell.blocked {
   background: transparent;
   border: none;
@@ -67,7 +88,7 @@
 }
 
 /* ------------------------------------------------------------
-   3. REGION COLORS
+   4. REGION COLORS
    ------------------------------------------------------------ */
 .board-cell.region-0 { background: var(--color-region-0); }
 .board-cell.region-1 { background: var(--color-region-1); }
@@ -75,7 +96,7 @@
 .board-cell.region-3 { background: var(--color-region-3); }
 
 /* ------------------------------------------------------------
-   4. REGION BADGES / OUTLINES
+   5. REGION BADGES / OUTLINES
    ------------------------------------------------------------ */
 .badge-layer {
   position: absolute;
@@ -105,7 +126,7 @@
 }
 
 /* ------------------------------------------------------------
-   5. DOMINO WRAPPER — BOARD ONLY
+   6. DOMINO WRAPPER — BOARD ONLY
    ------------------------------------------------------------ */
 .domino-wrapper.on-board {
   position: absolute;
@@ -139,7 +160,7 @@
 }
 
 /* ------------------------------------------------------------
-   6. DOMINO SIZE ON BOARD
+   7. DOMINO SIZE ON BOARD
    ------------------------------------------------------------ */
 .domino.on-board {
   position: absolute;
@@ -153,11 +174,6 @@
   width: 100%;
   height: 100%;
 }
-
-/* ------------------------------------------------------------
-   7. (REMOVED)
-   Pip rendering lives in domino.css by contract.
-   ------------------------------------------------------------ */
 
 /* ------------------------------------------------------------
    8. MOBILE SCALING
