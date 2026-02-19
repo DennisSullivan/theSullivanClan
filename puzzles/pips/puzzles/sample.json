@@ -1,9 +1,9 @@
 {
-  "id": "sample-4x9-basic",
-  "title": "4x9 Basic Rectangle Test",
+  "id": "sample-6x6-orientation-test",
+  "title": "6x6 Starting Domino Orientation Test",
 
-  "width": 9,
-  "height": 4,
+  "width": 6,
+  "height": 6,
 
   "dominos": [
     "00","01","02","03","04","05","06",
@@ -15,57 +15,40 @@
     "66"
   ],
 
-  "startingDominos": [],
+  "startingDominos": [
+    { "domino": "20", "cells": [ {"row":0,"col":0}, {"row":0,"col":1} ] },   // 0°
+    { "domino": "22", "cells": [ {"row":1,"col":1}, {"row":2,"col":1} ] },   // 90°
+    { "domino": "30", "cells": [ {"row":0,"col":3}, {"row":0,"col":2} ] },   // 180°
+    { "domino": "33", "cells": [ {"row":3,"col":0}, {"row":2,"col":0} ] },   // 270°
+    { "domino": "60", "cells": [ {"row":4,"col":4}, {"row":4,"col":5} ] },   // 0°
+    { "domino": "66", "cells": [ {"row":5,"col":3}, {"row":4,"col":3} ] }    // 90°
+  ],
+
   "blocked": [],
 
   "regions": [
-    {
-      "id": 0,
-      "cells": [
-        {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},
-        {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2}
-      ],
-      "rule": "<4"
-    },
-    {
-      "id": 1,
-      "cells": [
-        {"row":0,"col":3},{"row":0,"col":4},{"row":0,"col":5},
-        {"row":1,"col":3},{"row":1,"col":4},{"row":1,"col":5}
-      ],
-      "rule": "=5"
-    },
-    {
-      "id": 2,
-      "cells": [
-        {"row":0,"col":6},{"row":0,"col":7},{"row":0,"col":8},
-        {"row":1,"col":6},{"row":1,"col":7},{"row":1,"col":8}
-      ],
-      "rule": ">8"
-    },
-    {
-      "id": 3,
-      "cells": [
-        {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},
-        {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2}
-      ],
-      "rule": "6"
-    },
-    {
-      "id": 4,
-      "cells": [
-        {"row":2,"col":3},{"row":2,"col":4},{"row":2,"col":5},
-        {"row":3,"col":3},{"row":3,"col":4},{"row":3,"col":5}
-      ],
-      "rule": "<7"
-    },
-    {
-      "id": 5,
-      "cells": [
-        {"row":2,"col":6},{"row":2,"col":7},{"row":2,"col":8},
-        {"row":3,"col":6},{"row":3,"col":7},{"row":3,"col":8}
-      ],
-      "rule": ">3"
-    }
+    { "id":0, "cells":[
+      {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},
+      {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},
+      {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2}
+    ], "rule":"6" },
+
+    { "id":1, "cells":[
+      {"row":0,"col":3},{"row":0,"col":4},{"row":0,"col":5},
+      {"row":1,"col":3},{"row":1,"col":4},{"row":1,"col":5},
+      {"row":2,"col":3},{"row":2,"col":4},{"row":2,"col":5}
+    ], "rule":"=2" },
+
+    { "id":2, "cells":[
+      {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},
+      {"row":4,"col":0},{"row":4,"col":1},{"row":4,"col":2},
+      {"row":5,"col":0},{"row":5,"col":1},{"row":5,"col":2}
+    ], "rule":"<3" },
+
+    { "id":3, "cells":[
+      {"row":3,"col":3},{"row":3,"col":4},{"row":3,"col":5},
+      {"row":4,"col":3},{"row":4,"col":4},{"row":4,"col":5},
+      {"row":5,"col":3},{"row":5,"col":4},{"row":5,"col":5}
+    ], "rule":">12" }
   ]
 }
