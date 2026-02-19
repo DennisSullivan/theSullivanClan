@@ -1,11 +1,11 @@
 // ============================================================
 // FILE: badgeRenderer.js
-// PURPOSE: Render region rule badges at the top-left corner of
-//          each region's bounding box.
+// PURPOSE: Render region rule badges anchored to the top-left
+//          actual cell of each region.
 // NOTES:
 //   - Pure UI: reads regions array, never mutates engine state.
 //   - Each region with a rule gets a floating badge.
-//   - Badge position is computed from region.cells.
+//   - Badge anchor is derived from region.cells, not bounding boxes.
 //   - Medium diagnostics for impossible branches.
 // ============================================================
 
@@ -20,8 +20,8 @@
  *
  * BEHAVIOR:
  *   - Removes old .badge-layer elements.
- *   - Computes bounding box for each region.
- *   - Places a badge at the top-left cell of that box.
+ *   - Chooses the top-leftmost actual region cell as anchor.
+ *   - Places a badge relative to that cell.
  *   - Applies region color via CSS variables.
  *
  * PURE FUNCTION:
@@ -43,33 +43,31 @@ export function renderRegionBadges(regions, boardEl) {
 
   // Remove any existing badges.
   const oldLayers = boardEl.querySelectorAll(".badge-layer");
-  oldLayers.forEach((el) => el.remove());
+  oldLayers.forEach(el => el.remove());
 
   for (const region of regions) {
     // Skip regions without rules.
     if (!region.rule) continue;
 
-    // Defensive: region.cells must exist and be an array.
+    // Defensive: region.cells must exist and be non-empty.
     if (!Array.isArray(region.cells) || region.cells.length === 0) {
       console.error("renderRegionBadges: region has no cells", region);
       continue;
     }
 
-    // Compute bounding box.
-    let minRow = Infinity;
-    let minCol = Infinity;
+    // Choose the top-leftmost actual region cell.
+    const anchorCell = region.cells
+      .slice()
+      .sort((a, b) => a.row - b.row || a.col - b.col)[0];
 
-    for (const cell of region.cells) {
-      if (typeof cell.row !== "number" || typeof cell.col !== "number") {
-        console.error("renderRegionBadges: invalid cell in region", { region, cell });
-        continue;
-      }
-      if (cell.row < minRow) minRow = cell.row;
-      if (cell.col < minCol) minCol = cell.col;
-    }
-
-    if (!Number.isFinite(minRow) || !Number.isFinite(minCol)) {
-      console.error("renderRegionBadges: could not compute bounding box", region);
+    if (
+      typeof anchorCell.row !== "number" ||
+      typeof anchorCell.col !== "number"
+    ) {
+      console.error("renderRegionBadges: invalid anchor cell", {
+        region,
+        anchorCell
+      });
       continue;
     }
 
@@ -77,16 +75,20 @@ export function renderRegionBadges(regions, boardEl) {
     const layer = document.createElement("div");
     layer.className = "badge-layer";
 
-    // Position using CSS variables.
-    layer.style.left = `calc(${minCol} * var(--cell-size))`;
-    layer.style.top = `calc(${minRow} * var(--cell-size))`;
+    // Position using grid math (cell size + gap).
+    layer.style.left = `calc(${anchorCell.col} * (var(--cell-size) + var(--cell-gap)))`;
+    layer.style.top  = `calc(${anchorCell.row} * (var(--cell-size) + var(--cell-gap)))`;
 
     // Create badge.
     const badge = document.createElement("div");
     badge.className = "badge";
 
     // region.rule may be an object {op, value} or a string/number.
-    if (typeof region.rule === "object" && region.rule.op && region.rule.value != null) {
+    if (
+      typeof region.rule === "object" &&
+      region.rule.op &&
+      region.rule.value != null
+    ) {
       badge.textContent = `${region.rule.op}${region.rule.value}`;
     } else {
       badge.textContent = String(region.rule);
@@ -97,7 +99,10 @@ export function renderRegionBadges(regions, boardEl) {
       badge.style.background = `var(--color-region-${region.id})`;
       badge.style.borderColor = `var(--color-region-${region.id})`;
     } else {
-      console.warn("renderRegionBadges: region missing id; badge will use default colors", region);
+      console.warn(
+        "renderRegionBadges: region missing id; badge will use default colors",
+        region
+      );
     }
 
     layer.appendChild(badge);
