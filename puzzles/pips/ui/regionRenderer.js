@@ -74,9 +74,8 @@ export function renderRegions(regionMap, boardEl) {
     // Apply region class if regionId is a valid non-negative number.
     if (typeof regionId === "number" && regionId >= 0) {
       cell.classList.add(`region-${regionId}`);
-    } else if (regionId !== null && regionId !== undefined) {
-      // If regionId exists but is not a valid number, log it.
-      console.warn("renderRegions: unexpected regionId value", {
+    } else if (typeof regionId !== "number") {
+      console.error("renderRegions: invalid regionId value", {
         row,
         col,
         regionId
