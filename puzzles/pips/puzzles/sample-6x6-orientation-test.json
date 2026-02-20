@@ -16,12 +16,12 @@
   ],
 
   "startingDominos": [
-    { "domino": "20", "cells": [ {"row":0,"col":0}, {"row":0,"col":1} ] },   // 0°
-    { "domino": "22", "cells": [ {"row":1,"col":1}, {"row":2,"col":1} ] },   // 90°
-    { "domino": "30", "cells": [ {"row":0,"col":3}, {"row":0,"col":2} ] },   // 180°
-    { "domino": "33", "cells": [ {"row":3,"col":0}, {"row":2,"col":0} ] },   // 270°
-    { "domino": "60", "cells": [ {"row":4,"col":4}, {"row":4,"col":5} ] },   // 0°
-    { "domino": "66", "cells": [ {"row":5,"col":3}, {"row":4,"col":3} ] }    // 90°
+    { "domino": "20", "cells": [ {"row":0,"col":0}, {"row":0,"col":1} ] },
+    { "domino": "22", "cells": [ {"row":1,"col":1}, {"row":2,"col":1} ] },
+    { "domino": "30", "cells": [ {"row":0,"col":3}, {"row":0,"col":2} ] }, 
+    { "domino": "33", "cells": [ {"row":3,"col":0}, {"row":2,"col":0} ] },
+    { "domino": "60", "cells": [ {"row":4,"col":4}, {"row":4,"col":5} ] }, 
+    { "domino": "66", "cells": [ {"row":5,"col":3}, {"row":4,"col":3} ] }
   ],
 
   "blocked": [],
