@@ -47,28 +47,35 @@ export function validateStructure(puzzleDef) {
     ? new Set(puzzleDef.blocked.map(c => `${c.row},${c.col}`))
     : new Set();
 
-  // ------------------------------------------------------------
-  // Invariant: playableCellCount === 2 × dominoCount
-  // (startingDominos are already placed; dominos are tray inventory)
-  // ------------------------------------------------------------
-  const dominoCount = puzzleDef.dominoCount;
+// ------------------------------------------------------------
+// Invariant: tray dominos must exactly tile all free cells
+// ------------------------------------------------------------
+if (
+  typeof width === "number" &&
+  typeof height === "number" &&
+  Array.isArray(puzzleDef.dominos)
+) {
+  const totalCells = width * height;
+  const blockedCount = blockedSet.size;
 
-  if (
-    typeof width === "number" &&
-    typeof height === "number" &&
-    typeof dominoCount === "number"
-  ) {
-    const totalCells = width * height;
-    const playableCellCount = totalCells - blockedSet.size;
+  const startingCellCount = Array.isArray(puzzleDef.startingDominos)
+    ? puzzleDef.startingDominos.reduce(
+        (sum, d) => sum + (Array.isArray(d.cells) ? d.cells.length : 0),
+        0
+      )
+    : 0;
 
-    if (playableCellCount !== 2 * dominoCount) {
-      errors.push({
-        code: "DOMINO_COUNT_MISMATCH",
-        message: "Playable cell count must equal 2 × dominoCount.",
-        path: "/dominoCount"
-      });
-    }
+  const freeCellCount = totalCells - blockedCount - startingCellCount;
+  const trayDominoCount = puzzleDef.dominos.length;
+
+  if (freeCellCount !== 2 * trayDominoCount) {
+    errors.push({
+      code: "TRAY_DOMINO_COUNT_MISMATCH",
+      message: "Tray dominos must exactly tile all free board cells.",
+      path: "/dominos"
+    });
   }
+}
 
 // ------------------------------------------------------------
 // Invariant: playable cell count must be even
