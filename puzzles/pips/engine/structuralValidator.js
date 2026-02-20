@@ -94,27 +94,6 @@ export function validateStructure(puzzleDef) {
   }
 
   // ------------------------------------------------------------
-  // Invariant: region cells must be playable
-  // (blocked cells only; starting dominos are allowed)
-  // ------------------------------------------------------------
-  if (Array.isArray(puzzleDef.regions)) {
-    puzzleDef.regions.forEach((region, index) => {
-      if (!Array.isArray(region.cells)) return;
-
-      region.cells.forEach(cell => {
-        const key = `${cell.row},${cell.col}`;
-        if (blockedSet.has(key)) {
-          errors.push({
-            code: "REGION_ON_BLOCKED_CELL",
-            message: "Region includes a blocked cell.",
-            path: `/regions/${index}`
-          });
-        }
-      });
-    });
-  }
-
-  // ------------------------------------------------------------
   // Invariant: regions must not overlap
   // ------------------------------------------------------------
   const regionOccupied = new Set();
@@ -136,28 +115,6 @@ export function validateStructure(puzzleDef) {
         }
       });
     });
-  }
-
-  // ------------------------------------------------------------
-  // Invariant: every playable cell must belong to exactly one region
-  // ------------------------------------------------------------
-  if (typeof width === "number" && typeof height === "number" && Array.isArray(puzzleDef.regions)) {
-    for (let row = 0; row < height; row++) {
-      for (let col = 0; col < width; col++) {
-        const key = `${row},${col}`;
-        if (blockedSet.has(key)) continue;
-
-        if (!regionOccupied.has(key)) {
-          errors.push({
-            code: "REGION_COVERAGE_INCOMPLETE",
-            message: "Every playable cell must belong to exactly one region.",
-            path: "/regions"
-          });
-          row = height;
-          break;
-        }
-      }
-    }
   }
 
   // ------------------------------------------------------------
