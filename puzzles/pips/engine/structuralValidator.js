@@ -11,6 +11,36 @@ export function validateStructure(puzzleDef) {
   const width = puzzleDef.width;
   const height = puzzleDef.height;
 
+  // ------------------------------------------------------------
+  // Invariant: region cells must be within board bounds
+  // ------------------------------------------------------------
+  if (
+    typeof width === "number" &&
+    typeof height === "number" &&
+    Array.isArray(puzzleDef.regions)
+  ) {
+    puzzleDef.regions.forEach((region, index) => {
+      if (!Array.isArray(region.cells)) return;
+  
+      region.cells.forEach(cell => {
+        const { row, col } = cell;
+  
+        if (
+          typeof row !== "number" ||
+          typeof col !== "number" ||
+          row < 0 || row >= height ||
+          col < 0 || col >= width
+        ) {
+          errors.push({
+            code: "REGION_CELL_OUT_OF_BOUNDS",
+            message: "Region cell is outside board bounds.",
+            path: `/regions/${index}`
+          });
+        }
+      });
+    });
+  }
+
   const blockedSet = Array.isArray(puzzleDef.blocked)
     ? new Set(puzzleDef.blocked.map(c => `${c.row},${c.col}`))
     : new Set();
