@@ -142,7 +142,7 @@ export async function loadAndStart(url) {
     const validation = validateStructure(json);
     
     if (validation.status === "Rejected") {
-      console.error("Structural validation failed:", validation.errors);
+      console.error("Structural validation failed:", validation);
       return validation;
     }
 
