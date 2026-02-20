@@ -88,7 +88,7 @@ function loadDominos(idList) {
 // ------------------------------------------------------------
 function applyStartingDominos(startingList, dominos, grid) {
   for (const entry of startingList) {
-    const { id, cells } = entry;
+    const { domino: id, cells } = entry;
     const d = dominos.get(id);
 
     const r0 = cells[0].row;
