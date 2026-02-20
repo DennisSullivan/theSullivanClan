@@ -17,6 +17,7 @@ export function validateStructure(puzzleDef) {
 
   // ------------------------------------------------------------
   // Invariant: playableCellCount === 2 × dominoCount
+  // (startingDominos are already placed; dominos are tray inventory)
   // ------------------------------------------------------------
   const dominoCount = puzzleDef.dominoCount;
 
@@ -36,9 +37,9 @@ export function validateStructure(puzzleDef) {
   // ------------------------------------------------------------
   // Invariant: starting dominos must not occupy blocked cells
   // ------------------------------------------------------------
-  if (Array.isArray(puzzleDef.dominos)) {
-    puzzleDef.dominos.forEach((domino, index) => {
-      if (!domino.cells) return;
+  if (Array.isArray(puzzleDef.startingDominos)) {
+    puzzleDef.startingDominos.forEach((domino, index) => {
+      if (!Array.isArray(domino.cells)) return;
 
       domino.cells.forEach(cell => {
         const key = `${cell.row},${cell.col}`;
@@ -46,7 +47,7 @@ export function validateStructure(puzzleDef) {
           errors.push({
             code: "DOMINO_ON_BLOCKED_CELL",
             message: "Starting domino occupies a blocked cell.",
-            path: `/dominos/${index}`
+            path: `/startingDominos/${index}`
           });
         }
       });
@@ -56,11 +57,11 @@ export function validateStructure(puzzleDef) {
   // ------------------------------------------------------------
   // Invariant: starting dominos must not overlap
   // ------------------------------------------------------------
-  if (Array.isArray(puzzleDef.dominos)) {
+  if (Array.isArray(puzzleDef.startingDominos)) {
     const occupied = new Set();
 
-    puzzleDef.dominos.forEach((domino, index) => {
-      if (!domino.cells) return;
+    puzzleDef.startingDominos.forEach((domino, index) => {
+      if (!Array.isArray(domino.cells)) return;
 
       domino.cells.forEach(cell => {
         const key = `${cell.row},${cell.col}`;
@@ -68,7 +69,7 @@ export function validateStructure(puzzleDef) {
           errors.push({
             code: "DOMINO_OVERLAP",
             message: "Starting dominos overlap.",
-            path: `/dominos/${index}`
+            path: `/startingDominos/${index}`
           });
         } else {
           occupied.add(key);
@@ -94,6 +95,7 @@ export function validateStructure(puzzleDef) {
 
   // ------------------------------------------------------------
   // Invariant: region cells must be playable
+  // (blocked cells only; starting dominos are allowed)
   // ------------------------------------------------------------
   if (Array.isArray(puzzleDef.regions)) {
     puzzleDef.regions.forEach((region, index) => {
@@ -151,7 +153,7 @@ export function validateStructure(puzzleDef) {
             message: "Every playable cell must belong to exactly one region.",
             path: "/regions"
           });
-          row = height; // break both loops
+          row = height;
           break;
         }
       }
