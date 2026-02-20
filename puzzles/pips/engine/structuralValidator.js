@@ -118,6 +118,56 @@ export function validateStructure(puzzleDef) {
   }
 
   // ------------------------------------------------------------
+  // Invariant: regions must be orthogonally connected
+  // ------------------------------------------------------------
+  if (Array.isArray(puzzleDef.regions)) {
+    puzzleDef.regions.forEach((region, index) => {
+      if (!Array.isArray(region.cells) || region.cells.length === 0) return;
+  
+      const cellSet = new Set(
+        region.cells.map(c => `${c.row},${c.col}`)
+      );
+  
+      // BFS from first cell
+      const visited = new Set();
+      const queue = [];
+  
+      const start = region.cells[0];
+      const startKey = `${start.row},${start.col}`;
+  
+      queue.push(startKey);
+      visited.add(startKey);
+  
+      while (queue.length > 0) {
+        const key = queue.shift();
+        const [r, c] = key.split(",").map(Number);
+  
+        const neighbors = [
+          `${r-1},${c}`,
+          `${r+1},${c}`,
+          `${r},${c-1}`,
+          `${r},${c+1}`
+        ];
+  
+        for (const n of neighbors) {
+          if (cellSet.has(n) && !visited.has(n)) {
+            visited.add(n);
+            queue.push(n);
+          }
+        }
+      }
+  
+      if (visited.size !== cellSet.size) {
+        errors.push({
+          code: "REGION_DISCONNECTED",
+          message: "Region cells must form a single connected component.",
+          path: `/regions/${index}`
+        });
+      }
+    });
+  }
+
+  // ------------------------------------------------------------
   // Final decision
   // ------------------------------------------------------------
   if (errors.length > 0) {
