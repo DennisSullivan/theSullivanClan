@@ -10,6 +10,7 @@
 // ============================================================
 
 import { loadPuzzle } from "./engine/loader.js";
+import { validateStructure } from "./engine/structuralValidator.js";
 import { renderBoard } from "./ui/boardRenderer.js";
 import { renderTray } from "./ui/trayRenderer.js";
 import { installDragDrop } from "./ui/dragDrop.js";
