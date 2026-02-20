@@ -47,104 +47,101 @@ export function validateStructure(puzzleDef) {
     ? new Set(puzzleDef.blocked.map(c => `${c.row},${c.col}`))
     : new Set();
 
-// ------------------------------------------------------------
-// Invariant: tray dominos must exactly tile all free cells
-// ------------------------------------------------------------
-if (
-  typeof width === "number" &&
-  typeof height === "number" &&
-  Array.isArray(puzzleDef.dominos)
-) {
-  const totalCells = width * height;
-  const blockedCount = blockedSet.size;
+  // ------------------------------------------------------------
+  // Invariant: total dominos must exactly fill non-blocked cells
+  // ------------------------------------------------------------
+  if (
+    typeof width === "number" &&
+    typeof height === "number" &&
+    Array.isArray(puzzleDef.dominos)
+  ) {
+    const gridSize = width * height;
+    const blockedCount = blockedSet.size;
 
-  const startingCellCount = Array.isArray(puzzleDef.startingDominos)
-    ? puzzleDef.startingDominos.reduce(
-        (sum, d) => sum + (Array.isArray(d.cells) ? d.cells.length : 0),
-        0
-      )
-    : 0;
+    const startingDominoCount = Array.isArray(puzzleDef.startingDominos)
+      ? puzzleDef.startingDominos.length
+      : 0;
 
-  const freeCellCount = totalCells - blockedCount - startingCellCount;
-  const trayDominoCount = puzzleDef.dominos.length;
+    const trayDominoCount = puzzleDef.dominos.length;
+    const totalDominos = trayDominoCount + startingDominoCount;
 
-  if (freeCellCount !== 2 * trayDominoCount) {
-    errors.push({
-      code: "TRAY_DOMINO_COUNT_MISMATCH",
-      message: "Tray dominos must exactly tile all free board cells.",
-      path: "/dominos"
-    });
-  }
-}
-
-// ------------------------------------------------------------
-// Invariant: playable cell count must be even
-// ------------------------------------------------------------
-if (typeof width === "number" && typeof height === "number") {
-  const totalCells = width * height;
-  const playableCellCount = totalCells - blockedSet.size;
-
-  if (playableCellCount % 2 !== 0) {
-    errors.push({
-      code: "ODD_PLAYABLE_CELL_COUNT",
-      message: "Playable cell count must be even.",
-      path: "/blocked"
-    });
-  }
-}
-
-// ------------------------------------------------------------
-// Invariant: each disconnected playable area must have even size
-// ------------------------------------------------------------
-if (typeof width === "number" && typeof height === "number") {
-  const visited = new Set();
-
-  function neighbors(r, c) {
-    return [
-      [r - 1, c],
-      [r + 1, c],
-      [r, c - 1],
-      [r, c + 1]
-    ].filter(([rr, cc]) =>
-      rr >= 0 && rr < height &&
-      cc >= 0 && cc < width &&
-      !blockedSet.has(`${rr},${cc}`)
-    );
+    if (2 * totalDominos !== gridSize - blockedCount) {
+      errors.push({
+        code: "DOMINO_CAPACITY_MISMATCH",
+        message:
+          "Total dominos must exactly fill all non-blocked board cells.",
+        path: "/dominos"
+      });
+    }
   }
 
-  for (let r = 0; r < height; r++) {
-    for (let c = 0; c < width; c++) {
-      const key = `${r},${c}`;
-      if (blockedSet.has(key) || visited.has(key)) continue;
+  // ------------------------------------------------------------
+  // Invariant: playable cell count must be even
+  // ------------------------------------------------------------
+  if (typeof width === "number" && typeof height === "number") {
+    const totalCells = width * height;
+    const playableCellCount = totalCells - blockedSet.size;
 
-      // BFS to count this component
-      let count = 0;
-      const queue = [[r, c]];
-      visited.add(key);
+    if (playableCellCount % 2 !== 0) {
+      errors.push({
+        code: "ODD_PLAYABLE_CELL_COUNT",
+        message: "Playable cell count must be even.",
+        path: "/blocked"
+      });
+    }
+  }
 
-      while (queue.length > 0) {
-        const [cr, cc] = queue.shift();
-        count++;
+  // ------------------------------------------------------------
+  // Invariant: each disconnected playable area must have even size
+  // ------------------------------------------------------------
+  if (typeof width === "number" && typeof height === "number") {
+    const visited = new Set();
 
-        for (const [nr, nc] of neighbors(cr, cc)) {
-          const nkey = `${nr},${nc}`;
-          if (!visited.has(nkey)) {
-            visited.add(nkey);
-            queue.push([nr, nc]);
+    function neighbors(r, c) {
+      return [
+        [r - 1, c],
+        [r + 1, c],
+        [r, c - 1],
+        [r, c + 1]
+      ].filter(([rr, cc]) =>
+        rr >= 0 && rr < height &&
+        cc >= 0 && cc < width &&
+        !blockedSet.has(`${rr},${cc}`)
+      );
+    }
+
+    for (let r = 0; r < height; r++) {
+      for (let c = 0; c < width; c++) {
+        const key = `${r},${c}`;
+        if (blockedSet.has(key) || visited.has(key)) continue;
+
+        let count = 0;
+        const queue = [[r, c]];
+        visited.add(key);
+
+        while (queue.length > 0) {
+          const [cr, cc] = queue.shift();
+          count++;
+
+          for (const [nr, nc] of neighbors(cr, cc)) {
+            const nkey = `${nr},${nc}`;
+            if (!visited.has(nkey)) {
+              visited.add(nkey);
+              queue.push([nr, nc]);
+            }
           }
         }
-      }
 
-      if (count % 2 !== 0) {
-        errors.push({
-          code: "ODD_PLAYABLE_COMPONENT",
-          message: "Disconnected playable area has odd cell count.",
-          path: "/blocked"
-        });
+        if (count % 2 !== 0) {
+          errors.push({
+            code: "ODD_PLAYABLE_COMPONENT",
+            message: "Disconnected playable area has odd cell count.",
+            path: "/blocked"
+          });
+        }
       }
     }
   }
-}
 
   // ------------------------------------------------------------
   // Invariant: starting dominos must not occupy blocked cells
