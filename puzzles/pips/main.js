@@ -133,14 +133,20 @@ export async function loadAndStart(url) {
   try {
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
+
     const json = await response.json();
 
-    if (!validatePuzzle(json)) {
-      console.error("loadAndStart: invalid puzzle JSON", json);
-      return null;
+    // ------------------------------------------------------------
+    // Structural validation — authoritative gate
+    // ------------------------------------------------------------
+    const validation = validateStructure(json);
+    
+    if (validation.status === "Rejected") {
+      console.error("Structural validation failed:", validation.errors);
+      return validation;
     }
 
-    return startPuzzle(json);
+return startPuzzle(json);
   } catch (err) {
     console.error("loadAndStart: fetch or parse error", err);
     return null;
