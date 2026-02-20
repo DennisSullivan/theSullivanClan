@@ -70,6 +70,75 @@ export function validateStructure(puzzleDef) {
     }
   }
 
+// ------------------------------------------------------------
+// Invariant: playable cell count must be even
+// ------------------------------------------------------------
+if (typeof width === "number" && typeof height === "number") {
+  const totalCells = width * height;
+  const playableCellCount = totalCells - blockedSet.size;
+
+  if (playableCellCount % 2 !== 0) {
+    errors.push({
+      code: "ODD_PLAYABLE_CELL_COUNT",
+      message: "Playable cell count must be even.",
+      path: "/blocked"
+    });
+  }
+}
+
+// ------------------------------------------------------------
+// Invariant: each disconnected playable area must have even size
+// ------------------------------------------------------------
+if (typeof width === "number" && typeof height === "number") {
+  const visited = new Set();
+
+  function neighbors(r, c) {
+    return [
+      [r - 1, c],
+      [r + 1, c],
+      [r, c - 1],
+      [r, c + 1]
+    ].filter(([rr, cc]) =>
+      rr >= 0 && rr < height &&
+      cc >= 0 && cc < width &&
+      !blockedSet.has(`${rr},${cc}`)
+    );
+  }
+
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) {
+      const key = `${r},${c}`;
+      if (blockedSet.has(key) || visited.has(key)) continue;
+
+      // BFS to count this component
+      let count = 0;
+      const queue = [[r, c]];
+      visited.add(key);
+
+      while (queue.length > 0) {
+        const [cr, cc] = queue.shift();
+        count++;
+
+        for (const [nr, nc] of neighbors(cr, cc)) {
+          const nkey = `${nr},${nc}`;
+          if (!visited.has(nkey)) {
+            visited.add(nkey);
+            queue.push([nr, nc]);
+          }
+        }
+      }
+
+      if (count % 2 !== 0) {
+        errors.push({
+          code: "ODD_PLAYABLE_COMPONENT",
+          message: "Disconnected playable area has odd cell count.",
+          path: "/blocked"
+        });
+      }
+    }
+  }
+}
+
   // ------------------------------------------------------------
   // Invariant: starting dominos must not occupy blocked cells
   // ------------------------------------------------------------
