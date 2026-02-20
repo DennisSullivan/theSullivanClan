@@ -5,6 +5,8 @@
 //   Enforces Structural Invariants before any engine state exists.
 // ============================================================
 
+import { MASTER_TRAY } from "./domino.js";
+
 export function validateStructure(puzzleDef) {
   const errors = [];
 
@@ -21,10 +23,10 @@ export function validateStructure(puzzleDef) {
   ) {
     puzzleDef.regions.forEach((region, index) => {
       if (!Array.isArray(region.cells)) return;
-  
+
       region.cells.forEach(cell => {
         const { row, col } = cell;
-  
+
         if (
           typeof row !== "number" ||
           typeof col !== "number" ||
@@ -51,7 +53,11 @@ export function validateStructure(puzzleDef) {
   // ------------------------------------------------------------
   const dominoCount = puzzleDef.dominoCount;
 
-  if (typeof width === "number" && typeof height === "number" && typeof dominoCount === "number") {
+  if (
+    typeof width === "number" &&
+    typeof height === "number" &&
+    typeof dominoCount === "number"
+  ) {
     const totalCells = width * height;
     const playableCellCount = totalCells - blockedSet.size;
 
@@ -153,32 +159,31 @@ export function validateStructure(puzzleDef) {
   if (Array.isArray(puzzleDef.regions)) {
     puzzleDef.regions.forEach((region, index) => {
       if (!Array.isArray(region.cells) || region.cells.length === 0) return;
-  
+
       const cellSet = new Set(
         region.cells.map(c => `${c.row},${c.col}`)
       );
-  
-      // BFS from first cell
+
       const visited = new Set();
       const queue = [];
-  
+
       const start = region.cells[0];
       const startKey = `${start.row},${start.col}`;
-  
+
       queue.push(startKey);
       visited.add(startKey);
-  
+
       while (queue.length > 0) {
         const key = queue.shift();
         const [r, c] = key.split(",").map(Number);
-  
+
         const neighbors = [
           `${r-1},${c}`,
           `${r+1},${c}`,
           `${r},${c-1}`,
           `${r},${c+1}`
         ];
-  
+
         for (const n of neighbors) {
           if (cellSet.has(n) && !visited.has(n)) {
             visited.add(n);
@@ -186,12 +191,49 @@ export function validateStructure(puzzleDef) {
           }
         }
       }
-  
+
       if (visited.size !== cellSet.size) {
         errors.push({
           code: "REGION_DISCONNECTED",
           message: "Region cells must form a single connected component.",
           path: `/regions/${index}`
+        });
+      }
+    });
+  }
+
+  // ------------------------------------------------------------
+  // Invariant: starting dominos must NOT exist in tray
+  // ------------------------------------------------------------
+  if (
+    Array.isArray(puzzleDef.startingDominos) &&
+    Array.isArray(puzzleDef.dominos)
+  ) {
+    const traySet = new Set(puzzleDef.dominos.map(String));
+
+    puzzleDef.startingDominos.forEach((entry, index) => {
+      const id = String(entry.domino);
+      if (traySet.has(id)) {
+        errors.push({
+          code: "STARTING_DOMINO_IN_TRAY",
+          message: "Starting domino must not appear in tray domino list.",
+          path: `/startingDominos/${index}`
+        });
+      }
+    });
+  }
+
+  // ------------------------------------------------------------
+  // Invariant: starting domino IDs must be valid canonical dominos
+  // ------------------------------------------------------------
+  if (Array.isArray(puzzleDef.startingDominos)) {
+    puzzleDef.startingDominos.forEach((entry, index) => {
+      const id = String(entry.domino);
+      if (!MASTER_TRAY.includes(id)) {
+        errors.push({
+          code: "INVALID_STARTING_DOMINO_ID",
+          message: "Starting domino ID is not a valid canonical domino.",
+          path: `/startingDominos/${index}`
         });
       }
     });
