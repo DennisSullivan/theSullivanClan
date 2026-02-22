@@ -107,7 +107,6 @@
   position: absolute;
   pointer-events: none;
   z-index: 30;
-  transform: translate(-5px, -5px);
 }
 
 .region-outline {
