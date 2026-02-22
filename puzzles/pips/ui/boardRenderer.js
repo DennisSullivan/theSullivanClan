@@ -57,10 +57,6 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       cell.dataset.row = String(r);
       cell.dataset.col = String(c);
 
-      if (regionMap && regionMap[r] && regionMap[r][c] != null) {
-        cell.classList.add(`region-${regionMap[r][c]}`);
-      }
-
       if (blocked && blocked.has && blocked.has(`${r},${c}`)) {
         cell.classList.add("blocked");
       }
