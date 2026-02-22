@@ -67,8 +67,8 @@ export function renderRegionBadges(regions, regionMap, boardEl) {
     badge.style.background = `var(--color-region-${colorIndex})`;
     badge.style.borderColor = `var(--color-region-${colorIndex})`;
 
-    // Measure badge
-    document.body.appendChild(badge);
+    // Measure badge (must be in board context)
+    boardEl.appendChild(badge);
     const bw = badge.offsetWidth;
     const bh = badge.offsetHeight;
     badge.remove();
