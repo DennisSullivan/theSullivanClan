@@ -16,11 +16,6 @@
   --color-bg: #fafafa;
   --color-grid: #ddd;
 
-  --color-region-0: #d8d8ff;
-  --color-region-1: #d8ffd8;
-  --color-region-2: #ffd8d8;
-  --color-region-3: #d8ffff;
-
   --color-domino-bg: #ffffff;
   --color-domino-border: #aaa;
   --color-pip: #222;
@@ -34,6 +29,14 @@
   --domino-nudge-x: 2px;
   --domino-nudge-y: 2px;
 }
+
+/* ------------------------------------------------------------
+   REGION COLOR INDICES (renderer-assigned)
+   ------------------------------------------------------------ */
+.board-cell.region-color-0 { background: var(--color-region-0); }
+.board-cell.region-color-1 { background: var(--color-region-1); }
+.board-cell.region-color-2 { background: var(--color-region-2); }
+.board-cell.region-color-3 { background: var(--color-region-3); }
 
 /* ------------------------------------------------------------
    2. BOARD GRID (GRID LINES LIVE HERE)
