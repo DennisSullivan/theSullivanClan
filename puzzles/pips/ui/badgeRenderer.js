@@ -1,33 +1,34 @@
 // ============================================================
 // FILE: badgeRenderer.js
-// PURPOSE: Render region badges.
+// PURPOSE: Render region rule badges.
 // CONTRACT:
-//   - Called as: renderRegionBadges(regions, regionMap, boardEl)
 //   - Rendering only; no engine mutation.
 //   - Exactly one badge per region.
 //   - Deterministic anchor cell per region.
+//   - Badge text displays the region rule token.
+//   - Badge color is assigned deterministically by region id.
 //   - Visual center of badge is anchored to the
 //     top-left corner of the anchor cell.
 // ============================================================
 
-const BADGE_DEBUG = false;
+// Fixed palette of region colors (CSS variables)
+const REGION_COLORS = [
+  "var(--color-region-0)",
+  "var(--color-region-1)",
+  "var(--color-region-2)",
+  "var(--color-region-3)"
+];
 
 // ------------------------------------------------------------
 // renderRegionBadges
 // ------------------------------------------------------------
 // Renders one informational badge per region.
-// The badge is visually associated with its region by anchoring
+// Badges are visually associated with their region by anchoring
 // the badge's visual center to the top-left corner of a
 // deterministic anchor cell.
 // ------------------------------------------------------------
 export function renderRegionBadges(regions, regionMap, boardEl) {
   if (!boardEl || !Array.isArray(regions) || !regionMap) return;
-
-  // Grid geometry from CSS
-  const rootStyle = getComputedStyle(document.documentElement);
-  const cellSize = parseFloat(rootStyle.getPropertyValue("--cell-size"));
-  const cellGap  = parseFloat(rootStyle.getPropertyValue("--cell-gap"));
-  const stride   = cellSize + cellGap;
 
   // Ensure single badge layer
   let badgeLayer = boardEl.querySelector(".badge-layer");
@@ -63,21 +64,32 @@ export function renderRegionBadges(regions, regionMap, boardEl) {
   // ------------------------------------------------------------
   // Render badges
   // ------------------------------------------------------------
-  regions.forEach((_, regionId) => {
-    const anchor = anchors.get(regionId);
+  regions.forEach(region => {
+    const anchor = anchors.get(region.id);
     if (!anchor) return;
 
     const { row, col } = anchor;
 
     const badge = document.createElement("div");
     badge.className = "badge";
-    badge.textContent = regionId;
+    badge.textContent = String(region.rule ?? "");
+
+    // Deterministic color by region id
+    const color = REGION_COLORS[region.id % REGION_COLORS.length];
+    badge.style.background = color;
+    badge.style.borderColor = color;
 
     badgeLayer.appendChild(badge);
 
     // Measure after insertion
     const bw = badge.offsetWidth;
     const bh = badge.offsetHeight;
+
+    // Grid geometry from CSS
+    const rootStyle = getComputedStyle(document.documentElement);
+    const cellSize = parseFloat(rootStyle.getPropertyValue("--cell-size"));
+    const cellGap  = parseFloat(rootStyle.getPropertyValue("--cell-gap"));
+    const stride   = cellSize + cellGap;
 
     const cellLeft = col * stride;
     const cellTop  = row * stride;
@@ -90,13 +102,5 @@ export function renderRegionBadges(regions, regionMap, boardEl) {
     badge.style.position = "absolute";
     badge.style.left = `${left}px`;
     badge.style.top  = `${top}px`;
-
-    if (BADGE_DEBUG) {
-      console.group(`BADGE DIAG region ${regionId}`);
-      console.log("anchor", anchor);
-      console.log("badge size", { bw, bh });
-      console.log("placed at", { left, top });
-      console.groupEnd();
-    }
   });
 }
