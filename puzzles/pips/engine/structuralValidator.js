@@ -227,6 +227,26 @@ export function validateStructure(puzzleDef) {
   }
 
   // ------------------------------------------------------------
+  // Invariant: region cells must not include blocked cells
+  // ------------------------------------------------------------
+  if (Array.isArray(puzzleDef.regions)) {
+    puzzleDef.regions.forEach((region, index) => {
+      if (!Array.isArray(region.cells)) return;
+
+      region.cells.forEach(cell => {
+        const key = `${cell.row},${cell.col}`;
+        if (blockedSet.has(key)) {
+          errors.push({
+            code: "REGION_CELL_ON_BLOCKED_CELL",
+            message: "Region cell must not be a blocked cell.",
+            path: `/regions/${index}`
+          });
+        }
+      });
+    });
+  }
+
+  // ------------------------------------------------------------
   // Invariant: regions must be orthogonally connected
   // ------------------------------------------------------------
   if (Array.isArray(puzzleDef.regions)) {
