@@ -60,8 +60,9 @@ export function renderRegionBadges(regions, boardEl) {
     }
 
     // Solid region color identity (no blending)
-    badge.style.background = `var(--color-region-${region.id})`;
-    badge.style.borderColor = `var(--color-region-${region.id})`;
+    const colorIndex = regionColorMap.get(region.id);
+    badge.style.background = `var(--color-region-${colorIndex})`;
+    badge.style.borderColor = `var(--color-region-${colorIndex})`;
 
     // Measure badge
     document.body.appendChild(badge);
