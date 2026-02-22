@@ -70,15 +70,11 @@ export function renderRegionBadges(regions, regionMap, boardEl) {
     const bh = badge.offsetHeight;
     badge.remove();
 
-    // Overlap contract
-    const overlapX = Math.min(bw * 0.25, cellSize * 0.25);
-    const overlapY = Math.min(bh * 0.25, cellSize * 0.25);
-
     // --------------------------------------------------------
     // A) CURRENT (math-based) placement
     // --------------------------------------------------------
-    const left_math = anchor.col * stride - (bw - overlapX);
-    const top_math  = anchor.row * stride - (bh - overlapY);
+    const left = cellLeft - bw / 2;
+    const top  = cellTop  - bh / 2;
 
     // --------------------------------------------------------
     // B) DOM-truth placement (what the grid actually did)
