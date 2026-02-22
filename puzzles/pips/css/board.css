@@ -28,6 +28,11 @@
   */
   --domino-nudge-x: 2px;
   --domino-nudge-y: 2px;
+  /* TEMP DIAGNOSTIC: region visibility */
+  --color-region-0: rgba(255, 0, 0, 0.15);
+  --color-region-1: rgba(0, 255, 0, 0.15);
+  --color-region-2: rgba(0, 0, 255, 0.15);
+  --color-region-3: rgba(255, 255, 0, 0.15);
 }
 
 /* ------------------------------------------------------------
