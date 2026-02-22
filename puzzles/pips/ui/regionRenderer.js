@@ -8,6 +8,8 @@
 //   - Medium diagnostics for unexpected or impossible branches.
 // ============================================================
 
+import { computeRegionColorMap } from "./regionColorAssigner.js";
+
 /**
  * renderRegions(regionMap, boardEl)
  * Applies region classes to each board cell.
@@ -46,6 +48,8 @@ export function renderRegions(regionMap, boardEl) {
     return;
   }
 
+  const regionColorMap = computeRegionColorMap(regionMap);
+  
   for (const cell of cells) {
     const row = Number(cell.dataset.row);
     const col = Number(cell.dataset.col);
@@ -73,7 +77,10 @@ export function renderRegions(regionMap, boardEl) {
 
     // Apply region class if regionId is a valid non-negative number.
     if (typeof regionId === "number" && regionId >= 0) {
-      cell.classList.add(`region-${regionId}`);
+      const colorIndex = regionColorMap.get(regionId);
+      if (colorIndex != null) {
+        cell.classList.add(`region-color-${colorIndex}`);
+      }
     } else if (typeof regionId !== "number") {
       console.error("renderRegions: invalid regionId value", {
         row,
