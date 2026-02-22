@@ -36,6 +36,16 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
 
   const rows = grid.length;
   const cols = grid[0].length;
+  boardEl.style.gridTemplateColumns =
+    `repeat(${cols}, calc(var(--cell-size) + var(--cell-gap)))`;
+  
+  boardEl.style.gridTemplateRows =
+    `repeat(${rows}, calc(var(--cell-size) + var(--cell-gap)))`;
+  boardEl.style.width =
+    `calc(${cols} * (var(--cell-size) + var(--cell-gap)))`;
+  
+  boardEl.style.height =
+    `calc(${rows} * (var(--cell-size) + var(--cell-gap)))`;
 
   // ----------------------------------------------------------
   // 1. Render background board cells
