@@ -38,6 +38,12 @@
 .board-cell.region-color-2 { background: var(--color-region-2); }
 .board-cell.region-color-3 { background: var(--color-region-3); }
 
+  /* Region color palette (renderer-assigned) */
+  --color-region-0: #e8f0ff;
+  --color-region-1: #e8ffe8;
+  --color-region-2: #fff4e8;
+  --color-region-3: #f5e8ff;
+
 /* ------------------------------------------------------------
    2. BOARD GRID (GRID LINES LIVE HERE)
    ------------------------------------------------------------ */
@@ -87,14 +93,6 @@
   border: 1px solid #444;
   pointer-events: none;
 }
-
-/* ------------------------------------------------------------
-   4. REGION COLORS
-   ------------------------------------------------------------ */
-.board-cell.region-0 { background: var(--color-region-0); }
-.board-cell.region-1 { background: var(--color-region-1); }
-.board-cell.region-2 { background: var(--color-region-2); }
-.board-cell.region-3 { background: var(--color-region-3); }
 
 /* ------------------------------------------------------------
    5. REGION BADGES / OUTLINES
