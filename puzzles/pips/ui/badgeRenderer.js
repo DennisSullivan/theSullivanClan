@@ -1,150 +1,79 @@
-// ============================================================
-// FILE: badgeRenderer.js
-// PURPOSE: Render region rule badges using a deterministic
-//          visual anchor cell and strict placement geometry.
-// NOTES:
-//   - Pure UI: no engine mutation.
-//   - Visual anchor cell = top-leftmost region cell.
-//   - Badge overlaps ≤25% of anchor cell (upper-left quadrant).
-//   - Badge color identity is solid and never blended.
-// ============================================================
+// badgeRenderer.js
+// Renders region badges by anchoring the badge's visual center
+// to the top-left corner of the anchor cell.
+//
+// Contract:
+// - Badge center aligns with anchor cell top-left.
+// - No transforms.
+// - No overlap percentages.
+// - Geometry is explicit and visually stable.
 
-import { computeRegionColorMap } from "./regionColorAssigner.js";
+const BADGE_DEBUG = false;
 
-const BADGE_DEBUG = true; // set false to silence logs + markers
-
-export function renderRegionBadges(regions, regionMap, boardEl) {
-  if (!boardEl || !Array.isArray(regions)) return;
-
-  // Remove existing badges + debug markers
-  boardEl.querySelectorAll(".badge-layer").forEach(el => el.remove());
-  boardEl.querySelectorAll(".badge-debug-marker").forEach(el => el.remove());
-
-  const rootStyle = getComputedStyle(document.documentElement);
-  const cellSize = parseFloat(rootStyle.getPropertyValue("--cell-size"));
-  const cellGap  = parseFloat(rootStyle.getPropertyValue("--cell-gap"));
-  const stride   = cellSize + cellGap;
-
-  const nudgeX = parseFloat(rootStyle.getPropertyValue("--domino-nudge-x")) || 0;
-  const nudgeY = parseFloat(rootStyle.getPropertyValue("--domino-nudge-y")) || 0;
-
-  const regionColorMap = computeRegionColorMap(regionMap);
+export function renderBadges({
+  boardEl,
+  regions,
+  cellSize,
+  cellGap
+}) {
+  const stride = cellSize + cellGap;
 
   if (BADGE_DEBUG) {
-    console.log("BADGES: globals", { cellSize, cellGap, stride, nudgeX, nudgeY });
+    console.log("BADGES: globals", { cellSize, cellGap, stride });
   }
 
-  for (const region of regions) {
-    if (region.rule == null || !Array.isArray(region.cells) || region.cells.length === 0) continue;
+  // Ensure a single badge layer
+  let badgeLayer = boardEl.querySelector(".badge-layer");
+  if (!badgeLayer) {
+    badgeLayer = document.createElement("div");
+    badgeLayer.className = "badge-layer";
+    badgeLayer.style.position = "absolute";
+    badgeLayer.style.left = "0";
+    badgeLayer.style.top = "0";
+    badgeLayer.style.pointerEvents = "none";
+    badgeLayer.style.zIndex = "30";
+    boardEl.appendChild(badgeLayer);
+  }
 
-    // Visual anchor cell: top-leftmost region cell
-    const anchor = region.cells
-      .slice()
-      .sort((a, b) => a.row - b.row || a.col - b.col)[0];
+  // Clear existing badges
+  badgeLayer.innerHTML = "";
 
-    const anchorCell = boardEl.querySelector(
-      `.board-cell[data-row="${anchor.row}"][data-col="${anchor.col}"]`
-    );
-    if (!anchorCell) {
-      if (BADGE_DEBUG) console.warn("BADGES: missing anchorCell", { regionId: region.id, anchor });
-      continue;
-    }
+  regions.forEach((region, regionId) => {
+    const { anchor } = region;
+    if (!anchor) return;
 
-    // Badge element
+    const { row, col } = anchor;
+
+    // Create badge
     const badge = document.createElement("div");
     badge.className = "badge";
+    badge.textContent = regionId;
 
-    if (typeof region.rule === "object" && region.rule.op) {
-      badge.textContent = `${region.rule.op}${region.rule.value}`;
-    } else {
-      badge.textContent = String(region.rule);
-    }
+    badgeLayer.appendChild(badge);
 
-    const colorIndex = regionColorMap.get(region.id);
-    badge.style.background = `var(--color-region-${colorIndex})`;
-    badge.style.borderColor = `var(--color-region-${colorIndex})`;
-
-    // Measure badge in board context
-    boardEl.appendChild(badge);
+    // Measure badge AFTER insertion
     const bw = badge.offsetWidth;
     const bh = badge.offsetHeight;
-    badge.remove();
 
-    // --------------------------------------------------------
-    // A) CURRENT (math-based) placement
-    // --------------------------------------------------------
+    // Anchor cell top-left (grid truth)
+    const cellLeft = col * stride;
+    const cellTop  = row * stride;
+
+    // Center-anchor the badge on the cell corner
     const left = cellLeft - bw / 2;
     const top  = cellTop  - bh / 2;
 
-    // --------------------------------------------------------
-    // B) DOM-truth placement (what the grid actually did)
-    //    Anchor to the real cell box inside the board.
-    // --------------------------------------------------------
-    const cellLeft_dom = anchorCell.offsetLeft;
-    const cellTop_dom  = anchorCell.offsetTop;
-
-    const left_dom = cellLeft_dom - (bw - overlapX);
-    const top_dom  = cellTop_dom  - (bh - overlapY);
-
-    // --------------------------------------------------------
-    // C) Apply (choose one) — for now, keep YOUR math so we can diff
-    // --------------------------------------------------------
-    const left = left_math;
-    const top  = top_math;
-// --- DIAGNOSTICS: compare math vs DOM truth ---
-const cellLeft = anchorCell.offsetLeft;
-const cellTop  = anchorCell.offsetTop;
-
-const expectedLeft = cellLeft - (bw - overlapX);
-const expectedTop  = cellTop  - (bh - overlapY);
-
-console.group(`BADGE DIAG region ${region.id}`);
-console.log("anchor", anchor);
-console.log("cell offset", { cellLeft, cellTop });
-console.log("math pos", { left, top });
-console.log("dom pos", { expectedLeft, expectedTop });
-console.log("delta", {
-  dx: left - expectedLeft,
-  dy: top  - expectedTop
-});
-console.groupEnd();
-
-    const layer = document.createElement("div");
-    layer.className = "badge-layer";
-    layer.style.left = `${left}px`;
-    layer.style.top  = `${top}px`;
-
-    layer.appendChild(badge);
-    boardEl.appendChild(layer);
+    badge.style.position = "absolute";
+    badge.style.left = `${left}px`;
+    badge.style.top  = `${top}px`;
 
     if (BADGE_DEBUG) {
-      const dx = left_math - left_dom;
-      const dy = top_math - top_dom;
-
-      console.log("BADGES: region", {
-        regionId: region.id,
-        anchor,
-        bw, bh,
-        overlapX, overlapY,
-        cellLeft_dom, cellTop_dom,
-        left_math, top_math,
-        left_dom, top_dom,
-        dx, dy
-      });
-
-      // Optional visual marker at computed origin (top-left of badge layer)
-      const m = document.createElement("div");
-      m.className = "badge-debug-marker";
-      m.style.position = "absolute";
-      m.style.left = `${left}px`;
-      m.style.top = `${top}px`;
-      m.style.width = "0";
-      m.style.height = "0";
-      m.style.zIndex = "9999";
-      m.style.pointerEvents = "none";
-      m.style.borderLeft = "8px solid rgba(255,0,0,0.8)";
-      m.style.borderTop = "8px solid rgba(255,0,0,0.8)";
-      boardEl.appendChild(m);
+      console.group(`BADGE DIAG region ${regionId}`);
+      console.log("anchor", { row, col });
+      console.log("cell", { cellLeft, cellTop });
+      console.log("badge size", { bw, bh });
+      console.log("placed at", { left, top });
+      console.groupEnd();
     }
-  }
+  });
 }
