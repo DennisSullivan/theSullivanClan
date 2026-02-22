@@ -10,6 +10,7 @@
 
 
 import { computeRegionColorMap } from "./regionColorAssigner.js";
+const REGION_DEBUG = true;
 
 /**
  * renderRegions(regionMap, boardEl)
@@ -54,6 +55,34 @@ export function renderRegions(regionMap, boardEl) {
   for (const cell of cells) {
     const row = Number(cell.dataset.row);
     const col = Number(cell.dataset.col);
+    if (REGION_DEBUG) {
+      const rootStyle = getComputedStyle(document.documentElement);
+      const cellSize = parseFloat(rootStyle.getPropertyValue("--cell-size"));
+      const cellGap  = parseFloat(rootStyle.getPropertyValue("--cell-gap"));
+      const stride   = cellSize + cellGap;
+    
+      const boardRect = boardEl.getBoundingClientRect();
+      const cellRect  = cell.getBoundingClientRect();
+    
+      const domLeft = cell.offsetLeft;
+      const domTop  = cell.offsetTop;
+    
+      const gridLeft = col * stride;
+      const gridTop  = row * stride;
+    
+      console.group(`REGION DIAG cell (${row}, ${col})`);
+      console.log("DOM offset", { domLeft, domTop });
+      console.log("Grid math", { gridLeft, gridTop });
+      console.log("Delta", {
+        dx: domLeft - gridLeft,
+        dy: domTop  - gridTop
+      });
+      console.log("Rect (relative to board)", {
+        left: cellRect.left - boardRect.left,
+        top:  cellRect.top  - boardRect.top
+      });
+      console.groupEnd();
+    }
 
     // Defensive: ensure row/col are valid numbers.
     if (Number.isNaN(row) || Number.isNaN(col)) {
