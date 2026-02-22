@@ -1,22 +1,25 @@
-// badgeRenderer.js
-// Renders region badges by anchoring the badge's visual center
-// to the top-left corner of the anchor cell.
-//
-// Contract:
-// - Badge center aligns with anchor cell top-left.
-// - No transforms.
-// - No overlap percentages.
-// - Geometry is explicit and visually stable.
+// ============================================================
+// FILE: badgeRenderer.js
+// PURPOSE: Render region badges.
+// CONTRACT:
+//   - Badge visual center is anchored to the top-left corner
+//     of the region's anchor cell.
+//   - No transforms.
+//   - No overlap percentages.
+//   - Signature preserved for main.js:
+//       renderRegionBadges(regions, regionMap, boardEl)
+// ============================================================
 
 const BADGE_DEBUG = false;
 
-export function renderRegionBadges({
-  boardEl,
-  regions,
-  cellSize,
-  cellGap
-}) {
-  const stride = cellSize + cellGap;
+export function renderRegionBadges(regions, regionMap, boardEl) {
+  if (!boardEl || !Array.isArray(regions)) return;
+
+  // Read grid geometry from CSS (single source of truth)
+  const rootStyle = getComputedStyle(document.documentElement);
+  const cellSize = parseFloat(rootStyle.getPropertyValue("--cell-size"));
+  const cellGap  = parseFloat(rootStyle.getPropertyValue("--cell-gap"));
+  const stride   = cellSize + cellGap;
 
   if (BADGE_DEBUG) {
     console.log("BADGES: globals", { cellSize, cellGap, stride });
@@ -39,7 +42,7 @@ export function renderRegionBadges({
   badgeLayer.innerHTML = "";
 
   regions.forEach((region, regionId) => {
-    const { anchor } = region;
+    const anchor = region.anchor;
     if (!anchor) return;
 
     const { row, col } = anchor;
@@ -59,7 +62,7 @@ export function renderRegionBadges({
     const cellLeft = col * stride;
     const cellTop  = row * stride;
 
-    // Center-anchor the badge on the cell corner
+    // Center-anchor badge on the cell corner
     const left = cellLeft - bw / 2;
     const top  = cellTop  - bh / 2;
 
