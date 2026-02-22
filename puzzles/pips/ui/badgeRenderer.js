@@ -95,6 +95,23 @@ export function renderRegionBadges(regions, regionMap, boardEl) {
     // --------------------------------------------------------
     const left = left_math;
     const top  = top_math;
+// --- DIAGNOSTICS: compare math vs DOM truth ---
+const cellLeft = anchorCell.offsetLeft;
+const cellTop  = anchorCell.offsetTop;
+
+const expectedLeft = cellLeft - (bw - overlapX);
+const expectedTop  = cellTop  - (bh - overlapY);
+
+console.group(`BADGE DIAG region ${region.id}`);
+console.log("anchor", anchor);
+console.log("cell offset", { cellLeft, cellTop });
+console.log("math pos", { left, top });
+console.log("dom pos", { expectedLeft, expectedTop });
+console.log("delta", {
+  dx: left - expectedLeft,
+  dy: top  - expectedTop
+});
+console.groupEnd();
 
     const layer = document.createElement("div");
     layer.className = "badge-layer";
