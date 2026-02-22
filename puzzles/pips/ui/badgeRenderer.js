@@ -13,33 +13,27 @@
 import { computeRegionColorMap } from "./regionColorAssigner.js";
 
 /**
- * renderRegionBadges(regions, boardEl)
+ * renderRegionBadges(regions, regionMap, boardEl)
  *
  * EXPECTS:
  *   - regions: [{ id, rule, cells:[{row,col},...] }]
  *   - boardEl: board DOM element
- *
- * BEHAVIOR:
- *   - Removes existing badge layers.
- *   - Selects a deterministic visual anchor cell per region.
- *   - Places badge partially overlapping anchor cell only.
- *   - Never overlaps other cells or dominos.
  */
 export function renderRegionBadges(regions, regionMap, boardEl) {
   if (!boardEl || !Array.isArray(regions)) return;
 
+  // Remove existing badges
   boardEl.querySelectorAll(".badge-layer").forEach(el => el.remove());
 
-  const cellSize = parseFloat(getComputedStyle(document.documentElement)
-    .getPropertyValue("--cell-size"));
-  const cellGap = parseFloat(getComputedStyle(document.documentElement)
-    .getPropertyValue("--cell-gap"));
+  const rootStyle = getComputedStyle(document.documentElement);
+  const cellSize = parseFloat(rootStyle.getPropertyValue("--cell-size"));
+  const cellGap  = parseFloat(rootStyle.getPropertyValue("--cell-gap"));
 
-  const stride = cellSize + cellGap;
   const regionColorMap = computeRegionColorMap(regionMap);
 
   for (const region of regions) {
-    if (!region.rule || !Array.isArray(region.cells) || region.cells.length === 0) {
+    // Allow rule "=0" and other truthy strings
+    if (region.rule == null || !Array.isArray(region.cells) || region.cells.length === 0) {
       continue;
     }
 
@@ -50,8 +44,14 @@ export function renderRegionBadges(regions, regionMap, boardEl) {
       .slice()
       .sort((a, b) => a.row - b.row || a.col - b.col)[0];
 
+    const anchorCell = boardEl.querySelector(
+      `.board-cell[data-row="${anchor.row}"][data-col="${anchor.col}"]`
+    );
+
+    if (!anchorCell) continue;
+
     // --------------------------------------------------------
-    // Badge geometry
+    // Badge element
     // --------------------------------------------------------
     const badge = document.createElement("div");
     badge.className = "badge";
@@ -62,34 +62,34 @@ export function renderRegionBadges(regions, regionMap, boardEl) {
       badge.textContent = String(region.rule);
     }
 
-    // Solid region color identity (no blending)
     const colorIndex = regionColorMap.get(region.id);
     badge.style.background = `var(--color-region-${colorIndex})`;
     badge.style.borderColor = `var(--color-region-${colorIndex})`;
 
-    // Measure badge (must be in board context)
+    // --------------------------------------------------------
+    // Measure badge in board context
+    // --------------------------------------------------------
     boardEl.appendChild(badge);
     const bw = badge.offsetWidth;
     const bh = badge.offsetHeight;
     badge.remove();
 
     // --------------------------------------------------------
-    // Placement math
-    //   - ≤25% overlap with anchor cell
-    //   - overlap in upper-left quadrant only
+    // Placement using DOM truth
     // --------------------------------------------------------
+    const cellRect  = anchorCell.getBoundingClientRect();
+    const boardRect = boardEl.getBoundingClientRect();
+
     const overlapX = Math.min(bw * 0.25, cellSize * 0.25);
     const overlapY = Math.min(bh * 0.25, cellSize * 0.25);
 
-    const left =
-      anchor.col * stride - (bw - overlapX);
-    const top =
-      anchor.row * stride - (bh - overlapY);
+    const left = (cellRect.left - boardRect.left) - (bw - overlapX);
+    const top  = (cellRect.top  - boardRect.top)  - (bh - overlapY);
 
     const layer = document.createElement("div");
     layer.className = "badge-layer";
     layer.style.left = `${left}px`;
-    layer.style.top = `${top}px`;
+    layer.style.top  = `${top}px`;
 
     layer.appendChild(badge);
     boardEl.appendChild(layer);
