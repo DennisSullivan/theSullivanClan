@@ -74,7 +74,7 @@ export function startPuzzle(puzzleJson) {
     renderTray(puzzleDef, dominos, trayEl, grid);
     renderRegions(regionMap, boardEl);
     renderBlockedCells(blocked, boardEl);
-    renderRegionBadges(regions, boardEl);
+    renderRegionBadges(regions, regionMap, boardEl);
     syncCheck(dominos, grid);
   }
 
