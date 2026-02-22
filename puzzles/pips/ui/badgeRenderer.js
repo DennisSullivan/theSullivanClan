@@ -59,15 +59,13 @@ export function renderRegionBadges(regions, regionMap, boardEl) {
     badge.remove();
 
     // ≤25% overlap with anchor cell (upper-left quadrant)
+    const stride = cellSize + cellGap;
+    
     const overlapX = Math.min(bw * 0.25, cellSize * 0.25);
     const overlapY = Math.min(bh * 0.25, cellSize * 0.25);
-
-    // Use grid-computed local offsets (robust; no viewport math)
-    const cellLeft = anchorCell.offsetLeft;
-    const cellTop = anchorCell.offsetTop;
-
-    const left = cellLeft - (bw - overlapX);
-    const top  = cellTop  - (bh - overlapY);
+    
+    const left = anchor.col * stride - (bw - overlapX);
+    const top  = anchor.row * stride - (bh - overlapY);
 
     const layer = document.createElement("div");
     layer.className = "badge-layer";
