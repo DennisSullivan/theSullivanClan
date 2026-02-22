@@ -10,7 +10,7 @@
 
 const BADGE_DEBUG = false;
 
-export function renderBadges({
+export function renderRegionBadges({
   boardEl,
   regions,
   cellSize,
