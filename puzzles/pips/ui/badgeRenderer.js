@@ -20,6 +20,7 @@ export function renderRegionBadges(regions, regionMap, boardEl) {
 
   const rootStyle = getComputedStyle(document.documentElement);
   const cellSize = parseFloat(rootStyle.getPropertyValue("--cell-size"));
+  const cellGap = parseFloat(rootStyle.getPropertyValue("--cell-gap"));
   const regionColorMap = computeRegionColorMap(regionMap);
 
   for (const region of regions) {
