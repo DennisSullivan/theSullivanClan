@@ -1,12 +1,13 @@
 // ============================================================
 // FILE: regionRenderer.js
-// PURPOSE: Apply region overlay classes to board cells.
+// PURPOSE: Apply renderer-assigned region color classes to board cells.
 // NOTES:
 //   - Pure UI: reads regionMap, never mutates engine state.
-//   - Each region gets a CSS class like .region-0, .region-1, etc.
+//   - Region IDs are NOT color IDs.
+//   - Color identity is assigned deterministically by the renderer.
 //   - Assumes boardRenderer has already created .board-cell elements.
-//   - Medium diagnostics for unexpected or impossible branches.
 // ============================================================
+
 
 import { computeRegionColorMap } from "./regionColorAssigner.js";
 
@@ -19,8 +20,8 @@ import { computeRegionColorMap } from "./regionColorAssigner.js";
  *   - boardEl: DOM element containing .board-cell elements.
  *
  * BEHAVIOR:
- *   - Removes any existing region-* classes from each cell.
- *   - Adds region-N class if regionMap[row][col] is a valid number.
+ *   - Removes any existing region-color-* classes from each cell.
+ *   - Applies renderer-assigned region-color-N class based on adjacency-safe mapping.
  *   - Logs diagnostics for out-of-range coordinates or missing rows.
  *
  * PURE FUNCTION:
@@ -70,9 +71,9 @@ export function renderRegions(regionMap, boardEl) {
 
     // Remove any previous region-* classes.
     cell.classList.forEach((cls) => {
-      if (cls.startsWith("region-")) {
-        cell.classList.remove(cls);
-      }
+    if (cls.startsWith("region-color-")) {
+      cell.classList.remove(cls);
+    }
     });
 
     // Apply region class if regionId is a valid non-negative number.
@@ -82,7 +83,7 @@ export function renderRegions(regionMap, boardEl) {
         cell.classList.add(`region-color-${colorIndex}`);
       }
     } else if (typeof regionId !== "number") {
-      console.error("renderRegions: invalid regionId value", {
+      console.error("renderRegions: unexpected regionId value", {
         row,
         col,
         regionId
