@@ -28,34 +28,27 @@
   */
   --domino-nudge-x: 2px;
   --domino-nudge-y: 2px;
-  /* TEMP DIAGNOSTIC: region visibility */
-  --color-region-0: rgba(255, 0, 0, 0.15);
-  --color-region-1: rgba(0, 255, 0, 0.15);
-  --color-region-2: rgba(0, 0, 255, 0.15);
-  --color-region-3: rgba(255, 255, 0, 0.15);
+
+  /* Region color palette (renderer‑assigned) */
+  --color-region-0: #e8f0ff;
+  --color-region-1: #e8ffe8;
+  --color-region-2: #fff4e8;
+  --color-region-3: #f5e8ff;
 }
 
 /* ------------------------------------------------------------
-   REGION COLOR INDICES (renderer-assigned)
+   2. REGION COLOR INDICES (renderer‑assigned)
    ------------------------------------------------------------ */
 .board-cell.region-color-0 { background: var(--color-region-0); }
 .board-cell.region-color-1 { background: var(--color-region-1); }
 .board-cell.region-color-2 { background: var(--color-region-2); }
 .board-cell.region-color-3 { background: var(--color-region-3); }
 
-  /* Region color palette (renderer-assigned) */
-  --color-region-0: #e8f0ff;
-  --color-region-1: #e8ffe8;
-  --color-region-2: #fff4e8;
-  --color-region-3: #f5e8ff;
-
 /* ------------------------------------------------------------
-   2. BOARD GRID (GRID LINES LIVE HERE)
+   3. BOARD GRID (GRID LINES LIVE HERE)
    ------------------------------------------------------------ */
 #board {
   position: relative;
-  width: calc((var(--cell-size) + var(--cell-gap)) * 6);
-  height: calc((var(--cell-size) + var(--cell-gap)) * 6);
 
   background:
     repeating-linear-gradient(
@@ -79,12 +72,10 @@
   touch-action: none;
 
   display: grid;
-  grid-template-columns: repeat(6, calc(var(--cell-size) + var(--cell-gap)));
-  grid-template-rows: repeat(6, calc(var(--cell-size) + var(--cell-gap)));
 }
 
 /* ------------------------------------------------------------
-   3. BOARD CELLS
+   4. BOARD CELLS
    ------------------------------------------------------------ */
 .board-cell {
   position: relative;
@@ -183,11 +174,6 @@
    ------------------------------------------------------------ */
 @media (max-width: 600px) {
   :root { --cell-size: 36px; }
-
-  #board {
-    width: calc((var(--cell-size) + var(--cell-gap)) * 6);
-    height: calc((var(--cell-size) + var(--cell-gap)) * 6);
-  }
 
   .domino .pip {
     width: calc(var(--cell-size) * 0.10);
