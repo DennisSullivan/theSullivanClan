@@ -1,113 +1,93 @@
 // ============================================================
 // FILE: badgeRenderer.js
-// PURPOSE: Render region rule badges anchored to the top-left
-//          actual cell of each region.
+// PURPOSE: Render region rule badges using a deterministic
+//          visual anchor cell and strict placement geometry.
 // NOTES:
-//   - Pure UI: reads regions array, never mutates engine state.
-//   - Each region with a rule gets a floating badge.
-//   - Badge anchor is derived from region.cells, not bounding boxes.
-//   - Medium diagnostics for impossible branches.
+//   - Pure UI: no engine mutation.
+//   - Visual anchor cell = top-leftmost region cell.
+//   - Badge overlaps ≤25% of anchor cell (upper-left quadrant).
+//   - Badge never overlaps any other cell.
+//   - Badge color identity is solid and never blended.
 // ============================================================
 
 /**
  * renderRegionBadges(regions, boardEl)
- * Draws rule badges for each region that defines a rule.
  *
  * EXPECTS:
- *   - regions: array of region objects, each with:
- *       { id, rule, cells: [{row, col}, ...] }
- *   - boardEl: DOM element containing the board.
+ *   - regions: [{ id, rule, cells:[{row,col},...] }]
+ *   - boardEl: board DOM element
  *
  * BEHAVIOR:
- *   - Removes old .badge-layer elements.
- *   - Chooses the top-leftmost actual region cell as anchor.
- *   - Places a badge relative to that cell.
- *   - Applies region color via CSS variables.
- *
- * PURE FUNCTION:
- *   - Does not mutate regions or engine state.
- *   - Only updates DOM elements inside boardEl.
+ *   - Removes existing badge layers.
+ *   - Selects a deterministic visual anchor cell per region.
+ *   - Places badge partially overlapping anchor cell only.
+ *   - Never overlaps other cells or dominos.
  */
 export function renderRegionBadges(regions, boardEl) {
-  // Defensive: boardEl must exist.
-  if (!boardEl) {
-    console.error("renderRegionBadges: boardEl is null/undefined.");
-    return;
-  }
+  if (!boardEl || !Array.isArray(regions)) return;
 
-  // Defensive: regions must be an array.
-  if (!Array.isArray(regions)) {
-    console.error("renderRegionBadges: regions is not an array", regions);
-    return;
-  }
+  boardEl.querySelectorAll(".badge-layer").forEach(el => el.remove());
 
-  // Remove any existing badges.
-  const oldLayers = boardEl.querySelectorAll(".badge-layer");
-  oldLayers.forEach(el => el.remove());
+  const cellSize = parseFloat(getComputedStyle(document.documentElement)
+    .getPropertyValue("--cell-size"));
+  const cellGap = parseFloat(getComputedStyle(document.documentElement)
+    .getPropertyValue("--cell-gap"));
+
+  const stride = cellSize + cellGap;
 
   for (const region of regions) {
-    // Skip regions without rules.
-    if (!region.rule) continue;
-
-    // Defensive: region.cells must exist and be non-empty.
-    if (!Array.isArray(region.cells) || region.cells.length === 0) {
-      console.error("renderRegionBadges: region has no cells", region);
+    if (!region.rule || !Array.isArray(region.cells) || region.cells.length === 0) {
       continue;
     }
 
-    // Choose the top-leftmost actual region cell.
-    const anchorCell = region.cells
+    // --------------------------------------------------------
+    // Visual anchor cell: top-leftmost region cell
+    // --------------------------------------------------------
+    const anchor = region.cells
       .slice()
       .sort((a, b) => a.row - b.row || a.col - b.col)[0];
 
-    if (
-      typeof anchorCell.row !== "number" ||
-      typeof anchorCell.col !== "number"
-    ) {
-      console.error("renderRegionBadges: invalid anchor cell", {
-        region,
-        anchorCell
-      });
-      continue;
-    }
-
-    // Create badge layer.
-    const layer = document.createElement("div");
-    layer.className = "badge-layer";
-
-    // Position using grid math (cell size + gap).
-    layer.style.left = `calc(${anchorCell.col} * (var(--cell-size) + var(--cell-gap)))`;
-    layer.style.top  = `calc(${anchorCell.row} * (var(--cell-size) + var(--cell-gap)))`;
-
-    // Create badge.
+    // --------------------------------------------------------
+    // Badge geometry
+    // --------------------------------------------------------
     const badge = document.createElement("div");
     badge.className = "badge";
 
-    // region.rule may be an object {op, value} or a string/number.
-    if (
-      typeof region.rule === "object" &&
-      region.rule.op &&
-      region.rule.value != null
-    ) {
+    if (typeof region.rule === "object" && region.rule.op) {
       badge.textContent = `${region.rule.op}${region.rule.value}`;
     } else {
       badge.textContent = String(region.rule);
     }
 
-    // Apply region color via CSS variable.
-    if (region.id != null) {
-      badge.style.background = `var(--color-region-${region.id})`;
-      badge.style.borderColor = `var(--color-region-${region.id})`;
-    } else {
-      console.warn(
-        "renderRegionBadges: region missing id; badge will use default colors",
-        region
-      );
-    }
+    // Solid region color identity (no blending)
+    badge.style.background = `var(--color-region-${region.id})`;
+    badge.style.borderColor = `var(--color-region-${region.id})`;
+
+    // Measure badge
+    document.body.appendChild(badge);
+    const bw = badge.offsetWidth;
+    const bh = badge.offsetHeight;
+    badge.remove();
+
+    // --------------------------------------------------------
+    // Placement math
+    //   - ≤25% overlap with anchor cell
+    //   - overlap in upper-left quadrant only
+    // --------------------------------------------------------
+    const overlapX = Math.min(bw * 0.25, cellSize * 0.25);
+    const overlapY = Math.min(bh * 0.25, cellSize * 0.25);
+
+    const left =
+      anchor.col * stride - (bw - overlapX);
+    const top =
+      anchor.row * stride - (bh - overlapY);
+
+    const layer = document.createElement("div");
+    layer.className = "badge-layer";
+    layer.style.left = `${left}px`;
+    layer.style.top = `${top}px`;
 
     layer.appendChild(badge);
     boardEl.appendChild(layer);
   }
-
-  console.log("BADGES: region badges rendered");
 }
