@@ -68,7 +68,7 @@
     var(--color-bg);
 
   border: 2px solid #ccc;
-  overflow: hidden;
+  overflow: visible;
   touch-action: none;
 
   display: grid;
