@@ -10,6 +10,8 @@
 //   - Badge color identity is solid and never blended.
 // ============================================================
 
+import { computeRegionColorMap } from "./regionColorAssigner.js";
+
 /**
  * renderRegionBadges(regions, boardEl)
  *
@@ -23,7 +25,7 @@
  *   - Places badge partially overlapping anchor cell only.
  *   - Never overlaps other cells or dominos.
  */
-export function renderRegionBadges(regions, boardEl) {
+export function renderRegionBadges(regions, regionMap, boardEl) {
   if (!boardEl || !Array.isArray(regions)) return;
 
   boardEl.querySelectorAll(".badge-layer").forEach(el => el.remove());
@@ -34,6 +36,7 @@ export function renderRegionBadges(regions, boardEl) {
     .getPropertyValue("--cell-gap"));
 
   const stride = cellSize + cellGap;
+  const regionColorMap = computeRegionColorMap(regionMap);
 
   for (const region of regions) {
     if (!region.rule || !Array.isArray(region.cells) || region.cells.length === 0) {
