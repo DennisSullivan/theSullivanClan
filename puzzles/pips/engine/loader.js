@@ -21,9 +21,13 @@ import { buildRegionMap } from "./regionMapBuilder.js";
 // an engine-ready state object.
 // ------------------------------------------------------------
 export function loadPuzzle(json) {
-  // Accept both canonical (boardRows/boardCols) and legacy (width/height)
-  const boardRows = json.boardRows ?? json.height;
-  const boardCols = json.boardCols ?? json.width;
+
+  const { width, height } = json;
+  if (!Number.isInteger(width) || !Number.isInteger(height)) {
+    throw new Error("Puzzle definition missing valid width/height");
+  }
+  const boardCols = width;
+  const boardRows = height;
 
   // Create empty grid
   const grid = createGrid(boardCols, boardRows);
