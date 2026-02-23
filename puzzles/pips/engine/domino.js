@@ -58,7 +58,6 @@ export function getHomeSlot(id) {
  *     id, pip0, pip1,
  *     row0, col0, row1, col1,
  *     trayOrientation,
- *     pivotHalf
  *   }
  *
  * DIAGNOSTICS:
@@ -79,8 +78,7 @@ export function createDomino(id) {
     col0: null,
     row1: null,
     col1: null,
-    trayOrientation: 0,
-    pivotHalf: null
+    trayOrientation: 0
   };
 }
 
@@ -111,7 +109,6 @@ export function clearBoardState(domino, grid) {
   domino.col0 = null;
   domino.row1 = null;
   domino.col1 = null;
-  domino.pivotHalf = null;
 }
 
 /**
