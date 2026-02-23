@@ -11,8 +11,8 @@
 //   - Assigns each domino a stable homeSlot based on puzzle order.
 // ============================================================
 
-import { MASTER_TRAY, createDomino } from "./domino.js";
-import { createGrid } from "./grid.js";
+import { createDomino } from "./domino.js";
+import { createGrid, setCell } from "./grid.js";
 import { buildRegionMap } from "./regionMapBuilder.js";
 
 // ------------------------------------------------------------
@@ -55,7 +55,7 @@ export function loadPuzzle(json) {
     blocked,
     regions: json.regions || [],
     startingDominoIds: new Set(
-      (json.startingDominos || []).map(d => String(d.id))
+      (json.startingDominos || []).map(e => String(e.domino))
     )
   };
 }
@@ -75,7 +75,7 @@ function loadDominos(idList) {
     d.homeSlot = index++;
     d.trayOrientation = 0;
 
-    map.set(id, d);
+    map.set(String(id), d);
   }
 
   return map;
@@ -89,7 +89,11 @@ function loadDominos(idList) {
 function applyStartingDominos(startingList, dominos, grid) {
   for (const entry of startingList) {
     const { domino: id, cells } = entry;
-    const d = createDomino(id);
+
+    const key = String(id);
+    const d = dominos.get(key);
+    if (!d) continue; // structural validation should prevent this
+
     d.isStarting = true;
 
     const r0 = cells[0].row;
@@ -102,10 +106,8 @@ function applyStartingDominos(startingList, dominos, grid) {
     d.row1 = r1;
     d.col1 = c1;
 
-    // Starting dominos always use pivotHalf = 0
-    d.pivotHalf = 0;
-
-    grid[r0][c0] = { dominoId: id, half: 0 };
-    grid[r1][c1] = { dominoId: id, half: 1 };
+    // Commit occupancy via canonical grid helper
+    setCell(grid, r0, c0, key, 0);
+    setCell(grid, r1, c1, key, 1);
   }
 }
