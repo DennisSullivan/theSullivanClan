@@ -33,8 +33,6 @@
 //     Callers must migrate to commitPlacement(state, proposal).
 // ============================================================
 
-import { evaluateAllRegions } from "./regionRules.js";
-
 // ------------------------------------------------------------
 // Small helpers
 // ------------------------------------------------------------
@@ -156,31 +154,6 @@ export function validatePlacementProposal(state, proposal) {
 
   if (cell0 && String(cell0.dominoId) !== dominoId) return { ok: false, reason: "occupied" };
   if (cell1 && String(cell1.dominoId) !== dominoId) return { ok: false, reason: "occupied" };
-
-  // Region rules (evaluated deterministically against committed board state + this proposal).
-  // We validate the *resulting committed state* by applying the proposal hypothetically.
-  if (state.regionMap && Array.isArray(state.regions) && state.regions.length > 0) {
-    const testGrid = cloneGrid(grid);
-
-    // Clear old occupancy for this domino (if any).
-    for (let rr = 0; rr < testGrid.length; rr++) {
-      for (let cc = 0; cc < testGrid[0].length; cc++) {
-        const occ = testGrid[rr][cc];
-        if (occ && String(occ.dominoId) === dominoId) testGrid[rr][cc] = null;
-      }
-    }
-
-    // Apply proposed occupancy.
-    testGrid[r0][c0] = { dominoId, half: 0 };
-    testGrid[r1][c1] = { dominoId, half: 1 };
-
-    const results = evaluateAllRegions(testGrid, state.regionMap, state.regions);
-    for (const rr of results) {
-      if (!rr.satisfied) {
-        return { ok: false, reason: "region-rule", info: rr };
-      }
-    }
-  }
 
   return { ok: true };
 }
