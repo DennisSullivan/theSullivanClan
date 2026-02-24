@@ -158,7 +158,7 @@ function captureGeometrySnapshot(dominoEl) {
 
 function createDragClone(sourceEl, snapshot) {
   const clone = sourceEl.cloneNode(true);
-  clone.classList.add("drag-clone");
+  clone.classList.add("domino-clone");
 
   clone.style.position = "fixed";
   clone.style.pointerEvents = "none";
