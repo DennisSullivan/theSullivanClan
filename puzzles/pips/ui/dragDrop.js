@@ -1,267 +1,204 @@
-// ui/interaction/dragDrop.js
-//
-// Implements PIPS Interaction & State Transitions — Drag Lifecycle
-//
-// Responsibilities:
-// - Manage pointer lifecycle (down / move / up)
-// - Create and move a visual drag clone
-// - Determine destination placement at pointer-up
-// - Emit a single PlacementProposal
-//
-// Non-responsibilities:
-// - No engine mutation
-// - No validation
-// - No snapping
-// - No heuristics
-// - No half identity inference
-//
-// Contract alignment:
-// - Placement is determined ONLY at pointer-up
-// - Destination is defined by the clone’s visual footprint
-// - Half identities never swap
-// - All logical changes cross the boundary as a PlacementProposal
+// ============================================================
+// FILE: ui/dragDrop.js
+// PURPOSE: Drag/drop interaction → PlacementProposal emitter.
+// MODEL:
+//   - Visual clone follows pointer (non-authoritative)
+//   - Logical geometry snapshot captured once at drag-start
+//   - UI computes final geometry and emits proposal
+//   - Engine is sole authority for accept/reject
+// ============================================================
 
-const DRAG_THRESHOLD_PX = 6;
-const dragRoots = {
-  boardEl: null,
-  trayEl: null
-};
-let dragState = null;
+export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
-// ------------------------------------------------------------------
-// Installation
-// ------------------------------------------------------------------
-//
-// installDragDrop()
-// Attaches drag/drop interaction handlers.
-// Configuration is limited to DOM scoping only.
-// No geometry or placement decisions occur here.
-
-export function installDragDrop({ boardEl, trayEl }) {
-  document.addEventListener("pointerdown", onPointerDown);
-
-  // Optional: store roots for cell detection if needed later
-  dragRoots.boardEl = boardEl;
-  dragRoots.trayEl = trayEl;
-}
-
-/* ------------------------------------------------------------------ */
-/* Pointer Down                                                        */
-/* ------------------------------------------------------------------ */
-
-export function onPointerDown(e) {
-  const dominoEl = e.target.closest(".domino");
-  if (!dominoEl) return;
-
-  console.log("DRAG START dominoId =", dominoEl.dataset.dominoId, dominoEl);
-
-  dragState = {
-    dominoId: dominoEl.dataset.dominoId,
-    sourceEl: dominoEl,
-    startX: e.clientX,
-    startY: e.clientY,
-    dragging: false,
+  const dragState = {
+    active: false,
+    wrapper: null,
     clone: null,
-    snapshot: null
+    startX: 0,
+    startY: 0,
+    moved: false,
+    geometry: null,
+    pointerId: null
   };
 
-  document.addEventListener("pointermove", onPointerMove);
-  document.addEventListener("pointerup", onPointerUp, { once: true });
-}
+  // ------------------------------------------------------------
+  // pointerDown
+  // ------------------------------------------------------------
+  function pointerDown(ev) {
+    const wrapper = ev.target.closest(".domino-wrapper");
+    if (!wrapper) return;
+    if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
 
-/* ------------------------------------------------------------------ */
-/* Pointer Move                                                        */
-/* ------------------------------------------------------------------ */
+    ev.preventDefault();
+    ev.target.setPointerCapture(ev.pointerId);
 
-function onPointerMove(e) {
-  if (!dragState) return;
-
-  const dx = e.clientX - dragState.startX;
-  const dy = e.clientY - dragState.startY;
-
-  if (!dragState.dragging) {
-    if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
-    startDrag(e);
+    dragState.active = true;
+    dragState.wrapper = wrapper;
+    dragState.startX = ev.clientX;
+    dragState.startY = ev.clientY;
+    dragState.moved = false;
+    dragState.geometry = null;
+    dragState.pointerId = ev.pointerId;
   }
 
-  updateClonePosition(e);
-}
+  // ------------------------------------------------------------
+  // beginRealDrag
+  // ------------------------------------------------------------
+  function beginRealDrag(wrapper, x, y) {
+    //wrapper.style.visibility = "hidden";
+    dragState.moved = true;
 
-/* ------------------------------------------------------------------ */
-/* Drag Start                                                          */
-/* ------------------------------------------------------------------ */
+    const trayOrientation =
+      ((Number(wrapper.dataset.trayOrientation) || 0) % 360 + 360) % 360;
 
-function startDrag(e) {
-  dragState.dragging = true;
+    let half0Side;
+    switch (trayOrientation) {
+      case 0:   half0Side = "left";   break;
+      case 180: half0Side = "right";  break;
+      case 90:  half0Side = "top";    break;
+      case 270: half0Side = "bottom"; break;
+      default:  half0Side = "left";
+    }
 
-  dragState.snapshot = captureGeometrySnapshot(dragState.sourceEl);
-  dragState.clone = createDragClone(dragState.sourceEl, dragState.snapshot);
+    dragState.geometry = { half0Side };
 
-  dragState.sourceEl.classList.add("hidden-during-drag");
+    const clone = wrapper.cloneNode(true);
+    const rect = wrapper.getBoundingClientRect();
 
-  updateClonePosition(e);
-}
+    clone.style.position = "fixed";
+    clone.style.margin = "0";
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    clone.style.pointerEvents = "none";
+    clone.style.zIndex = 9999;
+    clone.style.left = `${x}px`;
+    clone.style.top = `${y}px`;
+    clone.style.transform = "translate(-50%, -50%)";
 
-/* ------------------------------------------------------------------ */
-/* Drag Move (visual only)                                             */
-/* ------------------------------------------------------------------ */
-
-function updateClonePosition(e) {
-  const clone = dragState.clone;
-  if (!clone) return;
-
-  clone.style.left = `${e.clientX}px`;
-  clone.style.top = `${e.clientY}px`;
-}
-
-/* ------------------------------------------------------------------ */
-/* Pointer Up                                                          */
-/* ------------------------------------------------------------------ */
-
-function onPointerUp(e) {
-  document.removeEventListener("pointermove", onPointerMove);
-
-  if (!dragState) return;
-
-  if (!dragState.dragging) {
-    cleanup();
-    return;
+    document.body.appendChild(clone);
+    dragState.clone = clone;
   }
 
-  const { dominoId, clone, snapshot } = dragState;
+  // ------------------------------------------------------------
+  // pointerMove
+  // ------------------------------------------------------------
+  function pointerMove(ev) {
+    if (!dragState.active) return;
+    if (ev.pointerId !== dragState.pointerId) return;
 
-  const placement = computePlacementFromClone(clone, snapshot);
+    const dx = ev.clientX - dragState.startX;
+    const dy = ev.clientY - dragState.startY;
 
-  cleanup();
+    if (!dragState.clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
+      beginRealDrag(dragState.wrapper, dragState.startX, dragState.startY);
+    }
 
-  console.log("Placment", placement);
+    if (!dragState.clone) return;
 
-  if (!placement) return;
-
-  emitPlacementProposal({
-    dominoId,
-    ...placement
-  });
-}
-
-/* ------------------------------------------------------------------ */
-/* Geometry Snapshot                                                   */
-/* ------------------------------------------------------------------ */
-
-function captureGeometrySnapshot(dominoEl) {
-  return {
-    half0Side: dominoEl.dataset.half0Side,
-    width: dominoEl.offsetWidth,
-    height: dominoEl.offsetHeight
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/* Clone Creation                                                      */
-/* ------------------------------------------------------------------ */
-
-function createDragClone(sourceEl, snapshot) {
-  const clone = sourceEl.cloneNode(true);
-  clone.classList.add("domino-clone");
-
-  clone.style.position = "fixed";
-  clone.style.pointerEvents = "none";
-  clone.style.width = `${snapshot.width}px`;
-  clone.style.height = `${snapshot.height}px`;
-
-  document.body.appendChild(clone);
-  return clone;
-}
-
-/* ------------------------------------------------------------------ */
-/* Placement Determination                                             */
-/* ------------------------------------------------------------------ */
-
-function computePlacementFromClone(clone, snapshot) {
-  const cells = cellsUnderClone(clone);
-  if (cells.length !== 2) return null;
-
-  const [cellA, cellB] = cells;
-
-  const { row: rA, col: cA } = cellA.dataset;
-  const { row: rB, col: cB } = cellB.dataset;
-
-  if (snapshot.half0Side === "left" || snapshot.half0Side === "top") {
-    return {
-      row0: Number(rA),
-      col0: Number(cA),
-      row1: Number(rB),
-      col1: Number(cB)
-    };
+    dragState.clone.style.left = `${ev.clientX}px`;
+    dragState.clone.style.top  = `${ev.clientY}px`;
   }
 
-  return {
-    row0: Number(rB),
-    col0: Number(cB),
-    row1: Number(rA),
-    col1: Number(cA)
-  };
-}
+  // ------------------------------------------------------------
+  // pointerUp
+  // ------------------------------------------------------------
+  function pointerUp(ev) {
+    if (ev.pointerId !== dragState.pointerId) return;
 
-/* ------------------------------------------------------------------ */
-/* Board Cell Detection                                                */
-/* ------------------------------------------------------------------ */
+    const wrapper = dragState.wrapper;
+    const id = wrapper?.dataset.dominoId;
 
-function cellsUnderClone(clone) {
-  const rect = clone.getBoundingClientRect();
+    if (dragState.moved && id && dragState.clone) {
+      emitPlacementProposal(dragState.clone, id, dragState.geometry);
+    }
 
-  const midX = (rect.left + rect.right) / 2;
-  const midY = (rect.top + rect.bottom) / 2;
+    if (dragState.clone) dragState.clone.remove();
+    if (wrapper) wrapper.style.visibility = "visible";
 
-  const halfOffsetX = rect.width / 4;
-  const halfOffsetY = rect.height / 4;
+    try {
+      ev.target.releasePointerCapture(ev.pointerId);
+    } catch {}
 
-  const points = [
-    [midX - halfOffsetX, midY],
-    [midX + halfOffsetX, midY]
-  ];
-
-  const cells = new Set();
-
-  for (const [x, y] of points) {
-    const el = document.elementFromPoint(x, y);
-    const cell = el && el.closest(".board-cell");
-    if (cell) cells.add(cell);
+    dragState.active = false;
+    dragState.wrapper = null;
+    dragState.clone = null;
+    dragState.geometry = null;
+    dragState.moved = false;
+    dragState.pointerId = null;
   }
 
-  return Array.from(cells);
-}
+  // ------------------------------------------------------------
+  // emitPlacementProposal
+  // ------------------------------------------------------------
+  function emitPlacementProposal(node, id, geometry) {
+    if (!node || !geometry) return;
 
-/* ------------------------------------------------------------------ */
-/* Proposal Emission                                                   */
-/* ------------------------------------------------------------------ */
+    const boardRect = boardEl.getBoundingClientRect();
+    const rect = node.getBoundingClientRect();
 
-function emitPlacementProposal({ dominoId, row0, col0, row1, col1 }) {
-//  console.log("DROP PROPOSAL", proposal);
-  document.dispatchEvent(
-    new CustomEvent("pips:drop:proposal", {
+    const cellW = boardRect.width / cols;
+    const cellH = boardRect.height / rows;
+
+    const isHorizontal =
+      geometry.half0Side === "left" ||
+      geometry.half0Side === "right";
+
+    let halfRects;
+    if (isHorizontal) {
+      const w = rect.width / 2;
+      halfRects = [
+        { left: rect.left, right: rect.left + w, top: rect.top, bottom: rect.bottom },
+        { left: rect.left + w, right: rect.right, top: rect.top, bottom: rect.bottom }
+      ];
+    } else {
+      const h = rect.height / 2;
+      halfRects = [
+        { left: rect.left, right: rect.right, top: rect.top, bottom: rect.top + h },
+        { left: rect.left, right: rect.right, top: rect.top + h, bottom: rect.bottom }
+      ];
+    }
+
+    const targets = halfRects.map(r => {
+      const cx = (r.left + r.right) / 2;
+      const cy = (r.top + r.bottom) / 2;
+      return {
+        row: Math.floor((cy - boardRect.top) / cellH),
+        col: Math.floor((cx - boardRect.left) / cellW)
+      };
+    });
+
+    if (isHorizontal) {
+      targets[1].row = targets[0].row;
+      targets[1].col = targets[0].col + 1;
+    } else {
+      targets[1].col = targets[0].col;
+      targets[1].row = targets[0].row + 1;
+    }
+
+    const half0IsFirst =
+      geometry.half0Side === "left" ||
+      geometry.half0Side === "top";
+
+    const [a, b] = half0IsFirst ? targets : [targets[1], targets[0]];
+
+    boardEl.dispatchEvent(new CustomEvent("pips:drop:proposal", {
+      bubbles: true,
       detail: {
         proposal: {
-          id: String(dominoId),
-          row0,
-          col0,
-          row1,
-          col1
+          id,
+          row0: a.row,
+          col0: a.col,
+          row1: b.row,
+          col1: b.col
         }
-      },
-      bubbles: true
-    })
-  );
-}
+      }
+    }));
+  }
 
-/* ------------------------------------------------------------------ */
-/* Cleanup                                                             */
-/* ------------------------------------------------------------------ */
-
-function cleanup() {
-  if (dragState?.clone) dragState.clone.remove();
-  if (dragState?.sourceEl)
-    dragState.sourceEl.classList.remove("hidden-during-drag");
-
-  dragState = null;
+  // ------------------------------------------------------------
+  // Wiring
+  // ------------------------------------------------------------
+  document.addEventListener("pointerdown", pointerDown);
+  document.addEventListener("pointermove", pointerMove);
+  document.addEventListener("pointerup", pointerUp);
 }
