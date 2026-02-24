@@ -22,8 +22,28 @@
 // - All logical changes cross the boundary as a PlacementProposal
 
 const DRAG_THRESHOLD_PX = 6;
-
+const dragRoots = {
+  boardEl: null,
+  trayEl: null
+};
 let dragState = null;
+
+// ------------------------------------------------------------------
+// Installation
+// ------------------------------------------------------------------
+//
+// installDragDrop()
+// Attaches drag/drop interaction handlers.
+// Configuration is limited to DOM scoping only.
+// No geometry or placement decisions occur here.
+
+export function installDragDrop({ boardEl, trayEl }) {
+  document.addEventListener("pointerdown", onPointerDown);
+
+  // Optional: store roots for cell detection if needed later
+  dragRoots.boardEl = boardEl;
+  dragRoots.trayEl = trayEl;
+}
 
 /* ------------------------------------------------------------------ */
 /* Pointer Down                                                        */
