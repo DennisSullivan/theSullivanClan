@@ -1,6 +1,6 @@
 // ============================================================
 // FILE: placementValidator.js
-// PURPOSE:
+// PURPOSE: 
 //   Contract-compliant bridge between UI events and the engine’s
 //   single commit boundary.
 // ============================================================
