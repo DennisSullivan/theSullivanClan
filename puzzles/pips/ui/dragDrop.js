@@ -126,17 +126,16 @@ function onPointerUp(e) {
     return;
   }
 
-  const placement = computePlacementFromClone(
-    dragState.clone,
-    dragState.snapshot
-  );
+  const { dominoId, clone, snapshot } = dragState;
+
+  const placement = computePlacementFromClone(clone, snapshot);
 
   cleanup();
 
   if (!placement) return;
 
   emitPlacementProposal({
-    dominoId: dragState.dominoId,
+    dominoId,
     ...placement
   });
 }
