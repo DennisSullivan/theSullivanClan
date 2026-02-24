@@ -19,7 +19,7 @@ import { syncCheck } from "./engine/syncCheck.js";
 import { renderRegions } from "./ui/regionRenderer.js";
 import { renderBlockedCells } from "./ui/blockedRenderer.js";
 import { renderRegionBadges } from "./ui/badgeRenderer.js";
-import { installPlacementValidator } from "./engine/placementValidator.js";
+import { installPlacementValidator } from "./ui/interaction/placementValidator.js";
 
 /**
  * validatePuzzle(p)
