@@ -66,11 +66,6 @@ export function renderDomino(domino, wrapper) {
   let pip1 = normalizePipValue(domino?.pip1);
 
   // ------------------------------------------------------------
-  // Build DOM structure
-  // ------------------------------------------------------------
-  inner = document.createElement("div");
-  inner.className = "domino";
-  // ------------------------------------------------------------
   // Orientation (board only)
   // ------------------------------------------------------------
   const half0Side = wrapper.dataset.half0Side;
