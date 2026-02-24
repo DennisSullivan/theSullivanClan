@@ -1,32 +1,30 @@
 // ============================================================
 // FILE: ui/rotation.js
-// PURPOSE: Rotation session state machine for dominos.
-// NOTES:
-//  - Double-click enters rotation session (geometry-only).
-//  - Subsequent double-clicks rotate geometry-only.
-//  - Session ends on pointerdown outside the domino or pointerup.
-//  - On session end we emit 'pips:board-rotate-request'.
+// PURPOSE: Rotation session → PlacementProposal emitter.
+// MODEL:
+//  - Rotation is geometry-only until commit
+//  - No board mutation during session
+//  - Session end emits a PlacementProposal
+//  - Engine is sole authority for accept/reject
 // ============================================================
 
 let rotatingDomino = null;
 let rotatingPrev = null;
 let rotatingPivot = 0;
-let rotatingRender = null;
 let rotatingBoardEl = null;
 
-export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
-  if (!boardEl || !renderPuzzle) {
-    console.warn("initRotation: missing required args");
+export function initRotation(dominos, trayEl, boardEl) {
+  if (!boardEl) {
+    console.warn("initRotation: missing boardEl");
     return;
   }
 
-  rotatingRender = renderPuzzle;
   rotatingBoardEl = boardEl;
 
   console.log("ROT: initRotation complete");
 
   // ----------------------------------------------------------
-  // TRAY single-click rotates tray domino visually
+  // TRAY single-click rotates tray domino visually (allowed)
   // ----------------------------------------------------------
   trayEl.addEventListener("click", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
@@ -35,16 +33,9 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
     const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
     if (!domino) return;
-    if (domino.row0 !== null) return; // only tray dominos
+    if (domino.row0 !== null) return;
 
     domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
-
-    console.log("ROT: tray rotate", {
-      id,
-      newOrientation: domino.trayOrientation
-    });
-
-    renderPuzzle();
   });
 
   // ----------------------------------------------------------
@@ -57,13 +48,11 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
     const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
     if (!domino) return;
-    if (domino.row0 === null) return; // only board dominos
+    if (domino.row0 === null) return;
 
-    // Determine pivot half
     const halfEl = event.target.closest(".half");
     const pivotHalf = halfEl?.classList.contains("half1") ? 1 : 0;
 
-    // Start or continue session
     if (rotatingDomino !== domino) {
       rotatingDomino = domino;
       rotatingPrev = {
@@ -83,22 +72,6 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
       rotatingPivot = pivotHalf;
       console.log("ROT: session continue", { id, pivotHalf });
     }
-
-    // Geometry-only rotation
-    rotateDominoOnBoard(domino, pivotHalf);
-
-    console.log("ROT: geometry rotate", {
-      id,
-      pivotHalf,
-      new: {
-        r0: domino.row0,
-        c0: domino.col0,
-        r1: domino.row1,
-        c1: domino.col1
-      }
-    });
-
-    renderPuzzle();
   });
 
   // ----------------------------------------------------------
@@ -112,7 +85,6 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
       String(rotatingDomino.id);
 
     if (!insideSame) {
-      console.log("ROT: pointerdown outside → end session");
       endRotationSession();
     }
   });
@@ -122,41 +94,67 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   // ----------------------------------------------------------
   document.addEventListener("pointerup", () => {
     if (rotatingDomino) {
-      console.log("ROT: pointerup → end session");
       endRotationSession();
     }
   });
 }
 
+// ------------------------------------------------------------
+// Session end → emit PlacementProposal
+// ------------------------------------------------------------
 function endRotationSession() {
-  if (!rotatingDomino) return;
+  if (!rotatingDomino || !rotatingPrev) return;
 
   const d = rotatingDomino;
-  const prev = rotatingPrev
-    ? { ...rotatingPrev }
-    : { r0: d.row0, c0: d.col0, r1: d.row1, c1: d.col1 };
+  const { r0, c0, r1, c1 } = rotatingPrev;
 
-  console.log("ROT: endRotationSession", {
-    id: d.id,
-    pivotHalf: rotatingPivot,
-    prev
-  });
+  const pivot =
+    rotatingPivot === 0
+      ? { r: r0, c: c0 }
+      : { r: r1, c: c1 };
 
-  const ev = new CustomEvent("pips:board-rotate-request", {
-    detail: { id: d.id, pivotHalf: rotatingPivot, prev },
-    bubbles: true
-  });
-  document.dispatchEvent(ev);
+  const other =
+    rotatingPivot === 0
+      ? { r: r1, c: c1 }
+      : { r: r0, c: c0 };
+
+  // 90° clockwise rotation around pivot
+  const dr = other.r - pivot.r;
+  const dc = other.c - pivot.c;
+
+  const rotated = {
+    r: pivot.r - dc,
+    c: pivot.c + dr
+  };
+
+  const half0IsPivot = rotatingPivot === 0;
+
+  const proposal = half0IsPivot
+    ? {
+        id: d.id,
+        row0: pivot.r,
+        col0: pivot.c,
+        row1: rotated.r,
+        col1: rotated.c
+      }
+    : {
+        id: d.id,
+        row0: rotated.r,
+        col0: rotated.c,
+        row1: pivot.r,
+        col1: pivot.c
+      };
+
+  console.log("ROT: emit placement proposal", proposal);
+
+  rotatingBoardEl.dispatchEvent(
+    new CustomEvent("pips:drop:proposal", {
+      bubbles: true,
+      detail: { proposal }
+    })
+  );
 
   rotatingDomino = null;
   rotatingPrev = null;
   rotatingPivot = 0;
-
-  setTimeout(() => {
-    try {
-      rotatingRender();
-    } catch (e) {
-      console.warn("ROT: render error after session end", e);
-    }
-  }, 0);
 }
