@@ -207,9 +207,16 @@ function computePlacementFromClone(clone, snapshot) {
 
 function cellsUnderClone(clone) {
   const rect = clone.getBoundingClientRect();
+
+  const midX = (rect.left + rect.right) / 2;
+  const midY = (rect.top + rect.bottom) / 2;
+
+  const halfOffsetX = rect.width / 4;
+  const halfOffsetY = rect.height / 4;
+
   const points = [
-    [rect.left + 2, rect.top + 2],
-    [rect.right - 2, rect.bottom - 2]
+    [midX - halfOffsetX, midY],
+    [midX + halfOffsetX, midY]
   ];
 
   const cells = new Set();
