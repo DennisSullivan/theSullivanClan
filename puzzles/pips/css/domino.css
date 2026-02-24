@@ -160,6 +160,8 @@
 /* Drag clone */
 .domino-clone {
   position: fixed;
+  outline: 2px solid rgba(0, 120, 255, 0.85);
+  outline-offset: 2px;
   transform: translate(-50%, -50%);
   transform-origin: center center;
   z-index: 9999;
