@@ -5,8 +5,8 @@
 //   single commit boundary.
 // ============================================================
 
-import { commitPlacement } from "./placement.js";
-import { evaluateAllRegions } from "./regionRules.js";
+import { commitPlacement } from "../../engine/placement.js";
+import { evaluateAllRegions } from "../../engine/regionRules.js";
 
 // ------------------------------------------------------------
 // dispatchEvents(target, names, detail)
