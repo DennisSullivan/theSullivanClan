@@ -114,6 +114,10 @@ export function startPuzzle(puzzleJson) {
     initRotation(dominos, trayEl, boardEl, renderPuzzle);
   }, 0);
 
+  document.addEventListener("pips:drop:reject:board", e => {
+    console.warn("DROP REJECTED", e.detail);
+  });
+
   // Expose for debugging and manual re-render
   window.__PIPS = window.__PIPS || {};
   window.__PIPS.puzzleDef = puzzleDef;
