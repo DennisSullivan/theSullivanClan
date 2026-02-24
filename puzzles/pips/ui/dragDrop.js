@@ -226,6 +226,7 @@ function cellsUnderClone(clone) {
 /* ------------------------------------------------------------------ */
 
 function emitPlacementProposal(proposal) {
+  console.log("DROP PROPOSAL", proposal);
   document.dispatchEvent(
     new CustomEvent("pips:drop:proposal", { detail: proposal })
   );
