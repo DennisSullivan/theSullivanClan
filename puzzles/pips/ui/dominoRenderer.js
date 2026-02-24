@@ -41,6 +41,10 @@ export function renderDomino(domino, wrapper) {
     wrapperClass: wrapper?.className
   });
   
+  const inner = document.createElement("div");
+  inner.className = "domino";
+  inner.dataset.dominoId = String(domino?.id);
+  
   wrapper.style.outline = "3px solid magenta";
 
   console.assert(
