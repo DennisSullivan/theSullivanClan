@@ -68,7 +68,7 @@ export function renderDomino(domino, wrapper) {
   // ------------------------------------------------------------
   // Build DOM structure
   // ------------------------------------------------------------
-  const inner = document.createElement("div");
+  inner = document.createElement("div");
   inner.className = "domino";
   // ------------------------------------------------------------
   // Orientation (board only)
