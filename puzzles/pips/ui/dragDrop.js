@@ -132,6 +132,8 @@ function onPointerUp(e) {
 
   cleanup();
 
+  console.log("Placment", placement);
+
   if (!placement) return;
 
   emitPlacementProposal({
