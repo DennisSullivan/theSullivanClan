@@ -53,6 +53,8 @@ export function onPointerDown(e) {
   const dominoEl = e.target.closest(".domino");
   if (!dominoEl) return;
 
+  console.log("DRAG START dominoId =", dominoEl.dataset.dominoId, dominoEl);
+
   dragState = {
     dominoId: dominoEl.dataset.dominoId,
     sourceEl: dominoEl,
