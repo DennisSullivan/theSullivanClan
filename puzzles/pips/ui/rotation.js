@@ -1,11 +1,9 @@
 // ============================================================
 // FILE: ui/rotation.js
-// PURPOSE: Visual-only pivot preview for board rotation.
-// MODEL:
-//  - Board rotation is a pivot around the initially clicked cell
-//  - Pivot cell is frozen for the session
-//  - No logical mutation during session
-//  - Preview survives renderPuzzle()
+// PURPOSE: DIAGNOSTIC rotation preview instrumentation
+// NOTE:
+//   - NO behavior changes
+//   - Logs every invariant involved in rotation
 // ============================================================
 
 import { findDominoCells } from "../engine/grid.js";
@@ -17,9 +15,6 @@ let rotationGhost = null;
 
 export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
 
-  // ----------------------------------------------------------
-  // TRAY click rotates tray domino visually (unchanged)
-  // ----------------------------------------------------------
   trayEl.addEventListener("click", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
@@ -33,9 +28,6 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     renderPuzzle();
   });
 
-  // ----------------------------------------------------------
-  // BOARD double-click → pivot preview (ADVANCING)
-  // ----------------------------------------------------------
   document.addEventListener("dblclick", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
@@ -48,9 +40,6 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const halfEl = event.target.closest(".half");
     if (!halfEl) return;
 
-    // --------------------------------------------------------
-    // Derive clicked grid cell from wrapper anchor + geometry
-    // --------------------------------------------------------
     const baseRow = Number(wrapper.style.getPropertyValue("--row"));
     const baseCol = Number(wrapper.style.getPropertyValue("--col"));
     const half0Side = wrapper.dataset.half0Side;
@@ -67,19 +56,15 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       }
     }
 
-    // --------------------------------------------------------
-    // Start or continue rotation session
-    // --------------------------------------------------------
+    console.log("ROTATE: clickCell", { clickRow, clickCol });
+
     if (rotatingDomino !== domino) {
       rotatingDomino = domino;
       rotatingPivotCell = { row: clickRow, col: clickCol };
 
       const cells = findDominoCells(grid, String(id));
-      if (cells.length !== 2) return;
-
       const cell0 = cells.find(c => c.half === 0);
       const cell1 = cells.find(c => c.half === 1);
-      if (!cell0 || !cell1) return;
 
       rotatingPrev = {
         r0: cell0.row,
@@ -96,15 +81,19 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       };
     }
 
-    // --------------------------------------------------------
-    // Determine pivotHalf from frozen pivot cell
-    // --------------------------------------------------------
+    console.log("ROTATE: pivotCell(frozen)", rotatingPivotCell);
+    console.log("ROTATE: prevUsed", rotatingPrev);
+
     const pivotHalf =
       (rotatingPrev.r1 === rotatingPivotCell.row &&
        rotatingPrev.c1 === rotatingPivotCell.col) ? 1 : 0;
 
+    console.log("ROTATE: pivotHalf", pivotHalf);
+
     const preview = computePivotPreview(rotatingPrev, pivotHalf);
     if (!preview) return;
+
+    console.log("ROTATE: preview", preview);
 
     rotationGhost = {
       id: domino.id,
@@ -117,9 +106,6 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     renderPuzzle();
   });
 
-  // ----------------------------------------------------------
-  // End session on pointerdown outside
-  // ----------------------------------------------------------
   document.addEventListener("pointerdown", (event) => {
     if (!rotatingDomino) return;
 
@@ -131,9 +117,6 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   });
 }
 
-// ------------------------------------------------------------
-// Compute pivoted placement (CLOCKWISE)
-// ------------------------------------------------------------
 function computePivotPreview(prev, pivotHalf) {
   const pivot =
     pivotHalf === 0
@@ -148,14 +131,14 @@ function computePivotPreview(prev, pivotHalf) {
   const dr = other.r - pivot.r;
   const dc = other.c - pivot.c;
 
-  // vertical → horizontal (clockwise)
+  console.log("ROTATE: dr/dc", dr, dc, "pivot", pivot);
+
   if (Math.abs(dr) === 1 && dc === 0) {
     return pivotHalf === 0
       ? { row0: pivot.r, col0: pivot.c, row1: pivot.r, col1: pivot.c - dr }
       : { row0: pivot.r, col0: pivot.c - dr, row1: pivot.r, col1: pivot.c };
   }
 
-  // horizontal → vertical (clockwise)
   if (Math.abs(dc) === 1 && dr === 0) {
     return pivotHalf === 0
       ? { row0: pivot.r, col0: pivot.c, row1: pivot.r + dc, col1: pivot.c }
@@ -165,9 +148,6 @@ function computePivotPreview(prev, pivotHalf) {
   return null;
 }
 
-// ------------------------------------------------------------
-// Clear preview state
-// ------------------------------------------------------------
 function clearRotationPreview(renderPuzzle) {
   rotationGhost = null;
   rotatingDomino = null;
@@ -176,9 +156,6 @@ function clearRotationPreview(renderPuzzle) {
   renderPuzzle();
 }
 
-// ------------------------------------------------------------
-// EXPORTS
-// ------------------------------------------------------------
 export function getRotatingDominoId() {
   return rotatingDomino?.id ?? null;
 }
