@@ -111,7 +111,7 @@ export function startPuzzle(puzzleJson) {
     });
 
     // Enable rotation mode (rotation no longer depends on dragDrop)
-    initRotation(dominos, trayEl, boardEl, renderPuzzle);
+    initRotation(dominos, grid, trayEl, boardEl, renderPuzzle);
   }, 0);
 
   document.addEventListener("pips:drop:reject:board", e => {
