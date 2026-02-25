@@ -45,8 +45,28 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const domino = dominos.get(id);
     if (!domino) return;
 
-    const halfEl = event.target.closest(".half");
-    const pivotHalf = halfEl?.classList.contains("half1") ? 1 : 0;
+    const cellEl = event.target.closest(".board-cell");
+    if (!cellEl) return;
+    
+    const clickRow = Number(cellEl.dataset.row);
+    const clickCol = Number(cellEl.dataset.col);
+    
+    // Determine pivot half by grid truth
+    let pivotHalf = 0;
+    
+    if (rotationGhost && rotatingDomino === domino) {
+      // Use ghost placement during session
+      if (rotationGhost.row1 === clickRow && rotationGhost.col1 === clickCol) {
+        pivotHalf = 1;
+      }
+    } else {
+      // Use grid truth initially
+      const cells = findDominoCells(grid, String(id));
+      const cell1 = cells.find(c => c.half === 1);
+      if (cell1 && cell1.row === clickRow && cell1.col === clickCol) {
+        pivotHalf = 1;
+      }
+    }
 
     // --------------------------------------------------------
     // Determine previous placement
