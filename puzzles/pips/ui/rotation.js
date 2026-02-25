@@ -123,40 +123,45 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   });
 }
 
+// computePivotPreview()
+// Computes a 90° clockwise rotation preview.
+// IMPORTANT INVARIANT:
+//   - row0/col0 is ALWAYS half0 (wrapper anchor)
+//   - row1/col1 is ALWAYS half1
 function computePivotPreview(prev, pivotHalf) {
-  const pivot =
-    pivotHalf === 0
-      ? { r: prev.r0, c: prev.c0 }
-      : { r: prev.r1, c: prev.c1 };
+  const half0 = { r: prev.r0, c: prev.c0 };
+  const half1 = { r: prev.r1, c: prev.c1 };
 
-  const other =
-    pivotHalf === 0
-      ? { r: prev.r1, c: prev.c1 }
-      : { r: prev.r0, c: prev.c0 };
+  const pivot = pivotHalf === 0 ? half0 : half1;
+  const other = pivotHalf === 0 ? half1 : half0;
 
   const dr = other.r - pivot.r;
   const dc = other.c - pivot.c;
 
-  // 90° clockwise rotation: (dr, dc) → (dc, -dr)
-  const newDr = dc;
-  const newDc = -dr;
-
-  const newOther = {
-    r: pivot.r + newDr,
-    c: pivot.c + newDc
+  // 90° clockwise rotation
+  const rotatedOther = {
+    r: pivot.r + dc,
+    c: pivot.c - dr
   };
 
-  return pivotHalf === 0
-    ? { row0: pivot.r, col0: pivot.c, row1: newOther.r, col1: newOther.c }
-    : { row0: newOther.r, col0: newOther.c, row1: pivot.r, col1: pivot.c };
-}
-
-function clearRotationPreview(renderPuzzle) {
-  rotationGhost = null;
-  rotatingDomino = null;
-  rotatingPrev = null;
-  rotatingPivotCell = null;
-  renderPuzzle();
+  // Re‑express result in half0‑anchored form
+  if (pivotHalf === 0) {
+    // half0 is pivot
+    return {
+      row0: pivot.r,
+      col0: pivot.c,
+      row1: rotatedOther.r,
+      col1: rotatedOther.c
+    };
+  } else {
+    // half1 is pivot; half0 moved
+    return {
+      row0: rotatedOther.r,
+      col0: rotatedOther.c,
+      row1: pivot.r,
+      col1: pivot.c
+    };
+  }
 }
 
 export function getRotatingDominoId() {
