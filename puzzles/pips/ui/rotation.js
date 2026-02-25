@@ -2,7 +2,7 @@
 // FILE: ui/rotation.js
 // PURPOSE: DIAGNOSTIC rotation preview instrumentation
 // NOTE:
-//   - NO behavior changes
+//   - NO behavior changes except fixing pivot-half detection
 //   - Logs every invariant involved in rotation
 // ============================================================
 
@@ -32,21 +32,18 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
     if (!boardEl.contains(wrapper)) return;
-  
+
     const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
     if (!domino) return;
-  
-    const halfEl = event.target.closest(".half");
-    if (!halfEl) return;
-  
-    // ----------------------------------------------------
-    // AUTHORITATIVE pivot-half detection
-    // ----------------------------------------------------
-    const clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
 
     const halfEl = event.target.closest(".half");
     if (!halfEl) return;
+
+    // --------------------------------------------------------
+    // FIX: authoritative pivot-half detection
+    // --------------------------------------------------------
+    const clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
 
     const baseRow = Number(wrapper.style.getPropertyValue("--row"));
     const baseCol = Number(wrapper.style.getPropertyValue("--col"));
@@ -55,7 +52,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     let clickRow = baseRow;
     let clickCol = baseCol;
 
-    if (halfEl.classList.contains("half1")) {
+    if (clickedHalf === 1) {
       switch (half0Side) {
         case "left":   clickCol = baseCol + 1; break;
         case "right":  clickCol = baseCol - 1; break;
@@ -92,6 +89,9 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     console.log("ROTATE: pivotCell(frozen)", rotatingPivotCell);
     console.log("ROTATE: prevUsed", rotatingPrev);
 
+    // --------------------------------------------------------
+    // FIX: pivotHalf = clickedHalf (spec invariant)
+    // --------------------------------------------------------
     const pivotHalf = clickedHalf;
 
     console.log("ROTATE: pivotHalf", pivotHalf);
