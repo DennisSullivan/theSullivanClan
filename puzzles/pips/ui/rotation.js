@@ -5,19 +5,17 @@
 //  - Board rotation is a pivot around the clicked half
 //  - No logical mutation during session
 //  - No engine interaction
-//  - Visual preview only (discardable)
+//  - Preview survives renderPuzzle()
 // ============================================================
 
 let rotatingDomino = null;
 let rotatingPrev = null;
 let rotatingPivot = 0;
-let rotationGhost = null;
-let boardElRef = null;
-let renderDominoRef = null;
 
-export function initRotation(dominos, trayEl, boardEl, renderDomino) {
-  boardElRef = boardEl;
-  renderDominoRef = renderDomino;
+// NOTE: reused as render-state, NOT a DOM node
+let rotationGhost = null;
+
+export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
 
   // ----------------------------------------------------------
   // TRAY click rotates tray domino visually (allowed)
@@ -32,6 +30,7 @@ export function initRotation(dominos, trayEl, boardEl, renderDomino) {
     if (domino.row0 !== null) return;
 
     domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
+    renderPuzzle();
   });
 
   // ----------------------------------------------------------
@@ -60,7 +59,19 @@ export function initRotation(dominos, trayEl, boardEl, renderDomino) {
     }
 
     rotatingPivot = pivotHalf;
-    showPivotPreview(domino, rotatingPrev, pivotHalf);
+
+    const preview = computePivotPreview(rotatingPrev, pivotHalf);
+    if (!preview) return;
+
+    rotationGhost = {
+      id: domino.id,
+      row0: preview.row0,
+      col0: preview.col0,
+      row1: preview.row1,
+      col1: preview.col1
+    };
+
+    renderPuzzle();
   });
 
   // ----------------------------------------------------------
@@ -73,14 +84,14 @@ export function initRotation(dominos, trayEl, boardEl, renderDomino) {
       event.target.closest(".domino-wrapper")?.dataset.dominoId ===
       String(rotatingDomino.id);
 
-    if (!inside) clearRotationPreview();
+    if (!inside) clearRotationPreview(renderPuzzle);
   });
 
   // ----------------------------------------------------------
   // End session on pointerup
   // ----------------------------------------------------------
   document.addEventListener("pointerup", () => {
-    if (rotatingDomino) clearRotationPreview();
+    if (rotatingDomino) clearRotationPreview(renderPuzzle);
   });
 }
 
@@ -119,48 +130,19 @@ function computePivotPreview(prev, pivotHalf) {
 }
 
 // ------------------------------------------------------------
-// Render visual ghost preview
+// Clear preview state
 // ------------------------------------------------------------
-function showPivotPreview(domino, prev, pivotHalf) {
-  const preview = computePivotPreview(prev, pivotHalf);
-  if (!preview) return;
-
-  if (rotationGhost) rotationGhost.remove();
-
-  rotationGhost = document.createElement("div");
-  rotationGhost.className = "domino-wrapper ghost";
-  rotationGhost.dataset.dominoId = domino.id;
-
-  const isHorizontal = preview.row0 === preview.row1;
-  rotationGhost.dataset.half0Side = isHorizontal
-    ? preview.col1 > preview.col0 ? "left" : "right"
-    : preview.row1 > preview.row0 ? "top" : "bottom";
-
-  const boardRect = boardElRef.getBoundingClientRect();
-  const rows = Number(boardElRef.dataset.rows);
-  const cols = Number(boardElRef.dataset.cols);
-  const cellW = boardRect.width / cols;
-  const cellH = boardRect.height / rows;
-
-  rotationGhost.style.position = "absolute";
-  rotationGhost.style.left = `${preview.col0 * cellW}px`;
-  rotationGhost.style.top = `${preview.row0 * cellH}px`;
-  rotationGhost.style.width = `${isHorizontal ? cellW * 2 : cellW}px`;
-  rotationGhost.style.height = `${isHorizontal ? cellH : cellH * 2}px`;
-  rotationGhost.style.pointerEvents = "none";
-  rotationGhost.style.opacity = "0.6";
-
-  boardElRef.appendChild(rotationGhost);
-  renderDominoRef(domino, rotationGhost);
-}
-
-// ------------------------------------------------------------
-// Clear preview
-// ------------------------------------------------------------
-function clearRotationPreview() {
-  if (rotationGhost) rotationGhost.remove();
+function clearRotationPreview(renderPuzzle) {
   rotationGhost = null;
   rotatingDomino = null;
   rotatingPrev = null;
   rotatingPivot = 0;
+  renderPuzzle();
+}
+
+// ------------------------------------------------------------
+// EXPORT: renderer hook
+// ------------------------------------------------------------
+export function getRotationGhost() {
+  return rotationGhost;
 }
