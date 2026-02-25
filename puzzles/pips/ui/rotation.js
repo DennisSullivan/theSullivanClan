@@ -66,11 +66,11 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     if (rotatingDomino !== domino) {
       rotatingDomino = domino;
       rotatingPivotCell = { row: clickRow, col: clickCol };
-
+    
       const cells = findDominoCells(grid, String(id));
       const cell0 = cells.find(c => c.half === 0);
       const cell1 = cells.find(c => c.half === 1);
-
+    
       rotatingPrev = {
         r0: cell0.row,
         c0: cell0.col,
@@ -78,12 +78,10 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
         c1: cell1.col
       };
     } else {
-      rotatingPrev = {
-        r0: rotationGhost.row0,
-        c0: rotationGhost.col0,
-        r1: rotationGhost.row1,
-        c1: rotationGhost.col1
-      };
+      // IMPORTANT:
+      // Use the last preview geometry *as-is*.
+      // Do NOT reinterpret anchor or pivot.
+      rotatingPrev = { ...rotationGhost };
     }
 
     console.log("ROTATE: pivotCell(frozen)", rotatingPivotCell);
