@@ -45,6 +45,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
 
     if (id === rotatingId && ghost) {
       // Substitute ghost placement
+      console.log("RENDER: using ghost cells", cells);
       cells = [
         { row: ghost.row0, col: ghost.col0, half: 0 },
         { row: ghost.row1, col: ghost.col1, half: 1 }
