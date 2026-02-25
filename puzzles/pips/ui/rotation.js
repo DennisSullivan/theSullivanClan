@@ -137,8 +137,8 @@ function computePivotPreview(prev, pivotHalf) {
   // horizontal → vertical
   if (Math.abs(dc) === 1 && dr === 0) {
     return pivotHalf === 0
-      ? { row0: pivot.r, col0: pivot.c, row1: pivot.r - dc, col1: pivot.c }
-      : { row0: pivot.r - dc, col0: pivot.c, row1: pivot.r, col1: pivot.c };
+      ? { row0: pivot.r, col0: pivot.c, row1: pivot.r + dc, col1: pivot.c }
+      : { row0: pivot.r + dc, col0: pivot.c, row1: pivot.r, col1: pivot.c };
   }
 
   return null;
