@@ -36,9 +36,10 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   // ----------------------------------------------------------
   // BOARD double-click → pivot preview
   // ----------------------------------------------------------
-  boardEl.addEventListener("dblclick", (event) => {
+  document.addEventListener("dblclick", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
+    if (!boardEl.contains(wrapper)) return;
 
     const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
@@ -90,9 +91,9 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   // ----------------------------------------------------------
   // End session on pointerup
   // ----------------------------------------------------------
-  document.addEventListener("pointerup", () => {
-    if (rotatingDomino) clearRotationPreview(renderPuzzle);
-  });
+//  document.addEventListener("pointerup", () => {
+//    if (rotatingDomino) clearRotationPreview(renderPuzzle);
+//  });
 }
 
 // ------------------------------------------------------------
