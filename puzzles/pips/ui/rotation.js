@@ -49,11 +49,9 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const domino = dominos.get(id);
     if (!domino) return;
 
-    const cells = findDominoCells(grid, String(id));
-    console.log("ROTATE: grid cells", id, JSON.stringify(cells));
-
     // Authoritative placement comes from the grid
     const cells = findDominoCells(grid, String(id));
+    console.log("ROTATE: grid cells", id, JSON.stringify(cells));
     if (cells.length !== 2) return;
 
     const cell0 = cells.find(c => c.half === 0);
