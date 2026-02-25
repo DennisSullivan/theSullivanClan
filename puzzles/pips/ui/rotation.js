@@ -77,11 +77,16 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
         r1: cell1.row,
         c1: cell1.col
       };
-    } else {
+   } else {
       // IMPORTANT:
-      // Use the last preview geometry *as-is*.
-      // Do NOT reinterpret anchor or pivot.
-      rotatingPrev = { ...rotationGhost };
+      // rotationGhost uses row0/col0/row1/col1.
+      // computePivotPreview expects r0/c0/r1/c1.
+      rotatingPrev = {
+        r0: rotationGhost.row0,
+        c0: rotationGhost.col0,
+        r1: rotationGhost.row1,
+        c1: rotationGhost.col1
+      };
     }
 
     console.log("ROTATE: pivotCell(frozen)", rotatingPivotCell);
