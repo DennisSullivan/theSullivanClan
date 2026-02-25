@@ -1,104 +1,168 @@
 // ============================================================
-// FILE: ui/boardRenderer.js
-// PURPOSE: Render board cells and dominos.
-// NOTES:
-//   - Grid is authoritative for logical placement.
-//   - Rotation preview uses rotationGhost as a visual override.
-//   - During rotation preview, we visually anchor the wrapper to
-//     half1 (the pivot half) so the pivot appears fixed.
+// FILE: ui/rotation.js
+// PURPOSE: DIAGNOSTIC rotation preview instrumentation
+// NOTE:
+//   - NO behavior changes except fixing pivot-half detection
+//   - Logs every invariant involved in rotation
 // ============================================================
 
-import { renderDomino } from "./dominoRenderer.js";
 import { findDominoCells } from "../engine/grid.js";
-import { getRotationGhost } from "./rotation.js";
 
-// renderBoard()
-// Renders the board background cells and all dominos.
-// If a rotation preview is active, we render the ghost geometry for that domino.
-export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
-  if (!boardEl) return;
+let rotatingDomino = null;
+let rotatingPrev = null;
+let rotatingPivotCell = null;
+let rotationGhost = null;
 
-  boardEl.innerHTML = "";
+export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
 
-  const rows = grid.length;
-  const cols = grid[0].length;
+  trayEl.addEventListener("click", (event) => {
+    const wrapper = event.target.closest(".domino-wrapper");
+    if (!wrapper) return;
 
-  boardEl.style.position = "relative";
-  boardEl.style.gridTemplateColumns =
-    `repeat(${cols}, calc(var(--cell-size) + var(--cell-gap)))`;
-  boardEl.style.gridTemplateRows =
-    `repeat(${rows}, calc(var(--cell-size) + var(--cell-gap)))`;
+    const id = wrapper.dataset.dominoId;
+    const domino = dominos.get(id);
+    if (!domino) return;
+    if (domino.row0 !== null) return;
 
-  // ----------------------------------------------------------
-  // 1. Render background cells
-  // ----------------------------------------------------------
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const cell = document.createElement("div");
-      cell.className = "board-cell";
-      cell.dataset.row = String(r);
-      cell.dataset.col = String(c);
+    domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
+    renderPuzzle();
+  });
 
-      if (blocked?.has(`${r},${c}`)) {
-        cell.classList.add("blocked");
+  document.addEventListener("dblclick", (event) => {
+    const wrapper = event.target.closest(".domino-wrapper");
+    if (!wrapper) return;
+    if (!boardEl.contains(wrapper)) return;
+
+    const id = wrapper.dataset.dominoId;
+    const domino = dominos.get(id);
+    if (!domino) return;
+
+    const halfEl = event.target.closest(".half");
+    if (!halfEl) return;
+
+    // --------------------------------------------------------
+    // FIX: authoritative pivot-half detection
+    // --------------------------------------------------------
+    const clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
+
+    const baseRow = Number(wrapper.style.getPropertyValue("--row"));
+    const baseCol = Number(wrapper.style.getPropertyValue("--col"));
+    const half0Side = wrapper.dataset.half0Side;
+
+    let clickRow = baseRow;
+    let clickCol = baseCol;
+
+    if (clickedHalf === 1) {
+      switch (half0Side) {
+        case "left":   clickCol = baseCol + 1; break;
+        case "right":  clickCol = baseCol - 1; break;
+        case "top":    clickRow = baseRow + 1; break;
+        case "bottom": clickRow = baseRow - 1; break;
       }
-
-      boardEl.appendChild(cell);
     }
-  }
 
-  // ----------------------------------------------------------
-  // 2. Render dominos (grid-derived, ghost-aware)
-  // ----------------------------------------------------------
-  const ghost = getRotationGhost();
-  const ghostId = ghost ? String(ghost.id) : null;
+    console.log("ROTATE: clickCell", { clickRow, clickCol });
 
-  for (const [id, d] of dominos) {
-    let cells;
+    if (rotatingDomino !== domino) {
+      rotatingDomino = domino;
+      rotatingPivotCell = { row: clickRow, col: clickCol };
 
-    if (ghost && String(id) === ghostId) {
-      // Substitute ghost placement (visual only)
-      cells = [
-        { row: ghost.row0, col: ghost.col0, half: 0 },
-        { row: ghost.row1, col: ghost.col1, half: 1 }
-      ];
+      const cells = findDominoCells(grid, String(id));
+      const cell0 = cells.find(c => c.half === 0);
+      const cell1 = cells.find(c => c.half === 1);
+
+      rotatingPrev = {
+        r0: cell0.row,
+        c0: cell0.col,
+        r1: cell1.row,
+        c1: cell1.col
+      };
     } else {
-      cells = findDominoCells(grid, String(d.id));
+      rotatingPrev = {
+        r0: rotationGhost.row0,
+        c0: rotationGhost.col0,
+        r1: rotationGhost.row1,
+        c1: rotationGhost.col1
+      };
     }
 
-    if (cells.length === 0) continue;
+    console.log("ROTATE: pivotCell(frozen)", rotatingPivotCell);
+    console.log("ROTATE: prevUsed", rotatingPrev);
 
-    const cell0 = cells.find(c => c.half === 0);
-    const cell1 = cells.find(c => c.half === 1);
+    // --------------------------------------------------------
+    // FIX: pivotHalf = clickedHalf (spec invariant)
+    // --------------------------------------------------------
+    const pivotHalf = clickedHalf;
 
-    let half0Side = "left";
-    if (cell0 && cell1) {
-      if (cell0.row === cell1.row) {
-        half0Side = cell0.col < cell1.col ? "left" : "right";
-      } else {
-        half0Side = cell0.row < cell1.row ? "top" : "bottom";
-      }
-    }
+    console.log("ROTATE: pivotHalf", pivotHalf);
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "domino-wrapper on-board";
-    wrapper.dataset.dominoId = String(d.id);
-    wrapper.dataset.half0Side = half0Side;
+    const preview = computePivotPreview(rotatingPrev, pivotHalf);
+    if (!preview) return;
 
-    // Rotation Preview Visual Anchor:
-    //   - Normal: anchor to half0
-    //   - Rotation preview: anchor to half1 (pivot half)
-    const isGhost = ghost && String(id) === ghostId;
-    const anchor = isGhost ? cell1 : cell0;
+    console.log("ROTATE: preview", preview);
 
-    wrapper.style.setProperty("--row", String(anchor.row));
-    wrapper.style.setProperty("--col", String(anchor.col));
+    rotationGhost = {
+      id: domino.id,
+      row0: preview.row0,
+      col0: preview.col0,
+      row1: preview.row1,
+      col1: preview.col1
+    };
 
-    if (isGhost) {
-      wrapper.classList.add("ghost");
-    }
+    renderPuzzle();
+  });
 
-    renderDomino(d, wrapper);
-    boardEl.appendChild(wrapper);
-  }
+  document.addEventListener("pointerdown", (event) => {
+    if (!rotatingDomino) return;
+
+    const inside =
+      event.target.closest(".domino-wrapper")?.dataset.dominoId ===
+      String(rotatingDomino.id);
+
+    if (!inside) clearRotationPreview(renderPuzzle);
+  });
+}
+
+function computePivotPreview(prev, pivotHalf) {
+  const pivot =
+    pivotHalf === 0
+      ? { r: prev.r0, c: prev.c0 }
+      : { r: prev.r1, c: prev.c1 };
+
+  const other =
+    pivotHalf === 0
+      ? { r: prev.r1, c: prev.c1 }
+      : { r: prev.r0, c: prev.c0 };
+
+  const dr = other.r - pivot.r;
+  const dc = other.c - pivot.c;
+
+  // 90° clockwise rotation: (dr, dc) → (dc, -dr)
+  const newDr = dc;
+  const newDc = -dr;
+
+  const newOther = {
+    r: pivot.r + newDr,
+    c: pivot.c + newDc
+  };
+
+  return pivotHalf === 0
+    ? { row0: pivot.r, col0: pivot.c, row1: newOther.r, col1: newOther.c }
+    : { row0: newOther.r, col0: newOther.c, row1: pivot.r, col1: pivot.c };
+}
+
+function clearRotationPreview(renderPuzzle) {
+  rotationGhost = null;
+  rotatingDomino = null;
+  rotatingPrev = null;
+  rotatingPivotCell = null;
+  renderPuzzle();
+}
+
+export function getRotatingDominoId() {
+  return rotatingDomino?.id ?? null;
+}
+
+export function getRotationGhost() {
+  return rotationGhost;
 }
