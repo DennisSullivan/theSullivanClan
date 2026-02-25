@@ -1,94 +1,86 @@
-// ============================================================
-// FILE: ui/boardRenderer.js
-// PURPOSE: Render the board grid and placed dominos.
-// NOTES:
-//   - Canonical board render is authoritative
-//   - Session visuals (rotation ghost) are rendered last
-// ============================================================
-
 import { renderDomino } from "./dominoRenderer.js";
+import { findDominoCells } from "../engine/grid.js";
 import { getRotationGhost, getRotatingDominoId } from "./rotation.js";
 
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
+  if (!boardEl) return;
+
   boardEl.innerHTML = "";
 
   const rows = grid.length;
   const cols = grid[0].length;
 
-  // ------------------------------------------------------------
-  // 1. Render board cells
-  // ------------------------------------------------------------
+  boardEl.style.position = "relative";
+  boardEl.style.gridTemplateColumns =
+    `repeat(${cols}, calc(var(--cell-size) + var(--cell-gap)))`;
+  boardEl.style.gridTemplateRows =
+    `repeat(${rows}, calc(var(--cell-size) + var(--cell-gap)))`;
+
+  // ----------------------------------------------------------
+  // 1. Render background cells
+  // ----------------------------------------------------------
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const cellEl = document.createElement("div");
-      cellEl.className = "board-cell";
-      cellEl.dataset.row = r;
-      cellEl.dataset.col = c;
+      const cell = document.createElement("div");
+      cell.className = "board-cell";
+      cell.dataset.row = String(r);
+      cell.dataset.col = String(c);
 
-      const regionId = regionMap[r][c];
-      cellEl.classList.add(`region-${regionId}`);
-
-      if (blocked.has(`${r},${c}`)) {
-        cellEl.classList.add("blocked");
+      if (blocked?.has(`${r},${c}`)) {
+        cell.classList.add("blocked");
       }
 
-      boardEl.appendChild(cellEl);
+      boardEl.appendChild(cell);
     }
   }
 
-  // ------------------------------------------------------------
-  // 2. Render canonical dominos (except rotating one)
-  // ------------------------------------------------------------
+  // ----------------------------------------------------------
+  // 2. Render dominos (grid‑derived, ghost‑aware)
+  // ----------------------------------------------------------
   const rotatingId = getRotatingDominoId();
+  const ghost = getRotationGhost();
 
   for (const [id, d] of dominos) {
-    if (d.row0 === null) continue;
-    if (id === rotatingId) continue;
+    let cells;
 
-    const wrapper = createDominoWrapper(d);
+    if (id === rotatingId && ghost) {
+      // Substitute ghost placement
+      cells = [
+        { row: ghost.row0, col: ghost.col0, half: 0 },
+        { row: ghost.row1, col: ghost.col1, half: 1 }
+      ];
+    } else {
+      cells = findDominoCells(grid, String(d.id));
+    }
+
+    if (cells.length === 0) continue;
+
+    const half0 = cells.find(c => c.half === 0) || cells[0];
+    const cell0 = cells.find(c => c.half === 0);
+    const cell1 = cells.find(c => c.half === 1);
+
+    let half0Side = "left";
+    if (cell0 && cell1) {
+      if (cell0.row === cell1.row) {
+        half0Side = cell0.col < cell1.col ? "left" : "right";
+      } else {
+        half0Side = cell0.row < cell1.row ? "top" : "bottom";
+      }
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "domino-wrapper on-board";
+    wrapper.dataset.dominoId = String(d.id);
+    wrapper.dataset.half0Side = half0Side;
+
+    wrapper.style.setProperty("--row", String(half0.row));
+    wrapper.style.setProperty("--col", String(half0.col));
+
+    if (id === rotatingId && ghost) {
+      wrapper.classList.add("ghost");
+    }
+
     renderDomino(d, wrapper);
     boardEl.appendChild(wrapper);
   }
-
-  // ------------------------------------------------------------
-  // 3. Render rotation ghost LAST
-  // ------------------------------------------------------------
-  const ghost = getRotationGhost();
-  if (ghost) {
-    const d = dominos.get(ghost.id);
-    if (d) {
-      const wrapper = createDominoWrapper({
-        ...d,
-        row0: ghost.row0,
-        col0: ghost.col0,
-        row1: ghost.row1,
-        col1: ghost.col1
-      });
-
-      wrapper.classList.add("ghost");
-      renderDomino(d, wrapper);
-      boardEl.appendChild(wrapper);
-    }
-  }
-}
-
-// ------------------------------------------------------------
-// Helper: create positioned domino wrapper
-// ------------------------------------------------------------
-function createDominoWrapper(d) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "domino-wrapper on-board";
-  wrapper.dataset.dominoId = String(d.id);
-
-  wrapper.style.setProperty("--row", d.row0);
-  wrapper.style.setProperty("--col", d.col0);
-
-  // Canonical half0 orientation
-  if (d.row1 === d.row0) {
-    wrapper.dataset.half0Side = d.col1 > d.col0 ? "left" : "right";
-  } else {
-    wrapper.dataset.half0Side = d.row1 > d.row0 ? "top" : "bottom";
-  }
-
-  return wrapper;
 }
