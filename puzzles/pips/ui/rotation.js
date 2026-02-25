@@ -3,14 +3,18 @@
 // PURPOSE: Render board cells and dominos.
 // NOTES:
 //   - Grid is authoritative for logical placement.
-//   - During rotation preview, wrapper is visually anchored
-//     to the pivot half so the pivot appears fixed.
+//   - Rotation preview uses rotationGhost as a visual override.
+//   - During rotation preview, we visually anchor the wrapper to
+//     half1 (the pivot half) so the pivot appears fixed.
 // ============================================================
 
 import { renderDomino } from "./dominoRenderer.js";
 import { findDominoCells } from "../engine/grid.js";
-import { getRotationGhost, getRotatingDominoId } from "./rotation.js";
+import { getRotationGhost } from "./rotation.js";
 
+// renderBoard()
+// Renders the board background cells and all dominos.
+// If a rotation preview is active, we render the ghost geometry for that domino.
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   if (!boardEl) return;
 
@@ -44,15 +48,16 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   }
 
   // ----------------------------------------------------------
-  // 2. Render dominos (grid‑derived, ghost‑aware)
+  // 2. Render dominos (grid-derived, ghost-aware)
   // ----------------------------------------------------------
-  const rotatingId = getRotatingDominoId();
   const ghost = getRotationGhost();
+  const ghostId = ghost ? String(ghost.id) : null;
 
   for (const [id, d] of dominos) {
     let cells;
 
-    if (id === rotatingId && ghost) {
+    if (ghost && String(id) === ghostId) {
+      // Substitute ghost placement (visual only)
       cells = [
         { row: ghost.row0, col: ghost.col0, half: 0 },
         { row: ghost.row1, col: ghost.col1, half: 1 }
@@ -80,20 +85,16 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.dataset.dominoId = String(d.id);
     wrapper.dataset.half0Side = half0Side;
 
-    // ----------------------------------------------------------
     // Rotation Preview Visual Anchor:
     //   - Normal: anchor to half0
-    //   - Rotation preview: anchor to pivot half (half1)
-    // ----------------------------------------------------------
-    const anchor =
-      (id === rotatingId && ghost)
-        ? cell1
-        : cell0;
+    //   - Rotation preview: anchor to half1 (pivot half)
+    const isGhost = ghost && String(id) === ghostId;
+    const anchor = isGhost ? cell1 : cell0;
 
     wrapper.style.setProperty("--row", String(anchor.row));
     wrapper.style.setProperty("--col", String(anchor.col));
 
-    if (id === rotatingId && ghost) {
+    if (isGhost) {
       wrapper.classList.add("ghost");
     }
 
