@@ -49,6 +49,9 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const domino = dominos.get(id);
     if (!domino) return;
 
+    const cells = findDominoCells(grid, String(id));
+    console.log("ROTATE: grid cells", id, JSON.stringify(cells));
+
     // Authoritative placement comes from the grid
     const cells = findDominoCells(grid, String(id));
     if (cells.length !== 2) return;
@@ -60,12 +63,27 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const halfEl = event.target.closest(".half");
     const pivotHalf = halfEl?.classList.contains("half1") ? 1 : 0;
 
+    console.log("ROTATE: pivotHalf", pivotHalf);
+    const pivot =
+      pivotHalf === 0
+        ? { r: cell0.row, c: cell0.col }
+        : { r: cell1.row, c: cell1.col };
+    
+    const other =
+      pivotHalf === 0
+        ? { r: cell1.row, c: cell1.col }
+        : { r: cell0.row, c: cell0.col };
+    
+    console.log("ROTATE: pivot", pivot, "other", other);
+
     rotatingDomino = domino;
     rotatingPrev = { r0: cell0.row, c0: cell0.col, r1: cell1.row, c1: cell1.col };
     rotatingPivot = pivotHalf;
 
     const preview = computePivotPreview(rotatingPrev, pivotHalf);
     if (!preview) return;
+
+    console.log("ROTATE: preview", preview);
 
     rotationGhost = {
       id: domino.id,
@@ -108,6 +126,8 @@ function computePivotPreview(prev, pivotHalf) {
 
   const dr = other.r - pivot.r;
   const dc = other.c - pivot.c;
+
+  console.log("ROTATE: dr/dc", dr, dc);
 
   // vertical → horizontal
   if (Math.abs(dr) === 1 && dc === 0) {
