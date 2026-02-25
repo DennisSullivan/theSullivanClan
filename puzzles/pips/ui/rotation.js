@@ -162,6 +162,16 @@ function computePivotPreview(prev, pivotHalf) {
   }
 }
 
+// clearRotationPreview()
+// Ends the rotation session and removes the ghost preview.
+function clearRotationPreview(renderPuzzle) {
+  rotationGhost = null;
+  rotatingDomino = null;
+  rotatingPrev = null;
+  rotatingPivotCell = null;
+  renderPuzzle();
+}
+
 export function getRotatingDominoId() {
   return rotatingDomino?.id ?? null;
 }
