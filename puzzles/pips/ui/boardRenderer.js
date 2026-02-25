@@ -6,57 +6,89 @@
 //   - Session visuals (rotation ghost) are rendered last
 // ============================================================
 
+import { renderDomino } from "./dominoRenderer.js";
 import { getRotationGhost, getRotatingDominoId } from "./rotation.js";
-import { renderBoardDomino } from "./dominoRenderer.js";
 
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
-  // Clear board
   boardEl.innerHTML = "";
 
+  const rows = grid.length;
+  const cols = grid[0].length;
+
   // ------------------------------------------------------------
-  // Render board grid cells
+  // 1. Render board cells
   // ------------------------------------------------------------
-  for (let r = 0; r < grid.length; r++) {
-    for (let c = 0; c < grid[0].length; c++) {
-      const cell = document.createElement("div");
-      cell.className = "board-cell";
-      cell.dataset.row = r;
-      cell.dataset.col = c;
-      boardEl.appendChild(cell);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cellEl = document.createElement("div");
+      cellEl.className = "board-cell";
+      cellEl.dataset.row = r;
+      cellEl.dataset.col = c;
+
+      const regionId = regionMap[r][c];
+      cellEl.classList.add(`region-${regionId}`);
+
+      if (blocked.has(`${r},${c}`)) {
+        cellEl.classList.add("blocked");
+      }
+
+      boardEl.appendChild(cellEl);
     }
   }
 
   // ------------------------------------------------------------
-  // Render canonical board dominos
-  // Suppress the domino currently in a rotation session
+  // 2. Render canonical dominos (except rotating one)
   // ------------------------------------------------------------
   const rotatingId = getRotatingDominoId();
 
-  for (const domino of dominos.values()) {
-    if (domino.row0 === null) continue;
-    if (domino.id === rotatingId) continue;
+  for (const [id, d] of dominos) {
+    if (d.row0 === null) continue;
+    if (id === rotatingId) continue;
 
-    renderBoardDomino(domino, boardEl);
+    const wrapper = createDominoWrapper(d);
+    renderDomino(d, wrapper);
+    boardEl.appendChild(wrapper);
   }
 
   // ------------------------------------------------------------
-  // Render rotation ghost LAST (session visual)
+  // 3. Render rotation ghost LAST
   // ------------------------------------------------------------
   const ghost = getRotationGhost();
   if (ghost) {
     const d = dominos.get(ghost.id);
     if (d) {
-      renderBoardDomino(
-        {
-          ...d,
-          row0: ghost.row0,
-          col0: ghost.col0,
-          row1: ghost.row1,
-          col1: ghost.col1
-        },
-        boardEl,
-        { ghost: true }
-      );
+      const wrapper = createDominoWrapper({
+        ...d,
+        row0: ghost.row0,
+        col0: ghost.col0,
+        row1: ghost.row1,
+        col1: ghost.col1
+      });
+
+      wrapper.classList.add("ghost");
+      renderDomino(d, wrapper);
+      boardEl.appendChild(wrapper);
     }
   }
+}
+
+// ------------------------------------------------------------
+// Helper: create positioned domino wrapper
+// ------------------------------------------------------------
+function createDominoWrapper(d) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "domino-wrapper on-board";
+  wrapper.dataset.dominoId = String(d.id);
+
+  wrapper.style.setProperty("--row", d.row0);
+  wrapper.style.setProperty("--col", d.col0);
+
+  // Canonical half0 orientation
+  if (d.row1 === d.row0) {
+    wrapper.dataset.half0Side = d.col1 > d.col0 ? "left" : "right";
+  } else {
+    wrapper.dataset.half0Side = d.row1 > d.row0 ? "top" : "bottom";
+  }
+
+  return wrapper;
 }
