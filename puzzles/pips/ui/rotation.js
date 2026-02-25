@@ -54,8 +54,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     if (
       rotatingDomino === domino &&
       rotationGhost &&
-      rotationGhost.id === domino.id &&
-      rotatingPivot === pivotHalf
+      rotationGhost.id === domino.id
     ) {
       // Advance from current ghost
       rotatingPrev = {
