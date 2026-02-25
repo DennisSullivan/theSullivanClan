@@ -142,6 +142,13 @@ function clearRotationPreview(renderPuzzle) {
 }
 
 // ------------------------------------------------------------
+// EXPORT: Rotating domino hook
+// ------------------------------------------------------------
+export function getRotatingDominoId() {
+  return rotatingDomino?.id ?? null;
+}
+
+// ------------------------------------------------------------
 // EXPORT: renderer hook
 // ------------------------------------------------------------
 export function getRotationGhost() {
