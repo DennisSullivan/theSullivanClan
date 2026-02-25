@@ -45,22 +45,41 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const domino = dominos.get(id);
     if (!domino) return;
 
-    const cellEl = event.target.closest(".board-cell");
-    if (!cellEl) return;
-    
-    const clickRow = Number(cellEl.dataset.row);
-    const clickCol = Number(cellEl.dataset.col);
-    
-    // Determine pivot half by grid truth
+    const halfEl = event.target.closest(".half");
+    if (!halfEl) return;
+
+    // --------------------------------------------------------
+    // Derive clicked grid cell from wrapper anchor + geometry
+    // --------------------------------------------------------
+    const baseRow = Number(wrapper.style.getPropertyValue("--row"));
+    const baseCol = Number(wrapper.style.getPropertyValue("--col"));
+    const half0Side = wrapper.dataset.half0Side;
+
+    let clickRow = baseRow;
+    let clickCol = baseCol;
+
+    if (halfEl.classList.contains("half1")) {
+      switch (half0Side) {
+        case "left":   clickCol = baseCol + 1; break;
+        case "right":  clickCol = baseCol - 1; break;
+        case "top":    clickRow = baseRow + 1; break;
+        case "bottom": clickRow = baseRow - 1; break;
+      }
+    }
+
+    // --------------------------------------------------------
+    // Determine pivotHalf by GRID TRUTH
+    // --------------------------------------------------------
     let pivotHalf = 0;
-    
+
     if (rotationGhost && rotatingDomino === domino) {
-      // Use ghost placement during session
-      if (rotationGhost.row1 === clickRow && rotationGhost.col1 === clickCol) {
+      if (
+        rotationGhost.row1 === clickRow &&
+        rotationGhost.col1 === clickCol
+      ) {
         pivotHalf = 1;
       }
     } else {
-      // Use grid truth initially
       const cells = findDominoCells(grid, String(id));
       const cell1 = cells.find(c => c.half === 1);
       if (cell1 && cell1.row === clickRow && cell1.col === clickCol) {
@@ -69,14 +88,13 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     }
 
     // --------------------------------------------------------
-    // Determine previous placement
+    // Determine previous placement (advance if active)
     // --------------------------------------------------------
     if (
       rotatingDomino === domino &&
       rotationGhost &&
       rotationGhost.id === domino.id
     ) {
-      // Advance from current ghost
       rotatingPrev = {
         r0: rotationGhost.row0,
         c0: rotationGhost.col0,
@@ -84,7 +102,6 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
         c1: rotationGhost.col1
       };
     } else {
-      // Start from grid truth
       const cells = findDominoCells(grid, String(id));
       if (cells.length !== 2) return;
 
