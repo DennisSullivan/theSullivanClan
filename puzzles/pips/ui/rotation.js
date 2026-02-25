@@ -8,6 +8,8 @@
 //  - Preview survives renderPuzzle()
 // ============================================================
 
+import { findDominoCells } from "../engine/grid.js";
+
 let rotatingDomino = null;
 let rotatingPrev = null;
 let rotatingPivot = 0;
@@ -15,8 +17,7 @@ let rotatingPivot = 0;
 // NOTE: reused as render-state, NOT a DOM node
 let rotationGhost = null;
 
-export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
-
+export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   // ----------------------------------------------------------
   // TRAY click rotates tray domino visually (allowed)
   // ----------------------------------------------------------
@@ -27,6 +28,9 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
     const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
     if (!domino) return;
+
+    // Tray membership should not depend on domino.row0 in your architecture.
+    // Keep your existing behavior, but do not block rotation based on row0.
     if (domino.row0 !== null) return;
 
     domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
@@ -34,7 +38,7 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
   });
 
   // ----------------------------------------------------------
-  // BOARD double-click → pivot preview
+  // BOARD double-click → pivot preview (GRID TRUTH)
   // ----------------------------------------------------------
   document.addEventListener("dblclick", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
@@ -44,21 +48,20 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
     const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
     if (!domino) return;
-    if (domino.row0 === null) return;
+
+    // Authoritative placement comes from the grid
+    const cells = findDominoCells(grid, String(id));
+    if (cells.length !== 2) return;
+
+    const cell0 = cells.find(c => c.half === 0);
+    const cell1 = cells.find(c => c.half === 1);
+    if (!cell0 || !cell1) return;
 
     const halfEl = event.target.closest(".half");
     const pivotHalf = halfEl?.classList.contains("half1") ? 1 : 0;
 
-    if (rotatingDomino !== domino) {
-      rotatingDomino = domino;
-      rotatingPrev = {
-        r0: domino.row0,
-        c0: domino.col0,
-        r1: domino.row1,
-        c1: domino.col1
-      };
-    }
-
+    rotatingDomino = domino;
+    rotatingPrev = { r0: cell0.row, c0: cell0.col, r1: cell1.row, c1: cell1.col };
     rotatingPivot = pivotHalf;
 
     const preview = computePivotPreview(rotatingPrev, pivotHalf);
@@ -87,13 +90,6 @@ export function initRotation(dominos, trayEl, boardEl, renderPuzzle) {
 
     if (!inside) clearRotationPreview(renderPuzzle);
   });
-
-  // ----------------------------------------------------------
-  // End session on pointerup
-  // ----------------------------------------------------------
-//  document.addEventListener("pointerup", () => {
-//    if (rotatingDomino) clearRotationPreview(renderPuzzle);
-//  });
 }
 
 // ------------------------------------------------------------
