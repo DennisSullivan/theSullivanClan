@@ -84,9 +84,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     console.log("ROTATE: pivotCell(frozen)", rotatingPivotCell);
     console.log("ROTATE: prevUsed", rotatingPrev);
 
-    const pivotHalf =
-      (rotatingPrev.r1 === rotatingPivotCell.row &&
-       rotatingPrev.c1 === rotatingPivotCell.col) ? 1 : 0;
+    const pivotHalf = clickedHalf;
 
     console.log("ROTATE: pivotHalf", pivotHalf);
 
