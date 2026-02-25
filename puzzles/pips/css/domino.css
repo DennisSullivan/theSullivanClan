@@ -178,6 +178,12 @@
   will-change: transform;
 }
 
+// Ghost domino for rotation
+.domino-wrapper.ghost {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 /* -------------------------
    Mobile scaling
    ------------------------- */
