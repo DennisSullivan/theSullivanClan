@@ -69,19 +69,6 @@ export function renderRegions(regionMap, boardEl) {
     
       const gridLeft = col * stride;
       const gridTop  = row * stride;
-    
-      console.group(`REGION DIAG cell (${row}, ${col})`);
-      console.log("DOM offset", { domLeft, domTop });
-      console.log("Grid math", { gridLeft, gridTop });
-      console.log("Delta", {
-        dx: domLeft - gridLeft,
-        dy: domTop  - gridTop
-      });
-      console.log("Rect (relative to board)", {
-        left: cellRect.left - boardRect.left,
-        top:  cellRect.top  - boardRect.top
-      });
-      console.groupEnd();
     }
 
     // Defensive: ensure row/col are valid numbers.
