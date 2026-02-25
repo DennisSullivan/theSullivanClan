@@ -1,30 +1,26 @@
 // ============================================================
 // FILE: ui/rotation.js
-// PURPOSE: Rotation session → PlacementProposal emitter.
+// PURPOSE: Visual-only pivot preview for board rotation.
 // MODEL:
-//  - Rotation is geometry-only until commit
-//  - No board mutation during session
-//  - Session end emits a PlacementProposal
-//  - Engine is sole authority for accept/reject
+//  - Board rotation is a pivot around the clicked half
+//  - No logical mutation during session
+//  - No engine interaction
+//  - Visual preview only (discardable)
 // ============================================================
 
 let rotatingDomino = null;
 let rotatingPrev = null;
 let rotatingPivot = 0;
-let rotatingBoardEl = null;
+let rotationGhost = null;
+let boardElRef = null;
+let renderDominoRef = null;
 
-export function initRotation(dominos, trayEl, boardEl) {
-  if (!boardEl) {
-    console.warn("initRotation: missing boardEl");
-    return;
-  }
-
-  rotatingBoardEl = boardEl;
-
-  console.log("ROT: initRotation complete");
+export function initRotation(dominos, trayEl, boardEl, renderDomino) {
+  boardElRef = boardEl;
+  renderDominoRef = renderDomino;
 
   // ----------------------------------------------------------
-  // TRAY single-click rotates tray domino visually (allowed)
+  // TRAY click rotates tray domino visually (allowed)
   // ----------------------------------------------------------
   trayEl.addEventListener("click", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
@@ -39,7 +35,7 @@ export function initRotation(dominos, trayEl, boardEl) {
   });
 
   // ----------------------------------------------------------
-  // BOARD double-click enters or continues rotation session
+  // BOARD double-click → pivot preview
   // ----------------------------------------------------------
   boardEl.addEventListener("dblclick", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
@@ -61,99 +57,109 @@ export function initRotation(dominos, trayEl, boardEl) {
         r1: domino.row1,
         c1: domino.col1
       };
-      rotatingPivot = pivotHalf;
-
-      console.log("ROT: session start", {
-        id,
-        pivotHalf,
-        prev: rotatingPrev
-      });
-    } else {
-      rotatingPivot = pivotHalf;
-      console.log("ROT: session continue", { id, pivotHalf });
     }
+
+    rotatingPivot = pivotHalf;
+    showPivotPreview(domino, rotatingPrev, pivotHalf);
   });
 
   // ----------------------------------------------------------
-  // Pointerdown outside ends the session
+  // End session on pointerdown outside
   // ----------------------------------------------------------
   document.addEventListener("pointerdown", (event) => {
     if (!rotatingDomino) return;
 
-    const insideSame =
+    const inside =
       event.target.closest(".domino-wrapper")?.dataset.dominoId ===
       String(rotatingDomino.id);
 
-    if (!insideSame) {
-      endRotationSession();
-    }
+    if (!inside) clearRotationPreview();
   });
 
   // ----------------------------------------------------------
-  // Pointerup ends the session
+  // End session on pointerup
   // ----------------------------------------------------------
   document.addEventListener("pointerup", () => {
-    if (rotatingDomino) {
-      endRotationSession();
-    }
+    if (rotatingDomino) clearRotationPreview();
   });
 }
 
 // ------------------------------------------------------------
-// Session end → emit PlacementProposal
+// Compute pivoted placement (visual only)
 // ------------------------------------------------------------
-function endRotationSession() {
-  if (!rotatingDomino || !rotatingPrev) return;
-
-  const d = rotatingDomino;
-  const { r0, c0, r1, c1 } = rotatingPrev;
-
+function computePivotPreview(prev, pivotHalf) {
   const pivot =
-    rotatingPivot === 0
-      ? { r: r0, c: c0 }
-      : { r: r1, c: c1 };
+    pivotHalf === 0
+      ? { r: prev.r0, c: prev.c0 }
+      : { r: prev.r1, c: prev.c1 };
 
   const other =
-    rotatingPivot === 0
-      ? { r: r1, c: c1 }
-      : { r: r0, c: c0 };
+    pivotHalf === 0
+      ? { r: prev.r1, c: prev.c1 }
+      : { r: prev.r0, c: prev.c0 };
 
-  // 90° clockwise rotation around pivot
   const dr = other.r - pivot.r;
   const dc = other.c - pivot.c;
 
-  const rotated = {
-    r: pivot.r - dc,
-    c: pivot.c + dr
-  };
+  // vertical → horizontal
+  if (Math.abs(dr) === 1 && dc === 0) {
+    return pivotHalf === 0
+      ? { row0: pivot.r, col0: pivot.c, row1: pivot.r, col1: pivot.c + dr }
+      : { row0: pivot.r, col0: pivot.c + dr, row1: pivot.r, col1: pivot.c };
+  }
 
-  const half0IsPivot = rotatingPivot === 0;
+  // horizontal → vertical
+  if (Math.abs(dc) === 1 && dr === 0) {
+    return pivotHalf === 0
+      ? { row0: pivot.r, col0: pivot.c, row1: pivot.r - dc, col1: pivot.c }
+      : { row0: pivot.r - dc, col0: pivot.c, row1: pivot.r, col1: pivot.c };
+  }
 
-  const proposal = half0IsPivot
-    ? {
-        id: d.id,
-        row0: pivot.r,
-        col0: pivot.c,
-        row1: rotated.r,
-        col1: rotated.c
-      }
-    : {
-        id: d.id,
-        row0: rotated.r,
-        col0: rotated.c,
-        row1: pivot.r,
-        col1: pivot.c
-      };
+  return null;
+}
 
-  console.log("ROT: emit placement proposal", proposal);
+// ------------------------------------------------------------
+// Render visual ghost preview
+// ------------------------------------------------------------
+function showPivotPreview(domino, prev, pivotHalf) {
+  const preview = computePivotPreview(prev, pivotHalf);
+  if (!preview) return;
 
-  rotatingBoardEl.dispatchEvent(
-    new CustomEvent("pips:drop:proposal", {
-      bubbles: true,
-      detail: { proposal }
-    })
-  );
+  if (rotationGhost) rotationGhost.remove();
 
+  rotationGhost = document.createElement("div");
+  rotationGhost.className = "domino-wrapper ghost";
+  rotationGhost.dataset.dominoId = domino.id;
+
+  const isHorizontal = preview.row0 === preview.row1;
+  rotationGhost.dataset.half0Side = isHorizontal
+    ? preview.col1 > preview.col0 ? "left" : "right"
+    : preview.row1 > preview.row0 ? "top" : "bottom";
+
+  const boardRect = boardElRef.getBoundingClientRect();
+  const rows = Number(boardElRef.dataset.rows);
+  const cols = Number(boardElRef.dataset.cols);
+  const cellW = boardRect.width / cols;
+  const cellH = boardRect.height / rows;
+
+  rotationGhost.style.position = "absolute";
+  rotationGhost.style.left = `${preview.col0 * cellW}px`;
+  rotationGhost.style.top = `${preview.row0 * cellH}px`;
+  rotationGhost.style.width = `${isHorizontal ? cellW * 2 : cellW}px`;
+  rotationGhost.style.height = `${isHorizontal ? cellH : cellH * 2}px`;
+  rotationGhost.style.pointerEvents = "none";
+  rotationGhost.style.opacity = "0.6";
+
+  boardElRef.appendChild(rotationGhost);
+  renderDominoRef(domino, rotationGhost);
+}
+
+// ------------------------------------------------------------
+// Clear preview
+// ------------------------------------------------------------
+function clearRotationPreview() {
+  if (rotationGhost) rotationGhost.remove();
+  rotationGhost = null;
   rotatingDomino = null;
   rotatingPrev = null;
   rotatingPivot = 0;
