@@ -3,9 +3,8 @@
 // PURPOSE: Render board cells and dominos.
 // NOTES:
 //   - Grid is authoritative for logical placement.
-//   - Rotation preview uses rotationGhost as a visual override.
-//   - During rotation preview, we visually anchor the wrapper to
-//     half1 (the pivot half) so the pivot appears fixed.
+//   - rotationGhost is a visual-only override for one domino.
+//   - HARD INVARIANT: wrapper origin is ALWAYS half0.
 // ============================================================
 
 import { renderDomino } from "./dominoRenderer.js";
@@ -13,8 +12,8 @@ import { findDominoCells } from "../engine/grid.js";
 import { getRotationGhost } from "./rotation.js";
 
 // renderBoard()
-// Renders the board background cells and all dominos.
-// If a rotation preview is active, we render the ghost geometry for that domino.
+// Renders the board background and all dominos.
+// If a rotation preview is active, we substitute ghost geometry for that domino.
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   if (!boardEl) return;
 
@@ -57,7 +56,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     let cells;
 
     if (ghost && String(id) === ghostId) {
-      // Substitute ghost placement (visual only)
+      // Visual-only ghost geometry
       cells = [
         { row: ghost.row0, col: ghost.col0, half: 0 },
         { row: ghost.row1, col: ghost.col1, half: 1 }
@@ -70,14 +69,13 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
 
     const cell0 = cells.find(c => c.half === 0);
     const cell1 = cells.find(c => c.half === 1);
+    if (!cell0 || !cell1) continue;
 
     let half0Side = "left";
-    if (cell0 && cell1) {
-      if (cell0.row === cell1.row) {
-        half0Side = cell0.col < cell1.col ? "left" : "right";
-      } else {
-        half0Side = cell0.row < cell1.row ? "top" : "bottom";
-      }
+    if (cell0.row === cell1.row) {
+      half0Side = cell0.col < cell1.col ? "left" : "right";
+    } else {
+      half0Side = cell0.row < cell1.row ? "top" : "bottom";
     }
 
     const wrapper = document.createElement("div");
@@ -85,16 +83,11 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.dataset.dominoId = String(d.id);
     wrapper.dataset.half0Side = half0Side;
 
-    // Rotation Preview Visual Anchor:
-    //   - Normal: anchor to half0
-    //   - Rotation preview: anchor to half1 (pivot half)
-    const isGhost = ghost && String(id) === ghostId;
-    const anchor = isGhost ? cell1 : cell0;
+    // HARD INVARIANT: wrapper origin is always half0
+    wrapper.style.setProperty("--row", String(cell0.row));
+    wrapper.style.setProperty("--col", String(cell0.col));
 
-    wrapper.style.setProperty("--row", String(anchor.row));
-    wrapper.style.setProperty("--col", String(anchor.col));
-
-    if (isGhost) {
+    if (ghost && String(id) === ghostId) {
       wrapper.classList.add("ghost");
     }
 
@@ -102,3 +95,4 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     boardEl.appendChild(wrapper);
   }
 }
+
