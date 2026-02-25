@@ -137,21 +137,18 @@ function computePivotPreview(prev, pivotHalf) {
   const dr = other.r - pivot.r;
   const dc = other.c - pivot.c;
 
-  console.log("ROTATE: dr/dc", dr, dc, "pivot", pivot);
+  // 90° clockwise rotation: (dr, dc) → (dc, -dr)
+  const newDr = dc;
+  const newDc = -dr;
 
-  if (Math.abs(dr) === 1 && dc === 0) {
-    return pivotHalf === 0
-      ? { row0: pivot.r, col0: pivot.c, row1: pivot.r, col1: pivot.c - dr }
-      : { row0: pivot.r, col0: pivot.c - dr, row1: pivot.r, col1: pivot.c };
-  }
+  const newOther = {
+    r: pivot.r + newDr,
+    c: pivot.c + newDc
+  };
 
-  if (Math.abs(dc) === 1 && dr === 0) {
-    return pivotHalf === 0
-      ? { row0: pivot.r, col0: pivot.c, row1: pivot.r + dc, col1: pivot.c }
-      : { row0: pivot.r + dc, col0: pivot.c, row1: pivot.r, col1: pivot.c };
-  }
-
-  return null;
+  return pivotHalf === 0
+    ? { row0: pivot.r, col0: pivot.c, row1: newOther.r, col1: newOther.c }
+    : { row0: newOther.r, col0: newOther.c, row1: pivot.r, col1: pivot.c };
 }
 
 function clearRotationPreview(renderPuzzle) {
