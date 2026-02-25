@@ -32,10 +32,18 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
     if (!boardEl.contains(wrapper)) return;
-
+  
     const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
     if (!domino) return;
+  
+    const halfEl = event.target.closest(".half");
+    if (!halfEl) return;
+  
+    // ----------------------------------------------------
+    // AUTHORITATIVE pivot-half detection
+    // ----------------------------------------------------
+    const clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
 
     const halfEl = event.target.closest(".half");
     if (!halfEl) return;
