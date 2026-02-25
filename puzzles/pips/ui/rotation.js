@@ -165,7 +165,7 @@ function computePivotPreview(prev, pivotHalf) {
   const dr = other.r - pivot.r;
   const dc = other.c - pivot.c;
 
-  // vertical → horizontal
+  // vertical → horizontal (CLOCKWISE)
   if (Math.abs(dr) === 1 && dc === 0) {
     return pivotHalf === 0
       ? { row0: pivot.r, col0: pivot.c, row1: pivot.r, col1: pivot.c - dr }
