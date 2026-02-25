@@ -35,12 +35,6 @@ export function renderDomino(domino, wrapper) {
     return;
   }
 
-  console.log("RENDERDOMINO ACTIVE", {
-    id: domino?.id,
-    half0Side: wrapper?.dataset?.half0Side,
-    wrapperClass: wrapper?.className
-  });
-  
   const inner = document.createElement("div");
   inner.className = "domino";
   inner.dataset.dominoId = String(domino?.id);
