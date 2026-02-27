@@ -19,11 +19,28 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     pointerId: null,
 
     // Frozen at pointerDown:
-    //   - delta from half0 cell to half1 cell (dr, dc)
-    //   - source domain for cancel semantics (tray vs board)
     delta: null,
     source: null
   };
+
+  // ------------------------------------------------------------
+  // Instrumentation helpers
+  // ------------------------------------------------------------
+  function markPoint(x, y, color = 'red') {
+    const d = document.createElement('div');
+    d.style.position = 'fixed';
+    d.style.left = `${x - 2}px`;
+    d.style.top = `${y - 2}px`;
+    d.style.width = '4px';
+    d.style.height = '4px';
+    d.style.background = color;
+    d.style.zIndex = 99999;
+    document.body.appendChild(d);
+  }
+
+  function log(...args) {
+    console.log('[drag]', ...args);
+  }
 
   // ------------------------------------------------------------
   // Helpers
@@ -33,7 +50,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   }
 
   function readBoardCoordsFromWrapper(wrapper) {
-    // Accept either (row0,col0,row1,col1) or (half0Row,half0Col,half1Row,half1Col)
     const d = wrapper.dataset;
 
     const row0 = d.row0 ?? d.half0Row;
@@ -52,12 +68,10 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   function deltaFromTrayOrientation(trayOrientationDeg) {
     const o = normDeg(trayOrientationDeg);
 
-    // half0 at (row0,col0); half1 at (row0+dr, col0+dc)
-    // 0: half1 to the right; 90: half1 below; 180: half1 to the left; 270: half1 above
     if (o === 0)   return { dr: 0,  dc: 1 };
     if (o === 90)  return { dr: 1,  dc: 0 };
     if (o === 180) return { dr: 0,  dc: -1 };
-    return { dr: -1, dc: 0 }; // 270 (and any other normalized value falls here)
+    return { dr: -1, dc: 0 };
   }
 
   function freezeDeltaAtPointerDown(wrapper) {
@@ -102,6 +116,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     dragState.delta = frozen.delta;
     dragState.source = frozen.source;
+
+    log("pointerDown", { x: ev.clientX, y: ev.clientY, id: wrapper.dataset.dominoId });
+    markPoint(ev.clientX, ev.clientY, "red");
   }
 
   // ------------------------------------------------------------
@@ -109,6 +126,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
   function beginRealDrag(wrapper, x, y) {
     dragState.moved = true;
+
+    log("beginRealDrag", { x, y });
+    markPoint(x, y, "orange");
 
     const clone = wrapper.cloneNode(true);
     const rect = wrapper.getBoundingClientRect();
@@ -137,6 +157,14 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const dx = ev.clientX - dragState.startX;
     const dy = ev.clientY - dragState.startY;
 
+    log("pointerMove", {
+      x: ev.clientX,
+      y: ev.clientY,
+      dx,
+      dy,
+      hasClone: !!dragState.clone
+    });
+
     if (!dragState.clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
       beginRealDrag(dragState.wrapper, dragState.startX, dragState.startY);
     }
@@ -145,6 +173,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     dragState.clone.style.left = `${ev.clientX}px`;
     dragState.clone.style.top = `${ev.clientY}px`;
+
+    markPoint(ev.clientX, ev.clientY, "blue");
   }
 
   // ------------------------------------------------------------
@@ -152,6 +182,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
   function pointerUp(ev) {
     if (ev.pointerId !== dragState.pointerId) return;
+
+    log("pointerUp", { x: ev.clientX, y: ev.clientY });
+    markPoint(ev.clientX, ev.clientY, "green");
 
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
@@ -183,6 +216,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   function emitPlacementProposal(node, id, delta) {
     if (!node || !delta) return;
 
+    log("emitPlacementProposal", { id, delta });
+
     const boardRect = boardEl.getBoundingClientRect();
     const rect = node.getBoundingClientRect();
 
@@ -197,6 +232,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     const row1 = row0 + delta.dr;
     const col1 = col0 + delta.dc;
+
+    log("proposalCells", { row0, col0, row1, col1 });
 
     boardEl.dispatchEvent(
       new CustomEvent("pips:drop:proposal", {
