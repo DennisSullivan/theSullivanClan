@@ -256,7 +256,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const col1 = col0 + delta.dc;
 
     log("proposalCells", { row0, col0, row1, col1 });
-    console.log("delta row and col". , delta.dr, delta.dc);
+    console.log("delta row and col", delta.dr, delta.dc);
 
     boardEl.dispatchEvent(
       new CustomEvent("pips:drop:proposal", {
