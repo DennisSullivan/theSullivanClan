@@ -242,12 +242,15 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     const boardRect = boardEl.getBoundingClientRect();
     const rect = node.getBoundingClientRect();
+console.log("rect", rect);
 
     const cellW = boardRect.width / cols;
     const cellH = boardRect.height / rows;
+console.log("cell W and H", cellW, cellH);
 
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
+console.log("cx cy", cx, cy);
 
     const row0 = Math.floor((cy - boardRect.top) / cellH);
     const col0 = Math.floor((cx - boardRect.left) / cellW);
