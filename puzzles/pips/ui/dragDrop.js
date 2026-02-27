@@ -132,6 +132,12 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     const clone = wrapper.cloneNode(true);
     const rect = wrapper.getBoundingClientRect();
+    
+    // Neutralize wrapper layout for drag clone
+    clone.style.display = "block";
+    clone.style.justifyContent = "unset";
+    clone.style.alignItems = "unset";
+    clone.style.padding = "0";
 
     clone.style.position = "fixed";
     clone.style.margin = "0";
