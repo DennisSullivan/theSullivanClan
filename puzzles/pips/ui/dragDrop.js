@@ -1,11 +1,12 @@
 // ============================================================
 // FILE: ui/dragDrop.js
 // PURPOSE: Drag/drop interaction → PlacementProposal emitter.
-// CONTRACT:
-//   - Geometry frozen at pointer-down
+// CONTRACT COMPLIANCE:
+//   - Geometry frozen at pointer-down (delta + half0Screen)
 //   - Visual clone is non-authoritative
 //   - Proposal derived from frozen geometry + snapped half0 cell
 //   - Engine is sole authority for accept/reject
+//   - No rotation, no inference, no heuristics
 // ============================================================
 
 export function installDragDrop({ boardEl, trayEl, rows, cols }) {
@@ -19,8 +20,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     pointerId: null,
 
     // Frozen at pointerDown:
-    delta: null,
-    source: null
+    delta: null,            // { dr, dc }
+    source: null,           // "tray" | "board"
+    pointerOffset: null     // { dx, dy } pointer - half0Screen
   };
 
   // ------------------------------------------------------------
@@ -94,6 +96,31 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   }
 
   // ------------------------------------------------------------
+  // Compute half0Screen from wrapper DOM geometry
+  // ------------------------------------------------------------
+  function getHalf0Screen(wrapper) {
+    const rect = wrapper.getBoundingClientRect();
+
+    // Half0 is always the left/top half in canonical geometry.
+    // Wrapper is a 2-cell flexbox: horizontal or vertical.
+    const orientation = wrapper.dataset.orientation; // "h" or "v"
+
+    if (orientation === "v") {
+      // vertical: half0 is top half
+      return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 4
+      };
+    }
+
+    // horizontal: half0 is left half
+    return {
+      x: rect.left + rect.width / 4,
+      y: rect.top + rect.height / 2
+    };
+  }
+
+  // ------------------------------------------------------------
   // pointerDown
   // ------------------------------------------------------------
   function pointerDown(ev) {
@@ -103,6 +130,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     const frozen = freezeDeltaAtPointerDown(wrapper);
     if (!frozen) return;
+
+    const half0Screen = getHalf0Screen(wrapper);
 
     ev.preventDefault();
     document.body.setPointerCapture(ev.pointerId);
@@ -117,7 +146,19 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     dragState.delta = frozen.delta;
     dragState.source = frozen.source;
 
-    log("pointerDown", { x: ev.clientX, y: ev.clientY, id: wrapper.dataset.dominoId });
+    dragState.pointerOffset = {
+      dx: ev.clientX - half0Screen.x,
+      dy: ev.clientY - half0Screen.y
+    };
+
+    log("pointerDown", {
+      x: ev.clientX,
+      y: ev.clientY,
+      id: wrapper.dataset.dominoId,
+      delta: dragState.delta,
+      pointerOffset: dragState.pointerOffset
+    });
+
     markPoint(ev.clientX, ev.clientY, "red");
   }
 
@@ -132,7 +173,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     const clone = wrapper.cloneNode(true);
     const rect = wrapper.getBoundingClientRect();
-    
+
     // Neutralize wrapper layout for drag clone
     clone.style.display = "block";
     clone.style.justifyContent = "unset";
@@ -150,13 +191,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     clone.style.transform = "translate(-50%, -50%)";
 
     document.body.appendChild(clone);
-    console.log("[drag] cloneCreated", {
-      id: wrapper.dataset.dominoId,
-      delta: dragState.delta,
-      source: dragState.source,
-      cloneRect: clone.getBoundingClientRect(),
-      pointerDown: { x, y }
-    });
 
     dragState.clone = clone;
   }
@@ -170,14 +204,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     const dx = ev.clientX - dragState.startX;
     const dy = ev.clientY - dragState.startY;
-
-    log("pointerMove", {
-      x: ev.clientX,
-      y: ev.clientY,
-      dx,
-      dy,
-      hasClone: !!dragState.clone
-    });
 
     if (!dragState.clone && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
       beginRealDrag(dragState.wrapper, dragState.startX, dragState.startY);
@@ -204,15 +230,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const id = wrapper?.dataset.dominoId;
 
     if (dragState.moved && id && dragState.clone && dragState.delta) {
-      const rect = dragState.clone.getBoundingClientRect();
-      console.log("[drag] cloneUsedForPlacement", {
-        id,
-        delta: dragState.delta,
-        source: dragState.source,
-        cloneRect: rect,
-        pointerUp: { x: ev.clientX, y: ev.clientY }
-      });
-      emitPlacementProposal(dragState.clone, id, dragState.delta);
+      emitPlacementProposal(ev.clientX, ev.clientY, id, dragState.delta, dragState.pointerOffset);
     }
 
     if (dragState.clone) dragState.clone.remove();
@@ -230,38 +248,34 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     dragState.pointerId = null;
     dragState.delta = null;
     dragState.source = null;
+    dragState.pointerOffset = null;
   }
 
   // ------------------------------------------------------------
   // emitPlacementProposal
   // ------------------------------------------------------------
-  function emitPlacementProposal(node, id, delta) {
-    if (!node || !delta) return;
-
+  function emitPlacementProposal(pointerX, pointerY, id, delta, pointerOffset) {
     log("emitPlacementProposal", { id, delta });
 
-    const boardRect = boardEl.getBoundingClientRect();
-console.log("boardRect", boardRect);
-    const rect = node.getBoundingClientRect();
-console.log("rect", rect);
-console.log("delta row and col", delta.dr, delta.dc);
+    // Compute half0Screen from pointer - offset
+    const half0Screen = {
+      x: pointerX - pointerOffset.dx,
+      y: pointerY - pointerOffset.dy
+    };
 
+    markPoint(half0Screen.x, half0Screen.y, "purple");
+
+    const boardRect = boardEl.getBoundingClientRect();
     const cellW = boardRect.width / cols;
     const cellH = boardRect.height / rows;
-console.log("cell W and H", cellW, cellH);
 
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-console.log("cx cy", cx, cy);
-
-    const row0 = Math.floor((cy - boardRect.top) / cellH);
-    const col0 = Math.floor((cx - boardRect.left) / cellW);
+    const row0 = Math.floor((half0Screen.y - boardRect.top) / cellH);
+    const col0 = Math.floor((half0Screen.x - boardRect.left) / cellW);
 
     const row1 = row0 + delta.dr;
     const col1 = col0 + delta.dc;
 
     log("proposalCells", { row0, col0, row1, col1 });
-    console.log("delta row and col", delta.dr, delta.dc);
 
     boardEl.dispatchEvent(
       new CustomEvent("pips:drop:proposal", {
