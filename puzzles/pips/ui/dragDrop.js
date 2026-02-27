@@ -145,12 +145,13 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     document.body.appendChild(clone);
     console.log("[drag] cloneCreated", {
-      id: domino.id,
-      orientation: snapshot.orientation,
-      half0First: snapshot.half0First,
+      id: wrapper.dataset.dominoId,
+      delta: dragState.delta,
+      source: dragState.source,
       cloneRect: clone.getBoundingClientRect(),
-      pointerDown: { x: e.clientX, y: e.clientY }
+      pointerDown: { x, y }
     });
+
     dragState.clone = clone;
   }
 
