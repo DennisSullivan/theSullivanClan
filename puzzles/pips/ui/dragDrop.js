@@ -198,18 +198,13 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const id = wrapper?.dataset.dominoId;
 
     if (dragState.moved && id && dragState.clone && dragState.delta) {
-      const rect = clone.getBoundingClientRect();
+      const rect = dragState.clone.getBoundingClientRect();
       console.log("[drag] cloneUsedForPlacement", {
-        id: snapshot.id,
-        orientation: snapshot.orientation,
-        half0First: snapshot.half0First,
+        id,
+        delta: dragState.delta,
+        source: dragState.source,
         cloneRect: rect,
-        pointerUp: { x: e.clientX, y: e.clientY },
-        computed: {
-          anchorRow: r0,
-          anchorCol: c0,
-          r0, c0, r1, c1
-        }
+        pointerUp: { x: ev.clientX, y: ev.clientY }
       });
       emitPlacementProposal(dragState.clone, id, dragState.delta);
     }
