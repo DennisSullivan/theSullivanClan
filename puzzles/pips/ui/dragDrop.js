@@ -1,10 +1,10 @@
 // ============================================================
 // FILE: ui/dragDrop.js
 // PURPOSE: Drag/drop interaction → PlacementProposal emitter.
-// MODEL:
-//   - Visual clone follows pointer (non-authoritative)
-//   - Logical geometry snapshot captured once at drag-start
-//   - UI computes final geometry and emits proposal
+// CONTRACT:
+//   - Geometry frozen at pointer-down
+//   - Visual clone is non-authoritative
+//   - Proposal derived from frozen geometry + anchor cell
 //   - Engine is sole authority for accept/reject
 // ============================================================
 
@@ -30,37 +30,33 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
 
     ev.preventDefault();
-    ev.target.setPointerCapture(ev.pointerId);
+    document.body.setPointerCapture(ev.pointerId);
+
+    const trayOrientation =
+      ((Number(wrapper.dataset.trayOrientation) || 0) % 360 + 360) % 360;
 
     dragState.active = true;
     dragState.wrapper = wrapper;
     dragState.startX = ev.clientX;
     dragState.startY = ev.clientY;
     dragState.moved = false;
-    dragState.geometry = null;
     dragState.pointerId = ev.pointerId;
+
+    // Freeze geometry at intent time
+    dragState.geometry = {
+      half0Side:
+        trayOrientation === 0   ? "left"   :
+        trayOrientation === 180 ? "right"  :
+        trayOrientation === 90  ? "top"    :
+                                  "bottom"
+    };
   }
 
   // ------------------------------------------------------------
   // beginRealDrag
   // ------------------------------------------------------------
   function beginRealDrag(wrapper, x, y) {
-    //wrapper.style.visibility = "hidden";
     dragState.moved = true;
-
-    const trayOrientation =
-      ((Number(wrapper.dataset.trayOrientation) || 0) % 360 + 360) % 360;
-
-    let half0Side;
-    switch (trayOrientation) {
-      case 0:   half0Side = "left";   break;
-      case 180: half0Side = "right";  break;
-      case 90:  half0Side = "top";    break;
-      case 270: half0Side = "bottom"; break;
-      default:  half0Side = "left";
-    }
-
-    dragState.geometry = { half0Side };
 
     const clone = wrapper.cloneNode(true);
     const rect = wrapper.getBoundingClientRect();
@@ -113,10 +109,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     }
 
     if (dragState.clone) dragState.clone.remove();
-    if (wrapper) wrapper.style.visibility = "visible";
 
     try {
-      ev.target.releasePointerCapture(ev.pointerId);
+      document.body.releasePointerCapture(ev.pointerId);
     } catch {}
 
     dragState.active = false;
@@ -139,57 +134,32 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const cellW = boardRect.width / cols;
     const cellH = boardRect.height / rows;
 
-    const isHorizontal =
-      geometry.half0Side === "left" ||
-      geometry.half0Side === "right";
+    // Anchor cell from clone center
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top  + rect.height / 2;
 
-    let halfRects;
-    if (isHorizontal) {
-      const w = rect.width / 2;
-      halfRects = [
-        { left: rect.left, right: rect.left + w, top: rect.top, bottom: rect.bottom },
-        { left: rect.left + w, right: rect.right, top: rect.top, bottom: rect.bottom }
-      ];
-    } else {
-      const h = rect.height / 2;
-      halfRects = [
-        { left: rect.left, right: rect.right, top: rect.top, bottom: rect.top + h },
-        { left: rect.left, right: rect.right, top: rect.top + h, bottom: rect.bottom }
-      ];
+    const row0 = Math.floor((cy - boardRect.top) / cellH);
+    const col0 = Math.floor((cx - boardRect.left) / cellW);
+
+    let row1 = row0;
+    let col1 = col0;
+
+    switch (geometry.half0Side) {
+      case "left":   col1 = col0 + 1; break;
+      case "right":  col1 = col0 - 1; break;
+      case "top":    row1 = row0 + 1; break;
+      case "bottom": row1 = row0 - 1; break;
     }
-
-    const targets = halfRects.map(r => {
-      const cx = (r.left + r.right) / 2;
-      const cy = (r.top + r.bottom) / 2;
-      return {
-        row: Math.floor((cy - boardRect.top) / cellH),
-        col: Math.floor((cx - boardRect.left) / cellW)
-      };
-    });
-
-    if (isHorizontal) {
-      targets[1].row = targets[0].row;
-      targets[1].col = targets[0].col + 1;
-    } else {
-      targets[1].col = targets[0].col;
-      targets[1].row = targets[0].row + 1;
-    }
-
-    const half0IsFirst =
-      geometry.half0Side === "left" ||
-      geometry.half0Side === "top";
-
-    const [a, b] = half0IsFirst ? targets : [targets[1], targets[0]];
 
     boardEl.dispatchEvent(new CustomEvent("pips:drop:proposal", {
       bubbles: true,
       detail: {
         proposal: {
           id,
-          row0: a.row,
-          col0: a.col,
-          row1: b.row,
-          col1: b.col
+          row0,
+          col0,
+          row1,
+          col1
         }
       }
     }));
