@@ -4,12 +4,11 @@
 // CONTRACT:
 //   - Geometry frozen at pointer-down
 //   - Visual clone is non-authoritative
-//   - Proposal derived from frozen geometry + anchor cell
+//   - Proposal derived from frozen geometry + snapped half0 cell
 //   - Engine is sole authority for accept/reject
 // ============================================================
 
 export function installDragDrop({ boardEl, trayEl, rows, cols }) {
-
   const dragState = {
     active: false,
     wrapper: null,
@@ -17,9 +16,68 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     startX: 0,
     startY: 0,
     moved: false,
-    geometry: null,
-    pointerId: null
+    pointerId: null,
+
+    // Frozen at pointerDown:
+    //   - delta from half0 cell to half1 cell (dr, dc)
+    //   - source domain for cancel semantics (tray vs board)
+    delta: null,
+    source: null
   };
+
+  // ------------------------------------------------------------
+  // Helpers
+  // ------------------------------------------------------------
+  function normDeg(deg) {
+    return ((Number(deg) || 0) % 360 + 360) % 360;
+  }
+
+  function readBoardCoordsFromWrapper(wrapper) {
+    // Accept either (row0,col0,row1,col1) or (half0Row,half0Col,half1Row,half1Col)
+    const d = wrapper.dataset;
+
+    const row0 = d.row0 ?? d.half0Row;
+    const col0 = d.col0 ?? d.half0Col;
+    const row1 = d.row1 ?? d.half1Row;
+    const col1 = d.col1 ?? d.half1Col;
+
+    if (row0 == null || col0 == null || row1 == null || col1 == null) return null;
+
+    const r0 = Number(row0), c0 = Number(col0), r1 = Number(row1), c1 = Number(col1);
+    if (![r0, c0, r1, c1].every(Number.isFinite)) return null;
+
+    return { row0: r0, col0: c0, row1: r1, col1: c1 };
+  }
+
+  function deltaFromTrayOrientation(trayOrientationDeg) {
+    const o = normDeg(trayOrientationDeg);
+
+    // half0 at (row0,col0); half1 at (row0+dr, col0+dc)
+    // 0: half1 to the right; 90: half1 below; 180: half1 to the left; 270: half1 above
+    if (o === 0)   return { dr: 0,  dc: 1 };
+    if (o === 90)  return { dr: 1,  dc: 0 };
+    if (o === 180) return { dr: 0,  dc: -1 };
+    return { dr: -1, dc: 0 }; // 270 (and any other normalized value falls here)
+  }
+
+  function freezeDeltaAtPointerDown(wrapper) {
+    if (trayEl.contains(wrapper)) {
+      const trayOrientation = normDeg(wrapper.dataset.trayOrientation);
+      return { delta: deltaFromTrayOrientation(trayOrientation), source: "tray" };
+    }
+
+    if (boardEl.contains(wrapper)) {
+      const coords = readBoardCoordsFromWrapper(wrapper);
+      if (!coords) return null;
+
+      return {
+        delta: { dr: coords.row1 - coords.row0, dc: coords.col1 - coords.col0 },
+        source: "board"
+      };
+    }
+
+    return null;
+  }
 
   // ------------------------------------------------------------
   // pointerDown
@@ -29,11 +87,11 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (!wrapper) return;
     if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
 
+    const frozen = freezeDeltaAtPointerDown(wrapper);
+    if (!frozen) return;
+
     ev.preventDefault();
     document.body.setPointerCapture(ev.pointerId);
-
-    const trayOrientation =
-      ((Number(wrapper.dataset.trayOrientation) || 0) % 360 + 360) % 360;
 
     dragState.active = true;
     dragState.wrapper = wrapper;
@@ -42,14 +100,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     dragState.moved = false;
     dragState.pointerId = ev.pointerId;
 
-    // Freeze geometry at intent time
-    dragState.geometry = {
-      half0Side:
-        trayOrientation === 0   ? "left"   :
-        trayOrientation === 180 ? "right"  :
-        trayOrientation === 90  ? "top"    :
-                                  "bottom"
-    };
+    dragState.delta = frozen.delta;
+    dragState.source = frozen.source;
   }
 
   // ------------------------------------------------------------
@@ -92,7 +144,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (!dragState.clone) return;
 
     dragState.clone.style.left = `${ev.clientX}px`;
-    dragState.clone.style.top  = `${ev.clientY}px`;
+    dragState.clone.style.top = `${ev.clientY}px`;
   }
 
   // ------------------------------------------------------------
@@ -104,8 +156,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const wrapper = dragState.wrapper;
     const id = wrapper?.dataset.dominoId;
 
-    if (dragState.moved && id && dragState.clone) {
-      emitPlacementProposal(dragState.clone, id, dragState.geometry);
+    if (dragState.moved && id && dragState.clone && dragState.delta) {
+      emitPlacementProposal(dragState.clone, id, dragState.delta);
     }
 
     if (dragState.clone) dragState.clone.remove();
@@ -117,16 +169,19 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     dragState.active = false;
     dragState.wrapper = null;
     dragState.clone = null;
-    dragState.geometry = null;
+    dragState.startX = 0;
+    dragState.startY = 0;
     dragState.moved = false;
     dragState.pointerId = null;
+    dragState.delta = null;
+    dragState.source = null;
   }
 
   // ------------------------------------------------------------
   // emitPlacementProposal
   // ------------------------------------------------------------
-  function emitPlacementProposal(node, id, geometry) {
-    if (!node || !geometry) return;
+  function emitPlacementProposal(node, id, delta) {
+    if (!node || !delta) return;
 
     const boardRect = boardEl.getBoundingClientRect();
     const rect = node.getBoundingClientRect();
@@ -134,35 +189,23 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const cellW = boardRect.width / cols;
     const cellH = boardRect.height / rows;
 
-    // Anchor cell from clone center
     const cx = rect.left + rect.width / 2;
-    const cy = rect.top  + rect.height / 2;
+    const cy = rect.top + rect.height / 2;
 
     const row0 = Math.floor((cy - boardRect.top) / cellH);
     const col0 = Math.floor((cx - boardRect.left) / cellW);
 
-    let row1 = row0;
-    let col1 = col0;
+    const row1 = row0 + delta.dr;
+    const col1 = col0 + delta.dc;
 
-    switch (geometry.half0Side) {
-      case "left":   col1 = col0 + 1; break;
-      case "right":  col1 = col0 - 1; break;
-      case "top":    row1 = row0 + 1; break;
-      case "bottom": row1 = row0 - 1; break;
-    }
-
-    boardEl.dispatchEvent(new CustomEvent("pips:drop:proposal", {
-      bubbles: true,
-      detail: {
-        proposal: {
-          id,
-          row0,
-          col0,
-          row1,
-          col1
+    boardEl.dispatchEvent(
+      new CustomEvent("pips:drop:proposal", {
+        bubbles: true,
+        detail: {
+          proposal: { id, row0, col0, row1, col1 }
         }
-      }
-    }));
+      })
+    );
   }
 
   // ------------------------------------------------------------
