@@ -144,6 +144,13 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     clone.style.transform = "translate(-50%, -50%)";
 
     document.body.appendChild(clone);
+    console.log("[drag] cloneCreated", {
+      id: domino.id,
+      orientation: snapshot.orientation,
+      half0First: snapshot.half0First,
+      cloneRect: clone.getBoundingClientRect(),
+      pointerDown: { x: e.clientX, y: e.clientY }
+    });
     dragState.clone = clone;
   }
 
@@ -190,6 +197,19 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const id = wrapper?.dataset.dominoId;
 
     if (dragState.moved && id && dragState.clone && dragState.delta) {
+      const rect = clone.getBoundingClientRect();
+      console.log("[drag] cloneUsedForPlacement", {
+        id: snapshot.id,
+        orientation: snapshot.orientation,
+        half0First: snapshot.half0First,
+        cloneRect: rect,
+        pointerUp: { x: e.clientX, y: e.clientY },
+        computed: {
+          anchorRow: r0,
+          anchorCol: c0,
+          r0, c0, r1, c1
+        }
+      });
       emitPlacementProposal(dragState.clone, id, dragState.delta);
     }
 
