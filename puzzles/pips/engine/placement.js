@@ -107,7 +107,7 @@ function cloneGrid(grid) {
 //   immutable puzzle definition. This does NOT mutate anything.
 //
 // RETURNS:
-//   { ok: true } or { ok: false, reason, info? }
+//   { ok: true } or { ok: false, reason, info }
 export function validatePlacementProposal(state, proposal) {
   if (!state || !state.grid || !state.dominos) {
     return { ok: false, reason: "missing-state" };
@@ -127,24 +127,70 @@ export function validatePlacementProposal(state, proposal) {
     return { ok: false, reason: "missing-startingDominoIds" };
   }
   if (state.startingDominoIds.has(dominoId)) {
-    return { ok: false, reason: "starting-domino-immutable" };
+    return {
+      ok: false,
+      reason: "starting-domino-immutable",
+      info: { dominoId }
+    };
   }
 
   const r0 = proposal.row0, c0 = proposal.col0, r1 = proposal.row1, c1 = proposal.col1;
 
   // Shape + type.
-  if (![r0, c0, r1, c1].every(isInt)) return { ok: false, reason: "invalid-coordinates" };
-  if (r0 === r1 && c0 === c1) return { ok: false, reason: "identical-cells" };
-  if (!areAdjacent(r0, c0, r1, c1)) return { ok: false, reason: "non-adjacent" };
+  if (![r0, c0, r1, c1].every(isInt)) {
+    return {
+      ok: false,
+      reason: "invalid-coordinates",
+      info: {
+        proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 }
+      }
+    };
+  }
+  if (r0 === r1 && c0 === c1) {
+    return {
+      ok: false,
+      reason: "identical-cells",
+      info: {
+        proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 }
+      }
+    };
+  }
+  if (!areAdjacent(r0, c0, r1, c1)) {
+    return {
+      ok: false,
+      reason: "non-adjacent",
+      info: {
+        proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 }
+      }
+    };
+  }
 
   // Bounds.
-  if (!inBounds(state, r0, c0) || !inBounds(state, r1, c1)) {
-    return { ok: false, reason: "out-of-bounds" };
+  const in0 = inBounds(state, r0, c0);
+  const in1 = inBounds(state, r1, c1);
+  if (!in0 || !in1) {
+    return {
+      ok: false,
+      reason: "out-of-bounds",
+      info: {
+        proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 },
+        bounds: { row0: r0, col0: c0, row1: r1, col1: c1, in0, in1 }
+      }
+    };
   }
 
   // Blocked.
-  if (isBlocked(state, r0, c0) || isBlocked(state, r1, c1)) {
-    return { ok: false, reason: "blocked" };
+  const blocked0 = isBlocked(state, r0, c0);
+  const blocked1 = isBlocked(state, r1, c1);
+  if (blocked0 || blocked1) {
+    return {
+      ok: false,
+      reason: "blocked",
+      info: {
+        proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 },
+        blocked: { cell0: blocked0, cell1: blocked1 }
+      }
+    };
   }
 
   // Occupancy conflicts (allow landing on own current cells).
@@ -152,8 +198,24 @@ export function validatePlacementProposal(state, proposal) {
   const cell0 = grid[r0][c0];
   const cell1 = grid[r1][c1];
 
-  if (cell0 && String(cell0.dominoId) !== dominoId) return { ok: false, reason: "occupied" };
-  if (cell1 && String(cell1.dominoId) !== dominoId) return { ok: false, reason: "occupied" };
+  const conflict0 = cell0 && String(cell0.dominoId) !== dominoId;
+  const conflict1 = cell1 && String(cell1.dominoId) !== dominoId;
+
+  if (conflict0 || conflict1) {
+    return {
+      ok: false,
+      reason: "occupied",
+      info: {
+        proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 },
+        occupancy: {
+          cell0,
+          cell1,
+          conflict0,
+          conflict1
+        }
+      }
+    };
+  }
 
   return { ok: true };
 }
@@ -168,10 +230,12 @@ export function validatePlacementProposal(state, proposal) {
 //   Validates first (no side effects), then commits atomically.
 //
 // RETURNS:
-//   { accepted: true } or { accepted: false, reason, info? }
+//   { accepted: true } or { accepted: false, reason, info }
 export function commitPlacement(state, proposal) {
   const v = validatePlacementProposal(state, proposal);
-  if (!v.ok) return { accepted: false, reason: v.reason, info: v.info };
+  if (!v.ok) {
+    return { accepted: false, reason: v.reason, info: v.info };
+  }
 
   const dominoId = String(proposal.dominoId);
   const d = resolveDomino(state, dominoId);
