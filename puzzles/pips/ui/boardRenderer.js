@@ -7,6 +7,7 @@
 //   - HARD INVARIANT: wrapper origin is ALWAYS half0.
 // ============================================================
 
+import { createDominoElement } from "./createDominoElement.js";
 import { renderDomino } from "./dominoRenderer.js";
 import { findDominoCells } from "../engine/grid.js";
 import { getRotationGhost } from "./rotation.js";
@@ -17,7 +18,6 @@ import { getRotationGhost } from "./rotation.js";
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   if (!boardEl) return;
 
-  // Clear board
   boardEl.innerHTML = "";
 
   const rows = grid.length;
@@ -57,7 +57,6 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     let cells;
 
     if (ghost && String(id) === ghostId) {
-      // Visual-only ghost geometry
       cells = [
         { row: ghost.row0, col: ghost.col0, half: 0 },
         { row: ghost.row1, col: ghost.col1, half: 1 }
@@ -81,14 +80,13 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     }
 
     // ----------------------------------------------------------
-    // Create canonical wrapper (two-element DOM lives inside)
+    // Create wrapper + canonical inner DOM
     // ----------------------------------------------------------
     const wrapper = document.createElement("div");
     wrapper.classList.add("domino-wrapper", "on-board");
     wrapper.dataset.dominoId = String(d.id);
     wrapper.dataset.half0Side = half0Side;
 
-    // HARD INVARIANT: wrapper origin is always half0
     wrapper.style.setProperty("--row", String(cell0.row));
     wrapper.style.setProperty("--col", String(cell0.col));
 
@@ -96,9 +94,9 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       wrapper.classList.add("ghost");
     }
 
-    // ----------------------------------------------------------
-    // Canonical two-element DOM
-    // ----------------------------------------------------------
+    const inner = createDominoElement();
+    wrapper.appendChild(inner);
+
     renderDomino(d, wrapper);
 
     boardEl.appendChild(wrapper);
