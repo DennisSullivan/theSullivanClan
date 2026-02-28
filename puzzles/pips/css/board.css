@@ -4,6 +4,7 @@
             Board rendering is orientation‑based, never rotated.
    ============================================================ */
 
+
 /* ------------------------------------------------------------
    1. ROOT VARIABLES
    ------------------------------------------------------------ */
@@ -36,16 +37,18 @@
   --color-region-3: #f5e8ff;
 }
 
+
 /* ------------------------------------------------------------
-   2. REGION COLOR INDICES (renderer‑assigned)
+   2. REGION COLOR INDICES
    ------------------------------------------------------------ */
 .board-cell.region-color-0 { background: var(--color-region-0); }
 .board-cell.region-color-1 { background: var(--color-region-1); }
 .board-cell.region-color-2 { background: var(--color-region-2); }
 .board-cell.region-color-3 { background: var(--color-region-3); }
 
+
 /* ------------------------------------------------------------
-   3. BOARD GRID (GRID LINES LIVE HERE)
+   3. BOARD GRID
    ------------------------------------------------------------ */
 #board {
   position: relative;
@@ -74,6 +77,7 @@
   display: grid;
 }
 
+
 /* ------------------------------------------------------------
    4. BOARD CELLS
    ------------------------------------------------------------ */
@@ -81,7 +85,7 @@
   position: relative;
   box-sizing: border-box;
   background: transparent;
-  border: none; /* grid lines are drawn by #board */
+  border: none;
 }
 
 .board-cell.blocked {
@@ -89,6 +93,7 @@
   border: 1px solid #444;
   pointer-events: none;
 }
+
 
 /* ------------------------------------------------------------
    5. REGION BADGES / OUTLINES
@@ -118,8 +123,9 @@
   box-sizing: border-box;
 }
 
+
 /* ------------------------------------------------------------
-   6. DOMINO WRAPPER — BOARD ONLY
+   6. DOMINO WRAPPER — BOARD ROOT ELEMENT
    ------------------------------------------------------------ */
 .domino-wrapper.on-board {
   position: absolute;
@@ -130,6 +136,7 @@
   top:  calc(var(--row) * (var(--cell-size) + var(--cell-gap)));
 
   transform: translate(var(--domino-nudge-x), var(--domino-nudge-y));
+  transform-origin: top left;
 }
 
 /* Horizontal domino */
@@ -146,27 +153,31 @@
   height: calc(var(--cell-size) * 2 + var(--cell-gap));
 }
 
-/* Dragging state (board) */
+/* Dragging state */
 .domino-wrapper.dragging {
   z-index: 1000;
   pointer-events: none;
 }
 
+
 /* ------------------------------------------------------------
-   7. DOMINO SIZE ON BOARD
+   7. PIP CONTAINER — VISUAL ONLY
    ------------------------------------------------------------ */
 .domino.on-board {
   position: absolute;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+  pointer-events: none; /* required by two‑element model */
 }
 
 .domino.in-tray {
   position: relative;
   width: 100%;
   height: 100%;
+  pointer-events: none;
 }
+
 
 /* ------------------------------------------------------------
    8. MOBILE SCALING
@@ -180,6 +191,7 @@
   }
 }
 
+
 /* ------------------------------------------------------------
    9. DEBUG HELPERS
    ------------------------------------------------------------ */
@@ -187,7 +199,7 @@
   outline: 1px dashed rgba(255,0,0,0.6);
 }
 
-.domino.on-board.debug-outline {
+.domino-wrapper.debug-outline .domino {
   outline: 1px solid rgba(0,255,0,0.6);
 }
 
