@@ -11,6 +11,7 @@
 //   - This module is pure rendering: it never mutates state.
 // ============================================================
 
+import { createDominoElement } from "./createDominoElement.js";
 import { renderDomino } from "./dominoRenderer.js";
 import { findDominoCells } from "../engine/grid.js";
 
@@ -29,7 +30,6 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
     return;
   }
 
-  // Clear tray
   trayEl.innerHTML = "";
 
   // ----------------------------------------------------------
@@ -69,14 +69,12 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
     }
 
     // --------------------------------------------------------
-    // Create canonical wrapper (two-element DOM lives inside)
+    // Create wrapper + canonical inner DOM
     // --------------------------------------------------------
     const wrapper = document.createElement("div");
     wrapper.classList.add("domino-wrapper", "in-tray");
     wrapper.dataset.dominoId = String(d.id);
-
-    // Tray orientation is visual-only (CSS rotates wrapper)
-    wrapper.dataset.half0Side = "left";
+    wrapper.dataset.half0Side = "left"; // tray default
 
     const trayOrientation =
       ((d.trayOrientation ?? 0) % 360 + 360) % 360;
@@ -84,9 +82,9 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
     wrapper.dataset.trayOrientation = String(trayOrientation);
     wrapper.style.setProperty("--angle", `${trayOrientation}deg`);
 
-    // --------------------------------------------------------
-    // Canonical two-element DOM
-    // --------------------------------------------------------
+    const inner = createDominoElement();
+    wrapper.appendChild(inner);
+
     renderDomino(d, wrapper);
 
     slot.appendChild(wrapper);
