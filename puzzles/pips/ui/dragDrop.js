@@ -203,6 +203,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (ev.pointerId !== state.pointerId) return;
 
     if (state.phase === "Dragging" && state.ghost) {
+      console.log("state.ghost", state.ghost);
       boardEl.dispatchEvent(
         new CustomEvent("pips:drop:proposal", {
           bubbles: true,
