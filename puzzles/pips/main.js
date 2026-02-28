@@ -115,7 +115,49 @@ export function startPuzzle(puzzleJson) {
   }, 0);
 
   document.addEventListener("pips:drop:reject:board", e => {
-    console.warn("DROP REJECTED", e.detail);
+    const rej = e.detail;
+  
+    console.groupCollapsed(
+      `%cDROP REJECTED%c — ${rej.reason}`,
+      "color:#b00;font-weight:bold;",
+      "color:#444;"
+    );
+  
+    console.log("Reason:", rej.reason);
+  
+    if (rej.proposal) {
+      console.log("Proposal:", rej.proposal);
+    }
+  
+    if (rej.dominoId !== undefined) {
+      console.log("Domino ID:", rej.dominoId);
+    }
+  
+    if (rej.delta) {
+      console.log("Delta (dr,dc):", rej.delta);
+    }
+  
+    if (rej.cells) {
+      console.log("Engine cell check:", rej.cells);
+    }
+  
+    if (rej.region) {
+      console.log("Region check:", rej.region);
+    }
+  
+    if (rej.bounds) {
+      console.log("Bounds check:", rej.bounds);
+    }
+  
+    if (rej.occupancy) {
+      console.log("Occupancy check:", rej.occupancy);
+    }
+  
+    if (rej.ghost) {
+      console.log("Ghost geometry:", rej.ghost);
+    }
+  
+    console.groupEnd();
   });
 
   // Expose for debugging and manual re-render
