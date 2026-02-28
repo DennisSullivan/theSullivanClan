@@ -47,7 +47,7 @@
 
 
 /* ============================================================
-   3. DOMINO WRAPPER — CORRECT CENTERING + ROTATION
+   3. DOMINO WRAPPER — CENTERING + ROTATION (ROOT ELEMENT)
    ============================================================ */
 
 .domino-wrapper.in-tray {
@@ -64,17 +64,20 @@
 
   /* ⭐ Correct transform order:
        1. translate(-50%, -50%) centers the wrapper
-       2. rotate(var(--angle)) rotates around the center
+       2. rotate(var(--tray-orientation)) rotates around the center
   */
-  transform: translate(-50%, -50%) rotate(var(--angle, 0deg));
+  transform: translate(-50%, -50%) rotate(var(--tray-orientation, 0deg));
   transform-origin: center center;
+
+  transition: transform var(--transition-fast, var(--_fallback-transition-fast));
 }
 
 
 /* ============================================================
-   4. FIX — RESET INNER DOMINO TRANSFORM IN TRAY
+   4. PIP CONTAINER — NO TRANSFORMS ALLOWED
    ============================================================ */
 
+/* The pip container must never rotate in the tray */
 .domino.in-tray {
   transform: none !important;
 }
