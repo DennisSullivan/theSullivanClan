@@ -189,7 +189,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
         const col0 = Math.floor((half0Screen.x - boardRect.left) / cellW);
         const row1 = row0 + delta.dr;
         const col1 = col0 + delta.dc;
-console-log("placement target", row0, "-", col0, "and", row1, "-", col1);
+console.log("placement target", row0, "-", col0, "and", row1, "-", col1);
         boardEl.dispatchEvent(
           new CustomEvent("pips:drop:proposal", {
             bubbles: true,
