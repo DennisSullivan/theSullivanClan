@@ -1,19 +1,16 @@
 // ============================================================
 // FILE: ui/boardRenderer.js
-// PURPOSE: Render board cells and dominos.
+// PURPOSE: Render board cells and dominos (two‑element DOM model).
 // NOTES:
 //   - Grid is authoritative for logical placement.
 //   - rotationGhost is a visual-only override for one domino.
 //   - HARD INVARIANT: wrapper origin is ALWAYS half0.
 // ============================================================
 
-import { renderDomino } from "./dominoRenderer.js";
+import { createDominoElement } from "./dominoFactory.js";
 import { findDominoCells } from "../engine/grid.js";
 import { getRotationGhost } from "./rotation.js";
 
-// renderBoard()
-// Renders the board background and all dominos.
-// If a rotation preview is active, we substitute ghost geometry for that domino.
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   if (!boardEl) return;
 
@@ -71,6 +68,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const cell1 = cells.find(c => c.half === 1);
     if (!cell0 || !cell1) continue;
 
+    // Determine orientation from geometry
     let half0Side = "left";
     if (cell0.row === cell1.row) {
       half0Side = cell0.col < cell1.col ? "left" : "right";
@@ -78,8 +76,11 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       half0Side = cell0.row < cell1.row ? "top" : "bottom";
     }
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "domino-wrapper on-board";
+    // ----------------------------------------------------------
+    // Create canonical two‑element DOM
+    // ----------------------------------------------------------
+    const wrapper = createDominoElement(d.half0, d.half1);
+    wrapper.classList.add("domino-wrapper", "on-board");
     wrapper.dataset.dominoId = String(d.id);
     wrapper.dataset.half0Side = half0Side;
 
@@ -91,8 +92,6 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       wrapper.classList.add("ghost");
     }
 
-    renderDomino(d, wrapper);
     boardEl.appendChild(wrapper);
   }
 }
-
