@@ -11,7 +11,7 @@
 //   - This module is pure rendering: it never mutates state.
 // ============================================================
 
-import { renderDomino } from "./dominoRenderer.js";
+import { createDominoElement } from "./dominoFactory.js";
 import { findDominoCells } from "../engine/grid.js";
 
 // ------------------------------------------------------------
@@ -50,17 +50,14 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
 
   for (const [id, d] of list) {
     const cells = findDominoCells(grid, String(d.id));
-    if (cells.length > 0) continue;
+    if (cells.length > 0) continue; // skip dominos on board
 
     if (typeof d.homeSlot !== "number") {
       console.error("renderTray: domino missing homeSlot", { id, domino: d });
       continue;
     }
 
-    const slot = trayEl.querySelector(
-      `.tray-slot[data-slot="${d.homeSlot}"]`
-    );
-
+    const slot = trayEl.querySelector(`.tray-slot[data-slot="${d.homeSlot}"]`);
     if (!slot) {
       console.error("renderTray: no tray-slot found for homeSlot", {
         id,
@@ -70,14 +67,14 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
       continue;
     }
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "domino-wrapper in-tray";
+    // --------------------------------------------------------
+    // Create canonical two‑element DOM
+    // --------------------------------------------------------
+    const wrapper = createDominoElement(d.half0, d.half1);
+    wrapper.classList.add("domino-wrapper", "in-tray");
     wrapper.dataset.dominoId = String(d.id);
 
-    // --------------------------------------------------------
-    // Tray rotation is VISUAL ONLY
-    // Renderer layout remains stable
-    // --------------------------------------------------------
+    // Tray orientation is visual-only (CSS rotates wrapper)
     wrapper.dataset.half0Side = "left";
 
     const trayOrientation =
@@ -86,7 +83,6 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
     wrapper.dataset.trayOrientation = String(trayOrientation);
     wrapper.style.setProperty("--angle", `${trayOrientation}deg`);
 
-    renderDomino(d, wrapper);
     slot.appendChild(wrapper);
   }
 }
