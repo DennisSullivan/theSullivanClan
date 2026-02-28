@@ -1,40 +1,31 @@
-
 // ============================================================
 // FILE: ui/dragDrop.js
-// PURPOSE: Contract‑clean drag/drop → pips:drop:proposal emitter.
-// ENFORCEMENT:
-//   - Idle preserved until DragThreshold exceeded (20px, Euclidean)
-//   - Geometry snapshot frozen at drag start (tray bridge once)
-//   - Clone is snapshot‑driven; no tray CSS inheritance
-//   - No rotation, no inference beyond candidate proposal
-//   - Cancel if structurally invalid; engine remains sole authority
+// PURPOSE: Contract‑clean drag/drop with continuous ghost.
 // ============================================================
 
 export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   const DragThreshold = 20;
 
   const state = {
-    phase: "Idle", // Idle | Pending | Dragging
+    phase: "Idle",        // Idle | Pending | Dragging
     pointerId: null,
     wrapper: null,
     startX: 0,
     startY: 0,
 
-    // Frozen at drag start
-    snapshot: null, // { id, delta:{dr,dc}, pointerOffset:{dx,dy} }
+    snapshot: null,       // { id, delta:{dr,dc}, pointerOffset:{dx,dy} }
+    clone: null,
 
-    clone: null
+    ghost: null           // { id,row0,col0,row1,col1 } or null
   };
 
-  // ------------------------------------------------------------
-  // Utilities
   // ------------------------------------------------------------
   function normDeg(deg) {
     return ((Number(deg) || 0) % 360 + 360) % 360;
   }
 
-  function deltaFromTrayOrientation(trayOrientationDeg) {
-    const o = normDeg(trayOrientationDeg);
+  function deltaFromTrayOrientation(o) {
+    o = normDeg(o);
     if (o === 0)   return { dr: 0,  dc: 1 };
     if (o === 90)  return { dr: 1,  dc: 0 };
     if (o === 180) return { dr: 0,  dc: -1 };
@@ -64,10 +55,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     state.startY = 0;
     state.snapshot = null;
     state.clone = null;
+    state.ghost = null;
   }
 
-  // ------------------------------------------------------------
-  // Canonical half0 screen anchor
   // ------------------------------------------------------------
   function getHalf0Screen(wrapper) {
     const x = Number(wrapper.dataset.half0ScreenX);
@@ -78,13 +68,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }
 
-  // ------------------------------------------------------------
-  // Clone creation (snapshot‑driven)
-  // ------------------------------------------------------------
   function createClone(wrapper, half0Screen) {
     const clone = wrapper.cloneNode(true);
-
-    // Strip inherited layout/transform state
     clone.style.all = "unset";
     clone.style.position = "fixed";
     clone.style.pointerEvents = "none";
@@ -100,6 +85,53 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     document.body.appendChild(clone);
     return clone;
+  }
+
+  // ------------------------------------------------------------
+  // Continuous ghost computation
+  // ------------------------------------------------------------
+  function updateGhost(ev) {
+    const snap = state.snapshot;
+    if (!snap) {
+      state.ghost = null;
+      return;
+    }
+
+    const { dx, dy } = snap.pointerOffset;
+    const half0Screen = {
+      x: ev.clientX - dx,
+      y: ev.clientY - dy
+    };
+
+    const boardRect = boardEl.getBoundingClientRect();
+    const inside =
+      half0Screen.x >= boardRect.left &&
+      half0Screen.x <= boardRect.right &&
+      half0Screen.y >= boardRect.top &&
+      half0Screen.y <= boardRect.bottom;
+
+    if (!inside) {
+      state.ghost = null;
+      return;
+    }
+
+    const cellW = boardRect.width / cols;
+    const cellH = boardRect.height / rows;
+
+    const row0 = Math.floor((half0Screen.y - boardRect.top) / cellH);
+    const col0 = Math.floor((half0Screen.x - boardRect.left) / cellW);
+    const row1 = row0 + snap.delta.dr;
+    const col1 = col0 + snap.delta.dc;
+
+    const valid =
+      row0 >= 0 && row0 < rows &&
+      col0 >= 0 && col0 < cols &&
+      row1 >= 0 && row1 < rows &&
+      col1 >= 0 && col1 < cols;
+
+    state.ghost = valid
+      ? { id: snap.id, row0, col0, row1, col1 }
+      : null;
   }
 
   // ------------------------------------------------------------
@@ -145,6 +177,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     document.body.setPointerCapture(ev.pointerId);
     state.clone = createClone(wrapper, half0Screen);
     state.phase = "Dragging";
+
+    updateGhost(ev);
   }
 
   function pointerMove(ev) {
@@ -161,44 +195,20 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     state.clone.style.left = `${ev.clientX}px`;
     state.clone.style.top = `${ev.clientY}px`;
+
+    updateGhost(ev);
   }
 
   function pointerUp(ev) {
     if (ev.pointerId !== state.pointerId) return;
 
-    if (state.phase === "Dragging" && state.snapshot) {
-      const { id, delta, pointerOffset } = state.snapshot;
-
-      const half0Screen = {
-        x: ev.clientX - pointerOffset.dx,
-        y: ev.clientY - pointerOffset.dy
-      };
-
-      const boardRect = boardEl.getBoundingClientRect();
-      const insideBoard =
-        half0Screen.x >= boardRect.left &&
-        half0Screen.x <= boardRect.right &&
-        half0Screen.y >= boardRect.top &&
-        half0Screen.y <= boardRect.bottom;
-
-      if (insideBoard) {
-        const cellW = boardRect.width / cols;
-        const cellH = boardRect.height / rows;
-
-        const row0 = Math.floor((half0Screen.y - boardRect.top) / cellH);
-        const col0 = Math.floor((half0Screen.x - boardRect.left) / cellW);
-        const row1 = row0 + delta.dr;
-        const col1 = col0 + delta.dc;
-console.log("placement target", row0, "-", col0, "and", row1, "-", col1);
-        boardEl.dispatchEvent(
-          new CustomEvent("pips:drop:proposal", {
-            bubbles: true,
-            detail: {
-              proposal: { id, row0, col0, row1, col1 }
-            }
-          })
-        );
-      }
+    if (state.phase === "Dragging" && state.ghost) {
+      boardEl.dispatchEvent(
+        new CustomEvent("pips:drop:proposal", {
+          bubbles: true,
+          detail: { proposal: state.ghost }
+        })
+      );
     }
 
     try { document.body.releasePointerCapture(ev.pointerId); } catch {}
@@ -210,8 +220,6 @@ console.log("placement target", row0, "-", col0, "and", row1, "-", col1);
     reset();
   }
 
-  // ------------------------------------------------------------
-  // Wiring
   // ------------------------------------------------------------
   document.addEventListener("pointerdown", pointerDown);
   document.addEventListener("pointermove", pointerMove);
