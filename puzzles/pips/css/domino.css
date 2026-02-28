@@ -1,54 +1,94 @@
 /* ============================================================
    FILE: domino.css
-   PURPOSE: Two‑element DOM model (root + pip container)
+   PURPOSE: Final unified stylesheet for the two‑element DOM model.
+   CONTRACT:
+     - Wrapper handles placement + rotation.
+     - Inner .domino handles orientation + pip grid.
+     - Halves contain 3×3 pip grids.
+     - Pip visibility driven by data-pip.
    ============================================================ */
 
-/* Safety defaults */
+/* ------------------------------------------------------------
+   ROOT VARIABLES
+   ------------------------------------------------------------ */
 :root {
-  --_fallback-cell-size: 48px;
-  --_fallback-cell-gap: 4px;
-  --_fallback-domino-thickness: 1px;
-  --_fallback-color-domino-bg: #ffffff;
-  --_fallback-color-domino-border: #aaa;
-  --_fallback-color-pip: #222;
-  --_fallback-transition-fast: 120ms ease-out;
-  --domino-nudge-x: 0px;
-  --domino-nudge-y: 0px;
+  --cell-size: 48px;
+  --cell-gap: 4px;
+
+  --domino-bg: #ffffff;
+  --domino-border: #000;
+  --pip-color: #000;
+
+  --domino-radius: 6px;
+  --transition-fast: 120ms ease-out;
 }
 
-.pip-grid { display: contents; }
+/* ============================================================
+   WRAPPER (placement + rotation)
+   ============================================================ */
 
-/* -------------------------
-   ROOT ELEMENT (geometry + events)
-   ------------------------- */
 .domino-wrapper {
-  position: relative;
+  position: absolute;
+  width: calc(2 * var(--cell-size) + var(--cell-gap));
+  height: var(--cell-size);
   display: flex;
-  justify-content: center;
   align-items: center;
-  box-sizing: border-box;
+  justify-content: center;
   pointer-events: auto;
+  touch-action: none;
   transform-origin: center center;
+}
+
+/* Board placement (half0 anchor) */
+.domino-wrapper.on-board {
+  transform: translate(
+    calc(var(--col) * (var(--cell-size) + var(--cell-gap))),
+    calc(var(--row) * (var(--cell-size) + var(--cell-gap)))
+  );
+}
+
+/* Tray rotation (visual-only) */
+.domino-wrapper.in-tray {
+  position: relative;
+  transform: rotate(var(--angle));
+  transition: transform var(--transition-fast);
+}
+
+/* Ghost preview */
+.domino-wrapper.ghost {
+  opacity: 0.5;
+  filter: grayscale(100%);
+  pointer-events: none;
+}
+
+/* ============================================================
+   INNER DOMINO (orientation + border)
+   ============================================================ */
+
+.domino {
+  display: flex;
   width: 100%;
   height: 100%;
+  border-radius: var(--domino-radius);
+  background: var(--domino-bg);
+  border: 2px solid var(--domino-border);
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: none; /* required by two-element model */
 }
 
-/* Orientation lives on the wrapper */
-.domino-wrapper.vertical {
-  flex-direction: column;
-}
-
-.domino-wrapper:not(.vertical) {
+/* Orientation set by renderDomino() */
+.domino.horizontal {
   flex-direction: row;
 }
 
-/* Tray orientation */
-.domino-wrapper.in-tray {
-  transition: transform var(--transition-fast, var(--_fallback-transition-fast));
-  transform: rotate(var(--tray-orientation));
+.domino.vertical {
+  flex-direction: column;
+  width: var(--cell-size);
+  height: calc(2 * var(--cell-size) + var(--cell-gap));
 }
 
-/* Visual states */
+/* Tray vs board visual distinction */
 .domino-wrapper.in-tray .domino {
   box-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
@@ -57,31 +97,10 @@
   box-shadow: none;
 }
 
-/* Ghost state */
-.domino-wrapper.ghost {
-  opacity: 0.6;
-  pointer-events: none;
-}
+/* ============================================================
+   HALVES (3×3 pip grid)
+   ============================================================ */
 
-/* -------------------------
-   PIP CONTAINER (visual only)
-   ------------------------- */
-.domino {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  background: var(--color-domino-bg, var(--_fallback-color-domino-bg));
-  border: var(--domino-thickness, var(--_fallback-domino-thickness))
-          solid var(--color-domino-border, var(--_fallback-color-domino-border));
-  border-radius: 4px;
-  box-sizing: border-box;
-  padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.08);
-  pointer-events: none; /* required by two‑element model */
-}
-
-/* -------------------------
-   Halves (3×3 pip grid)
-   ------------------------- */
 .domino .half {
   flex: 1;
   display: grid;
@@ -89,33 +108,32 @@
   grid-template-rows: repeat(3, 1fr);
   justify-items: center;
   align-items: center;
-  gap: 0;
-  padding: 0;
-  font-size: 0;
   box-sizing: border-box;
 }
 
-/* Divider orientation depends on wrapper */
-.domino-wrapper.vertical .domino .half + .half {
-  border-top: 1px solid var(--color-domino-border, var(--_fallback-color-domino-border));
+/* Divider (horizontal or vertical) */
+.domino.horizontal .half + .half {
+  border-left: 1px solid var(--domino-border);
 }
 
-.domino-wrapper:not(.vertical) .domino .half + .half {
-  border-left: 1px solid var(--color-domino-border, var(--_fallback-color-domino-border));
+.domino.vertical .half + .half {
+  border-top: 1px solid var(--domino-border);
 }
 
-/* -------------------------
-   Pips
-   ------------------------- */
+/* ============================================================
+   PIPS (7-position grid)
+   ============================================================ */
+
 .domino .pip {
-  width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.095);
-  height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.095);
-  background: var(--color-pip, var(--_fallback-color-pip));
+  width: calc(var(--cell-size) * 0.095);
+  height: calc(var(--cell-size) * 0.095);
+  background: var(--pip-color);
   border-radius: 50%;
   opacity: 0;
-  transition: opacity var(--transition-fast, var(--_fallback-transition-fast));
+  transition: opacity var(--transition-fast);
 }
 
+/* Pip positions */
 .p1 { grid-area: 2 / 2; }
 .p2 { grid-area: 1 / 1; }
 .p3 { grid-area: 3 / 3; }
@@ -124,14 +142,16 @@
 .p6 { grid-area: 2 / 1; }
 .p7 { grid-area: 2 / 3; }
 
+/* Slightly larger center pips */
 .p7 {
-  width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.105);
-  height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.105);
+  width: calc(var(--cell-size) * 0.105);
+  height: calc(var(--cell-size) * 0.105);
 }
 
-/* -------------------------
-   Die faces
-   ------------------------- */
+/* ============================================================
+   PIP ACTIVATION RULES (data-pip)
+   ============================================================ */
+
 .domino .half[data-pip="0"] .pip { opacity: 0; }
 
 .domino .half[data-pip="1"] .p1 { opacity: 1; }
@@ -161,42 +181,31 @@
 .domino .half[data-pip="6"] .p6,
 .domino .half[data-pip="6"] .p7 { opacity: 1; }
 
-/* -------------------------
-   Drag clone (root clone)
-   ------------------------- */
-.domino-wrapper-clone {
-  position: fixed;
-  outline: 2px solid rgba(0, 120, 255, 0.85);
-  outline-offset: 2px;
-  transform: translate(-50%, -50%);
-  transform-origin: center center;
-  z-index: 9999;
-  pointer-events: none;
-  user-select: none;
-  touch-action: none;
+/* ============================================================
+   BOARD CELLS
+   ============================================================ */
+
+.board-cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  background: #eee;
+  border-radius: 4px;
+  position: relative;
+}
+
+.board-cell.blocked {
+  background: #bbb;
+}
+
+/* ============================================================
+   TRAY SLOTS
+   ============================================================ */
+
+.tray-slot {
+  width: calc(2 * var(--cell-size) + var(--cell-gap));
+  height: var(--cell-size);
   display: flex;
-  box-sizing: border-box;
-  transition: transform 160ms cubic-bezier(.2,.8,.2,1);
-  will-change: transform;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
-
-/* -------------------------
-   Mobile scaling
-   ------------------------- */
-@media (max-width: 600px) {
-  .domino .pip {
-    width: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
-    height: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
-  }
-
-  .domino {
-    padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.10);
-  }
-}
-
-/* -------------------------
-   Debug helpers
-   ------------------------- */
-.domino-wrapper.on-board.debug-outline { outline: 1px dashed rgba(255,0,0,0.6); }
-.domino-wrapper.debug-outline .domino { outline: 1px solid rgba(0,255,0,0.6); }
-.board-cell.debug-outline { outline: 1px dotted rgba(0,0,255,0.25); }
