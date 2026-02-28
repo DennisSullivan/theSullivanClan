@@ -84,10 +84,7 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
       ((d.trayOrientation ?? 0) % 360 + 360) % 360;
 
     wrapper.dataset.trayOrientation = String(trayOrientation);
-    wrapper.style.setProperty(
-      "--tray-orientation",
-      `${trayOrientation}deg`
-    );
+    wrapper.style.setProperty("--angle", `${trayOrientation}deg`);
 
     renderDomino(d, wrapper);
     slot.appendChild(wrapper);
