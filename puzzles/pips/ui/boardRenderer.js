@@ -7,13 +7,17 @@
 //   - HARD INVARIANT: wrapper origin is ALWAYS half0.
 // ============================================================
 
-import { createDominoElement } from "./dominoFactory.js";
+import { renderDomino } from "./dominoRenderer.js";
 import { findDominoCells } from "../engine/grid.js";
 import { getRotationGhost } from "./rotation.js";
 
+// ------------------------------------------------------------
+// renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
+// ------------------------------------------------------------
 export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl) {
   if (!boardEl) return;
 
+  // Clear board
   boardEl.innerHTML = "";
 
   const rows = grid.length;
@@ -77,9 +81,9 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     }
 
     // ----------------------------------------------------------
-    // Create canonical two‑element DOM
+    // Create canonical wrapper (two-element DOM lives inside)
     // ----------------------------------------------------------
-    const wrapper = createDominoElement(d.half0, d.half1);
+    const wrapper = document.createElement("div");
     wrapper.classList.add("domino-wrapper", "on-board");
     wrapper.dataset.dominoId = String(d.id);
     wrapper.dataset.half0Side = half0Side;
@@ -91,6 +95,11 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     if (ghost && String(id) === ghostId) {
       wrapper.classList.add("ghost");
     }
+
+    // ----------------------------------------------------------
+    // Canonical two-element DOM
+    // ----------------------------------------------------------
+    renderDomino(d, wrapper);
 
     boardEl.appendChild(wrapper);
   }
