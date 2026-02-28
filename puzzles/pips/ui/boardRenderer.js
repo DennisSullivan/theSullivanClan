@@ -87,8 +87,17 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.dataset.dominoId = String(d.id);
     wrapper.dataset.half0Side = half0Side;
 
+    // CSS placement (half0 anchor)
     wrapper.style.setProperty("--row", String(cell0.row));
     wrapper.style.setProperty("--col", String(cell0.col));
+
+    // ----------------------------------------------------------
+    // REQUIRED FOR DRAG/DROP (pure geometry, no state duplication)
+    // ----------------------------------------------------------
+    wrapper.dataset.row0 = String(cell0.row);
+    wrapper.dataset.col0 = String(cell0.col);
+    wrapper.dataset.row1 = String(cell1.row);
+    wrapper.dataset.col1 = String(cell1.col);
 
     if (ghost && String(id) === ghostId) {
       wrapper.classList.add("ghost");
