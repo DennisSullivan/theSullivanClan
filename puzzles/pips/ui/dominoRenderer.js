@@ -1,24 +1,11 @@
 // ============================================================
 // FILE: dominoRenderer.js
-// PURPOSE: Build DOM for a single domino (used by tray and board).
+// PURPOSE: Populate an existing two‑element domino DOM.
 // NOTES:
 //   - Pure UI: never mutates the domino model.
-//   - Uses canonical pip0/pip1 only.
-//   - Always creates seven .pip elements per half.
+//   - Assumes wrapper was created by createDominoElement().
+//   - Only updates pip values + orientation class.
 // ============================================================
-
-function createPips() {
-  const container = document.createElement("div");
-  container.className = "pip-grid";
-
-  for (let i = 1; i <= 7; i++) {
-    const p = document.createElement("div");
-    p.className = `pip p${i}`;
-    container.appendChild(p);
-  }
-
-  return container;
-}
 
 function normalizePipValue(v) {
   if (typeof v === "number") return v;
@@ -35,58 +22,42 @@ export function renderDomino(domino, wrapper) {
     return;
   }
 
-  const inner = document.createElement("div");
-  inner.className = "domino";
-  inner.dataset.dominoId = String(domino?.id);
-  
-  wrapper.style.outline = "3px solid magenta";
-
-  console.assert(
-    wrapper.dataset.half0Side,
-    "Renderer requires canonical half0Side"
-  );
-
-  console.assert(
-    !wrapper.dataset.orientation,
-    "Renderer must not receive orientation"
-  );
-
-  wrapper.innerHTML = "";
+  // The wrapper must already contain:
+  // <div class="domino"> <div class="half">…pips…</div> <div class="half">…</div> </div>
+  const inner = wrapper.querySelector(".domino");
+  if (!inner) {
+    console.error("renderDomino: wrapper missing .domino child", wrapper);
+    return;
+  }
 
   // ------------------------------------------------------------
   // Canonical pip extraction
   // ------------------------------------------------------------
-  let pip0 = normalizePipValue(domino?.pip0);
-  let pip1 = normalizePipValue(domino?.pip1);
+  const pip0 = normalizePipValue(domino?.pip0);
+  const pip1 = normalizePipValue(domino?.pip1);
+
+  const half0 = inner.querySelector(".half0") || inner.querySelector(".half:first-child");
+  const half1 = inner.querySelector(".half1") || inner.querySelector(".half:last-child");
+
+  if (!half0 || !half1) {
+    console.error("renderDomino: missing half0/half1 elements", wrapper);
+    return;
+  }
+
+  half0.dataset.pip = String(pip0);
+  half1.dataset.pip = String(pip1);
 
   // ------------------------------------------------------------
-  // Orientation (board only)
+  // Orientation (board + tray)
   // ------------------------------------------------------------
   const half0Side = wrapper.dataset.half0Side;
-  
+
   const isHorizontal =
     half0Side === "left" ||
     half0Side === "right";
 
-  inner.classList.add(isHorizontal ? "horizontal" : "vertical");
-  const half0 = document.createElement("div");
-  half0.className = "half half0";
-  half0.dataset.pip = String(pip0);
-  half0.appendChild(createPips());
-
-  const half1 = document.createElement("div");
-  half1.className = "half half1";
-  half1.dataset.pip = String(pip1);
-  half1.appendChild(createPips());
-
-  if (half0Side === "right" || half0Side === "bottom") {
-    inner.appendChild(half1);
-    inner.appendChild(half0);
-  } else {
-    inner.appendChild(half0);
-    inner.appendChild(half1);
-  }
-  wrapper.appendChild(inner);
+  inner.classList.toggle("vertical", !isHorizontal);
+  inner.classList.toggle("horizontal", isHorizontal);
 
   // ------------------------------------------------------------
   // Accessibility label
