@@ -1,9 +1,11 @@
 // ============================================================
 // FILE: ui/rotation.js
-// PURPOSE: DIAGNOSTIC rotation preview instrumentation
-// NOTE:
-//   - NO behavior changes except fixing pivot-half detection
-//   - Logs every invariant involved in rotation
+// PURPOSE: Contract‑clean rotation preview instrumentation
+// NOTES:
+//   - Pure UI: never mutates engine state except trayOrientation.
+//   - Pivot‑half detection is authoritative.
+//   - Wrapper is the only geometry anchor.
+//   - Pip container is never touched.
 // ============================================================
 
 import { findDominoCells } from "../engine/grid.js";
@@ -15,6 +17,9 @@ let rotationGhost = null;
 
 export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
 
+  // ------------------------------------------------------------
+  // 1. TRAY ROTATION (visual-only)
+  // ------------------------------------------------------------
   trayEl.addEventListener("click", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
@@ -22,12 +27,17 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const id = wrapper.dataset.dominoId;
     const domino = dominos.get(id);
     if (!domino) return;
+
+    // Only rotate if in tray
     if (domino.row0 !== null) return;
 
     domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
     renderPuzzle();
   });
 
+  // ------------------------------------------------------------
+  // 2. BOARD ROTATION (pivot‑half based)
+  // ------------------------------------------------------------
   document.addEventListener("dblclick", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
@@ -45,6 +55,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     // --------------------------------------------------------
     const clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
 
+    // Wrapper origin is always half0
     const baseRow = Number(wrapper.style.getPropertyValue("--row"));
     const baseCol = Number(wrapper.style.getPropertyValue("--col"));
     const half0Side = wrapper.dataset.half0Side;
@@ -52,6 +63,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     let clickRow = baseRow;
     let clickCol = baseCol;
 
+    // Compute clicked cell from half0 orientation
     if (clickedHalf === 1) {
       switch (half0Side) {
         case "left":   clickCol = baseCol + 1; break;
@@ -61,26 +73,27 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       }
     }
 
-    console.log("ROTATE: clickCell", { clickRow, clickCol });
-
+    // --------------------------------------------------------
+    // Rotation session management
+    // --------------------------------------------------------
     if (rotatingDomino !== domino) {
+      // Start new rotation session
       rotatingDomino = domino;
       rotatingPivotCell = { row: clickRow, col: clickCol };
-    
+
       const cells = findDominoCells(grid, String(id));
       const cell0 = cells.find(c => c.half === 0);
       const cell1 = cells.find(c => c.half === 1);
-    
+
       rotatingPrev = {
         r0: cell0.row,
         c0: cell0.col,
         r1: cell1.row,
         c1: cell1.col
       };
-   } else {
-      // IMPORTANT:
-      // rotationGhost uses row0/col0/row1/col1.
-      // computePivotPreview expects r0/c0/r1/c1.
+
+    } else {
+      // Advance rotation session
       rotatingPrev = {
         r0: rotationGhost.row0,
         c0: rotationGhost.col0,
@@ -89,20 +102,13 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       };
     }
 
-    console.log("ROTATE: pivotCell(frozen)", rotatingPivotCell);
-    console.log("ROTATE: prevUsed", rotatingPrev);
-
     // --------------------------------------------------------
     // FIX: pivotHalf = clickedHalf (spec invariant)
     // --------------------------------------------------------
     const pivotHalf = clickedHalf;
 
-    console.log("ROTATE: pivotHalf", pivotHalf);
-
     const preview = computePivotPreview(rotatingPrev, pivotHalf);
     if (!preview) return;
-
-    console.log("ROTATE: preview", preview);
 
     rotationGhost = {
       id: domino.id,
@@ -115,6 +121,9 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     renderPuzzle();
   });
 
+  // ------------------------------------------------------------
+  // 3. Cancel rotation session when clicking outside
+  // ------------------------------------------------------------
   document.addEventListener("pointerdown", (event) => {
     if (!rotatingDomino) return;
 
@@ -126,11 +135,10 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   });
 }
 
+// ============================================================
 // computePivotPreview()
-// Computes a 90° clockwise rotation preview.
-// IMPORTANT INVARIANT:
-//   - row0/col0 is ALWAYS half0 (wrapper anchor)
-//   - row1/col1 is ALWAYS half1
+// 90° clockwise rotation around pivotHalf
+// ============================================================
 function computePivotPreview(prev, pivotHalf) {
   const half0 = { r: prev.r0, c: prev.c0 };
   const half1 = { r: prev.r1, c: prev.c1 };
@@ -147,9 +155,8 @@ function computePivotPreview(prev, pivotHalf) {
     c: pivot.c - dr
   };
 
-  // Re‑express result in half0‑anchored form
+  // Re‑express in half0‑anchored form
   if (pivotHalf === 0) {
-    // half0 is pivot
     return {
       row0: pivot.r,
       col0: pivot.c,
@@ -157,7 +164,6 @@ function computePivotPreview(prev, pivotHalf) {
       col1: rotatedOther.c
     };
   } else {
-    // half1 is pivot; half0 moved
     return {
       row0: rotatedOther.r,
       col0: rotatedOther.c,
@@ -167,8 +173,9 @@ function computePivotPreview(prev, pivotHalf) {
   }
 }
 
+// ============================================================
 // clearRotationPreview()
-// Ends the rotation session and removes the ghost preview.
+// ============================================================
 function clearRotationPreview(renderPuzzle) {
   rotationGhost = null;
   rotatingDomino = null;
