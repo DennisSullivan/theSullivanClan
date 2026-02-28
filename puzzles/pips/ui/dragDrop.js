@@ -33,12 +33,15 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     return { dr: -1, dc: 0 };
   }
 
+  // ------------------------------------------------------------
+  // BoardRenderer now sets data-row0/col0/row1/col1 explicitly.
+  // ------------------------------------------------------------
   function readBoardDelta(wrapper) {
     const d = wrapper.dataset;
-    const r0 = Number(d.row0 ?? d.half0Row);
-    const c0 = Number(d.col0 ?? d.half0Col);
-    const r1 = Number(d.row1 ?? d.half1Row);
-    const c1 = Number(d.col1 ?? d.half1Col);
+    const r0 = Number(d.row0);
+    const c0 = Number(d.col0);
+    const r1 = Number(d.row1);
+    const c1 = Number(d.col1);
     if (![r0, c0, r1, c1].every(Number.isFinite)) return null;
     return { dr: r1 - r0, dc: c1 - c0 };
   }
@@ -76,21 +79,12 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
   function createClone(wrapper, half0Screen) {
     const clone = wrapper.cloneNode(true);
-
-    // DO NOT wipe styles — preserves two‑element DOM structure
-    clone.style.position = "fixed";
-    clone.style.pointerEvents = "none";
-    clone.style.zIndex = 9999;
-
-    const rect = wrapper.getBoundingClientRect();
-    clone.style.width = `${rect.width}px`;
-    clone.style.height = `${rect.height}px`;
+    clone.classList.add("domino-drag-clone");
 
     clone.style.left = `${half0Screen.x}px`;
     clone.style.top = `${half0Screen.y}px`;
-    clone.style.transform = "translate(-50%, -50%)";
 
-    // Optional: remove tray/board shadows
+    // Remove board/tray visual states
     clone.classList.remove("in-tray", "on-board");
 
     document.body.appendChild(clone);
@@ -158,7 +152,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     state.pointerId = ev.pointerId;
     state.wrapper = wrapper;
     state.startX = ev.clientX;
-    state.startY = ev.clientX;
     state.startY = ev.clientY;
   }
 
