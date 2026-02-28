@@ -1,6 +1,7 @@
 // ============================================================
 // FILE: ui/dragDrop.js
 // PURPOSE: Contract‑clean drag/drop with continuous ghost.
+//          Two‑element DOM model compliant.
 // ============================================================
 
 export function installDragDrop({ boardEl, trayEl, rows, cols }) {
@@ -59,6 +60,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   }
 
   // ------------------------------------------------------------
+  // Wrapper geometry only (never pip container)
+  // ------------------------------------------------------------
   function getHalf0Screen(wrapper) {
     const x = Number(wrapper.dataset.half0ScreenX);
     const y = Number(wrapper.dataset.half0ScreenY);
@@ -68,9 +71,13 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }
 
+  // ------------------------------------------------------------
+  // Clone must preserve wrapper + pip container structure
+  // ------------------------------------------------------------
   function createClone(wrapper, half0Screen) {
     const clone = wrapper.cloneNode(true);
-    clone.style.all = "unset";
+
+    // DO NOT wipe styles — preserves two‑element DOM structure
     clone.style.position = "fixed";
     clone.style.pointerEvents = "none";
     clone.style.zIndex = 9999;
@@ -83,12 +90,15 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     clone.style.top = `${half0Screen.y}px`;
     clone.style.transform = "translate(-50%, -50%)";
 
+    // Optional: remove tray/board shadows
+    clone.classList.remove("in-tray", "on-board");
+
     document.body.appendChild(clone);
     return clone;
   }
 
   // ------------------------------------------------------------
-  // Continuous ghost computation
+  // Continuous ghost computation (wrapper geometry only)
   // ------------------------------------------------------------
   function updateGhost(ev) {
     const snap = state.snapshot;
@@ -148,6 +158,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     state.pointerId = ev.pointerId;
     state.wrapper = wrapper;
     state.startX = ev.clientX;
+    state.startY = ev.clientX;
     state.startY = ev.clientY;
   }
 
@@ -203,7 +214,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (ev.pointerId !== state.pointerId) return;
 
     if (state.phase === "Dragging" && state.ghost) {
-      console.log("state.ghost", state.ghost);
       boardEl.dispatchEvent(
         new CustomEvent("pips:drop:proposal", {
           bubbles: true,
