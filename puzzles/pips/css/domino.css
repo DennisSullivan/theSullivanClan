@@ -1,6 +1,6 @@
 /* ============================================================
    FILE: domino.css
-   PURPOSE: Domino rendering + orientation contract
+   PURPOSE: Two‑element DOM model (root + pip container)
    ============================================================ */
 
 /* Safety defaults */
@@ -19,7 +19,7 @@
 .pip-grid { display: contents; }
 
 /* -------------------------
-   Wrapper (neutral)
+   ROOT ELEMENT (geometry + events)
    ------------------------- */
 .domino-wrapper {
   position: relative;
@@ -28,15 +28,43 @@
   align-items: center;
   box-sizing: border-box;
   pointer-events: auto;
+  transform-origin: center center;
+  width: 100%;
+  height: 100%;
 }
 
-.domino-wrapper.in-tray .domino {
-  transition: transform 120ms ease-out;
+/* Orientation lives on the wrapper */
+.domino-wrapper.vertical {
+  flex-direction: column;
+}
+
+.domino-wrapper:not(.vertical) {
+  flex-direction: row;
+}
+
+/* Tray orientation */
+.domino-wrapper.in-tray {
+  transition: transform var(--transition-fast, var(--_fallback-transition-fast));
   transform: rotate(var(--tray-orientation));
 }
 
+/* Visual states */
+.domino-wrapper.in-tray .domino {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+}
+
+.domino-wrapper.on-board .domino {
+  box-shadow: none;
+}
+
+/* Ghost state */
+.domino-wrapper.ghost {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 /* -------------------------
-   Domino core
+   PIP CONTAINER (visual only)
    ------------------------- */
 .domino {
   width: 100%;
@@ -47,20 +75,8 @@
           solid var(--color-domino-border, var(--_fallback-color-domino-border));
   border-radius: 4px;
   box-sizing: border-box;
-  transform-origin: center center;
-  pointer-events: auto;
   padding: calc(var(--cell-size, var(--_fallback-cell-size)) * 0.08);
-}
-
-/* -------------------------
-   Orientation contract
-   ------------------------- */
-.domino.vertical {
-  flex-direction: column;
-}
-
-.domino:not(.vertical) {
-  flex-direction: row;
+  pointer-events: none; /* required by two‑element model */
 }
 
 /* -------------------------
@@ -79,12 +95,12 @@
   box-sizing: border-box;
 }
 
-/* Divider orientation */
-.domino.vertical .half + .half {
+/* Divider orientation depends on wrapper */
+.domino-wrapper.vertical .domino .half + .half {
   border-top: 1px solid var(--color-domino-border, var(--_fallback-color-domino-border));
 }
 
-.domino:not(.vertical) .half + .half {
+.domino-wrapper:not(.vertical) .domino .half + .half {
   border-left: 1px solid var(--color-domino-border, var(--_fallback-color-domino-border));
 }
 
@@ -100,7 +116,6 @@
   transition: opacity var(--transition-fast, var(--_fallback-transition-fast));
 }
 
-/* Pip positions */
 .p1 { grid-area: 2 / 2; }
 .p2 { grid-area: 1 / 1; }
 .p3 { grid-area: 3 / 3; }
@@ -147,18 +162,9 @@
 .domino .half[data-pip="6"] .p7 { opacity: 1; }
 
 /* -------------------------
-   Visual states
+   Drag clone (root clone)
    ------------------------- */
-.domino.in-tray {
-  box-shadow: 0 1px 2px rgba(0,0,0,0.25);
-}
-
-.domino.on-board {
-  box-shadow: none;
-}
-
-/* Drag clone */
-.domino-clone {
+.domino-wrapper-clone {
   position: fixed;
   outline: 2px solid rgba(0, 120, 255, 0.85);
   outline-offset: 2px;
@@ -168,20 +174,10 @@
   pointer-events: none;
   user-select: none;
   touch-action: none;
-  display: block;
+  display: flex;
   box-sizing: border-box;
-  background: inherit;
-  border-radius: inherit;
-  border: inherit;
-  box-shadow: inherit;
   transition: transform 160ms cubic-bezier(.2,.8,.2,1);
   will-change: transform;
-}
-
-// Ghost domino for rotation
-.domino-wrapper.ghost {
-  opacity: 0.6;
-  pointer-events: none;
 }
 
 /* -------------------------
@@ -199,8 +195,8 @@
 }
 
 /* -------------------------
-   Debug helpers (preserved)
+   Debug helpers
    ------------------------- */
 .domino-wrapper.on-board.debug-outline { outline: 1px dashed rgba(255,0,0,0.6); }
-.domino.on-board.debug-outline { outline: 1px solid rgba(0,255,0,0.6); }
+.domino-wrapper.debug-outline .domino { outline: 1px solid rgba(0,255,0,0.6); }
 .board-cell.debug-outline { outline: 1px dotted rgba(0,0,255,0.25); }
