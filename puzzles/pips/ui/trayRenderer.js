@@ -76,11 +76,23 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
     wrapper.dataset.dominoId = String(d.id);
     wrapper.dataset.half0Side = "left"; // tray default
 
+    // --------------------------------------------------------
+    // VISUAL-ONLY ORIENTATION
+    // --------------------------------------------------------
     const trayOrientation =
       ((d.trayOrientation ?? 0) % 360 + 360) % 360;
 
     wrapper.dataset.trayOrientation = String(trayOrientation);
     wrapper.style.setProperty("--angle", `${trayOrientation}deg`);
+
+    // --------------------------------------------------------
+    // CRITICAL: CLEAR BOARD GEOMETRY ATTRIBUTES
+    // (Tray dominos must never present fake board geometry.)
+    // --------------------------------------------------------
+    delete wrapper.dataset.row0;
+    delete wrapper.dataset.col0;
+    delete wrapper.dataset.row1;
+    delete wrapper.dataset.col1;
 
     const inner = createDominoElement();
     wrapper.appendChild(inner);
