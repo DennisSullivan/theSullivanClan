@@ -1,0 +1,48 @@
+/* ============================================================
+   FILE: drag-clone.css
+   PURPOSE: Visual-only drag clone for the two-element DOM model.
+   CONTRACT:
+     - Clone is never interactive.
+     - Clone is always pointer-centered.
+     - Clone never participates in layout.
+     - Clone never infers geometry from CSS.
+   ============================================================ */
+
+.domino-drag-clone {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  /* Center clone on pointer */
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
+
+  /* Visual distinction */
+  outline: 2px solid rgba(0, 120, 255, 0.85);
+  outline-offset: 2px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+
+  /* Always above board + tray */
+  z-index: 9999;
+
+  /* Never interactive */
+  pointer-events: none;
+  user-select: none;
+  touch-action: none;
+
+  /* Smooth motion */
+  transition: transform 120ms cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+
+  /* Match wrapper geometry */
+  width: calc(2 * var(--cell-size) + var(--cell-gap));
+  height: var(--cell-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Inner domino inherits all normal styles */
+.domino-drag-clone .domino {
+  pointer-events: none;
+}
