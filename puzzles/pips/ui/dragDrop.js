@@ -90,59 +90,66 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
   // Continuous ghost computation (center‑anchored)
   // ------------------------------------------------------------
-  function updateGhost(ev) {
-    const snap = state.snapshot;
-    if (!snap) {
-      state.ghost = null;
-      return;
-    }
+function updateGhost(ev) {
+  const snap = state.snapshot;
+  if (!snap) {
+    state.ghost = null;
+    return;
+  }
 
-    const { dx, dy } = snap.pointerOffset;
-    const centerScreen = {
-      x: ev.clientX - dx,
-      y: ev.clientY - dy
-    };
+  const { dx, dy } = snap.pointerOffset;
+  const centerScreen = {
+    x: ev.clientX - dx,
+    y: ev.clientY - dy
+  };
 
-    const boardRect = boardEl.getBoundingClientRect();
-    const inside =
-      centerScreen.x >= boardRect.left &&
-      centerScreen.x <= boardRect.right &&
-      centerScreen.y >= boardRect.top &&
-      centerScreen.y <= boardRect.bottom;
+  const boardRect = boardEl.getBoundingClientRect();
+  const inside =
+    centerScreen.x >= boardRect.left &&
+    centerScreen.x <= boardRect.right &&
+    centerScreen.y >= boardRect.top &&
+    centerScreen.y <= boardRect.bottom;
 
-    if (!inside) {
-      state.ghost = null;
-      return;
-    }
+  if (!inside) {
+    state.ghost = null;
+    return;
+  }
 
-    const cellW = boardRect.width / cols;
-    const cellH = boardRect.height / rows;
+  const cellW = boardRect.width / cols;
+  const cellH = boardRect.height / rows;
 
-    // Shift by half a cell so the geometric center between halves
-    // maps symmetrically for all deltas (0/90/180/270).
-    const rowCenter = Math.floor(
-      (centerScreen.y - boardRect.top + cellH / 2) / cellH
-    );
-    const colCenter = Math.floor(
+  let rowCenter, colCenter;
+
+  if (snap.delta.dr === 0) {
+    // Horizontal: row from center cell, col from center between halves
+    rowCenter = Math.floor((centerScreen.y - boardRect.top) / cellH);
+    colCenter = Math.floor(
       (centerScreen.x - boardRect.left + cellW / 2) / cellW
     );
-
-    // Center + delta → half coordinates (no directional naming, pure adjacency)
-    const row0 = rowCenter - (snap.delta.dr > 0 ? 1 : 0);
-    const col0 = colCenter - (snap.delta.dc > 0 ? 1 : 0);
-    const row1 = row0 + snap.delta.dr;
-    const col1 = col0 + snap.delta.dc;
-
-    const valid =
-      row0 >= 0 && row0 < rows &&
-      col0 >= 0 && col0 < cols &&
-      row1 >= 0 && row1 < rows &&
-      col1 >= 0 && col1 < cols;
-
-    state.ghost = valid
-      ? { id: snap.id, row0, col0, row1, col1 }
-      : null;
+  } else {
+    // Vertical: col from center cell, row from center between halves
+    rowCenter = Math.floor(
+      (centerScreen.y - boardRect.top + cellH / 2) / cellH
+    );
+    colCenter = Math.floor((centerScreen.x - boardRect.left) / cellW);
   }
+
+  // Center + delta → half coordinates (no directional naming, pure adjacency)
+  const row0 = rowCenter - (snap.delta.dr > 0 ? 1 : 0);
+  const col0 = colCenter - (snap.delta.dc > 0 ? 1 : 0);
+  const row1 = row0 + snap.delta.dr;
+  const col1 = col0 + snap.delta.dc;
+
+  const valid =
+    row0 >= 0 && row0 < rows &&
+    col0 >= 0 && col0 < cols &&
+    row1 >= 0 && row1 < rows &&
+    col1 >= 0 && col1 < cols;
+
+  state.ghost = valid
+    ? { id: snap.id, row0, col0, row1, col1 }
+    : null;
+}
 
   // ------------------------------------------------------------
   // Pointer handlers
