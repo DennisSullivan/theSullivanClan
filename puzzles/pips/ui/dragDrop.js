@@ -1,7 +1,7 @@
 // ============================================================
 // FILE: ui/dragDrop.js
-// PURPOSE: Contract‑clean drag/drop with continuous ghost.
-//          Two‑element DOM model compliant.
+// PURPOSE: Pointer‑centered drag/drop with continuous ghost.
+//          Contract‑clean. Two‑element DOM model compliant.
 // ============================================================
 
 export function installDragDrop({ boardEl, trayEl, rows, cols }) {
@@ -33,9 +33,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     return { dr: -1, dc: 0 };
   }
 
-  // ------------------------------------------------------------
-  // BoardRenderer now sets data-row0/col0/row1/col1 explicitly.
-  // ------------------------------------------------------------
   function readBoardDelta(wrapper) {
     const d = wrapper.dataset;
     const r0 = Number(d.row0);
@@ -63,28 +60,26 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   }
 
   // ------------------------------------------------------------
-  // Wrapper geometry only (never pip container)
+  // Domino center in screen coordinates
   // ------------------------------------------------------------
-  function getHalf0Screen(wrapper) {
-    const x = Number(wrapper.dataset.half0ScreenX);
-    const y = Number(wrapper.dataset.half0ScreenY);
-    if (Number.isFinite(x) && Number.isFinite(y)) return { x, y };
-
+  function getDominoCenterScreen(wrapper) {
     const r = wrapper.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    return {
+      x: r.left + r.width / 2,
+      y: r.top + r.height / 2
+    };
   }
 
   // ------------------------------------------------------------
-  // Clone must preserve wrapper + pip container structure
+  // Clone creation (centered via CSS translate(-50%, -50%))
   // ------------------------------------------------------------
-  function createClone(wrapper, half0Screen) {
+  function createClone(wrapper, centerScreen) {
     const clone = wrapper.cloneNode(true);
     clone.classList.add("domino-drag-clone");
 
-    clone.style.left = `${half0Screen.x}px`;
-    clone.style.top = `${half0Screen.y}px`;
+    clone.style.left = `${centerScreen.x}px`;
+    clone.style.top = `${centerScreen.y}px`;
 
-    // Remove board/tray visual states
     clone.classList.remove("in-tray", "on-board");
 
     document.body.appendChild(clone);
@@ -92,7 +87,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   }
 
   // ------------------------------------------------------------
-  // Continuous ghost computation (wrapper geometry only)
+  // Continuous ghost computation (center‑anchored)
   // ------------------------------------------------------------
   function updateGhost(ev) {
     const snap = state.snapshot;
@@ -102,17 +97,17 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     }
 
     const { dx, dy } = snap.pointerOffset;
-    const half0Screen = {
+    const centerScreen = {
       x: ev.clientX - dx,
       y: ev.clientY - dy
     };
 
     const boardRect = boardEl.getBoundingClientRect();
     const inside =
-      half0Screen.x >= boardRect.left &&
-      half0Screen.x <= boardRect.right &&
-      half0Screen.y >= boardRect.top &&
-      half0Screen.y <= boardRect.bottom;
+      centerScreen.x >= boardRect.left &&
+      centerScreen.x <= boardRect.right &&
+      centerScreen.y >= boardRect.top &&
+      centerScreen.y <= boardRect.bottom;
 
     if (!inside) {
       state.ghost = null;
@@ -122,8 +117,12 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const cellW = boardRect.width / cols;
     const cellH = boardRect.height / rows;
 
-    const row0 = Math.floor((half0Screen.y - boardRect.top) / cellH);
-    const col0 = Math.floor((half0Screen.x - boardRect.left) / cellW);
+    const rowCenter = Math.floor((centerScreen.y - boardRect.top) / cellH);
+    const colCenter = Math.floor((centerScreen.x - boardRect.left) / cellW);
+
+    // Convert center → half0
+    const row0 = rowCenter - Math.floor(snap.delta.dr / 2);
+    const col0 = colCenter - Math.floor(snap.delta.dc / 2);
     const row1 = row0 + snap.delta.dr;
     const col1 = col0 + snap.delta.dc;
 
@@ -166,10 +165,10 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     }
     if (!delta) return reset();
 
-    const half0Screen = getHalf0Screen(wrapper);
+    const centerScreen = getDominoCenterScreen(wrapper);
     const pointerOffset = {
-      dx: ev.clientX - half0Screen.x,
-      dy: ev.clientY - half0Screen.y
+      dx: ev.clientX - centerScreen.x,
+      dy: ev.clientY - centerScreen.y
     };
 
     state.snapshot = {
@@ -179,7 +178,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     };
 
     document.body.setPointerCapture(ev.pointerId);
-    state.clone = createClone(wrapper, half0Screen);
+    state.clone = createClone(wrapper, centerScreen);
     state.phase = "Dragging";
 
     updateGhost(ev);
@@ -197,8 +196,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     if (state.phase !== "Dragging") return;
 
-    state.clone.style.left = `${ev.clientX}px`;
-    state.clone.style.top = `${ev.clientY}px`;
+    const { dx, dy } = state.snapshot.pointerOffset;
+    state.clone.style.left = `${ev.clientX - dx}px`;
+    state.clone.style.top  = `${ev.clientY - dy}px`;
 
     updateGhost(ev);
   }
