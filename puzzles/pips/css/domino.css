@@ -39,14 +39,6 @@
   transform-origin: center center;
 }
 
-/* Board placement (half0 anchor) */
-.domino-wrapper.on-board {
-  transform: translate(
-    calc(var(--col) * (var(--cell-size) + var(--cell-gap))),
-    calc(var(--row) * (var(--cell-size) + var(--cell-gap)))
-  );
-}
-
 /* Tray rotation (visual-only) */
 .domino-wrapper.in-tray {
   position: relative;
