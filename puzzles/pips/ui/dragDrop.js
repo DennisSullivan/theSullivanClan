@@ -155,44 +155,39 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     state.startY = ev.clientY;
   }
 
-function beginDrag(ev) {
-  const wrapper = state.wrapper;
-
-  let delta = null;
-  if (trayEl.contains(wrapper)) {
-    delta = deltaFromTrayOrientation(wrapper.dataset.trayOrientation);
-  } else if (boardEl.contains(wrapper)) {
-    delta = readBoardDelta(wrapper);
+  function beginDrag(ev) {
+    const wrapper = state.wrapper;
+  
+    let delta = null;
+    if (trayEl.contains(wrapper)) {
+      delta = deltaFromTrayOrientation(wrapper.dataset.trayOrientation);
+    } else if (boardEl.contains(wrapper)) {
+      delta = readBoardDelta(wrapper);
+    }
+    if (!delta) return reset();
+  
+    const centerScreen = getDominoCenterScreen(wrapper);
+  
+    // PointerOffset: how far the pointer is from the domino center
+    const pointerOffset = {
+      dx: ev.clientX - centerScreen.x,
+      dy: ev.clientY - centerScreen.y
+    };
+  
+    state.snapshot = {
+      id: String(wrapper.dataset.dominoId),
+      delta,
+      pointerOffset
+    };
+  
+    document.body.setPointerCapture(ev.pointerId);
+  
+    state.clone = createClone(wrapper, centerScreen);
+  
+    state.phase = "Dragging";
+  
+    updateGhost(ev);
   }
-  if (!delta) return reset();
-
-  // *** CRITICAL FIX ***
-  // Recompute the center NOW, not at pointerDown.
-  // This makes the pointer snap to the center at drag start.
-  const centerScreen = getDominoCenterScreen(wrapper);
-
-  // The pointerOffset is now defined so that:
-  //    centerScreen = pointer - offset
-  // which means the pointer will sit at the center.
-  // Pointer is now defined as the center
-  const pointerOffset = { dx: 0, dy: 0 };
-
-
-  state.snapshot = {
-    id: String(wrapper.dataset.dominoId),
-    delta,
-    pointerOffset
-  };
-
-  document.body.setPointerCapture(ev.pointerId);
-
-  // Clone starts centered under the pointer
-  state.clone = createClone(wrapper, centerScreen);
-
-  state.phase = "Dragging";
-
-  updateGhost(ev);
-}
 
   function pointerMove(ev) {
     if (ev.pointerId !== state.pointerId) return;
