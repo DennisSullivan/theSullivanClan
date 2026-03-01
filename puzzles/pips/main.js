@@ -115,6 +115,32 @@ export function startPuzzle(puzzleJson) {
   }, 0);
 
   document.addEventListener("pips:drop:reject:board", e => {
+  const { id, reason, info } = e.detail;
+
+  console.groupCollapsed(
+    `%cDROP REJECTED%c — ${reason}`,
+    "color:#b00;font-weight:bold;",
+    "color:#444;"
+  );
+
+  console.log("Domino:", id);
+  console.log("Reason:", reason);
+
+  if (info) {
+    console.log("Engine info:", info);
+
+    // Optional: break out common subfields if present
+    if (info.proposal) console.log("Proposal:", info.proposal);
+    if (info.blocked) console.log("Blocked:", info.blocked);
+    if (info.bounds) console.log("Bounds:", info.bounds);
+    if (info.occupancy) console.log("Occupancy:", info.occupancy);
+  }
+
+  console.groupEnd();
+});
+
+  /*
+  document.addEventListener("pips:drop:reject:board", e => {
     const rej = e.detail;
   
     console.groupCollapsed(
@@ -159,6 +185,7 @@ export function startPuzzle(puzzleJson) {
   
     console.groupEnd();
   });
+  */
 
   // Expose for debugging and manual re-render
   window.__PIPS = window.__PIPS || {};
