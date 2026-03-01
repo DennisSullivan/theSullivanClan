@@ -58,6 +58,20 @@ export function installPlacementValidator(appRoot, puzzle) {
       col1
     });
 
+    if (!result.accepted) {
+      boardEl.dispatchEvent(
+        new CustomEvent("pips:drop:reject:board", {
+          bubbles: true,
+          detail: {
+            reason: result.reason,
+            dominoId: proposal.dominoId,
+            proposal,
+            ...(result.info || {})
+          }
+        })
+      );
+    }
+
     if (!res.accepted) {
       dispatchEvents(ev.target, ["pips:drop:reject:board"], {
         id: String(id),
