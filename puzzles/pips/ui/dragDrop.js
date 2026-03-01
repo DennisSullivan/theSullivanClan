@@ -120,9 +120,10 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const rowCenter = Math.floor((centerScreen.y - boardRect.top) / cellH);
     const colCenter = Math.floor((centerScreen.x - boardRect.left) / cellW);
 
-    // Convert center → half0
-    const row0 = rowCenter - Math.floor(snap.delta.dr / 2);
-    const col0 = colCenter - Math.floor(snap.delta.dc / 2);
+    // Contract‑clean center → half‑coordinates
+    const row0 = rowCenter - (snap.delta.dr !== 0 ? 1 : 0);
+    const col0 = colCenter - (snap.delta.dc !== 0 ? 1 : 0);
+    
     const row1 = row0 + snap.delta.dr;
     const col1 = col0 + snap.delta.dc;
 
