@@ -107,18 +107,6 @@ export function renderDomino(domino, wrapper) {
   }
 
   // ------------------------------------------------------------
-  // Orientation (board + tray)
-  // ------------------------------------------------------------
-  const half0Side = wrapper.dataset.half0Side;
-
-  const isHorizontal =
-    half0Side === "left" ||
-    half0Side === "right";
-
-  inner.classList.toggle("horizontal", isHorizontal);
-  inner.classList.toggle("vertical", !isHorizontal);
-
-  // ------------------------------------------------------------
   // Accessibility label
   // ------------------------------------------------------------
   wrapper.setAttribute(
