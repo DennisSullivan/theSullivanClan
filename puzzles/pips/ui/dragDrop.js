@@ -173,10 +173,9 @@ function beginDrag(ev) {
   // The pointerOffset is now defined so that:
   //    centerScreen = pointer - offset
   // which means the pointer will sit at the center.
-  const pointerOffset = {
-    dx: ev.clientX - centerScreen.x,
-    dy: ev.clientY - centerScreen.y
-  };
+  // Pointer is now defined as the center
+  const pointerOffset = { dx: 0, dy: 0 };
+
 
   state.snapshot = {
     id: String(wrapper.dataset.dominoId),
