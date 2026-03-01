@@ -83,7 +83,7 @@ export function renderTray(puzzleJson, dominos, trayEl, grid) {
       ((d.trayOrientation ?? 0) % 360 + 360) % 360;
 
     wrapper.dataset.trayOrientation = String(trayOrientation);
-    wrapper.style.setProperty("--angle", `${trayOrientation}deg`);
+    wrapper.style.setProperty("--tray-orientation", `${trayOrientation}deg`);
 
     // --------------------------------------------------------
     // CRITICAL: CLEAR BOARD GEOMETRY ATTRIBUTES
