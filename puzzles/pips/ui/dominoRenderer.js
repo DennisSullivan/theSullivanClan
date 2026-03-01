@@ -10,6 +10,9 @@
 //       </div>
 //   - Only updates pip values + orientation class.
 //   - DOM order is normalized to match (row0,col0) and (row1,col1).
+//   - Added diagnostics:
+//       (1) Warn if no placement attempted due to missing/out‑of‑bounds coords.
+//       (2) Log placement data if placement is attempted.
 // ============================================================
 
 function normalizePipValue(v) {
@@ -59,25 +62,36 @@ export function renderDomino(domino, wrapper) {
   half1.dataset.pip = String(pip1);
 
   // ------------------------------------------------------------
-  // DOM ORDER NORMALIZATION (contract‑clean)
-  //
-  // The renderer must visually place half0 at (row0,col0)
-  // and half1 at (row1,col1). If the coordinate pair for half1
-  // is "less" than half0, swap the DOM children.
-  //
-  // This uses only coordinate comparison — no directional meaning.
+  // DOM ORDER NORMALIZATION + DIAGNOSTICS
   // ------------------------------------------------------------
   const r0 = Number(wrapper.dataset.row0);
   const c0 = Number(wrapper.dataset.col0);
   const r1 = Number(wrapper.dataset.row1);
   const c1 = Number(wrapper.dataset.col1);
 
-  if (
+  const coordsAreValid =
     Number.isFinite(r0) &&
     Number.isFinite(c0) &&
     Number.isFinite(r1) &&
-    Number.isFinite(c1)
-  ) {
+    Number.isFinite(c1);
+
+  if (!coordsAreValid) {
+    console.warn(
+      "renderDomino: no placement attempted (out‑of‑bounds or missing coords)",
+      { row0: wrapper.dataset.row0, col0: wrapper.dataset.col0,
+        row1: wrapper.dataset.row1, col1: wrapper.dataset.col1 }
+    );
+  } else {
+    console.log("renderDomino: placement attempted", {
+      id: domino?.id,
+      pip0,
+      pip1,
+      row0: r0,
+      col0: c0,
+      row1: r1,
+      col1: c1
+    });
+
     const half1ShouldComeFirst =
       r1 < r0 || (r1 === r0 && c1 < c0);
 
