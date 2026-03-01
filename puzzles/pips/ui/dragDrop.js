@@ -117,13 +117,18 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const cellW = boardRect.width / cols;
     const cellH = boardRect.height / rows;
 
-    const rowCenter = Math.floor((centerScreen.y - boardRect.top) / cellH);
-    const colCenter = Math.floor((centerScreen.x - boardRect.left) / cellW);
+    // Shift by half a cell so the geometric center between halves
+    // maps symmetrically for all deltas (0/90/180/270).
+    const rowCenter = Math.floor(
+      (centerScreen.y - boardRect.top + cellH / 2) / cellH
+    );
+    const colCenter = Math.floor(
+      (centerScreen.x - boardRect.left + cellW / 2) / cellW
+    );
 
-    // Contract‑clean center → half‑coordinates
-    const row0 = rowCenter - (snap.delta.dr !== 0 ? 1 : 0);
-    const col0 = colCenter - (snap.delta.dc !== 0 ? 1 : 0);
-    
+    // Center + delta → half coordinates (no directional naming, pure adjacency)
+    const row0 = rowCenter - (snap.delta.dr > 0 ? 1 : 0);
+    const col0 = colCenter - (snap.delta.dc > 0 ? 1 : 0);
     const row1 = row0 + snap.delta.dr;
     const col1 = col0 + snap.delta.dc;
 
@@ -157,7 +162,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
   function beginDrag(ev) {
     const wrapper = state.wrapper;
-  
+
     let delta = null;
     if (trayEl.contains(wrapper)) {
       delta = deltaFromTrayOrientation(wrapper.dataset.trayOrientation);
@@ -165,27 +170,27 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       delta = readBoardDelta(wrapper);
     }
     if (!delta) return reset();
-  
+
     const centerScreen = getDominoCenterScreen(wrapper);
-  
+
     // PointerOffset: how far the pointer is from the domino center
     const pointerOffset = {
       dx: ev.clientX - centerScreen.x,
       dy: ev.clientY - centerScreen.y
     };
-  
+
     state.snapshot = {
       id: String(wrapper.dataset.dominoId),
       delta,
       pointerOffset
     };
-  
+
     document.body.setPointerCapture(ev.pointerId);
-  
+
     state.clone = createClone(wrapper, centerScreen);
-  
+
     state.phase = "Dragging";
-  
+
     updateGhost(ev);
   }
 
