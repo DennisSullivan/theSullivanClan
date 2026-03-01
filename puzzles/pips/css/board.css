@@ -132,9 +132,6 @@
   z-index: 100;
   pointer-events: auto;
 
-  left: calc(var(--col) * (var(--cell-size) + var(--cell-gap)));
-  top:  calc(var(--row) * (var(--cell-size) + var(--cell-gap)));
-
   transform: translate(var(--domino-nudge-x), var(--domino-nudge-y));
   transform-origin: top left;
 }
