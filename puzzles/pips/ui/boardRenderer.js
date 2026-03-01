@@ -5,6 +5,7 @@
 //   - Grid is authoritative for logical placement.
 //   - rotationGhost is a visual-only override for one domino.
 //   - HARD INVARIANT: wrapper origin is ALWAYS half0.
+//   - Pixel placement is computed here (CSS no longer positions dominos).
 // ============================================================
 
 import { createDominoElement } from "./createDominoElement.js";
@@ -28,6 +29,13 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     `repeat(${cols}, calc(var(--cell-size) + var(--cell-gap)))`;
   boardEl.style.gridTemplateRows =
     `repeat(${rows}, calc(var(--cell-size) + var(--cell-gap)))`;
+
+  // ----------------------------------------------------------
+  // Precompute cell size + gap (pixel placement)
+  // ----------------------------------------------------------
+  const cs = parseFloat(getComputedStyle(boardEl).getPropertyValue("--cell-size"));
+  const cg = parseFloat(getComputedStyle(boardEl).getPropertyValue("--cell-gap"));
+  const cellSpan = cs + cg;
 
   // ----------------------------------------------------------
   // 1. Render background cells
@@ -87,13 +95,19 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.dataset.dominoId = String(d.id);
     wrapper.dataset.half0Side = half0Side;
 
-    // ----------------------------------------------------------
-    // REQUIRED FOR DRAG/DROP (pure geometry, no state duplication)
-    // ----------------------------------------------------------
+    // Geometry for drag/drop + renderer
     wrapper.dataset.row0 = String(cell0.row);
     wrapper.dataset.col0 = String(cell0.col);
     wrapper.dataset.row1 = String(cell1.row);
     wrapper.dataset.col1 = String(cell1.col);
+
+    // ----------------------------------------------------------
+    // Pixel placement (half0 anchor)
+    // ----------------------------------------------------------
+    const px = cell0.col * cellSpan;
+    const py = cell0.row * cellSpan;
+    wrapper.style.left = `${px}px`;
+    wrapper.style.top  = `${py}px`;
 
     if (ghost && String(id) === ghostId) {
       wrapper.classList.add("ghost");
