@@ -80,6 +80,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     clone.style.left = `${centerScreen.x}px`;
     clone.style.top = `${centerScreen.y}px`;
 
+    clone.style.transform = "";
+    clone.style.removeProperty("transform");
     clone.classList.remove("in-tray", "on-board");
     clone.classList.remove("horizontal", "vertical");
 
