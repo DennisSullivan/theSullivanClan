@@ -21,18 +21,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   };
 
   // ------------------------------------------------------------
-  function normDeg(deg) {
-    return ((Number(deg) || 0) % 360 + 360) % 360;
-  }
-
-  function deltaFromTrayOrientation(o) {
-    o = normDeg(o);
-    if (o === 0)   return { dr: 0,  dc: 1 };
-    if (o === 90)  return { dr: 1,  dc: 0 };
-    if (o === 180) return { dr: 0,  dc: -1 };
-    return { dr: -1, dc: 0 };
-  }
-
   function readBoardDelta(wrapper) {
     const d = wrapper.dataset;
     const r0 = Number(d.row0);
@@ -173,6 +161,19 @@ function updateGhost(ev) {
   }
 
   function beginDrag(ev) {
+    if (trayEl.contains(wrapper)) {
+      const o = Number(wrapper.dataset.trayOrientation) || 0;
+    
+      // Virtual initial coordinates
+      row0 = 100;
+      col0 = 100;
+    
+      if (o === 0)       { row1 = row0;     col1 = col0 + 1; }
+      else if (o === 90) { row1 = row0 + 1; col1 = col0;     }
+      else if (o === 180){ row1 = row0;     col1 = col0 - 1; }
+      else               { row1 = row0 - 1; col1 = col0;     }
+    }
+    
     const wrapper = state.wrapper;
 
     let row0, col0, row1, col1;
