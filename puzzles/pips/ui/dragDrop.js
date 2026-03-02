@@ -14,7 +14,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     startX: 0,
     startY: 0,
 
-    snapshot: null,       // { id, delta:{dr,dc}, pointerOffset:{dx,dy} }
+    snapshot: null,       // { id, (row0,col0), (row1,col1), pointerOffset:{dx,dy} }
     clone: null,
 
     ghost: null           // { id,row0,col0,row1,col1 } or null
@@ -94,6 +94,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
 function updateGhost(ev) {
   const snap = state.snapshot;
+  const dr = snap.row1 - snap.row0;
+  const dc = snap.col1 - snap.col0;
   if (!snap) {
     state.ghost = null;
     return;
@@ -122,7 +124,7 @@ function updateGhost(ev) {
 
   let rowCenter, colCenter;
 
-  if (snap.delta.dr === 0) {
+  if (dr === 0) {
     // Horizontal: row from center cell, col from center between halves
     rowCenter = Math.floor((centerScreen.y - boardRect.top) / cellH);
     colCenter = Math.floor(
@@ -137,10 +139,10 @@ function updateGhost(ev) {
   }
 
   // Center + delta → half coordinates (no directional naming, pure adjacency)
-  const row0 = rowCenter - (snap.delta.dr > 0 ? 1 : 0);
-  const col0 = colCenter - (snap.delta.dc > 0 ? 1 : 0);
-  const row1 = row0 + snap.delta.dr;
-  const col1 = col0 + snap.delta.dc;
+  const row0 = rowCenter - (dr > 0 ? 1 : 0);
+  const col0 = colCenter - (dc > 0 ? 1 : 0);
+  const row1 = row0 + dr;
+  const col1 = col0 + dc;
 
   const valid =
     row0 >= 0 && row0 < rows &&
@@ -173,23 +175,33 @@ function updateGhost(ev) {
   function beginDrag(ev) {
     const wrapper = state.wrapper;
 
-    let delta = null;
-    if (trayEl.contains(wrapper)) {
-      delta = deltaFromTrayOrientation(wrapper.dataset.trayOrientation);
-    } else if (boardEl.contains(wrapper)) {
-      delta = readBoardDelta(wrapper);
-    }
-    if (!delta) return reset();
-
-    // At drag start, the clone’s center *is* the pointer.
-    const centerScreen = { x: ev.clientX, y: ev.clientY };
+    let row0, col0, row1, col1;
     
-    // PointerOffset is (0,0) by definition at drag start.
+    if (trayEl.contains(wrapper)) {
+      const d = deltaFromTrayOrientation(wrapper.dataset.trayOrientation);
+    
+      // Virtual initial coordinates (adjacent, board-notation)
+      row0 = 100;
+      col0 = 100;
+      row1 = row0 + d.dr;
+      col1 = col0 + d.dc;
+    
+    } else if (boardEl.contains(wrapper)) {
+      const d = wrapper.dataset;
+      row0 = Number(d.row0);
+      col0 = Number(d.col0);
+      row1 = Number(d.row1);
+      col1 = Number(d.col1);
+    }
+    
+    if (![row0,col0,row1,col1].every(Number.isFinite)) return reset();
+    
     const pointerOffset = { dx: 0, dy: 0 };
-
+    
     state.snapshot = {
       id: String(wrapper.dataset.dominoId),
-      delta,
+      row0, col0,
+      row1, col1,
       pointerOffset
     };
 
