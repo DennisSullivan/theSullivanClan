@@ -21,16 +21,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   };
 
   // ------------------------------------------------------------
-  function readBoardDelta(wrapper) {
-    const d = wrapper.dataset;
-    const r0 = Number(d.row0);
-    const c0 = Number(d.col0);
-    const r1 = Number(d.row1);
-    const c1 = Number(d.col1);
-    if (![r0, c0, r1, c1].every(Number.isFinite)) return null;
-    return { dr: r1 - r0, dc: c1 - c0 };
-  }
-
   function distance(x0, y0, x1, y1) {
     return Math.hypot(x1 - x0, y1 - y0);
   }
@@ -82,12 +72,13 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
 function updateGhost(ev) {
   const snap = state.snapshot;
-  const dr = snap.row1 - snap.row0;
-  const dc = snap.col1 - snap.col0;
   if (!snap) {
     state.ghost = null;
     return;
   }
+
+  const dr = snap.row1 - snap.row0;
+  const dc = snap.col1 - snap.col0;
 
   const { dx, dy } = snap.pointerOffset;
   const centerScreen = {
@@ -161,32 +152,22 @@ function updateGhost(ev) {
   }
 
   function beginDrag(ev) {
+    const wrapper = state.wrapper;
+  
+    let row0, col0, row1, col1;
+  
     if (trayEl.contains(wrapper)) {
       const o = Number(wrapper.dataset.trayOrientation) || 0;
-    
-      // Virtual initial coordinates
+  
+      // Virtual initial coordinates (adjacent, board-notation)
       row0 = 100;
       col0 = 100;
-    
+  
       if (o === 0)       { row1 = row0;     col1 = col0 + 1; }
       else if (o === 90) { row1 = row0 + 1; col1 = col0;     }
       else if (o === 180){ row1 = row0;     col1 = col0 - 1; }
       else               { row1 = row0 - 1; col1 = col0;     }
-    }
-    
-    const wrapper = state.wrapper;
-
-    let row0, col0, row1, col1;
-    
-    if (trayEl.contains(wrapper)) {
-      const d = deltaFromTrayOrientation(wrapper.dataset.trayOrientation);
-    
-      // Virtual initial coordinates (adjacent, board-notation)
-      row0 = 100;
-      col0 = 100;
-      row1 = row0 + d.dr;
-      col1 = col0 + d.dc;
-    
+  
     } else if (boardEl.contains(wrapper)) {
       const d = wrapper.dataset;
       row0 = Number(d.row0);
@@ -194,24 +175,25 @@ function updateGhost(ev) {
       row1 = Number(d.row1);
       col1 = Number(d.col1);
     }
-    
-    if (![row0,col0,row1,col1].every(Number.isFinite)) return reset();
-    
+  
+    if (![row0, col0, row1, col1].every(Number.isFinite)) return reset();
+  
+    const centerScreen = { x: ev.clientX, y: ev.clientY };
     const pointerOffset = { dx: 0, dy: 0 };
-    
+  
     state.snapshot = {
       id: String(wrapper.dataset.dominoId),
       row0, col0,
       row1, col1,
       pointerOffset
     };
-
+  
     document.body.setPointerCapture(ev.pointerId);
-
+  
     state.clone = createClone(wrapper, centerScreen);
-
+  
     state.phase = "Dragging";
-
+  
     updateGhost(ev);
   }
 
