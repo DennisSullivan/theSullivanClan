@@ -179,13 +179,11 @@ function updateGhost(ev) {
     }
     if (!delta) return reset();
 
-    const centerScreen = getDominoCenterScreen(wrapper);
-
-    // PointerOffset: how far the pointer is from the domino center
-    const pointerOffset = {
-      dx: ev.clientX - centerScreen.x,
-      dy: ev.clientY - centerScreen.y
-    };
+    // At drag start, the clone’s center *is* the pointer.
+    const centerScreen = { x: ev.clientX, y: ev.clientY };
+    
+    // PointerOffset is (0,0) by definition at drag start.
+    const pointerOffset = { dx: 0, dy: 0 };
 
     state.snapshot = {
       id: String(wrapper.dataset.dominoId),
