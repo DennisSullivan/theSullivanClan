@@ -178,6 +178,7 @@ function updateGhost(ev) {
     state.startY = ev.clientY;
   }
 
+  // --------------------
   function beginDrag(ev) {
     const wrapper = state.wrapper;
   
