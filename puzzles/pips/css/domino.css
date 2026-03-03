@@ -89,6 +89,14 @@
   box-shadow: none;
 }
 
+.domino.flip-horizontal {
+  transform: scaleX(-1);
+}
+
+.domino.flip-vertical {
+  transform: scaleY(-1);
+}
+
 /* ============================================================
    HALVES (3×3 pip grid)
    ============================================================ */
