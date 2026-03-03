@@ -124,6 +124,14 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       inner.insertBefore(half1, half0);
     }
 
+    if (half0Side === "right") {
+      wrapper.style.left = `${px - cellSpan}px`;
+    }
+    
+    if (half0Side === "bottom") {
+      wrapper.style.top = `${py - cellSpan}px`;
+}
+
     boardEl.appendChild(wrapper);
   }
 }
