@@ -95,8 +95,14 @@ function applyStartingDominos(startingList, dominos, grid) {
     const { domino: id, cells } = entry;
 
     const key = String(id);
-    const d = dominos.get(key);
-    if (!d) continue; // structural validation should prevent this
+    let d = dominos.get(key);
+    if (!d) {
+      // Starting domino not in tray — create it
+      d = createDomino(key);
+      d.homeSlot = -1;        // ensures it NEVER appears in the tray
+      d.trayOrientation = 0;
+      dominos.set(key, d);
+    }
 
     d.isStarting = true;
 
