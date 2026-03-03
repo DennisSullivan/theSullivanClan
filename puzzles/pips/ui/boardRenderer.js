@@ -114,15 +114,14 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
 
     const inner = createDominoElement();
     wrapper.appendChild(inner);
-
-    renderDomino(d, wrapper);
-    inner = wrapper.querySelector(".domino");
     
-    if (half0Side === "right") {
-      inner.classList.add("flip-horizontal");
-    }
-    if (half0Side === "bottom") {
-      inner.classList.add("flip-vertical");
+    renderDomino(d, wrapper);
+    
+    const half0 = inner.querySelector(".half.half0");
+    const half1 = inner.querySelector(".half.half1");
+    
+    if (half0Side === "right" || half0Side === "bottom") {
+      inner.insertBefore(half1, half0);
     }
 
     boardEl.appendChild(wrapper);
