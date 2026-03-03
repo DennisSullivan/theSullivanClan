@@ -93,7 +93,6 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     const wrapper = document.createElement("div");
     wrapper.classList.add("domino-wrapper", "on-board");
     wrapper.dataset.dominoId = String(d.id);
-    wrapper.dataset.half0Side = half0Side;
 
     // Geometry for drag/drop + renderer
     wrapper.dataset.row0 = String(cell0.row);
