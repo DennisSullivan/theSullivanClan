@@ -88,7 +88,15 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     clone.style.transform = "";
     clone.style.removeProperty("transform");
     clone.classList.remove("in-tray", "on-board");
-    clone.classList.remove("horizontal", "vertical");
+    const inner = clone.querySelector(".domino");
+    if (inner) {
+      inner.classList.remove(
+        "horizontal",
+        "vertical",
+        "domino-horizontal",
+        "domino-vertical"
+      );
+    }
 
     document.body.appendChild(clone);
     return clone;
