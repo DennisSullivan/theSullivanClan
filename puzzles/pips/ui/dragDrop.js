@@ -37,6 +37,33 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     state.ghost = null;
   }
 
+  function orientCloneFromGeometry(clone, row0, col0, row1, col1, cellSpan) {
+    // Derive orientation
+    let half1Dir;
+    if (row0 === row1) {
+      half1Dir = col1 > col0 ? "right" : "left";
+    } else {
+      half1Dir = row1 > row0 ? "down" : "up";
+    }
+  
+    const inner = clone.querySelector(".domino");
+    const half0 = inner.querySelector(".half.half0");
+    const half1 = inner.querySelector(".half.half1");
+  
+    // Reorder halves for negative adjacency
+    if (half1Dir === "left" || half1Dir === "up") {
+      inner.insertBefore(half1, half0);
+    }
+  
+    // Offset wrapper so visual half0 stays anchored
+    if (half1Dir === "left") {
+      clone.style.left = `${parseFloat(clone.style.left) - cellSpan}px`;
+    }
+    if (half1Dir === "up") {
+      clone.style.top = `${parseFloat(clone.style.top) - cellSpan}px`;
+    }
+  }
+
   // ------------------------------------------------------------
   // Domino center in screen coordinates
   // ------------------------------------------------------------
@@ -191,6 +218,15 @@ function updateGhost(ev) {
     document.body.setPointerCapture(ev.pointerId);
   
     state.clone = createClone(wrapper, centerScreen);
+    const boardRect = boardEl.getBoundingClientRect();
+    const cellSpan = boardRect.width / cols; // square cells by contract
+    
+    orientCloneFromGeometry(
+      state.clone,
+      row0, col0,
+      row1, col1,
+      cellSpan
+    );
   
     state.phase = "Dragging";
   
