@@ -116,7 +116,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.appendChild(inner);
 
     renderDomino(d, wrapper);
-    const inner = wrapper.querySelector(".domino");
+    inner = wrapper.querySelector(".domino");
     
     if (half0Side === "right") {
       inner.classList.add("flip-horizontal");
