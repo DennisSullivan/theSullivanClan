@@ -5,14 +5,16 @@
 //   - Pure UI: never mutates the domino model.
 //   - Assumes wrapper already contains the canonical structure:
 //       <div class="domino">
-//         <div class="half half0">…7 pips…</div>
-//         <div class="half half1">…7 pips…</div>
+//         <div class="half half0">…pips…</div>
+//         <div class="half half1">…pips…</div>
 //       </div>
-//   - Only updates pip values + orientation class.
-//   - DOM order is normalized to match (row0,col0) and (row1,col1).
+//   - Only updates pip values + orientation class on the inner .domino.
+//   - DOM order is fixed: half0 then half1. No reordering based on geometry.
+//   - Orientation is derived from adjacency and used only for visual classes.
 //   - Added diagnostics:
 //       (1) Warn if no placement attempted due to missing/out‑of‑bounds coords.
-//       (2) Log placement data if placement is attempted.
+//       (2) Warn if coords are non‑adjacent.
+//       (3) Log placement data if placement is attempted.
 // ============================================================
 
 function normalizePipValue(v) {
@@ -39,16 +41,11 @@ export function renderDomino(domino, wrapper) {
     return;
   }
 
-  const half0 =
-    inner.querySelector(".half0") ||
-    inner.querySelector(".half:first-child");
-
-  const half1 =
-    inner.querySelector(".half1") ||
-    inner.querySelector(".half:last-child");
+  const half0 = inner.querySelector(".half.half0");
+  const half1 = inner.querySelector(".half.half1");
 
   if (!half0 || !half1) {
-    console.error("renderDomino: missing half0/half1 elements", wrapper);
+    console.error("renderDomino: missing .half0/.half1 elements", wrapper);
     return;
   }
 
@@ -62,7 +59,10 @@ export function renderDomino(domino, wrapper) {
   half1.dataset.pip = String(pip1);
 
   // ------------------------------------------------------------
-  // DOM ORDER NORMALIZATION + DIAGNOSTICS
+  // Orientation derivation (visual only) + diagnostics
+  // Geometry is defined in Domino Geometry Contract.
+  // This renderer derives orientation from adjacency solely
+  // to select visual classes. No model state is mutated.
   // ------------------------------------------------------------
   const r0 = Number(wrapper.dataset.row0);
   const c0 = Number(wrapper.dataset.col0);
@@ -75,33 +75,55 @@ export function renderDomino(domino, wrapper) {
     Number.isFinite(r1) &&
     Number.isFinite(c1);
 
+  // Clear any previous orientation classes
+  inner.classList.remove("domino-horizontal", "domino-vertical");
+
   if (!coordsAreValid) {
     console.warn(
-      "renderDomino: no placement attempted (out‑of‑bounds or missing coords)",
-      { row0: wrapper.dataset.row0, col0: wrapper.dataset.col0,
-        row1: wrapper.dataset.row1, col1: wrapper.dataset.col1 }
+      "renderDomino: no placement attempted (missing or non‑numeric coords)",
+      {
+        row0: wrapper.dataset.row0,
+        col0: wrapper.dataset.col0,
+        row1: wrapper.dataset.row1,
+        col1: wrapper.dataset.col1
+      }
     );
   } else {
-    console.log("renderDomino: placement attempted", {
-      id: domino?.id,
-      pip0,
-      pip1,
-      row0: r0,
-      col0: c0,
-      row1: r1,
-      col1: c1
-    });
+    const sameRow = r0 === r1;
+    const sameCol = c0 === c1;
+    const colDelta = Math.abs(c0 - c1);
+    const rowDelta = Math.abs(r0 - r1);
 
-    const half1ShouldComeFirst =
-      r1 < r0 || (r1 === r0 && c1 < c0);
+    const isHorizontal = sameRow && colDelta === 1;
+    const isVertical = sameCol && rowDelta === 1;
+    const isAdjacent = isHorizontal || isVertical;
 
-    if (half1ShouldComeFirst) {
-      if (half1.nextSibling !== half0) {
-        half0.before(half1);
-      }
+    if (!isAdjacent) {
+      console.warn("renderDomino: coords are not orthogonally adjacent", {
+        id: domino?.id,
+        row0: r0,
+        col0: c0,
+        row1: r1,
+        col1: c1
+      });
     } else {
-      if (half0.nextSibling !== half1) {
-        half1.before(half0);
+      console.log("renderDomino: placement attempted", {
+        id: domino?.id,
+        pip0,
+        pip1,
+        row0: r0,
+        col0: c0,
+        row1: r1,
+        col1: c1,
+        orientation: isHorizontal ? "horizontal" : "vertical"
+      });
+
+      if (isHorizontal) {
+        inner.classList.add("domino-horizontal");
+        inner.classList.remove("domino-vertical");
+      } else if (isVertical) {
+        inner.classList.add("domino-vertical");
+        inner.classList.remove("domino-horizontal");
       }
     }
   }
