@@ -35,6 +35,10 @@
   --color-region-1: #e8ffe8;
   --color-region-2: #fff4e8;
   --color-region-3: #f5e8ff;
+
+  /* Geometry variables set per domino by JS */
+  --row-span: 1;
+  --col-span: 2;
 }
 
 
@@ -132,22 +136,18 @@
   z-index: 100;
   pointer-events: auto;
 
+  /* Pixel-truth placement from JS */
+  left: calc(var(--col) * (var(--cell-size) + var(--cell-gap)));
+  top: calc(var(--row) * (var(--cell-size) + var(--cell-gap)));
+
+  /* Geometry-driven sizing */
+  width: calc(var(--col-span) * var(--cell-size)
+           + (var(--col-span) - 1) * var(--cell-gap));
+  height: calc(var(--row-span) * var(--cell-size)
+            + (var(--row-span) - 1) * var(--cell-gap));
+
   transform: translate(var(--domino-nudge-x), var(--domino-nudge-y));
   transform-origin: top left;
-}
-
-/* Horizontal domino */
-.domino-wrapper.on-board[data-half0-side="left"],
-.domino-wrapper.on-board[data-half0-side="right"] {
-  width: calc(var(--cell-size) * 2 + var(--cell-gap));
-  height: var(--cell-size);
-}
-
-/* Vertical domino */
-.domino-wrapper.on-board[data-half0-side="top"],
-.domino-wrapper.on-board[data-half0-side="bottom"] {
-  width: var(--cell-size);
-  height: calc(var(--cell-size) * 2 + var(--cell-gap));
 }
 
 /* Dragging state */
@@ -165,7 +165,7 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  pointer-events: none; /* required by two‑element model */
+  pointer-events: none;
 }
 
 .domino.in-tray {
