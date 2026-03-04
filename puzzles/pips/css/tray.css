@@ -1,6 +1,11 @@
 /* ============================================================
    FILE: tray.css (Drop‑in Replacement)
    PURPOSE: Multi‑row tray with correct domino centering + rotation
+   CONTRACT:
+     - Tray uses flex-wrap for multi-row layout.
+     - Tray slots are geometry-driven (row-span/col-span).
+     - Wrapper is centered inside slot and rotated visually.
+     - Inner .domino never rotates in the tray.
    ============================================================ */
 
 
@@ -10,7 +15,7 @@
 
 #tray {
   display: flex;
-  flex-wrap: wrap;                 /* allows multiple rows */
+  flex-wrap: wrap;
   gap: var(--cell-gap);
   padding: 8px;
   background: #eee;
@@ -19,13 +24,17 @@
 
 
 /* ============================================================
-   2. TRAY SLOT GEOMETRY
+   2. TRAY SLOT GEOMETRY (geometry-driven)
    ============================================================ */
 
 .tray-slot {
-  width: calc(var(--cell-size) * 2);   /* horizontal domino footprint */
-  height: calc(var(--cell-size) * 2);  /* vertical domino footprint */
-  position: relative;                  /* containing block for wrapper */
+  /* Geometry-driven footprint for a domino */
+  width: calc(var(--col-span) * var(--cell-size)
+           + (var(--col-span) - 1) * var(--cell-gap));
+  height: calc(var(--row-span) * var(--cell-size)
+            + (var(--row-span) - 1) * var(--cell-gap));
+
+  position: relative;
   box-sizing: content-box;
   padding: 0;
   display: block;
@@ -53,18 +62,21 @@
 .domino-wrapper.in-tray {
   position: absolute;
 
-  /* center the wrapper inside the slot */
+  /* Center the wrapper inside the slot */
   top: 50%;
   left: 50%;
 
-  width: calc(var(--cell-size) * 2);
-  height: var(--cell-size);
+  /* Geometry-driven wrapper size */
+  width: calc(var(--col-span) * var(--cell-size)
+           + (var(--col-span) - 1) * var(--cell-gap));
+  height: calc(var(--row-span) * var(--cell-size)
+            + (var(--row-span) - 1) * var(--cell-gap));
 
   overflow: visible;
 
-  /* ⭐ Correct transform order:
+  /* Correct transform order:
        1. translate(-50%, -50%) centers the wrapper
-       2. rotate(var(--tray-orientation)) rotates around the center
+       2. rotate(var(--tray-orientation)) rotates visually
   */
   transform: translate(-50%, -50%) rotate(var(--tray-orientation, 0deg));
   transform-origin: center center;
@@ -77,7 +89,6 @@
    4. PIP CONTAINER — NO TRANSFORMS ALLOWED
    ============================================================ */
 
-/* The pip container must never rotate in the tray */
 .domino.in-tray {
   transform: none !important;
 }
