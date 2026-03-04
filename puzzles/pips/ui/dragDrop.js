@@ -220,14 +220,16 @@ function updateGhost(ev) {
   
     const centerScreen = { x: ev.clientX, y: ev.clientY };
     const pointerOffset = { dx: 0, dy: 0 };
-  
+    const source = trayEl.contains(wrapper) ? "tray" : "board";
+ 
     state.snapshot = {
       id: String(wrapper.dataset.dominoId),
+      source,
       row0, col0,
       row1, col1,
       pointerOffset
     };
-  
+ 
     document.body.setPointerCapture(ev.pointerId);
   
     state.clone = createClone(wrapper, centerScreen);
@@ -258,20 +260,31 @@ function updateGhost(ev) {
   }
 
   function pointerUp(ev) {
-    if (state.phase === "Dragging" && state.ghost) {
-      boardEl.dispatchEvent(
-        new CustomEvent("pips:drop:proposal", {
-          bubbles: true,
-          detail: { proposal: state.ghost }
-        })
-      );
-    
-      // CRITICAL: reset drag state immediately after drop proposal
-      reset();
-      return;
-    }
-
+    if (ev.pointerId !== state.pointerId) return;
+  
     try { document.body.releasePointerCapture(ev.pointerId); } catch {}
+  
+    if (state.phase === "Dragging") {
+      if (state.ghost) {
+        // Normal board placement
+        boardEl.dispatchEvent(
+          new CustomEvent("pips:drop:proposal", {
+            bubbles: true,
+            detail: { proposal: state.ghost }
+          })
+        );
+      } else if (state.snapshot?.source === "board") {
+        // Dragged off board → return to tray
+        boardEl.dispatchEvent(
+          new CustomEvent("pips:return-to-tray", {
+            bubbles: true,
+            detail: { id: state.snapshot.id }
+          })
+        );
+      }
+    }
+  
+    reset();
   }
 
   function pointerCancel(ev) {
