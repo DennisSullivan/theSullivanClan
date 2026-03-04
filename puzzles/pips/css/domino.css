@@ -120,11 +120,11 @@
 }
 
 /* Divider (horizontal or vertical) */
-.domino.horizontal .half + .half {
+.domino.domino-horizontal .half + .half {
   border-left: 1px solid var(--domino-border);
 }
 
-.domino.vertical .half + .half {
+.domino.domino-vertical .half + .half {
   border-top: 1px solid var(--domino-border);
 }
 
