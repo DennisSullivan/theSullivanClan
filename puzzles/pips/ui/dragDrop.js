@@ -258,8 +258,6 @@ function updateGhost(ev) {
   }
 
   function pointerUp(ev) {
-    if (ev.pointerId !== state.pointerId) return;
-
     if (state.phase === "Dragging" && state.ghost) {
       boardEl.dispatchEvent(
         new CustomEvent("pips:drop:proposal", {
@@ -267,6 +265,10 @@ function updateGhost(ev) {
           detail: { proposal: state.ghost }
         })
       );
+    
+      // CRITICAL: reset drag state immediately after drop proposal
+      reset();
+      return;
     }
 
     try { document.body.releasePointerCapture(ev.pointerId); } catch {}
