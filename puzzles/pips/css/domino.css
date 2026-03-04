@@ -6,6 +6,7 @@
      - Inner .domino handles orientation + pip grid.
      - Halves contain 3×3 pip grids.
      - Pip visibility driven by data-pip.
+     - Center seam is a physical property of the domino body.
    ============================================================ */
 
 /* ------------------------------------------------------------
@@ -34,7 +35,6 @@
 .domino-wrapper {
   position: absolute;
 
-  /* Geometry-driven sizing */
   width: calc(var(--col-span) * var(--cell-size)
            + (var(--col-span) - 1) * var(--cell-gap));
   height: calc(var(--row-span) * var(--cell-size)
@@ -49,14 +49,12 @@
   transform-origin: center center;
 }
 
-/* Tray rotation (visual-only) */
 .domino-wrapper.in-tray {
   position: relative;
   transform: rotate(var(--angle));
   transition: transform var(--transition-fast);
 }
 
-/* Ghost preview */
 .domino-wrapper.ghost {
   opacity: 0.5;
   filter: grayscale(100%);
@@ -68,6 +66,7 @@
    ============================================================ */
 
 .domino {
+  position: relative;
   display: flex;
   width: 100%;
   height: 100%;
@@ -76,10 +75,10 @@
   border: 2px solid var(--domino-border);
   box-sizing: border-box;
   overflow: hidden;
-  pointer-events: none; /* required by two-element model */
+  pointer-events: none;
 }
 
-/* Orientation only — no geometry */
+/* Orientation only */
 .domino.domino-horizontal {
   flex-direction: row;
 }
@@ -96,13 +95,41 @@
   flex-direction: column-reverse;
 }
 
-/* Tray vs board visual distinction */
 .domino-wrapper.in-tray .domino {
   box-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
 
 .domino-wrapper.on-board .domino {
   box-shadow: none;
+}
+
+/* ============================================================
+   CENTER SEAM — PHYSICAL DOMINO DIVIDER
+   ============================================================ */
+
+.domino::after {
+  content: "";
+  position: absolute;
+  background: var(--domino-border);
+  pointer-events: none;
+}
+
+/* Horizontal domino → vertical seam */
+.domino.domino-horizontal::after {
+  width: 1px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+  transform: translateX(-0.5px);
+}
+
+/* Vertical domino → horizontal seam */
+.domino.domino-vertical::after {
+  height: 1px;
+  width: 100%;
+  top: 50%;
+  left: 0;
+  transform: translateY(-0.5px);
 }
 
 /* ============================================================
@@ -120,15 +147,6 @@
   box-sizing: border-box;
 }
 
-/* Divider (orientation-aware, renderer-aligned) */
-.domino.domino-horizontal .half + .half {
-  border-left: 1px solid var(--domino-border);
-}
-
-.domino.domino-vertical .half + .half {
-  border-top: 1px solid var(--domino-border);
-}
-
 /* ============================================================
    PIPS (7-position grid)
    ============================================================ */
@@ -142,7 +160,6 @@
   transition: opacity var(--transition-fast);
 }
 
-/* Pip positions */
 .p1 { grid-area: 2 / 2; }
 .p2 { grid-area: 1 / 1; }
 .p3 { grid-area: 3 / 3; }
@@ -151,14 +168,13 @@
 .p6 { grid-area: 2 / 1; }
 .p7 { grid-area: 2 / 3; }
 
-/* Slightly larger center pip */
 .p7 {
   width: calc(var(--cell-size) * 0.105);
   height: calc(var(--cell-size) * 0.105);
 }
 
 /* ============================================================
-   PIP ACTIVATION RULES (data-pip)
+   PIP ACTIVATION RULES
    ============================================================ */
 
 .domino .half[data-pip="0"] .pip { opacity: 0; }
@@ -207,7 +223,7 @@
 }
 
 /* ============================================================
-   TRAY SLOTS (geometry-driven)
+   TRAY SLOTS
    ============================================================ */
 
 .tray-slot {
