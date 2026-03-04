@@ -79,6 +79,38 @@ export function installPlacementValidator(appRoot, puzzle) {
   });
 
   // ------------------------------------------------------------
+  // pips:return-to-tray → engine remove placement
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:return-to-tray", (ev) => {
+    const { id } = ev.detail || {};
+    if (!id) return;
+  
+    // Remove domino from board (engine authority)
+    const res = commitPlacement(puzzle, {
+      dominoId: String(id),
+      row0: null,
+      col0: null,
+      row1: null,
+      col1: null
+    });
+  
+    if (!res.accepted) {
+      dispatchEvents(ev.target, ["pips:return-to-tray:reject"], {
+        id: String(id),
+        reason: res.reason,
+        info: res.info
+      });
+      return;
+    }
+  
+    dispatchEvents(ev.target, ["pips:return-to-tray:commit"], {
+      id: String(id)
+    });
+  
+    dispatchEvents(ev.target, ["pips:state:update"], {});
+  });
+
+  // ------------------------------------------------------------
   // Rotation requests
   // ------------------------------------------------------------
   appRoot.addEventListener("pips:board-rotate-request", (ev) => {
