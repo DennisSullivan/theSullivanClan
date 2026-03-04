@@ -240,16 +240,8 @@ function updateGhost(ev) {
     document.body.setPointerCapture(ev.pointerId);
   
     state.clone = createClone(wrapper, centerScreen);
-    const boardRect = boardEl.getBoundingClientRect();
-    const cellSpan = boardRect.width / cols; // square cells by contract
-    
-    orientCloneFromGeometry(
-      state.clone,
-      row0, col0,
-      row1, col1,
-      cellSpan
-    );
-  
+    applyCloneGeometryAndOrientation(state.clone, row0, col0, row1, col1);
+
     state.phase = "Dragging";
   
     updateGhost(ev);
