@@ -100,13 +100,13 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.dataset.row1 = String(cell1.row);
     wrapper.dataset.col1 = String(cell1.col);
 
-    // ----------------------------------------------------------
-    // Pixel placement (half0 anchor)
-    // ----------------------------------------------------------
-    const px = cell0.col * cellSpan;
-    const py = cell0.row * cellSpan;
-    wrapper.style.left = `${px}px`;
-    wrapper.style.top  = `${py}px`;
+    // Anchor wrapper at bounding-box top-left (NOT at half0)
+    // Pixel placement (geometry anchor: top-left of bounding box)
+    const minRow = Math.min(cell0.row, cell1.row);
+    const minCol = Math.min(cell0.col, cell1.col);
+    
+    wrapper.style.left = `${minCol * cellSpan}px`;
+    wrapper.style.top  = `${minRow * cellSpan}px`;
 
     if (ghost && String(id) === ghostId) {
       wrapper.classList.add("ghost");
