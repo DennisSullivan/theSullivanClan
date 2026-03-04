@@ -132,6 +132,19 @@
   transform: translateY(-0.5px);
 }
 
+/* ------------------------------------------------------------
+   TRAY / DEFAULT SEAM (no geometry available)
+   ------------------------------------------------------------ */
+
+/* Default to horizontal seam when no orientation class exists */
+.domino:not(.domino-horizontal):not(.domino-vertical)::after {
+  width: 1px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+  transform: translateX(-0.5px);
+}
+
 /* ============================================================
    HALVES (3×3 pip grid)
    ============================================================ */
