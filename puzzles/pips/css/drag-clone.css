@@ -13,8 +13,9 @@
   top: 0;
   left: 0;
 
-  /* Centering is immutable */
+  /* Pointer-centered, immutable */
   transform: translate(-50%, -50%) !important;
+  transform-origin: center center;
 
   /* Visual distinction */
   outline: 2px solid rgba(0, 120, 255, 0.85);
@@ -33,15 +34,19 @@
   transition: transform 120ms cubic-bezier(.2,.8,.2,1);
   will-change: transform;
 
-  /* Match wrapper geometry */
-  width: calc(2 * var(--cell-size) + var(--cell-gap));
-  height: var(--cell-size);
+  /* Geometry-driven sizing (never infer orientation) */
+  width: calc(var(--col-span) * var(--cell-size)
+           + (var(--col-span) - 1) * var(--cell-gap));
+  height: calc(var(--row-span) * var(--cell-size)
+            + (var(--row-span) - 1) * var(--cell-gap));
+
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Inner domino inherits all normal styles */
+/* Inner domino inherits all normal styles, never interactive */
 .domino-drag-clone .domino {
   pointer-events: none;
+  transform: none !important; /* clone never rotates the inner element */
 }
