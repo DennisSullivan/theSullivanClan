@@ -2,7 +2,7 @@
    FILE: domino.css
    PURPOSE: Final unified stylesheet for the two‑element DOM model.
    CONTRACT:
-     - Wrapper handles placement + rotation.
+     - Wrapper handles geometry (row/col span) + rotation.
      - Inner .domino handles orientation + pip grid.
      - Halves contain 3×3 pip grids.
      - Pip visibility driven by data-pip.
@@ -21,19 +21,29 @@
 
   --domino-radius: 6px;
   --transition-fast: 120ms ease-out;
+
+  /* Geometry variables set per domino by JS */
+  --row-span: 1;
+  --col-span: 2;
 }
 
 /* ============================================================
-   WRAPPER (placement + rotation)
+   WRAPPER (geometry + placement + rotation)
    ============================================================ */
 
 .domino-wrapper {
   position: absolute;
-  width: calc(2 * var(--cell-size) + var(--cell-gap));
-  height: var(--cell-size);
+
+  /* Geometry-driven sizing */
+  width: calc(var(--col-span) * var(--cell-size)
+           + (var(--col-span) - 1) * var(--cell-gap));
+  height: calc(var(--row-span) * var(--cell-size)
+            + (var(--row-span) - 1) * var(--cell-gap));
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   pointer-events: auto;
   touch-action: none;
   transform-origin: center center;
@@ -69,15 +79,13 @@
   pointer-events: none; /* required by two-element model */
 }
 
-/* Orientation set by renderDomino() */
+/* Orientation only — no geometry */
 .domino.horizontal {
   flex-direction: row;
 }
 
 .domino.vertical {
   flex-direction: column;
-  width: var(--cell-size);
-  height: calc(2 * var(--cell-size) + var(--cell-gap));
 }
 
 /* Tray vs board visual distinction */
@@ -87,14 +95,6 @@
 
 .domino-wrapper.on-board .domino {
   box-shadow: none;
-}
-
-.domino.flip-horizontal {
-  transform: scaleX(-1);
-}
-
-.domino.flip-vertical {
-  transform: scaleY(-1);
 }
 
 /* ============================================================
@@ -142,7 +142,7 @@
 .p6 { grid-area: 2 / 1; }
 .p7 { grid-area: 2 / 3; }
 
-/* Slightly larger center pips */
+/* Slightly larger center pip */
 .p7 {
   width: calc(var(--cell-size) * 0.105);
   height: calc(var(--cell-size) * 0.105);
@@ -198,12 +198,14 @@
 }
 
 /* ============================================================
-   TRAY SLOTS
+   TRAY SLOTS (geometry-driven)
    ============================================================ */
 
 .tray-slot {
-  width: calc(2 * var(--cell-size) + var(--cell-gap));
-  height: var(--cell-size);
+  width: calc(var(--col-span) * var(--cell-size)
+           + (var(--col-span) - 1) * var(--cell-gap));
+  height: calc(var(--row-span) * var(--cell-size)
+            + (var(--row-span) - 1) * var(--cell-gap));
   display: flex;
   align-items: center;
   justify-content: center;
