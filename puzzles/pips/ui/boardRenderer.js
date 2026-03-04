@@ -108,6 +108,16 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.style.left = `${minCol * cellSpan}px`;
     wrapper.style.top  = `${minRow * cellSpan}px`;
 
+    // ----------------------------------------------------------
+    // Geometry-driven wrapper sizing (REQUIRED)
+    // ----------------------------------------------------------
+    const sameRow = (cell0.row === cell1.row);
+    const sameCol = (cell0.col === cell1.col);
+    
+    // Assumes adjacency already guaranteed by engine/grid
+    wrapper.style.setProperty("--row-span", sameCol ? "2" : "1");
+    wrapper.style.setProperty("--col-span", sameRow ? "2" : "1");
+
     if (ghost && String(id) === ghostId) {
       wrapper.classList.add("ghost");
     }
