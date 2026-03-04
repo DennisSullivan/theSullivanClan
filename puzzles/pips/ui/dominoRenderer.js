@@ -118,12 +118,19 @@ export function renderDomino(domino, wrapper) {
         orientation: isHorizontal ? "horizontal" : "vertical"
       });
 
+      inner.classList.remove(
+        "domino-horizontal",
+        "domino-vertical",
+        "half0-right",
+        "half0-bottom"
+      );
+      
       if (isHorizontal) {
         inner.classList.add("domino-horizontal");
-        inner.classList.remove("domino-vertical");
+        if (c0 > c1) inner.classList.add("half0-right");
       } else if (isVertical) {
         inner.classList.add("domino-vertical");
-        inner.classList.remove("domino-horizontal");
+        if (r0 > r1) inner.classList.add("half0-bottom");
       }
     }
   }
