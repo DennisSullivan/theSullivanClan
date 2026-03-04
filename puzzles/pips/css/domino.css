@@ -80,11 +80,11 @@
 }
 
 /* Orientation only — no geometry */
-.domino.horizontal {
+.domino.domino-horizontal {
   flex-direction: row;
 }
 
-.domino.vertical {
+.domino.domino-vertical {
   flex-direction: column;
 }
 
