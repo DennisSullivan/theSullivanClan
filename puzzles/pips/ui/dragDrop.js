@@ -37,30 +37,43 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     state.ghost = null;
   }
 
-  function orientCloneFromGeometry(clone, row0, col0, row1, col1, cellSpan) {
-    // Derive orientation
-    let half1Dir;
-    if (row0 === row1) {
-      half1Dir = col1 > col0 ? "right" : "left";
-    } else {
-      half1Dir = row1 > row0 ? "down" : "up";
-    }
+  function applyCloneGeometryAndOrientation(clone, row0, col0, row1, col1) {
+    // Make clone wrapper board-equivalent for geometry/orientation consumers
+    clone.dataset.row0 = String(row0);
+    clone.dataset.col0 = String(col0);
+    clone.dataset.row1 = String(row1);
+    clone.dataset.col1 = String(col1);
   
+    // Geometry-driven sizing (same rule as boardRenderer)
+    const sameRow = row0 === row1;
+    const sameCol = col0 === col1;
+  
+    clone.style.setProperty("--row-span", sameCol ? "2" : "1");
+    clone.style.setProperty("--col-span", sameRow ? "2" : "1");
+  
+    // Orientation classes (renderer-aligned, no DOM reordering)
     const inner = clone.querySelector(".domino");
-    const half0 = inner.querySelector(".half.half0");
-    const half1 = inner.querySelector(".half.half1");
+    if (!inner) return;
   
-    // Reorder halves for negative adjacency
-    if (half1Dir === "left" || half1Dir === "up") {
-      inner.insertBefore(half1, half0);
-    }
+    inner.classList.remove(
+      "domino-horizontal",
+      "domino-vertical",
+      "half0-right",
+      "half0-bottom"
+    );
   
-    // Offset wrapper so visual half0 stays anchored
-    if (half1Dir === "left") {
-      clone.style.left = `${parseFloat(clone.style.left) - cellSpan}px`;
-    }
-    if (half1Dir === "up") {
-      clone.style.top = `${parseFloat(clone.style.top) - cellSpan}px`;
+    const colDelta = Math.abs(col0 - col1);
+    const rowDelta = Math.abs(row0 - row1);
+  
+    const isHorizontal = sameRow && colDelta === 1;
+    const isVertical = sameCol && rowDelta === 1;
+  
+    if (isHorizontal) {
+      inner.classList.add("domino-horizontal");
+      if (col0 > col1) inner.classList.add("half0-right");
+    } else if (isVertical) {
+      inner.classList.add("domino-vertical");
+      if (row0 > row1) inner.classList.add("half0-bottom");
     }
   }
 
