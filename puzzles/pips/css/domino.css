@@ -88,11 +88,11 @@
   flex-direction: column;
 }
 
-.domino.horizontal.half0-right {
+.domino.domino-horizontal.half0-right {
   flex-direction: row-reverse;
 }
 
-.domino.vertical.half0-bottom {
+.domino.domino-vertical.half0-bottom {
   flex-direction: column-reverse;
 }
 
