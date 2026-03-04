@@ -119,7 +119,7 @@
   box-sizing: border-box;
 }
 
-/* Divider (horizontal or vertical) */
+/* Divider (orientation-aware, renderer-aligned) */
 .domino.domino-horizontal .half + .half {
   border-left: 1px solid var(--domino-border);
 }
