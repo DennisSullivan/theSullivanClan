@@ -116,21 +116,6 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
     wrapper.appendChild(inner);
     
     renderDomino(d, wrapper);
-    
-    const half0 = inner.querySelector(".half.half0");
-    const half1 = inner.querySelector(".half.half1");
-    
-    if (half0Side === "right" || half0Side === "bottom") {
-      inner.insertBefore(half1, half0);
-    }
-
-    if (half0Side === "right") {
-      wrapper.style.left = `${px - cellSpan}px`;
-    }
-    
-    if (half0Side === "bottom") {
-      wrapper.style.top = `${py - cellSpan}px`;
-}
 
     boardEl.appendChild(wrapper);
   }
