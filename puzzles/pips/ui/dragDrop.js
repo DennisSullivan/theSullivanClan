@@ -272,7 +272,6 @@ function updateGhost(ev) {
     }
 
     try { document.body.releasePointerCapture(ev.pointerId); } catch {}
-    reset();
   }
 
   function pointerCancel(ev) {
