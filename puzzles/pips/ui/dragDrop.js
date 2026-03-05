@@ -261,7 +261,13 @@ function updateGhost(ev) {
 
   function pointerUp(ev) {
     if (ev.pointerId !== state.pointerId) return;
-  
+
+    console.log("pointerUp", {
+      phase: state.phase,
+      ghost: state.ghost,
+      source: state.snapshot?.source
+    });
+    
     try { document.body.releasePointerCapture(ev.pointerId); } catch {}
   
     if (state.phase === "Dragging") {
