@@ -107,17 +107,6 @@ export function renderDomino(domino, wrapper) {
         col1: c1
       });
     } else {
-      console.log("renderDomino: placement attempted", {
-        id: domino?.id,
-        pip0,
-        pip1,
-        row0: r0,
-        col0: c0,
-        row1: r1,
-        col1: c1,
-        orientation: isHorizontal ? "horizontal" : "vertical"
-      });
-
       inner.classList.remove(
         "domino-horizontal",
         "domino-vertical",
