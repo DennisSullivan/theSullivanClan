@@ -95,6 +95,7 @@ export function installPlacementValidator(appRoot, puzzle) {
       row1: null,
       col1: null
     });
+console.log("engine remove result", res);
   
     if (!res.accepted) {
       dispatchEvents(ev.target, ["pips:return-to-tray:reject"], {
