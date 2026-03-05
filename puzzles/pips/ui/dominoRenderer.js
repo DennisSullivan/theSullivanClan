@@ -79,15 +79,7 @@ export function renderDomino(domino, wrapper) {
   inner.classList.remove("domino-horizontal", "domino-vertical");
 
   if (!coordsAreValid) {
-    console.warn(
-      "renderDomino: no placement attempted (missing or non‑numeric coords)",
-      {
-        row0: wrapper.dataset.row0,
-        col0: wrapper.dataset.col0,
-        row1: wrapper.dataset.row1,
-        col1: wrapper.dataset.col1
-      }
-    );
+
   } else {
     const sameRow = r0 === r1;
     const sameCol = c0 === c1;
