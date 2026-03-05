@@ -84,7 +84,9 @@ export function installPlacementValidator(appRoot, puzzle) {
   appRoot.addEventListener("pips:return-to-tray", (ev) => {
     const { id } = ev.detail || {};
     if (!id) return;
-  
+
+    console.log("tray listener received return-to-tray", e.detail);
+ 
     // Remove domino from board (engine authority)
     const res = commitPlacement(puzzle, {
       dominoId: String(id),
