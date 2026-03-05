@@ -79,7 +79,8 @@ export function renderDomino(domino, wrapper) {
   inner.classList.remove("domino-horizontal", "domino-vertical");
 
   if (!coordsAreValid) {
-    console.warn(
+/* This shows for every tray domino
+      console.warn(
       "renderDomino: no placement attempted (missing or non‑numeric coords)",
       {
         row0: wrapper.dataset.row0,
@@ -87,8 +88,7 @@ export function renderDomino(domino, wrapper) {
         row1: wrapper.dataset.row1,
         col1: wrapper.dataset.col1
       }
-    );
-  } else {
+ */
     const sameRow = r0 === r1;
     const sameCol = c0 === c1;
     const colDelta = Math.abs(c0 - c1);
