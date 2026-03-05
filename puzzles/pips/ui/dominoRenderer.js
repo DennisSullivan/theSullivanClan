@@ -79,8 +79,7 @@ export function renderDomino(domino, wrapper) {
   inner.classList.remove("domino-horizontal", "domino-vertical");
 
   if (!coordsAreValid) {
-/* This shows for every tray domino
-      console.warn(
+    console.warn(
       "renderDomino: no placement attempted (missing or non‑numeric coords)",
       {
         row0: wrapper.dataset.row0,
@@ -88,7 +87,8 @@ export function renderDomino(domino, wrapper) {
         row1: wrapper.dataset.row1,
         col1: wrapper.dataset.col1
       }
- */
+    );
+  } else {
     const sameRow = r0 === r1;
     const sameCol = c0 === c1;
     const colDelta = Math.abs(c0 - c1);
@@ -107,6 +107,17 @@ export function renderDomino(domino, wrapper) {
         col1: c1
       });
     } else {
+      console.log("renderDomino: placement attempted", {
+        id: domino?.id,
+        pip0,
+        pip1,
+        row0: r0,
+        col0: c0,
+        row1: r1,
+        col1: c1,
+        orientation: isHorizontal ? "horizontal" : "vertical"
+      });
+
       inner.classList.remove(
         "domino-horizontal",
         "domino-vertical",
