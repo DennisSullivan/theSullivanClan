@@ -150,6 +150,7 @@
    ============================================================ */
 
 .domino .half {
+  pointer-events: auto;
   background: var(--domino-bg);
   flex: 1;
   display: grid;
