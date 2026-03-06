@@ -83,7 +83,15 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     if (!domino) return;
 
     const halfEl = event.target.closest(".half");
-    if (!halfEl) return;
+    let clickedHalf;
+    
+    if (halfEl) {
+      clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
+    } else {
+      // Click landed on .domino, not on a half
+      // Contract-safe default: pivot on half0
+      clickedHalf = 0;
+    }
 
     const clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
 
