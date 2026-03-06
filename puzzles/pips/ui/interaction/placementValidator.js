@@ -5,7 +5,7 @@
 //   single commit boundary.
 // ============================================================
 
-import { commitPlacement } from "../../engine/placement.js";
+import { commitPlacement, validatePlacementProposal } from "../../engine/placement.js";
 import { evaluateAllRegions } from "../../engine/regionRules.js";
 
 // ------------------------------------------------------------
@@ -57,8 +57,6 @@ export function installPlacementValidator(appRoot, puzzle) {
       col1
     });
 
-    // (Removed legacy result/boardEl block)
-
     if (!res.accepted) {
       dispatchEvents(ev.target, ["pips:drop:reject:board"], {
         id: String(id),
@@ -75,6 +73,7 @@ export function installPlacementValidator(appRoot, puzzle) {
       r1: row1,
       c1: col1
     });
+
     dispatchEvents(ev.target, ["pips:state:update"], {});
   });
 
@@ -85,9 +84,6 @@ export function installPlacementValidator(appRoot, puzzle) {
     const { id } = ev.detail || {};
     if (!id) return;
 
-    console.log("tray listener received return-to-tray", ev.detail);
- 
-    // Remove domino from board (engine authority)
     const res = commitPlacement(puzzle, {
       dominoId: String(id),
       row0: null,
@@ -95,8 +91,7 @@ export function installPlacementValidator(appRoot, puzzle) {
       row1: null,
       col1: null
     });
-console.log("engine remove result", res);
-  
+
     if (!res.accepted) {
       dispatchEvents(ev.target, ["pips:return-to-tray:reject"], {
         id: String(id),
@@ -105,16 +100,78 @@ console.log("engine remove result", res);
       });
       return;
     }
-  
+
     dispatchEvents(ev.target, ["pips:return-to-tray:commit"], {
       id: String(id)
     });
-  
+
+    dispatchEvents(ev.target, ["pips:state:update"], {});
+  });
+
+  // ============================================================
+  // pips:rotate:proposal → engine validate + commitPlacement
+  // ============================================================
+  appRoot.addEventListener("pips:rotate:proposal", (ev) => {
+    const { proposal } = ev.detail || {};
+    if (!proposal) return;
+
+    const { id, row0, col0, row1, col1 } = proposal;
+    if (!id) return;
+
+    // 1. Engine validation
+    const validation = validatePlacementProposal(puzzle, {
+      dominoId: String(id),
+      row0,
+      col0,
+      row1,
+      col1
+    });
+
+    if (!validation.ok) {
+      dispatchEvents(ev.target, ["pips:rotate:reject"], {
+        id: String(id),
+        reason: validation.reason,
+        info: validation.info
+      });
+
+      dispatchEvents(ev.target, ["pips:state:update"], {});
+      return;
+    }
+
+    // 2. Engine commit
+    const res = commitPlacement(puzzle, {
+      dominoId: String(id),
+      row0,
+      col0,
+      row1,
+      col1
+    });
+
+    if (!res.accepted) {
+      dispatchEvents(ev.target, ["pips:rotate:reject"], {
+        id: String(id),
+        reason: res.reason,
+        info: res.info
+      });
+
+      dispatchEvents(ev.target, ["pips:state:update"], {});
+      return;
+    }
+
+    // 3. Rotation committed
+    dispatchEvents(ev.target, ["pips:rotate:commit"], {
+      id: String(id),
+      r0: row0,
+      c0: col0,
+      r1: row1,
+      c1: col1
+    });
+
     dispatchEvents(ev.target, ["pips:state:update"], {});
   });
 
   // ------------------------------------------------------------
-  // Rotation requests
+  // Rotation requests (must submit proposal)
   // ------------------------------------------------------------
   appRoot.addEventListener("pips:board-rotate-request", (ev) => {
     const { id } = ev.detail || {};
@@ -152,60 +209,7 @@ console.log("engine remove result", res);
       }
     }
 
-    // ============================================================
-    // ROTATION PROPOSAL HANDLER (engine-authoritative)
-    // ============================================================
-    appRoot.addEventListener("pips:rotate:proposal", (event) => {
-      const ghost = event.detail.proposal;
-      if (!ghost) return;
-    
-      const proposal = {
-        dominoId: String(ghost.id),
-        row0: ghost.row0,
-        col0: ghost.col0,
-        row1: ghost.row1,
-        col1: ghost.col1
-      };
-    
-      // 1. Engine validation
-      const validation = validatePlacementProposal(puzzle, proposal);
-    
-      if (!validation.ok) {
-        console.log(
-          "%c[ROTATION] CommitRejected",
-          "color:#c71585;font-weight:bold;",
-          validation
-        );
-    
-        // Cancel: re-render from authoritative engine state
-        renderPuzzle();
-        return;
-      }
-    
-      // 2. Engine commit
-      const result = commitPlacement(puzzle, proposal);
-    
-      if (!result.accepted) {
-        console.log(
-          "%c[ROTATION] CommitFailed",
-          "color:#c71585;font-weight:bold;",
-          result
-        );
-    
-        renderPuzzle();
-        return;
-      }
-    
-      // 3. Rotation committed
-      console.log(
-        "%c[ROTATION] CommitAccepted",
-        "color:#c71585;font-weight:bold;",
-        proposal
-      );
-    
-      renderPuzzle();
-    });
-
+    return { ok: true };
   }
 
   appRoot.addEventListener("pips:check-solution", () => {
@@ -215,5 +219,3 @@ console.log("engine remove result", res);
 
   console.log("installPlacementValidator: complete (contract‑clean)");
 }
-
-;
