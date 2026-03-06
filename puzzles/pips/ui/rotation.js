@@ -24,9 +24,9 @@ function logRotation(event, data = {}) {
 // ------------------------------------------------------------
 // Rotation session state
 // ------------------------------------------------------------
-let rotatingDomino = null;        // { id, ... } from dominos map
-let rotationGhost = null;         // { id,row0,col0,row1,col1 } or null
-let rotationPointerId = null;     // pointerId during optional adjust
+let rotatingDomino = null;
+let rotationGhost = null;
+let rotationPointerId = null;
 
 // ------------------------------------------------------------
 // Double‑click detection (pointer‑based)
@@ -82,9 +82,12 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const domino = dominos.get(id);
     if (!domino) return;
 
+    // ------------------------------------------------------------
+    // Pivot‑half detection (safe)
+    // ------------------------------------------------------------
     const halfEl = event.target.closest(".half");
     let clickedHalf;
-    
+
     if (halfEl) {
       clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
     } else {
@@ -93,9 +96,9 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       clickedHalf = 0;
     }
 
-    clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
-
+    // ------------------------------------------------------------
     // Geometry from engine, not DOM
+    // ------------------------------------------------------------
     const cells = findDominoCells(grid, String(id));
     if (!cells || cells.length !== 2) return;
 
