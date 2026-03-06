@@ -21,9 +21,18 @@ function logRotation(event, data = {}) {
   );
 }
 
+// ------------------------------------------------------------
+// Rotation session state
+// ------------------------------------------------------------
 let rotatingDomino = null;        // { id, ... } from dominos map
 let rotationGhost = null;         // { id,row0,col0,row1,col1 } or null
 let rotationPointerId = null;     // pointerId during optional adjust
+
+// ------------------------------------------------------------
+// Double‑click detection (pointer‑based)
+// ------------------------------------------------------------
+let lastClickTime = 0;
+const DoubleClickWindow = 300; // ms
 
 export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
 
@@ -52,9 +61,19 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   });
 
   // ------------------------------------------------------------
-  // 2. BOARD ROTATION (pivot‑half based, with preview + commit)
+  // 2. BOARD ROTATION — pointer‑based double‑click detector
   // ------------------------------------------------------------
-  document.addEventListener("dblclick", (event) => {
+  document.addEventListener("pointerup", (event) => {
+    const now = performance.now();
+    const delta = now - lastClickTime;
+    lastClickTime = now;
+
+    if (delta > DoubleClickWindow) return; // Not a double‑click
+
+    handleBoardDoubleClick(event);
+  });
+
+  function handleBoardDoubleClick(event) {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
     if (!boardEl.contains(wrapper)) return;
@@ -115,7 +134,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       id: domino.id,
       ghost: rotationGhost
     });
-  });
+  }
 
   // ------------------------------------------------------------
   // 3. Optional adjust + exit triggers
