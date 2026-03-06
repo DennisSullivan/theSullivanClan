@@ -10,6 +10,17 @@
 
 import { findDominoCells } from "../engine/grid.js";
 
+// ------------------------------------------------------------
+// Debug logger
+// ------------------------------------------------------------
+function logRotation(event, data = {}) {
+  console.log(
+    `%c[ROTATION] ${event}`,
+    "color:#c71585;font-weight:bold;",
+    data
+  );
+}
+
 let rotatingDomino = null;        // { id, ... } from dominos map
 let rotationGhost = null;         // { id,row0,col0,row1,col1 } or null
 let rotationPointerId = null;     // pointerId during optional adjust
@@ -31,6 +42,12 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     if (domino.row0 !== null || domino.row1 !== null) return;
 
     domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
+
+    logRotation("TrayRotate", {
+      id,
+      newOrientation: domino.trayOrientation
+    });
+
     renderPuzzle();
   });
 
@@ -66,9 +83,21 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       c1: cell1.col
     };
 
+    logRotation("RotationStart", {
+      id,
+      clickedHalf,
+      prev
+    });
+
     const pivotHalf = clickedHalf;
     const preview = computePivotPreview(prev, pivotHalf);
     if (!preview) return;
+
+    logRotation("PreviewComputed", {
+      id,
+      pivotHalf,
+      preview
+    });
 
     rotatingDomino = domino;
     rotationGhost = {
@@ -81,15 +110,16 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     rotationPointerId = null;
 
     renderPuzzle();
+
+    logRotation("PreviewRendered", {
+      id: domino.id,
+      ghost: rotationGhost
+    });
   });
 
   // ------------------------------------------------------------
   // 3. Optional adjust + exit triggers
-  //    - pointerDown on rotated domino → begin adjust (no drag snapshot)
-  //    - pointerUp on rotated domino   → exit trigger A (commit/cancel)
-  //    - pointerDown outside           → exit trigger B (commit/cancel)
   // ------------------------------------------------------------
-
   document.addEventListener("pointerdown", (event) => {
     if (!rotatingDomino) return;
 
@@ -98,16 +128,27 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       wrapper && wrapper.dataset.dominoId === String(rotatingDomino.id);
 
     if (inside) {
-      // Begin optional adjust session (no geometry change here;
-      // we only anchor pointer and wait for pointerUp to commit).
       rotationPointerId = event.pointerId;
+
+      logRotation("AdjustStart", {
+        id: rotatingDomino.id,
+        pointerId: event.pointerId,
+        ghost: rotationGhost
+      });
+
       return;
     }
 
     // Exit trigger B: pointerDown outside → commit/cancel
+    logRotation("ExitTriggerOutside", {
+      id: rotatingDomino.id,
+      ghost: rotationGhost
+    });
+
     if (rotationGhost) {
       dispatchRotationProposal(boardEl, rotationGhost);
     }
+
     clearRotationPreview(renderPuzzle);
   });
 
@@ -116,16 +157,28 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     if (rotationPointerId === null) return;
     if (event.pointerId !== rotationPointerId) return;
 
+    logRotation("AdjustEnd", {
+      id: rotatingDomino.id,
+      pointerId: event.pointerId,
+      ghost: rotationGhost
+    });
+
     // Exit trigger A: pointerUp on rotated domino → commit/cancel
     if (rotationGhost) {
       dispatchRotationProposal(boardEl, rotationGhost);
     }
+
     clearRotationPreview(renderPuzzle);
   });
 
   document.addEventListener("pointercancel", (event) => {
     if (!rotatingDomino) return;
     if (rotationPointerId !== null && event.pointerId !== rotationPointerId) return;
+
+    logRotation("Cancel", {
+      id: rotatingDomino?.id
+    });
+
     clearRotationPreview(renderPuzzle);
   });
 }
@@ -172,6 +225,8 @@ function computePivotPreview(prev, pivotHalf) {
 // clearRotationPreview()
 // ============================================================
 function clearRotationPreview(renderPuzzle) {
+  logRotation("SessionCleared");
+
   rotationGhost = null;
   rotatingDomino = null;
   rotationPointerId = null;
@@ -183,6 +238,10 @@ function clearRotationPreview(renderPuzzle) {
 // Renderer‑neutral event to engine/validator
 // ============================================================
 function dispatchRotationProposal(boardEl, ghost) {
+  logRotation("CommitDispatched", {
+    proposal: ghost
+  });
+
   boardEl.dispatchEvent(
     new CustomEvent("pips:rotate:proposal", {
       bubbles: true,
