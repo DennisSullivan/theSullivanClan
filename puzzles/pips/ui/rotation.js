@@ -1,19 +1,18 @@
 // ============================================================
 // FILE: ui/rotation.js
-// PURPOSE: Contract‑clean rotation preview instrumentation
+// PURPOSE: Contract‑clean rotation preview & commit instrumentation
 // NOTES:
 //   - Pure UI: never mutates engine state except trayOrientation.
+//   - Geometry is taken from engine (grid/domino), never from DOM.
 //   - Pivot‑half detection is authoritative.
-//   - Wrapper is the only geometry anchor.
-//   - Pip container is never touched.
+//   - Wrapper is not used as a geometry authority.
 // ============================================================
 
 import { findDominoCells } from "../engine/grid.js";
 
-let rotatingDomino = null;
-let rotatingPrev = null;
-let rotatingPivotCell = null;
-let rotationGhost = null;
+let rotatingDomino = null;        // { id, ... } from dominos map
+let rotationGhost = null;         // { id,row0,col0,row1,col1 } or null
+let rotationPointerId = null;     // pointerId during optional adjust
 
 export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
 
@@ -28,15 +27,15 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const domino = dominos.get(id);
     if (!domino) return;
 
-    // Only rotate if in tray
-    if (domino.row0 !== null) return;
+    // Only rotate if in tray (engine geometry is null)
+    if (domino.row0 !== null || domino.row1 !== null) return;
 
     domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
     renderPuzzle();
   });
 
   // ------------------------------------------------------------
-  // 2. BOARD ROTATION (pivot‑half based)
+  // 2. BOARD ROTATION (pivot‑half based, with preview + commit)
   // ------------------------------------------------------------
   document.addEventListener("dblclick", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
@@ -50,66 +49,28 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const halfEl = event.target.closest(".half");
     if (!halfEl) return;
 
-    // --------------------------------------------------------
-    // FIX: authoritative pivot-half detection
-    // --------------------------------------------------------
     const clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
 
-    // Wrapper origin is always half0
-    const baseRow = Number(wrapper.style.getPropertyValue("--row"));
-    const baseCol = Number(wrapper.style.getPropertyValue("--col"));
-    const half0Side = wrapper.dataset.half0Side;
+    // Geometry from engine, not DOM
+    const cells = findDominoCells(grid, String(id));
+    if (!cells || cells.length !== 2) return;
 
-    let clickRow = baseRow;
-    let clickCol = baseCol;
+    const cell0 = cells.find(c => c.half === 0);
+    const cell1 = cells.find(c => c.half === 1);
+    if (!cell0 || !cell1) return;
 
-    // Compute clicked cell from half0 orientation
-    if (clickedHalf === 1) {
-      switch (half0Side) {
-        case "left":   clickCol = baseCol + 1; break;
-        case "right":  clickCol = baseCol - 1; break;
-        case "top":    clickRow = baseRow + 1; break;
-        case "bottom": clickRow = baseRow - 1; break;
-      }
-    }
+    const prev = {
+      r0: cell0.row,
+      c0: cell0.col,
+      r1: cell1.row,
+      c1: cell1.col
+    };
 
-    // --------------------------------------------------------
-    // Rotation session management
-    // --------------------------------------------------------
-    if (rotatingDomino !== domino) {
-      // Start new rotation session
-      rotatingDomino = domino;
-      rotatingPivotCell = { row: clickRow, col: clickCol };
-
-      const cells = findDominoCells(grid, String(id));
-      const cell0 = cells.find(c => c.half === 0);
-      const cell1 = cells.find(c => c.half === 1);
-
-      rotatingPrev = {
-        r0: cell0.row,
-        c0: cell0.col,
-        r1: cell1.row,
-        c1: cell1.col
-      };
-
-    } else {
-      // Advance rotation session
-      rotatingPrev = {
-        r0: rotationGhost.row0,
-        c0: rotationGhost.col0,
-        r1: rotationGhost.row1,
-        c1: rotationGhost.col1
-      };
-    }
-
-    // --------------------------------------------------------
-    // FIX: pivotHalf = clickedHalf (spec invariant)
-    // --------------------------------------------------------
     const pivotHalf = clickedHalf;
-
-    const preview = computePivotPreview(rotatingPrev, pivotHalf);
+    const preview = computePivotPreview(prev, pivotHalf);
     if (!preview) return;
 
+    rotatingDomino = domino;
     rotationGhost = {
       id: domino.id,
       row0: preview.row0,
@@ -117,21 +78,55 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       row1: preview.row1,
       col1: preview.col1
     };
+    rotationPointerId = null;
 
     renderPuzzle();
   });
 
   // ------------------------------------------------------------
-  // 3. Cancel rotation session when clicking outside
+  // 3. Optional adjust + exit triggers
+  //    - pointerDown on rotated domino → begin adjust (no drag snapshot)
+  //    - pointerUp on rotated domino   → exit trigger A (commit/cancel)
+  //    - pointerDown outside           → exit trigger B (commit/cancel)
   // ------------------------------------------------------------
+
   document.addEventListener("pointerdown", (event) => {
     if (!rotatingDomino) return;
 
+    const wrapper = event.target.closest(".domino-wrapper");
     const inside =
-      event.target.closest(".domino-wrapper")?.dataset.dominoId ===
-      String(rotatingDomino.id);
+      wrapper && wrapper.dataset.dominoId === String(rotatingDomino.id);
 
-    if (!inside) clearRotationPreview(renderPuzzle);
+    if (inside) {
+      // Begin optional adjust session (no geometry change here;
+      // we only anchor pointer and wait for pointerUp to commit).
+      rotationPointerId = event.pointerId;
+      return;
+    }
+
+    // Exit trigger B: pointerDown outside → commit/cancel
+    if (rotationGhost) {
+      dispatchRotationProposal(boardEl, rotationGhost);
+    }
+    clearRotationPreview(renderPuzzle);
+  });
+
+  document.addEventListener("pointerup", (event) => {
+    if (!rotatingDomino) return;
+    if (rotationPointerId === null) return;
+    if (event.pointerId !== rotationPointerId) return;
+
+    // Exit trigger A: pointerUp on rotated domino → commit/cancel
+    if (rotationGhost) {
+      dispatchRotationProposal(boardEl, rotationGhost);
+    }
+    clearRotationPreview(renderPuzzle);
+  });
+
+  document.addEventListener("pointercancel", (event) => {
+    if (!rotatingDomino) return;
+    if (rotationPointerId !== null && event.pointerId !== rotationPointerId) return;
+    clearRotationPreview(renderPuzzle);
   });
 }
 
@@ -179,11 +174,26 @@ function computePivotPreview(prev, pivotHalf) {
 function clearRotationPreview(renderPuzzle) {
   rotationGhost = null;
   rotatingDomino = null;
-  rotatingPrev = null;
-  rotatingPivotCell = null;
+  rotationPointerId = null;
   renderPuzzle();
 }
 
+// ============================================================
+// dispatchRotationProposal()
+// Renderer‑neutral event to engine/validator
+// ============================================================
+function dispatchRotationProposal(boardEl, ghost) {
+  boardEl.dispatchEvent(
+    new CustomEvent("pips:rotate:proposal", {
+      bubbles: true,
+      detail: { proposal: ghost }
+    })
+  );
+}
+
+// ============================================================
+// Public helpers
+// ============================================================
 export function getRotatingDominoId() {
   return rotatingDomino?.id ?? null;
 }
