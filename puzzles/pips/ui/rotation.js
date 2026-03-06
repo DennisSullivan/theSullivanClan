@@ -93,7 +93,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       clickedHalf = 0;
     }
 
-    const clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
+    clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
 
     // Geometry from engine, not DOM
     const cells = findDominoCells(grid, String(id));
