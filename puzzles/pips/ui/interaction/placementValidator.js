@@ -152,7 +152,60 @@ console.log("engine remove result", res);
       }
     }
 
-    return { ok: true };
+    // ============================================================
+    // ROTATION PROPOSAL HANDLER (engine-authoritative)
+    // ============================================================
+    appRoot.addEventListener("pips:rotate:proposal", (event) => {
+      const ghost = event.detail.proposal;
+      if (!ghost) return;
+    
+      const proposal = {
+        dominoId: String(ghost.id),
+        row0: ghost.row0,
+        col0: ghost.col0,
+        row1: ghost.row1,
+        col1: ghost.col1
+      };
+    
+      // 1. Engine validation
+      const validation = validatePlacementProposal(puzzle, proposal);
+    
+      if (!validation.ok) {
+        console.log(
+          "%c[ROTATION] CommitRejected",
+          "color:#c71585;font-weight:bold;",
+          validation
+        );
+    
+        // Cancel: re-render from authoritative engine state
+        renderPuzzle();
+        return;
+      }
+    
+      // 2. Engine commit
+      const result = commitPlacement(puzzle, proposal);
+    
+      if (!result.accepted) {
+        console.log(
+          "%c[ROTATION] CommitFailed",
+          "color:#c71585;font-weight:bold;",
+          result
+        );
+    
+        renderPuzzle();
+        return;
+      }
+    
+      // 3. Rotation committed
+      console.log(
+        "%c[ROTATION] CommitAccepted",
+        "color:#c71585;font-weight:bold;",
+        proposal
+      );
+    
+      renderPuzzle();
+    });
+
   }
 
   appRoot.addEventListener("pips:check-solution", () => {
@@ -163,25 +216,4 @@ console.log("engine remove result", res);
   console.log("installPlacementValidator: complete (contract‑clean)");
 }
 
-boardEl.addEventListener("pips:rotate:proposal", (event) => {
-  const ghost = event.detail.proposal;
-
-  const proposal = {
-    dominoId: String(ghost.id),
-    row0: ghost.row0,
-    col0: ghost.col0,
-    row1: ghost.row1,
-    col1: ghost.col1
-  };
-
-  const result = commitPlacement(state, proposal);
-
-  if (!result.accepted) {
-    // Rotation cancel — engine rejected the geometry
-    renderPuzzle(); // re-render from authoritative engine state
-    return;
-  }
-
-  // Rotation commit — engine accepted the geometry
-  renderPuzzle();
-});
+;
