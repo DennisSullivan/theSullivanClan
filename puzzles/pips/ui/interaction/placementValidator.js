@@ -162,3 +162,26 @@ console.log("engine remove result", res);
 
   console.log("installPlacementValidator: complete (contract‑clean)");
 }
+
+boardEl.addEventListener("pips:rotate:proposal", (event) => {
+  const ghost = event.detail.proposal;
+
+  const proposal = {
+    dominoId: String(ghost.id),
+    row0: ghost.row0,
+    col0: ghost.col0,
+    row1: ghost.row1,
+    col1: ghost.col1
+  };
+
+  const result = commitPlacement(state, proposal);
+
+  if (!result.accepted) {
+    // Rotation cancel — engine rejected the geometry
+    renderPuzzle(); // re-render from authoritative engine state
+    return;
+  }
+
+  // Rotation commit — engine accepted the geometry
+  renderPuzzle();
+});
