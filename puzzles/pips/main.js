@@ -78,6 +78,55 @@ export function startPuzzle(puzzleJson) {
     syncCheck(dominos, grid);
   }
 
+  // ============================================================
+  // UI‑SIDE ROTATION EVENT LISTENERS
+  // ============================================================
+  
+  // ------------------------------------------------------------
+  // Rotation commit → engine accepted the rotated geometry
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:rotate:commit", (ev) => {
+    const { id, r0, c0, r1, c1 } = ev.detail || {};
+  
+    console.log(
+      "%c[ROTATION] UI Commit",
+      "color:#1e90ff;font-weight:bold;",
+      { id, r0, c0, r1, c1 }
+    );
+  
+    // Optional: highlight the rotated domino
+    // highlightDomino(id);
+  
+    // Engine state is authoritative — just re-render
+    renderPuzzle();
+  });
+  
+  // ------------------------------------------------------------
+  // Rotation reject → engine rejected the rotated geometry
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:rotate:reject", (ev) => {
+    const { id, reason, info } = ev.detail || {};
+  
+    console.log(
+      "%c[ROTATION] UI Reject",
+      "color:#ff4500;font-weight:bold;",
+      { id, reason, info }
+    );
+  
+    // Optional: show a UI message
+    // showRotationError(reason, info);
+  
+    // Re-render from authoritative engine state
+    renderPuzzle();
+  });
+  
+  // ------------------------------------------------------------
+  // State update → engine geometry changed (commit or cancel)
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:state:update", () => {
+    renderPuzzle();
+  });
+
   // ------------------------------------------------------------
   // Re-render on canonical state updates
   // The engine/validator is the authority; when it says state
