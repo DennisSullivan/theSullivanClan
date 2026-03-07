@@ -210,13 +210,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
   // Pointer handlers
   // ------------------------------------------------------------
-  if (boardEl.contains(wrapper) && isRotationSessionActive()) {
-    return;
-  }
-
-  if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
-  ...
-}
   function pointerDown(ev) {
     if (state.phase !== "Idle") return;
 
