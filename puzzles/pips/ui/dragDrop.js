@@ -2,11 +2,49 @@
 // FILE: ui/dragDrop.js
 // PURPOSE: Pointer‑centered drag/drop with continuous ghost.
 //          Contract‑clean. Two‑element DOM model compliant.
+//          Instrumented (phase, snapshot, ghost, dispatch).
 // ============================================================
 
 export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   const DragThreshold = 20;
 
+  // ------------------------------------------------------------
+  // Instrumentation (contract‑clean)
+  // ------------------------------------------------------------
+  function logPhase(label, data = {}) {
+    console.log(`dragDrop:${label}`, data);
+  }
+
+  function logSnapshot(snap) {
+    console.log("dragDrop:snapshot", {
+      id: snap.id,
+      source: snap.source,
+      row0: snap.row0,
+      col0: snap.col0,
+      row1: snap.row1,
+      col1: snap.col1
+    });
+  }
+
+  function logGhost(ghost) {
+    if (!ghost) {
+      console.log("dragDrop:ghost:null");
+      return;
+    }
+    console.log("dragDrop:ghost", {
+      id: ghost.id,
+      row0: ghost.row0,
+      col0: ghost.col0,
+      row1: ghost.row1,
+      col1: ghost.col1
+    });
+  }
+
+  function logDispatch(type, detail) {
+    console.log(`dragDrop:dispatch:${type}`, detail);
+  }
+
+  // ------------------------------------------------------------
   const state = {
     phase: "Idle",        // Idle | Pending | Dragging
     pointerId: null,
@@ -26,6 +64,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   }
 
   function reset() {
+    logPhase("reset");
+
     if (state.clone) state.clone.remove();
     state.phase = "Idle";
     state.pointerId = null;
@@ -38,36 +78,33 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   }
 
   function applyCloneGeometryAndOrientation(clone, row0, col0, row1, col1) {
-    // Make clone wrapper board-equivalent for geometry/orientation consumers
     clone.dataset.row0 = String(row0);
     clone.dataset.col0 = String(col0);
     clone.dataset.row1 = String(row1);
     clone.dataset.col1 = String(col1);
-  
-    // Geometry-driven sizing (same rule as boardRenderer)
+
     const sameRow = row0 === row1;
     const sameCol = col0 === col1;
-  
+
     clone.style.setProperty("--row-span", sameCol ? "2" : "1");
     clone.style.setProperty("--col-span", sameRow ? "2" : "1");
-  
-    // Orientation classes (renderer-aligned, no DOM reordering)
+
     const inner = clone.querySelector(".domino");
     if (!inner) return;
-  
+
     inner.classList.remove(
       "domino-horizontal",
       "domino-vertical",
       "half0-right",
       "half0-bottom"
     );
-  
+
     const colDelta = Math.abs(col0 - col1);
     const rowDelta = Math.abs(row0 - row1);
-  
+
     const isHorizontal = sameRow && colDelta === 1;
     const isVertical = sameCol && rowDelta === 1;
-  
+
     if (isHorizontal) {
       inner.classList.add("domino-horizontal");
       if (col0 > col1) inner.classList.add("half0-right");
@@ -78,8 +115,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   }
 
   // ------------------------------------------------------------
-  // Domino center in screen coordinates
-  // ------------------------------------------------------------
   function getDominoCenterScreen(wrapper) {
     const r = wrapper.getBoundingClientRect();
     return {
@@ -88,8 +123,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     };
   }
 
-  // ------------------------------------------------------------
-  // Clone creation (centered via CSS translate(-50%, -50%))
   // ------------------------------------------------------------
   function createClone(wrapper, centerScreen) {
     const clone = wrapper.cloneNode(true);
@@ -109,69 +142,70 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // ------------------------------------------------------------
   // Continuous ghost computation (center‑anchored)
   // ------------------------------------------------------------
-function updateGhost(ev) {
-  const snap = state.snapshot;
-  if (!snap) {
-    state.ghost = null;
-    return;
+  function updateGhost(ev) {
+    const snap = state.snapshot;
+    if (!snap) {
+      state.ghost = null;
+      logGhost(null);
+      return;
+    }
+
+    const dr = snap.row1 - snap.row0;
+    const dc = snap.col1 - snap.col0;
+
+    const { dx, dy } = snap.pointerOffset;
+    const centerScreen = {
+      x: ev.clientX - dx,
+      y: ev.clientY - dy
+    };
+
+    const boardRect = boardEl.getBoundingClientRect();
+    const inside =
+      centerScreen.x >= boardRect.left &&
+      centerScreen.x <= boardRect.right &&
+      centerScreen.y >= boardRect.top &&
+      centerScreen.y <= boardRect.bottom;
+
+    if (!inside) {
+      state.ghost = null;
+      logGhost(null);
+      return;
+    }
+
+    const cellW = boardRect.width / cols;
+    const cellH = boardRect.height / rows;
+
+    let rowCenter, colCenter;
+
+    if (dr === 0) {
+      rowCenter = Math.floor((centerScreen.y - boardRect.top) / cellH);
+      colCenter = Math.floor(
+        (centerScreen.x - boardRect.left + cellW / 2) / cellW
+      );
+    } else {
+      rowCenter = Math.floor(
+        (centerScreen.y - boardRect.top + cellH / 2) / cellH
+      );
+      colCenter = Math.floor((centerScreen.x - boardRect.left) / cellW);
+    }
+
+    const row0 = rowCenter - (dr > 0 ? 1 : 0);
+    const col0 = colCenter - (dc > 0 ? 1 : 0);
+    const row1 = row0 + dr;
+    const col1 = col0 + dc;
+
+    const valid =
+      row0 >= 0 && row0 < rows &&
+      col0 >= 0 && col0 < cols &&
+      row1 >= 0 && row1 < rows &&
+      col1 >= 0 && col1 < cols;
+
+    state.ghost = valid
+      ? { id: snap.id, row0, col0, row1, col1 }
+      : null;
+
+    logGhost(state.ghost);
   }
-
-  const dr = snap.row1 - snap.row0;
-  const dc = snap.col1 - snap.col0;
-
-  const { dx, dy } = snap.pointerOffset;
-  const centerScreen = {
-    x: ev.clientX - dx,
-    y: ev.clientY - dy
-  };
-
-  const boardRect = boardEl.getBoundingClientRect();
-  const inside =
-    centerScreen.x >= boardRect.left &&
-    centerScreen.x <= boardRect.right &&
-    centerScreen.y >= boardRect.top &&
-    centerScreen.y <= boardRect.bottom;
-
-  if (!inside) {
-    state.ghost = null;
-    return;
-  }
-
-  const cellW = boardRect.width / cols;
-  const cellH = boardRect.height / rows;
-
-  let rowCenter, colCenter;
-
-  if (dr === 0) {
-    // Horizontal: row from center cell, col from center between halves
-    rowCenter = Math.floor((centerScreen.y - boardRect.top) / cellH);
-    colCenter = Math.floor(
-      (centerScreen.x - boardRect.left + cellW / 2) / cellW
-    );
-  } else {
-    // Vertical: col from center cell, row from center between halves
-    rowCenter = Math.floor(
-      (centerScreen.y - boardRect.top + cellH / 2) / cellH
-    );
-    colCenter = Math.floor((centerScreen.x - boardRect.left) / cellW);
-  }
-
-  // Center + delta → half coordinates (no directional naming, pure adjacency)
-  const row0 = rowCenter - (dr > 0 ? 1 : 0);
-  const col0 = colCenter - (dc > 0 ? 1 : 0);
-  const row1 = row0 + dr;
-  const col1 = col0 + dc;
-
-  const valid =
-    row0 >= 0 && row0 < rows &&
-    col0 >= 0 && col0 < cols &&
-    row1 >= 0 && row1 < rows &&
-    col1 >= 0 && col1 < cols;
-
-  state.ghost = valid
-    ? { id: snap.id, row0, col0, row1, col1 }
-    : null;
-}
 
   // ------------------------------------------------------------
   // Pointer handlers
@@ -180,6 +214,8 @@ function updateGhost(ev) {
     if (state.phase !== "Idle") return;
 
     const wrapper = ev.target.closest(".domino-wrapper");
+    logPhase("pointerDown", { wrapper: !!wrapper });
+
     if (!wrapper) return;
     if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
 
@@ -192,22 +228,23 @@ function updateGhost(ev) {
 
   // --------------------
   function beginDrag(ev) {
+    logPhase("beginDrag");
+
     const wrapper = state.wrapper;
-  
+
     let row0, col0, row1, col1;
-  
+
     if (trayEl.contains(wrapper)) {
       const o = Number(wrapper.dataset.trayOrientation) || 0;
-  
-      // Virtual initial coordinates (adjacent, board-notation)
+
       row0 = 100;
       col0 = 100;
-  
+
       if (o === 0)       { row1 = row0;     col1 = col0 + 1; }
       else if (o === 90) { row1 = row0 + 1; col1 = col0;     }
       else if (o === 180){ row1 = row0;     col1 = col0 - 1; }
       else               { row1 = row0 - 1; col1 = col0;     }
-  
+
     } else if (boardEl.contains(wrapper)) {
       const d = wrapper.dataset;
       row0 = Number(d.row0);
@@ -215,13 +252,13 @@ function updateGhost(ev) {
       row1 = Number(d.row1);
       col1 = Number(d.col1);
     }
-  
+
     if (![row0, col0, row1, col1].every(Number.isFinite)) return reset();
-  
+
     const centerScreen = { x: ev.clientX, y: ev.clientY };
     const pointerOffset = { dx: 0, dy: 0 };
     const source = trayEl.contains(wrapper) ? "tray" : "board";
- 
+
     state.snapshot = {
       id: String(wrapper.dataset.dominoId),
       source,
@@ -229,14 +266,16 @@ function updateGhost(ev) {
       row1, col1,
       pointerOffset
     };
- 
+
+    logSnapshot(state.snapshot);
+
     document.body.setPointerCapture(ev.pointerId);
-  
+
     state.clone = createClone(wrapper, centerScreen);
     applyCloneGeometryAndOrientation(state.clone, row0, col0, row1, col1);
 
     state.phase = "Dragging";
-  
+
     updateGhost(ev);
   }
 
@@ -252,6 +291,8 @@ function updateGhost(ev) {
 
     if (state.phase !== "Dragging") return;
 
+    logPhase("pointerMove");
+
     const { dx, dy } = state.snapshot.pointerOffset;
     state.clone.style.left = `${ev.clientX - dx}px`;
     state.clone.style.top  = `${ev.clientY - dy}px`;
@@ -262,17 +303,17 @@ function updateGhost(ev) {
   function pointerUp(ev) {
     if (ev.pointerId !== state.pointerId) return;
 
-    console.log("pointerUp", {
+    logPhase("pointerUp", {
       phase: state.phase,
-      ghost: state.ghost,
+      ghost: !!state.ghost,
       source: state.snapshot?.source
     });
-    
+
     try { document.body.releasePointerCapture(ev.pointerId); } catch {}
-  
+
     if (state.phase === "Dragging") {
       if (state.ghost) {
-        // Normal board placement
+        logDispatch("pips:drop:proposal", state.ghost);
         boardEl.dispatchEvent(
           new CustomEvent("pips:drop:proposal", {
             bubbles: true,
@@ -280,7 +321,7 @@ function updateGhost(ev) {
           })
         );
       } else if (state.snapshot?.source === "board") {
-        // Dragged off board → return to tray
+        logDispatch("pips:return-to-tray", { id: state.snapshot.id });
         boardEl.dispatchEvent(
           new CustomEvent("pips:return-to-tray", {
             bubbles: true,
@@ -289,7 +330,7 @@ function updateGhost(ev) {
         );
       }
     }
-  
+
     reset();
   }
 
