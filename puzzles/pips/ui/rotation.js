@@ -6,6 +6,13 @@
 //   - Geometry is taken from engine (grid/domino), never from DOM.
 //   - Pivot‑half detection is authoritative.
 //   - Wrapper is not used as a geometry authority.
+//   - Rotation session:
+//       * Starts on dblclick on a specific domino half.
+//       * Continues only for dblclicks on the same half of the same domino.
+//       * Pivot half stays fixed for the entire session.
+//       * A single click (pointerDown+pointerUp) on that same half ends session,
+//         unless a dblclick arrives within DoubleClickWindow.
+//       * pointerDown anywhere else ends session immediately.
 // ============================================================
 
 import { findDominoCells } from "../engine/grid.js";
@@ -27,13 +34,15 @@ function logRotation(event, data = {}) {
 let rotatingDomino = null;
 let rotationGhost = null;
 let rotationPointerId = null;
+let rotationSessionHalf = null;
 
-// ------------------------------------------------------------
-// Double‑click detection (pointer‑based)
-// ------------------------------------------------------------
-let lastClickTime = 0;
+// Single‑click exit deferral (to give dblclick priority)
 const DoubleClickWindow = 300; // ms
+let pendingExitTimeoutId = null;
 
+// ------------------------------------------------------------
+// TRAY + BOARD ROTATION INITIALIZER
+// ------------------------------------------------------------
 export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
 
   // ------------------------------------------------------------
@@ -61,19 +70,9 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   });
 
   // ------------------------------------------------------------
-  // 2. BOARD ROTATION — pointer‑based double‑click detector
+  // 2. BOARD ROTATION — dblclick‑based session start/advance
   // ------------------------------------------------------------
-  document.addEventListener("pointerup", (event) => {
-    const now = performance.now();
-    const delta = now - lastClickTime;
-    lastClickTime = now;
-
-    if (delta > DoubleClickWindow) return; // Not a double‑click
-
-    handleBoardDoubleClick(event);
-  });
-
-  function handleBoardDoubleClick(event) {
+  document.addEventListener("dblclick", (event) => {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
     if (!boardEl.contains(wrapper)) return;
@@ -82,23 +81,43 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     const domino = dominos.get(id);
     if (!domino) return;
 
-    // ------------------------------------------------------------
-    // Pivot‑half detection (safe)
-    // ------------------------------------------------------------
+    // Identify clicked half
     const halfEl = event.target.closest(".half");
     let clickedHalf;
-
     if (halfEl) {
       clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
     } else {
-      // Click landed on .domino, not on a half
-      // Contract-safe default: pivot on half0
+      // Contract‑safe default: pivot on half0 if not on a half
       clickedHalf = 0;
     }
 
-    // ------------------------------------------------------------
+    // If a rotation session is active, it continues only for the same domino + same half
+    if (rotatingDomino && rotationSessionHalf !== null) {
+      const sameDomino = String(rotatingDomino.id) === String(id);
+      const sameHalf = sameDomino && clickedHalf === rotationSessionHalf;
+
+      if (!sameHalf) {
+        // Different half or different domino: treat as outside click
+        // → end current session immediately, then start a new one for this dblclick.
+        logRotation("ExitTriggerOutside", {
+          id: rotatingDomino.id,
+          ghost: rotationGhost
+        });
+        if (rotationGhost) {
+          dispatchRotationProposal(boardEl, rotationGhost);
+        }
+        clearRotationPreview(renderPuzzle);
+        // fall through to start a new session below
+      } else {
+        // Same half, same domino: cancel any pending single‑click exit
+        if (pendingExitTimeoutId !== null) {
+          clearTimeout(pendingExitTimeoutId);
+          pendingExitTimeoutId = null;
+        }
+      }
+    }
+
     // Geometry from engine, not DOM
-    // ------------------------------------------------------------
     const cells = findDominoCells(grid, String(id));
     if (!cells || cells.length !== 2) return;
 
@@ -119,7 +138,10 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       prev
     });
 
-    const pivotHalf = clickedHalf;
+    const pivotHalf = rotatingDomino && rotationSessionHalf !== null
+      ? rotationSessionHalf
+      : clickedHalf;
+
     const preview = computePivotPreview(prev, pivotHalf);
     if (!preview) return;
 
@@ -130,6 +152,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     });
 
     rotatingDomino = domino;
+    rotationSessionHalf = pivotHalf;
     rotationGhost = {
       id: domino.id,
       row0: preview.row0,
@@ -145,7 +168,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       id: domino.id,
       ghost: rotationGhost
     });
-  }
+  });
 
   // ------------------------------------------------------------
   // 3. Optional adjust + exit triggers
@@ -154,10 +177,18 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     if (!rotatingDomino) return;
 
     const wrapper = event.target.closest(".domino-wrapper");
-    const inside =
+    const halfEl = event.target.closest(".half");
+
+    const sameDomino =
       wrapper && wrapper.dataset.dominoId === String(rotatingDomino.id);
 
-    if (inside) {
+    const sameHalf =
+      sameDomino &&
+      halfEl &&
+      ((halfEl.classList.contains("half1") ? 1 : 0) === rotationSessionHalf);
+
+    if (sameHalf) {
+      // Optional adjust start
       rotationPointerId = event.pointerId;
 
       logRotation("AdjustStart", {
@@ -169,11 +200,17 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       return;
     }
 
-    // Exit trigger B: pointerDown outside → commit/cancel
+    // Any pointerDown not on the same half is Exit Trigger B
     logRotation("ExitTriggerOutside", {
       id: rotatingDomino.id,
       ghost: rotationGhost
     });
+
+    // Cancel any pending single‑click exit
+    if (pendingExitTimeoutId !== null) {
+      clearTimeout(pendingExitTimeoutId);
+      pendingExitTimeoutId = null;
+    }
 
     if (rotationGhost) {
       dispatchRotationProposal(boardEl, rotationGhost);
@@ -184,21 +221,70 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
 
   document.addEventListener("pointerup", (event) => {
     if (!rotatingDomino) return;
-    if (rotationPointerId === null) return;
-    if (event.pointerId !== rotationPointerId) return;
 
-    logRotation("AdjustEnd", {
-      id: rotatingDomino.id,
-      pointerId: event.pointerId,
-      ghost: rotationGhost
-    });
+    // If this pointerup corresponds to an adjust drag, end adjust and schedule exit
+    if (rotationPointerId !== null && event.pointerId === rotationPointerId) {
+      logRotation("AdjustEnd", {
+        id: rotatingDomino.id,
+        pointerId: event.pointerId,
+        ghost: rotationGhost
+      });
 
-    // Exit trigger A: pointerUp on rotated domino → commit/cancel
-    if (rotationGhost) {
-      dispatchRotationProposal(boardEl, rotationGhost);
+      rotationPointerId = null;
+
+      // Exit Trigger A: pointerUp on same half (end session),
+      // but give dblclick priority by deferring commit/revert.
+      if (pendingExitTimeoutId !== null) {
+        clearTimeout(pendingExitTimeoutId);
+        pendingExitTimeoutId = null;
+      }
+
+      if (rotationGhost) {
+        pendingExitTimeoutId = setTimeout(() => {
+          logRotation("ExitTriggerSameHalf", {
+            id: rotatingDomino.id,
+            ghost: rotationGhost
+          });
+
+          dispatchRotationProposal(boardEl, rotationGhost);
+          clearRotationPreview(renderPuzzle);
+        }, DoubleClickWindow);
+      }
+
+      return;
     }
 
-    clearRotationPreview(renderPuzzle);
+    // If pointerup is not part of adjust, we still treat a single click on the same half
+    // as a potential Exit Trigger A, but again defer to allow dblclick.
+    const wrapper = event.target.closest(".domino-wrapper");
+    const halfEl = event.target.closest(".half");
+
+    const sameDomino =
+      wrapper && rotatingDomino && wrapper.dataset.dominoId === String(rotatingDomino.id);
+
+    const sameHalf =
+      sameDomino &&
+      halfEl &&
+      ((halfEl.classList.contains("half1") ? 1 : 0) === rotationSessionHalf);
+
+    if (sameHalf) {
+      if (pendingExitTimeoutId !== null) {
+        clearTimeout(pendingExitTimeoutId);
+        pendingExitTimeoutId = null;
+      }
+
+      if (rotationGhost) {
+        pendingExitTimeoutId = setTimeout(() => {
+          logRotation("ExitTriggerSameHalf", {
+            id: rotatingDomino.id,
+            ghost: rotationGhost
+          });
+
+          dispatchRotationProposal(boardEl, rotationGhost);
+          clearRotationPreview(renderPuzzle);
+        }, DoubleClickWindow);
+      }
+    }
   });
 
   document.addEventListener("pointercancel", (event) => {
@@ -208,6 +294,11 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
     logRotation("Cancel", {
       id: rotatingDomino?.id
     });
+
+    if (pendingExitTimeoutId !== null) {
+      clearTimeout(pendingExitTimeoutId);
+      pendingExitTimeoutId = null;
+    }
 
     clearRotationPreview(renderPuzzle);
   });
@@ -260,6 +351,13 @@ function clearRotationPreview(renderPuzzle) {
   rotationGhost = null;
   rotatingDomino = null;
   rotationPointerId = null;
+  rotationSessionHalf = null;
+
+  if (pendingExitTimeoutId !== null) {
+    clearTimeout(pendingExitTimeoutId);
+    pendingExitTimeoutId = null;
+  }
+
   renderPuzzle();
 }
 
