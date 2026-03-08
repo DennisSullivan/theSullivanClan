@@ -5,6 +5,8 @@
 //          Instrumented (phase, snapshot, ghost, dispatch).
 // ============================================================
 
+import { isRotationSessionActive } from "./rotation.js";
+
 let dragDropPhase = "Idle";   // Idle | Pending | Dragging
 
 export function isDragDropActive() {
