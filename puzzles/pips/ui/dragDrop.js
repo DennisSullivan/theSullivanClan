@@ -45,8 +45,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       col0: ghost.col0,
       row1: ghost.row1,
       col1: ghost.col1
-    } */
-    );
+    }); */
   }
 
   function logDispatch(type, detail) {
