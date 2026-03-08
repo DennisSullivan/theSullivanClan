@@ -20,7 +20,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   // Instrumentation (contract‑clean)
   // ------------------------------------------------------------
   function logPhase(label, data = {}) {
-    console.log(`dragDrop:${label}`, data);
+//    console.log(`dragDrop:${label}`, data);
   }
 
   function logSnapshot(snap) {
@@ -39,7 +39,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       console.log("dragDrop:ghost:null");
       return;
     }
-    console.log("dragDrop:ghost", {
+//    console.log("dragDrop:ghost", {
       id: ghost.id,
       row0: ghost.row0,
       col0: ghost.col0,
