@@ -355,6 +355,11 @@ function installExclusivity(boardEl) {
     if (!RotationSession.isActive()) return;
     if (!boardEl.contains(ev.target)) return;
 
+    // Allow events that originate on a domino wrapper to pass through
+    // so rotation can see same‑half / other‑half clicks.
+    const wrapper = ev.target.closest(".domino-wrapper");
+    if (wrapper) return;
+
     ev.stopImmediatePropagation();
     ev.preventDefault();
   }
