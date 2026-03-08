@@ -371,18 +371,23 @@ function installExclusivity(boardEl) {
 export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   RotationSession.configure(dominos, grid, trayEl, boardEl, renderPuzzle);
 
-  installExclusivity(boardEl);
-
   trayEl.addEventListener("click", (ev) => RotationSession.handleTrayClick(ev));
 
+  // Rotation handlers run in capture phase so they see events
+  // before exclusivity stops propagation.
+  const capture = true;
+
   document.addEventListener("dblclick", (ev) => RotationSession.handleDblClick(ev));
-  document.addEventListener("pointerdown", (ev) => RotationSession.handlePointerDown(ev));
-  document.addEventListener("pointermove", (ev) => RotationSession.handlePointerMove(ev));
-  document.addEventListener("pointerup", (ev) => RotationSession.handlePointerUp(ev));
-  document.addEventListener("pointercancel", (ev) => RotationSession.handlePointerCancel(ev));
+  document.addEventListener("pointerdown", (ev) => RotationSession.handlePointerDown(ev), capture);
+  document.addEventListener("pointermove", (ev) => RotationSession.handlePointerMove(ev), capture);
+  document.addEventListener("pointerup", (ev) => RotationSession.handlePointerUp(ev), capture);
+  document.addEventListener("pointercancel", (ev) => RotationSession.handlePointerCancel(ev), capture);
 
   document.addEventListener("pips:rotate:commit", (ev) => RotationSession.handleEngineCommit(ev));
   document.addEventListener("pips:rotate:reject", (ev) => RotationSession.handleEngineReject(ev));
+
+  // Install exclusivity *after* rotation handlers, also in capture phase.
+  installExclusivity(boardEl);
 }
 
 // ------------------------------------------------------------
