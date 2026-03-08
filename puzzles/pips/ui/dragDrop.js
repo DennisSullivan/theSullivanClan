@@ -68,6 +68,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     if (state.clone) state.clone.remove();
     state.phase = "Idle";
+    dragDropPhase = "Idle";
     state.pointerId = null;
     state.wrapper = null;
     state.startX = 0;
@@ -221,6 +222,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (!trayEl.contains(wrapper) && !boardEl.contains(wrapper)) return;
 
     state.phase = "Pending";
+    dragDropPhase = "Pending";
     state.pointerId = ev.pointerId;
     state.wrapper = wrapper;
     state.startX = ev.clientX;
@@ -276,6 +278,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     applyCloneGeometryAndOrientation(state.clone, row0, col0, row1, col1);
 
     state.phase = "Dragging";
+    dragDropPhase = "Dragging";
 
     updateGhost(ev);
   }
