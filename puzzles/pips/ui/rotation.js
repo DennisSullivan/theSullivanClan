@@ -37,7 +37,7 @@ let rotationPointerId = null;
 let rotationSessionHalf = null;
 
 // Single‑click exit deferral (to give dblclick priority)
-const DoubleClickWindow = 300; // ms
+const DoubleClickWindow = 250; // ms
 let pendingExitTimeoutId = null;
 
 // ------------------------------------------------------------
@@ -73,6 +73,8 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   // 2. BOARD ROTATION — dblclick‑based session start/advance
   // ------------------------------------------------------------
   document.addEventListener("dblclick", (event) => {
+    if (isDragDropActive()) return;
+    
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
     if (!boardEl.contains(wrapper)) return;
