@@ -39,13 +39,14 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       console.log("dragDrop:ghost:null");
       return;
     }
-//    console.log("dragDrop:ghost", {
+/*    console.log("dragDrop:ghost", {
       id: ghost.id,
       row0: ghost.row0,
       col0: ghost.col0,
       row1: ghost.row1,
       col1: ghost.col1
-    });
+    } */
+    );
   }
 
   function logDispatch(type, detail) {
