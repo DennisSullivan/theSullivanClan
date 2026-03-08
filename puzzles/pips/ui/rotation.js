@@ -7,6 +7,21 @@
 
 import { findDominoCells } from "../engine/grid.js";
 import { isDragDropActive } from "./dragDrop.js";
+document.addEventListener("dblclick", (e) => {
+  console.log("[RAW DBLCLICK]", {
+    target: e.target,
+    wrapper: !!e.target.closest(".domino-wrapper"),
+    half: e.target.closest(".half")?.className || null
+  });
+});
+
+document.addEventListener("pointerdown", (e) => {
+  console.log("[RAW POINTERDOWN]", {
+    target: e.target,
+    wrapper: !!e.target.closest(".domino-wrapper"),
+    half: e.target.closest(".half")?.className || null
+  });
+});
 
 // ------------------------------------------------------------
 // Debug logger (normalized L2 style)
