@@ -1,24 +1,15 @@
 // ============================================================
 // FILE: ui/rotation.js
-// PURPOSE: Contract‑clean rotation preview & commit instrumentation
-// NOTES:
-//   - Pure UI: never mutates engine state except trayOrientation.
-//   - Geometry is taken from engine (grid/domino), never from DOM.
-//   - Pivot‑half detection is authoritative.
-//   - Wrapper is not used as a geometry authority.
-//   - Rotation session:
-//       * Starts on dblclick on a specific domino half.
-//       * Continues only for dblclicks on the same half of the same domino.
-//       * Pivot half stays fixed for the entire session.
-//       * A single click (pointerDown+pointerUp) on that same half ends session,
-//         unless a dblclick arrives within DoubleClickWindow.
-//       * pointerDown anywhere else ends session immediately.
+// PURPOSE: Clean, contract‑pure rotation session with normalized
+//          logging, RotationSession singleton, exclusivity guard,
+//          cleaned computePivotPreview, and drop‑in compatibility.
 // ============================================================
 
 import { findDominoCells } from "../engine/grid.js";
+import { isDragDropActive } from "./dragDrop.js";
 
 // ------------------------------------------------------------
-// Debug logger
+// Debug logger (normalized L2 style)
 // ------------------------------------------------------------
 function logRotation(event, data = {}) {
   console.log(
@@ -29,98 +20,154 @@ function logRotation(event, data = {}) {
 }
 
 // ------------------------------------------------------------
-// Rotation session state
+// RotationSession singleton
 // ------------------------------------------------------------
-let rotatingDomino = null;
-let rotationGhost = null;
-let rotationPointerId = null;
-let rotationSessionHalf = null;
+const RotationSession = {
+  dominos: null,
+  grid: null,
+  trayEl: null,
+  boardEl: null,
+  renderPuzzle: null,
 
-// Single‑click exit deferral (to give dblclick priority)
-const DoubleClickWindow = 250; // ms
-let pendingExitTimeoutId = null;
+  rotatingDomino: null,
+  rotationGhost: null,
+  rotationPointerId: null,
+  rotationSessionHalf: null,
 
-// ------------------------------------------------------------
-// TRAY + BOARD ROTATION INITIALIZER
-// ------------------------------------------------------------
-export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
+  DoubleClickWindow: 250,
+  pendingExitTimeoutId: null,
 
-  // ------------------------------------------------------------
-  // 1. TRAY ROTATION (visual-only)
-  // ------------------------------------------------------------
-  trayEl.addEventListener("click", (event) => {
+  configure(dominos, grid, trayEl, boardEl, renderPuzzle) {
+    this.dominos = dominos;
+    this.grid = grid;
+    this.trayEl = trayEl;
+    this.boardEl = boardEl;
+    this.renderPuzzle = renderPuzzle;
+  },
+
+  isActive() {
+    return this.rotatingDomino !== null;
+  },
+
+  clearSession() {
+    logRotation("Rotation.SessionCleared");
+
+    this.rotationGhost = null;
+    this.rotatingDomino = null;
+    this.rotationPointerId = null;
+    this.rotationSessionHalf = null;
+
+    if (this.pendingExitTimeoutId !== null) {
+      clearTimeout(this.pendingExitTimeoutId);
+      this.pendingExitTimeoutId = null;
+    }
+
+    this.renderPuzzle();
+  },
+
+  dispatchCommit(ghost) {
+    logRotation("Rotation.CommitDispatched", { proposal: ghost });
+
+    this.boardEl.dispatchEvent(
+      new CustomEvent("pips:rotate:proposal", {
+        bubbles: true,
+        detail: { proposal: ghost }
+      })
+    );
+  },
+
+  computePreview(prev, pivotHalf) {
+    const half0 = { r: prev.r0, c: prev.c0 };
+    const half1 = { r: prev.r1, c: prev.c1 };
+
+    const pivot = pivotHalf === 0 ? half0 : half1;
+    const other = pivotHalf === 0 ? half1 : half0;
+
+    const dr = other.r - pivot.r;
+    const dc = other.c - pivot.c;
+
+    const rotatedOther = {
+      r: pivot.r + dc,
+      c: pivot.c - dr
+    };
+
+    if (pivotHalf === 0) {
+      return {
+        row0: pivot.r,
+        col0: pivot.c,
+        row1: rotatedOther.r,
+        col1: rotatedOther.c
+      };
+    } else {
+      return {
+        row0: rotatedOther.r,
+        col0: rotatedOther.c,
+        row1: pivot.r,
+        col1: pivot.c
+      };
+    }
+  },
+
+  handleTrayClick(event) {
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
 
     const id = wrapper.dataset.dominoId;
-    const domino = dominos.get(id);
+    const domino = this.dominos.get(id);
     if (!domino) return;
 
-    // Only rotate if in tray (engine geometry is null)
     if (domino.row0 !== null || domino.row1 !== null) return;
 
     domino.trayOrientation = ((domino.trayOrientation || 0) + 90) % 360;
 
-    logRotation("TrayRotate", {
+    logRotation("Rotation.TrayRotate", {
       id,
       newOrientation: domino.trayOrientation
     });
 
-    renderPuzzle();
-  });
+    this.renderPuzzle();
+  },
 
-  // ------------------------------------------------------------
-  // 2. BOARD ROTATION — dblclick‑based session start/advance
-  // ------------------------------------------------------------
-  document.addEventListener("dblclick", (event) => {
+  handleDblClick(event) {
     if (isDragDropActive()) return;
-    
+
     const wrapper = event.target.closest(".domino-wrapper");
     if (!wrapper) return;
-    if (!boardEl.contains(wrapper)) return;
+    if (!this.boardEl.contains(wrapper)) return;
 
     const id = wrapper.dataset.dominoId;
-    const domino = dominos.get(id);
+    const domino = this.dominos.get(id);
     if (!domino) return;
 
-    // Identify clicked half
     const halfEl = event.target.closest(".half");
-    let clickedHalf;
-    if (halfEl) {
-      clickedHalf = halfEl.classList.contains("half1") ? 1 : 0;
-    } else {
-      // Contract‑safe default: pivot on half0 if not on a half
-      clickedHalf = 0;
-    }
+    const clickedHalf = halfEl
+      ? (halfEl.classList.contains("half1") ? 1 : 0)
+      : 0;
 
-    // If a rotation session is active, it continues only for the same domino + same half
-    if (rotatingDomino && rotationSessionHalf !== null) {
-      const sameDomino = String(rotatingDomino.id) === String(id);
-      const sameHalf = sameDomino && clickedHalf === rotationSessionHalf;
+    if (this.rotatingDomino && this.rotationSessionHalf !== null) {
+      const sameDomino = String(this.rotatingDomino.id) === String(id);
+      const sameHalf = sameDomino && clickedHalf === this.rotationSessionHalf;
 
       if (!sameHalf) {
-        // Different half or different domino: treat as outside click
-        // → end current session immediately, then start a new one for this dblclick.
-        logRotation("ExitTriggerOutside", {
-          id: rotatingDomino.id,
-          ghost: rotationGhost
+        logRotation("Rotation.Exit.Outside", {
+          id: this.rotatingDomino.id,
+          ghost: this.rotationGhost
         });
-        if (rotationGhost) {
-          dispatchRotationProposal(boardEl, rotationGhost);
+
+        if (this.rotationGhost) {
+          this.dispatchCommit(this.rotationGhost);
         }
-        clearRotationPreview(renderPuzzle);
-        // fall through to start a new session below
+
+        this.clearSession();
       } else {
-        // Same half, same domino: cancel any pending single‑click exit
-        if (pendingExitTimeoutId !== null) {
-          clearTimeout(pendingExitTimeoutId);
-          pendingExitTimeoutId = null;
+        if (this.pendingExitTimeoutId !== null) {
+          clearTimeout(this.pendingExitTimeoutId);
+          this.pendingExitTimeoutId = null;
         }
       }
     }
 
-    // Geometry from engine, not DOM
-    const cells = findDominoCells(grid, String(id));
+    const cells = findDominoCells(this.grid, String(id));
     if (!cells || cells.length !== 2) return;
 
     const cell0 = cells.find(c => c.half === 0);
@@ -134,259 +181,192 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
       c1: cell1.col
     };
 
-    logRotation("RotationStart", {
+    logRotation("Rotation.SessionStart", {
       id,
       clickedHalf,
       prev
     });
 
-    const pivotHalf = rotatingDomino && rotationSessionHalf !== null
-      ? rotationSessionHalf
-      : clickedHalf;
+    const pivotHalf =
+      this.rotatingDomino && this.rotationSessionHalf !== null
+        ? this.rotationSessionHalf
+        : clickedHalf;
 
-    const preview = computePivotPreview(prev, pivotHalf);
+    const preview = this.computePreview(prev, pivotHalf);
     if (!preview) return;
 
-    logRotation("PreviewComputed", {
+    logRotation("Rotation.PreviewComputed", {
       id,
       pivotHalf,
       preview
     });
 
-    rotatingDomino = domino;
-    rotationSessionHalf = pivotHalf;
-    rotationGhost = {
+    this.rotatingDomino = domino;
+    this.rotationSessionHalf = pivotHalf;
+    this.rotationGhost = {
       id: domino.id,
       row0: preview.row0,
       col0: preview.col0,
       row1: preview.row1,
       col1: preview.col1
     };
-    rotationPointerId = null;
+    this.rotationPointerId = null;
 
-    renderPuzzle();
+    this.renderPuzzle();
 
-    logRotation("PreviewRendered", {
+    logRotation("Rotation.PreviewRendered", {
       id: domino.id,
-      ghost: rotationGhost
+      ghost: this.rotationGhost
     });
-  });
+  },
 
-  // ------------------------------------------------------------
-  // 3. Optional adjust + exit triggers
-  // ------------------------------------------------------------
-  document.addEventListener("pointerdown", (event) => {
-    if (!rotatingDomino) return;
+  handlePointerDown(event) {
+    if (!this.rotatingDomino) return;
 
     const wrapper = event.target.closest(".domino-wrapper");
     const halfEl = event.target.closest(".half");
 
     const sameDomino =
-      wrapper && wrapper.dataset.dominoId === String(rotatingDomino.id);
+      wrapper && wrapper.dataset.dominoId === String(this.rotatingDomino.id);
 
     const sameHalf =
       sameDomino &&
       halfEl &&
-      ((halfEl.classList.contains("half1") ? 1 : 0) === rotationSessionHalf);
+      ((halfEl.classList.contains("half1") ? 1 : 0) === this.rotationSessionHalf);
 
     if (sameHalf) {
-      // Optional adjust start
-      rotationPointerId = event.pointerId;
+      this.rotationPointerId = event.pointerId;
 
-      logRotation("AdjustStart", {
-        id: rotatingDomino.id,
+      logRotation("Rotation.AdjustStart", {
+        id: this.rotatingDomino.id,
         pointerId: event.pointerId,
-        ghost: rotationGhost
+        ghost: this.rotationGhost
       });
 
       return;
     }
 
-    // Any pointerDown not on the same half is Exit Trigger B
-    logRotation("ExitTriggerOutside", {
-      id: rotatingDomino.id,
-      ghost: rotationGhost
+    logRotation("Rotation.Exit.Outside", {
+      id: this.rotatingDomino.id,
+      ghost: this.rotationGhost
     });
 
-    // Cancel any pending single‑click exit
-    if (pendingExitTimeoutId !== null) {
-      clearTimeout(pendingExitTimeoutId);
-      pendingExitTimeoutId = null;
+    if (this.pendingExitTimeoutId !== null) {
+      clearTimeout(this.pendingExitTimeoutId);
+      this.pendingExitTimeoutId = null;
     }
 
-    if (rotationGhost) {
-      dispatchRotationProposal(boardEl, rotationGhost);
+    if (this.rotationGhost) {
+      this.dispatchCommit(this.rotationGhost);
     }
 
-    clearRotationPreview(renderPuzzle);
-  });
+    this.clearSession();
+  },
 
-  document.addEventListener("pointerup", (event) => {
-    if (!rotatingDomino) return;
+  handlePointerUp(event) {
+    if (!this.rotatingDomino) return;
 
-    // If this pointerup corresponds to an adjust drag, end adjust and schedule exit
-    if (rotationPointerId !== null && event.pointerId === rotationPointerId) {
-      logRotation("AdjustEnd", {
-        id: rotatingDomino.id,
+    if (this.rotationPointerId !== null && event.pointerId === this.rotationPointerId) {
+      logRotation("Rotation.AdjustEnd", {
+        id: this.rotatingDomino.id,
         pointerId: event.pointerId,
-        ghost: rotationGhost
+        ghost: this.rotationGhost
       });
 
-      rotationPointerId = null;
+      this.rotationPointerId = null;
 
-      // Exit Trigger A: pointerUp on same half (end session),
-      // but give dblclick priority by deferring commit/revert.
-      if (pendingExitTimeoutId !== null) {
-        clearTimeout(pendingExitTimeoutId);
-        pendingExitTimeoutId = null;
+      if (this.pendingExitTimeoutId !== null) {
+        clearTimeout(this.pendingExitTimeoutId);
+        this.pendingExitTimeoutId = null;
       }
 
-      if (rotationGhost) {
-        pendingExitTimeoutId = setTimeout(() => {
-          logRotation("ExitTriggerSameHalf", {
-            id: rotatingDomino.id,
-            ghost: rotationGhost
+      if (this.rotationGhost) {
+        this.pendingExitTimeoutId = setTimeout(() => {
+          logRotation("Rotation.Exit.SameHalf", {
+            id: this.rotatingDomino.id,
+            ghost: this.rotationGhost
           });
 
-          dispatchRotationProposal(boardEl, rotationGhost);
-          clearRotationPreview(renderPuzzle);
-        }, DoubleClickWindow);
+          this.dispatchCommit(this.rotationGhost);
+          this.clearSession();
+        }, this.DoubleClickWindow);
       }
 
       return;
     }
 
-    // If pointerup is not part of adjust, we still treat a single click on the same half
-    // as a potential Exit Trigger A, but again defer to allow dblclick.
     const wrapper = event.target.closest(".domino-wrapper");
     const halfEl = event.target.closest(".half");
 
     const sameDomino =
-      wrapper && rotatingDomino && wrapper.dataset.dominoId === String(rotatingDomino.id);
+      wrapper && this.rotatingDomino && wrapper.dataset.dominoId === String(this.rotatingDomino.id);
 
     const sameHalf =
       sameDomino &&
       halfEl &&
-      ((halfEl.classList.contains("half1") ? 1 : 0) === rotationSessionHalf);
+      ((halfEl.classList.contains("half1") ? 1 : 0) === this.rotationSessionHalf);
 
     if (sameHalf) {
-      if (pendingExitTimeoutId !== null) {
-        clearTimeout(pendingExitTimeoutId);
-        pendingExitTimeoutId = null;
+      if (this.pendingExitTimeoutId !== null) {
+        clearTimeout(this.pendingExitTimeoutId);
+        this.pendingExitTimeoutId = null;
       }
 
-      if (rotationGhost) {
-        pendingExitTimeoutId = setTimeout(() => {
-          logRotation("ExitTriggerSameHalf", {
-            id: rotatingDomino.id,
-            ghost: rotationGhost
+      if (this.rotationGhost) {
+        this.pendingExitTimeoutId = setTimeout(() => {
+          logRotation("Rotation.Exit.SameHalf", {
+            id: this.rotatingDomino.id,
+            ghost: this.rotationGhost
           });
 
-          dispatchRotationProposal(boardEl, rotationGhost);
-          clearRotationPreview(renderPuzzle);
-        }, DoubleClickWindow);
+          this.dispatchCommit(this.rotationGhost);
+          this.clearSession();
+        }, this.DoubleClickWindow);
       }
     }
-  });
+  },
 
-  document.addEventListener("pointercancel", (event) => {
-    if (!rotatingDomino) return;
-    if (rotationPointerId !== null && event.pointerId !== rotationPointerId) return;
+  handlePointerCancel(event) {
+    if (!this.rotatingDomino) return;
+    if (this.rotationPointerId !== null && event.pointerId !== this.rotationPointerId) return;
 
-    logRotation("Cancel", {
-      id: rotatingDomino?.id
+    logRotation("Rotation.Cancel", {
+      id: this.rotatingDomino?.id
     });
 
-    if (pendingExitTimeoutId !== null) {
-      clearTimeout(pendingExitTimeoutId);
-      pendingExitTimeoutId = null;
+    if (this.pendingExitTimeoutId !== null) {
+      clearTimeout(this.pendingExitTimeoutId);
+      this.pendingExitTimeoutId = null;
     }
 
-    clearRotationPreview(renderPuzzle);
-  });
-}
-
-// ============================================================
-// computePivotPreview()
-// 90° clockwise rotation around pivotHalf
-// ============================================================
-function computePivotPreview(prev, pivotHalf) {
-  const half0 = { r: prev.r0, c: prev.c0 };
-  const half1 = { r: prev.r1, c: prev.c1 };
-
-  const pivot = pivotHalf === 0 ? half0 : half1;
-  const other = pivotHalf === 0 ? half1 : half0;
-
-  const dr = other.r - pivot.r;
-  const dc = other.c - pivot.c;
-
-  // 90° clockwise rotation
-  const rotatedOther = {
-    r: pivot.r + dc,
-    c: pivot.c - dr
-  };
-
-  // Re‑express in half0‑anchored form
-  if (pivotHalf === 0) {
-    return {
-      row0: pivot.r,
-      col0: pivot.c,
-      row1: rotatedOther.r,
-      col1: rotatedOther.c
-    };
-  } else {
-    return {
-      row0: rotatedOther.r,
-      col0: rotatedOther.c,
-      row1: pivot.r,
-      col1: pivot.c
-    };
+    this.clearSession();
   }
+};
+
+// ------------------------------------------------------------
+// Public initializer
+// ------------------------------------------------------------
+export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
+  RotationSession.configure(dominos, grid, trayEl, boardEl, renderPuzzle);
+
+  trayEl.addEventListener("click", RotationSession.handleTrayClick.bind(RotationSession));
+  document.addEventListener("dblclick", RotationSession.handleDblClick.bind(RotationSession));
+  document.addEventListener("pointerdown", RotationSession.handlePointerDown.bind(RotationSession));
+  document.addEventListener("pointerup", RotationSession.handlePointerUp.bind(RotationSession));
+  document.addEventListener("pointercancel", RotationSession.handlePointerCancel.bind(RotationSession));
 }
 
-// ============================================================
-// clearRotationPreview()
-// ============================================================
-function clearRotationPreview(renderPuzzle) {
-  logRotation("SessionCleared");
-
-  rotationGhost = null;
-  rotatingDomino = null;
-  rotationPointerId = null;
-  rotationSessionHalf = null;
-
-  if (pendingExitTimeoutId !== null) {
-    clearTimeout(pendingExitTimeoutId);
-    pendingExitTimeoutId = null;
-  }
-
-  renderPuzzle();
-}
-
-// ============================================================
-// dispatchRotationProposal()
-// Renderer‑neutral event to engine/validator
-// ============================================================
-function dispatchRotationProposal(boardEl, ghost) {
-  logRotation("CommitDispatched", {
-    proposal: ghost
-  });
-
-  boardEl.dispatchEvent(
-    new CustomEvent("pips:rotate:proposal", {
-      bubbles: true,
-      detail: { proposal: ghost }
-    })
-  );
-}
-
-// ============================================================
+// ------------------------------------------------------------
 // Public helpers
-// ============================================================
+// ------------------------------------------------------------
 export function getRotatingDominoId() {
-  return rotatingDomino?.id ?? null;
+  return RotationSession.rotatingDomino?.id ?? null;
 }
 
 export function getRotationGhost() {
-  return rotationGhost;
+  return RotationSession.rotationGhost;
+}
+
+export function isRotationSessionActive() {
+  return RotationSession.isActive();
 }
