@@ -5,6 +5,12 @@
 //          Instrumented (phase, snapshot, ghost, dispatch).
 // ============================================================
 
+let dragDropPhase = "Idle";   // Idle | Pending | Dragging
+
+export function isDragDropActive() {
+  return dragDropPhase !== "Idle";
+}
+
 export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   const DragThreshold = 20;
 
