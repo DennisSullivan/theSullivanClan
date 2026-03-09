@@ -4,12 +4,13 @@
 //   Contract‑pure board rotation with:
 //   - BoardRotatePreview from grid
 //   - Same‑half double‑click rotation (pivot fixed)
-//   - Same‑Half Click Disambiguation (§7.5.5)
+//   - Same‑Half Click Disambiguation (§7.5.5) using timestamps
 //   - Optional Adjust (terminal, snapped translation)
 //   - Exit Trigger A/B → single proposal
 //   - Await engine authority (commit/reject)
 //   - Pointer exclusivity on the board
 //   Tray rotation remains visual‑only.
+//   Half identity during rotation is geometry‑based (ghost cells), not DOM‑based.
 // ============================================================
 
 import { findDominoCells } from "../engine/grid.js";
@@ -106,6 +107,7 @@ const RotationSession = {
     const d = this.dominos.get(id);
     if (!d) return;
 
+    // Only rotate tray dominos (not on board)
     if (d.row0 !== null || d.row1 !== null) return;
 
     d.trayOrientation = ((d.trayOrientation || 0) + 90) % 360;
@@ -167,6 +169,29 @@ const RotationSession = {
     };
   },
 
+  // Ghost‑geometry half detection (authoritative during rotation session)
+  halfFromGhostAtPointer(ev) {
+    if (!this.ghost) return null;
+    const cell = this.cellFromPointer(ev);
+    if (!cell) return null;
+
+    if (cell.r === this.ghost.row0 && cell.c === this.ghost.col0) return 0;
+    if (cell.r === this.ghost.row1 && cell.c === this.ghost.col1) return 1;
+
+    return null;
+  },
+
+  // Committed‑geometry half detection (used only to start a session)
+  halfFromCommittedAtPointer(ev, committed) {
+    const cell = this.cellFromPointer(ev);
+    if (!cell) return null;
+
+    if (cell.r === committed.row0 && cell.c === committed.col0) return 0;
+    if (cell.r === committed.row1 && cell.c === committed.col1) return 1;
+
+    return null;
+  },
+
   // ----------------------------------------------------------
   // Start rotation session (double‑click)
   // ----------------------------------------------------------
@@ -187,16 +212,35 @@ const RotationSession = {
     const d = this.dominos.get(id);
     if (!d) return;
 
-    const halfEl = ev.target.closest(".half");
-    const clickedHalf = halfEl && halfEl.classList.contains("half1") ? 1 : 0;
-
     const sameDomino =
       this.rotatingDomino && String(this.rotatingDomino.id) === String(id);
 
-    // Ambiguous → RotateAgain
-    if (this.state === RS.Ambiguous && sameDomino && clickedHalf === this.ambigHalf) {
-      const now2 = performance.now();
-      if (now2 - this.ambigStartTime <= this.lastNativeDblClickInterval) {
+    // Ambiguous → RotateAgain (geometry‑based half identity)
+    if (this.state === RS.Ambiguous && sameDomino) {
+      const clickedHalf = this.halfFromGhostAtPointer(ev);
+      if (clickedHalf !== null && clickedHalf === this.ambigHalf) {
+        const now2 = performance.now();
+        if (now2 - this.ambigStartTime <= this.lastNativeDblClickInterval) {
+          const next = this.rotateOnce(this.ghost, this.pivotHalf);
+          this.ghost = {
+            id: this.rotatingDomino.id,
+            row0: next.row0,
+            col0: next.col0,
+            row1: next.row1,
+            col1: next.col1
+          };
+          this.state = RS.Preview;
+          logRotation("Ambiguous→RotateAgain", { id, ghost: this.ghost });
+          this.renderPuzzle();
+          return;
+        }
+      }
+    }
+
+    // Preview → RotateAgain (geometry‑based half identity)
+    if (this.state === RS.Preview && sameDomino && this.ghost) {
+      const clickedHalf = this.halfFromGhostAtPointer(ev);
+      if (clickedHalf !== null && clickedHalf === this.pivotHalf) {
         const next = this.rotateOnce(this.ghost, this.pivotHalf);
         this.ghost = {
           id: this.rotatingDomino.id,
@@ -205,32 +249,17 @@ const RotationSession = {
           row1: next.row1,
           col1: next.col1
         };
-        this.state = RS.Preview;
-        logRotation("Ambiguous→RotateAgain", { id, ghost: this.ghost });
+        logRotation("PreviewRotateAgain", { id, ghost: this.ghost });
         this.renderPuzzle();
         return;
       }
     }
 
-    // Preview → RotateAgain (normal dblclick)
-    if (this.state === RS.Preview && sameDomino && clickedHalf === this.pivotHalf && this.ghost) {
-      const next = this.rotateOnce(this.ghost, this.pivotHalf);
-      this.ghost = {
-        id: this.rotatingDomino.id,
-        row0: next.row0,
-        col0: next.col0,
-        row1: next.row1,
-        col1: next.col1
-      };
-      logRotation("PreviewRotateAgain", { id, ghost: this.ghost });
-      this.renderPuzzle();
-      return;
-    }
-
-    // If session active but not same domino/half, ignore here
+    // If session active but not same domino/half, ignore here;
+    // Exit Trigger B is handled by pointerDown.
     if (this.isActive()) return;
 
-    // New session
+    // New session: get committed geometry from grid
     const cells = findDominoCells(this.grid, String(id));
     if (!cells || cells.length !== 2) return;
 
@@ -238,14 +267,18 @@ const RotationSession = {
     const c1 = cells.find(c => c.half === 1);
     if (!c0 || !c1) return;
 
-    const prev = {
+    const committed = {
       row0: c0.row,
       col0: c0.col,
       row1: c1.row,
       col1: c1.col
     };
 
-    const next = this.rotateOnce(prev, clickedHalf);
+    // Determine pivot half from committed geometry + pointer cell (not DOM)
+    const clickedHalf = this.halfFromCommittedAtPointer(ev, committed);
+    if (clickedHalf === null) return;
+
+    const next = this.rotateOnce(committed, clickedHalf);
 
     this.rotatingDomino = d;
     this.pivotHalf = clickedHalf;
@@ -258,7 +291,7 @@ const RotationSession = {
     };
 
     this.state = RS.Preview;
-    logRotation("SessionStartPreview", { id, pivotHalf: clickedHalf, ghost: this.ghost });
+    logRotation("SessionStartPreview", { id: d.id, pivotHalf: clickedHalf, ghost: this.ghost });
     this.renderPuzzle();
   },
 
@@ -279,19 +312,21 @@ const RotationSession = {
     if (!this.isActive()) return;
 
     const wrapper = ev.target.closest(".domino-wrapper");
-    const halfEl = ev.target.closest(".half");
-
     const sameDomino =
       wrapper && this.rotatingDomino && wrapper.dataset.dominoId === String(this.rotatingDomino.id);
 
-    const clickedHalf =
-      halfEl && halfEl.classList.contains("half1") ? 1 : 0;
+    // Exit Trigger B — pointerDown anywhere other than the same half
+    if (!sameDomino) {
+      logRotation("ExitTriggerB", { id: this.rotatingDomino.id });
+      this.emitProposalAndAwait();
+      return;
+    }
 
-    const sameHalf =
-      sameDomino && halfEl && clickedHalf === this.pivotHalf;
+    // Geometry‑based half detection against current ghost
+    const clickedHalf = this.halfFromGhostAtPointer(ev);
 
-    // Preview → Ambiguous
-    if (sameHalf && this.state === RS.Preview) {
+    // Preview → Ambiguous only when pointerDown is on the same half cell
+    if (this.state === RS.Preview && clickedHalf !== null && clickedHalf === this.pivotHalf) {
       this.state = RS.Ambiguous;
       this.ambigPointerId = ev.pointerId;
       this.ambigStartXY = { x: ev.clientX, y: ev.clientY };
@@ -305,7 +340,7 @@ const RotationSession = {
       return;
     }
 
-    // Exit Trigger B
+    // Same domino but not same half cell (or not on either half cell) → Exit Trigger B
     logRotation("ExitTriggerB", { id: this.rotatingDomino.id });
     this.emitProposalAndAwait();
   },
@@ -454,6 +489,8 @@ function installExclusivity(boardEl) {
     if (!RotationSession.isActive()) return;
     if (!boardEl.contains(ev.target)) return;
 
+    // Allow events that originate on a domino wrapper to pass through
+    // so rotation can see same‑half / other‑half clicks.
     const wrapper = ev.target.closest(".domino-wrapper");
     if (wrapper) return;
 
@@ -475,6 +512,8 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
 
   trayEl.addEventListener("click", (ev) => RotationSession.handleTrayClick(ev));
 
+  // Rotation handlers run in capture phase so they see events
+  // before exclusivity stops propagation.
   const capture = true;
 
   document.addEventListener("dblclick", (ev) => RotationSession.handleDblClick(ev));
@@ -486,6 +525,7 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   document.addEventListener("pips:rotate:commit", (ev) => RotationSession.handleEngineCommit(ev));
   document.addEventListener("pips:rotate:reject", (ev) => RotationSession.handleEngineReject(ev));
 
+  // Install exclusivity *after* rotation handlers, also in capture phase.
   installExclusivity(boardEl);
 }
 
