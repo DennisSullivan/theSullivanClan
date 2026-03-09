@@ -11,6 +11,7 @@
 //   - Pointer exclusivity on the board
 //   Tray rotation remains visual‑only.
 //   Half identity during rotation is geometry‑based (ghost cells), not DOM‑based.
+//   INSTRUMENTED: classifier decision logs (no behavior changes).
 // ============================================================
 
 import { findDominoCells } from "../engine/grid.js";
@@ -172,13 +173,29 @@ const RotationSession = {
   // Ghost‑geometry half detection (authoritative during rotation session)
   halfFromGhostAtPointer(ev) {
     if (!this.ghost) return null;
+
     const cell = this.cellFromPointer(ev);
-    if (!cell) return null;
+    if (!cell) {
+      logRotation("HalfDetect", { result: null, reason: "no cell" });
+      return null;
+    }
 
-    if (cell.r === this.ghost.row0 && cell.c === this.ghost.col0) return 0;
-    if (cell.r === this.ghost.row1 && cell.c === this.ghost.col1) return 1;
+    let result = null;
+    if (cell.r === this.ghost.row0 && cell.c === this.ghost.col0) result = 0;
+    else if (cell.r === this.ghost.row1 && cell.c === this.ghost.col1) result = 1;
 
-    return null;
+    logRotation("HalfDetect", {
+      cell,
+      ghost: {
+        r0: this.ghost.row0,
+        c0: this.ghost.col0,
+        r1: this.ghost.row1,
+        c1: this.ghost.col1
+      },
+      result
+    });
+
+    return result;
   },
 
   // Committed‑geometry half detection (used only to start a session)
@@ -218,6 +235,14 @@ const RotationSession = {
     // Ambiguous → RotateAgain (geometry‑based half identity)
     if (this.state === RS.Ambiguous && sameDomino) {
       const clickedHalf = this.halfFromGhostAtPointer(ev);
+      logRotation("DblClickWhileAmbiguous", {
+        id,
+        clickedHalf,
+        ambigHalf: this.ambigHalf,
+        dt: performance.now() - this.ambigStartTime,
+        interval: this.lastNativeDblClickInterval
+      });
+
       if (clickedHalf !== null && clickedHalf === this.ambigHalf) {
         const now2 = performance.now();
         if (now2 - this.ambigStartTime <= this.lastNativeDblClickInterval) {
@@ -240,6 +265,8 @@ const RotationSession = {
     // Preview → RotateAgain (geometry‑based half identity)
     if (this.state === RS.Preview && sameDomino && this.ghost) {
       const clickedHalf = this.halfFromGhostAtPointer(ev);
+      logRotation("DblClickWhilePreview", { id, clickedHalf, pivotHalf: this.pivotHalf });
+
       if (clickedHalf !== null && clickedHalf === this.pivotHalf) {
         const next = this.rotateOnce(this.ghost, this.pivotHalf);
         this.ghost = {
@@ -302,8 +329,13 @@ const RotationSession = {
     // Ambiguous timeout check
     if (this.state === RS.Ambiguous) {
       const now = performance.now();
-      if (now - this.ambigStartTime > this.lastNativeDblClickInterval) {
-        logRotation("AmbiguousTimeout→ExitA", { id: this.rotatingDomino.id });
+      const dt = now - this.ambigStartTime;
+      if (dt > this.lastNativeDblClickInterval) {
+        logRotation("AmbiguousTimeout→ExitA", {
+          id: this.rotatingDomino.id,
+          dt,
+          interval: this.lastNativeDblClickInterval
+        });
         this.emitProposalAndAwait();
         return;
       }
@@ -317,13 +349,22 @@ const RotationSession = {
 
     // Exit Trigger B — pointerDown anywhere other than the same half
     if (!sameDomino) {
-      logRotation("ExitTriggerB", { id: this.rotatingDomino.id });
+      logRotation("ExitTriggerB", { id: this.rotatingDomino.id, reason: "not sameDomino" });
       this.emitProposalAndAwait();
       return;
     }
 
     // Geometry‑based half detection against current ghost
     const clickedHalf = this.halfFromGhostAtPointer(ev);
+
+    logRotation("PointerDownClassify", {
+      state: this.state,
+      id: this.rotatingDomino.id,
+      pointerId: ev.pointerId,
+      buttons: ev.buttons,
+      clickedHalf,
+      pivotHalf: this.pivotHalf
+    });
 
     // Preview → Ambiguous only when pointerDown is on the same half cell
     if (this.state === RS.Preview && clickedHalf !== null && clickedHalf === this.pivotHalf) {
@@ -341,7 +382,12 @@ const RotationSession = {
     }
 
     // Same domino but not same half cell (or not on either half cell) → Exit Trigger B
-    logRotation("ExitTriggerB", { id: this.rotatingDomino.id });
+    logRotation("ExitTriggerB", {
+      id: this.rotatingDomino.id,
+      reason: "sameDomino but not sameHalfCell",
+      clickedHalf,
+      pivotHalf: this.pivotHalf
+    });
     this.emitProposalAndAwait();
   },
 
@@ -352,17 +398,32 @@ const RotationSession = {
     // Ambiguous timeout check
     if (this.state === RS.Ambiguous) {
       const now = performance.now();
-      if (now - this.ambigStartTime > this.lastNativeDblClickInterval) {
-        logRotation("AmbiguousTimeout→ExitA", { id: this.rotatingDomino.id });
+      const dt = now - this.ambigStartTime;
+      if (dt > this.lastNativeDblClickInterval) {
+        logRotation("AmbiguousTimeout→ExitA", {
+          id: this.rotatingDomino.id,
+          dt,
+          interval: this.lastNativeDblClickInterval
+        });
         this.emitProposalAndAwait();
         return;
       }
     }
 
-    // Ambiguous → Adjust on movement
+    // Ambiguous movement check (instrumented)
     if (this.state === RS.Ambiguous && ev.pointerId === this.ambigPointerId) {
       const dx = ev.clientX - this.ambigStartXY.x;
       const dy = ev.clientY - this.ambigStartXY.y;
+
+      logRotation("AmbiguousMoveCheck", {
+        id: this.rotatingDomino.id,
+        pointerId: ev.pointerId,
+        buttons: ev.buttons,
+        dx,
+        dy,
+        startXY: this.ambigStartXY,
+        nowXY: { x: ev.clientX, y: ev.clientY }
+      });
 
       if (dx !== 0 || dy !== 0) {
         this.state = RS.Adjust;
@@ -404,11 +465,24 @@ const RotationSession = {
   // PointerUp: Ambiguous stays ambiguous; Adjust → Exit A
   // ----------------------------------------------------------
   handlePointerUp(ev) {
+    logRotation("PointerUp", {
+      state: this.state,
+      id: this.rotatingDomino?.id ?? null,
+      pointerId: ev.pointerId,
+      ambigPointerId: this.ambigPointerId,
+      buttons: ev.buttons
+    });
+
     // Ambiguous timeout check
     if (this.state === RS.Ambiguous) {
       const now = performance.now();
-      if (now - this.ambigStartTime > this.lastNativeDblClickInterval) {
-        logRotation("AmbiguousTimeout→ExitA", { id: this.rotatingDomino.id });
+      const dt = now - this.ambigStartTime;
+      if (dt > this.lastNativeDblClickInterval) {
+        logRotation("AmbiguousTimeout→ExitA", {
+          id: this.rotatingDomino.id,
+          dt,
+          interval: this.lastNativeDblClickInterval
+        });
         this.emitProposalAndAwait();
         return;
       }
