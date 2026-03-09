@@ -9,6 +9,13 @@
      - Center seam is a physical property of the domino body.
    ============================================================ */
 
+#pips-root, 
+#pips-root * {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
 /* ------------------------------------------------------------
    ROOT VARIABLES
    ------------------------------------------------------------ */
