@@ -9,6 +9,14 @@ import { isRotationSessionActive } from "./rotation.js";
 
 let dragDropPhase = "Idle";   // Idle | Pending | Dragging
 
+function logStateChange(from, to, detail = {}) {
+  console.log(
+    `%cSTATE ${from} → ${to}`,
+    'color:#0a0;font-weight:bold;',
+    detail
+  );
+}
+
 export function isDragDropActive() {
   return dragDropPhase !== "Idle";
 }
@@ -77,6 +85,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (state.clone) state.clone.remove();
     state.phase = "Idle";
     dragDropPhase = "Idle";
+    logStateChange("Something", "Idle", { id: wrapper.dataset.dominoId });
     state.pointerId = null;
     state.wrapper = null;
     state.startX = 0;
@@ -231,6 +240,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     state.phase = "Pending";
     dragDropPhase = "Pending";
+    logStateChange("Idle", "Pending", { id: wrapper.dataset.dominoId });
     state.pointerId = ev.pointerId;
     state.wrapper = wrapper;
     state.startX = ev.clientX;
@@ -287,6 +297,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     state.phase = "Dragging";
     dragDropPhase = "Dragging";
+    logStateChange("Pending", "Dragging" { id: wrapper.dataset.dominoId });
 
     updateGhost(ev);
   }
@@ -325,6 +336,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     if (state.phase === "Dragging") {
       if (state.ghost) {
+        logStateChange("Dragging", "Idle:Commit", state.ghost);
         logDispatch("pips:drop:proposal", state.ghost);
         boardEl.dispatchEvent(
           new CustomEvent("pips:drop:proposal", {
@@ -335,6 +347,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       } else if (state.snapshot?.source === "board") {
         logDispatch("pips:return-to-tray", { id: state.snapshot.id });
         boardEl.dispatchEvent(
+          logStateChange("Dragging", "Idle:Commit", state.ghost);
           new CustomEvent("pips:return-to-tray", {
             bubbles: true,
             detail: { id: state.snapshot.id }
