@@ -9,12 +9,6 @@
 //   - Runs SyncCheck after each action.
 // ============================================================
 
-html, body {
-  user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-}
-
 import { loadPuzzle } from "./engine/loader.js";
 import { validateStructure } from "./engine/structuralValidator.js";
 import { renderBoard } from "./ui/boardRenderer.js";
