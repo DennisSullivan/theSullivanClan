@@ -18,7 +18,7 @@ import { isDragDropActive } from "./dragDrop.js";
 // Logging (kept lightweight)
 // ------------------------------------------------------------
 function logRotation(event, data = {}) {
-//  console.log(`[rotation] ${event}`, data);
+  console.log(`[rotation] ${event}`, data);
 }
 
 // ------------------------------------------------------------
