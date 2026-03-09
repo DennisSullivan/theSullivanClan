@@ -11,7 +11,7 @@
 //   - Pointer exclusivity on the board
 //   Tray rotation remains visual‑only.
 //   Half identity during rotation is geometry‑based (ghost cells), not DOM‑based.
-//   INSTRUMENTED: classifier decision logs (no behavior changes).
+//   INSTRUMENTED: classifier decision logs.
 // ============================================================
 
 import { findDominoCells } from "../engine/grid.js";
@@ -323,7 +323,7 @@ const RotationSession = {
   },
 
   // ----------------------------------------------------------
-  // PointerDown: Ambiguous start or Exit Trigger B
+  // PointerDown: Ambiguous start, Ambiguous second-click hold, or Exit Trigger B
   // ----------------------------------------------------------
   handlePointerDown(ev) {
     // Ambiguous timeout check
@@ -347,14 +347,13 @@ const RotationSession = {
     const sameDomino =
       wrapper && this.rotatingDomino && wrapper.dataset.dominoId === String(this.rotatingDomino.id);
 
-    // Exit Trigger B — pointerDown anywhere other than the same half
+    // Exit Trigger B — pointerDown anywhere other than the same domino
     if (!sameDomino) {
       logRotation("ExitTriggerB", { id: this.rotatingDomino.id, reason: "not sameDomino" });
       this.emitProposalAndAwait();
       return;
     }
 
-    // Geometry‑based half detection against current ghost
     const clickedHalf = this.halfFromGhostAtPointer(ev);
 
     logRotation("PointerDownClassify", {
@@ -363,10 +362,11 @@ const RotationSession = {
       pointerId: ev.pointerId,
       buttons: ev.buttons,
       clickedHalf,
-      pivotHalf: this.pivotHalf
+      pivotHalf: this.pivotHalf,
+      ambigHalf: this.ambigHalf
     });
 
-    // Preview → Ambiguous only when pointerDown is on the same half cell
+    // Preview → Ambiguous only when pointerDown is on the pivot half cell
     if (this.state === RS.Preview && clickedHalf !== null && clickedHalf === this.pivotHalf) {
       this.state = RS.Ambiguous;
       this.ambigPointerId = ev.pointerId;
@@ -381,12 +381,23 @@ const RotationSession = {
       return;
     }
 
+    // Ambiguous: second click on same half must NOT trigger Exit B.
+    // Stay Ambiguous and let native dblclick resolve RotateAgain.
+    if (this.state === RS.Ambiguous && clickedHalf !== null && clickedHalf === this.ambigHalf) {
+      logRotation("AmbiguousSecondClickPointerDown", {
+        id: this.rotatingDomino.id,
+        clickedHalf
+      });
+      return;
+    }
+
     // Same domino but not same half cell (or not on either half cell) → Exit Trigger B
     logRotation("ExitTriggerB", {
       id: this.rotatingDomino.id,
       reason: "sameDomino but not sameHalfCell",
       clickedHalf,
-      pivotHalf: this.pivotHalf
+      pivotHalf: this.pivotHalf,
+      ambigHalf: this.ambigHalf
     });
     this.emitProposalAndAwait();
   },
