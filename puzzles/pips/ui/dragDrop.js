@@ -297,7 +297,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     state.phase = "Dragging";
     dragDropPhase = "Dragging";
-    logStateChange("Pending", "Dragging" { id: wrapper.dataset.dominoId });
+    logStateChange("Pending", "Dragging", { id: wrapper.dataset.dominoId });
 
     updateGhost(ev);
   }
