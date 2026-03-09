@@ -81,6 +81,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
   function reset() {
     logPhase("reset");
+    console.log("Resetting");
 
     if (state.clone) state.clone.remove();
     state.phase = "Idle";
