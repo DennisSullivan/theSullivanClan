@@ -155,6 +155,7 @@ const RotationSession = {
   // Start rotation session (double‑click on board domino)
   // ----------------------------------------------------------
   handleDblClick(ev) {
+    console.log("Double-click handler");
     if (isDragDropActive()) return;
 
     const wrapper = ev.target.closest(".domino-wrapper");
