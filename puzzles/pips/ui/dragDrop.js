@@ -346,8 +346,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
         );
       } else if (state.snapshot?.source === "board") {
         logDispatch("pips:return-to-tray", { id: state.snapshot.id });
+        logStateChange("Dragging", "Idle:Commit", state.ghost);
         boardEl.dispatchEvent(
-          logStateChange("Dragging", "Idle:Commit", state.ghost);
           new CustomEvent("pips:return-to-tray", {
             bubbles: true,
             detail: { id: state.snapshot.id }
