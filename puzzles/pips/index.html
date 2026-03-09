@@ -16,6 +16,13 @@
   <link rel="stylesheet" href="css/tray.css">
 
   <style>
+     /* Disable native text selection everywhere in PIPS */
+       html, body {
+         user-select: none;
+         -webkit-user-select: none;
+         -ms-user-select: none;
+       }
+       
     /* Center the puzzle board + tray */
     .pips-container {
       width: 100%;
