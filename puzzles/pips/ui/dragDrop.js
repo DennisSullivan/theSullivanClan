@@ -85,7 +85,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     if (state.clone) state.clone.remove();
     state.phase = "Idle";
     dragDropPhase = "Idle";
-    logStateChange("Something", "Idle", { id: wrapper.dataset.dominoId });
     state.pointerId = null;
     state.wrapper = null;
     state.startX = 0;
