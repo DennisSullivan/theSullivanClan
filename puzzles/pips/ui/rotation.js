@@ -4,6 +4,7 @@
 //   Contract‑pure board rotation with:
 //   - BoardRotatePreview from grid
 //   - Same‑half double‑click rotation (pivot fixed)
+//   - Same‑Half Click Disambiguation (§7.5.5)
 //   - Optional Adjust (terminal, snapped translation)
 //   - Exit Trigger A/B → single proposal
 //   - Await engine authority (commit/reject)
@@ -27,6 +28,7 @@ function logRotation(event, data = {}) {
 const RS = {
   Idle: "Idle",
   Preview: "Preview",
+  Ambiguous: "Ambiguous",
   Adjust: "Adjust",
   AwaitResult: "AwaitResult"
 };
@@ -42,12 +44,22 @@ const RotationSession = {
   renderPuzzle: null,
 
   state: RS.Idle,
-  rotatingDomino: null,      // { id, ... } from dominos
-  pivotHalf: null,           // 0 or 1, fixed for session
-  ghost: null,               // { id,row0,col0,row1,col1 }
+  rotatingDomino: null,
+  pivotHalf: null,
+  ghost: null,
 
   adjustPointerId: null,
   adjustStartCell: null,
+
+  // Ambiguous click fields
+  ambigPointerId: null,
+  ambigStartXY: null,
+  ambigStartTime: null,
+  ambigHalf: null,
+
+  // Passive OS double‑click interval learning
+  lastNativeDblClickInterval: 350,
+  lastClickTime: null,
 
   configure(dominos, grid, trayEl, boardEl, renderPuzzle) {
     this.dominos = dominos;
@@ -75,11 +87,16 @@ const RotationSession = {
     this.adjustPointerId = null;
     this.adjustStartCell = null;
 
+    this.ambigPointerId = null;
+    this.ambigStartXY = null;
+    this.ambigStartTime = null;
+    this.ambigHalf = null;
+
     this.renderPuzzle();
   },
 
   // ----------------------------------------------------------
-  // Tray rotation (visual‑only, unchanged)
+  // Tray rotation (visual‑only)
   // ----------------------------------------------------------
   handleTrayClick(ev) {
     const wrapper = ev.target.closest(".domino-wrapper");
@@ -89,7 +106,6 @@ const RotationSession = {
     const d = this.dominos.get(id);
     if (!d) return;
 
-    // Only rotate tray dominos (not on board)
     if (d.row0 !== null || d.row1 !== null) return;
 
     d.trayOrientation = ((d.trayOrientation || 0) + 90) % 360;
@@ -152,10 +168,15 @@ const RotationSession = {
   },
 
   // ----------------------------------------------------------
-  // Start rotation session (double‑click on board domino)
+  // Start rotation session (double‑click)
   // ----------------------------------------------------------
   handleDblClick(ev) {
-    console.log("Double-click handler");
+    const now = performance.now();
+    if (this.lastClickTime != null) {
+      this.lastNativeDblClickInterval = now - this.lastClickTime;
+    }
+    this.lastClickTime = now;
+
     if (isDragDropActive()) return;
 
     const wrapper = ev.target.closest(".domino-wrapper");
@@ -169,9 +190,13 @@ const RotationSession = {
     const halfEl = ev.target.closest(".half");
     const clickedHalf = halfEl && halfEl.classList.contains("half1") ? 1 : 0;
 
-    // If session active, same‑half double‑click rotates preview again
-    if (this.state === RS.Preview && this.rotatingDomino && String(this.rotatingDomino.id) === String(id)) {
-      if (clickedHalf === this.pivotHalf && this.ghost) {
+    const sameDomino =
+      this.rotatingDomino && String(this.rotatingDomino.id) === String(id);
+
+    // Ambiguous → RotateAgain
+    if (this.state === RS.Ambiguous && sameDomino && clickedHalf === this.ambigHalf) {
+      const now2 = performance.now();
+      if (now2 - this.ambigStartTime <= this.lastNativeDblClickInterval) {
         const next = this.rotateOnce(this.ghost, this.pivotHalf);
         this.ghost = {
           id: this.rotatingDomino.id,
@@ -180,17 +205,32 @@ const RotationSession = {
           row1: next.row1,
           col1: next.col1
         };
-        logRotation("PreviewRotateAgain", { id, ghost: this.ghost });
+        this.state = RS.Preview;
+        logRotation("Ambiguous→RotateAgain", { id, ghost: this.ghost });
         this.renderPuzzle();
+        return;
       }
+    }
+
+    // Preview → RotateAgain (normal dblclick)
+    if (this.state === RS.Preview && sameDomino && clickedHalf === this.pivotHalf && this.ghost) {
+      const next = this.rotateOnce(this.ghost, this.pivotHalf);
+      this.ghost = {
+        id: this.rotatingDomino.id,
+        row0: next.row0,
+        col0: next.col0,
+        row1: next.row1,
+        col1: next.col1
+      };
+      logRotation("PreviewRotateAgain", { id, ghost: this.ghost });
+      this.renderPuzzle();
       return;
     }
 
-    // If session active but not same domino/half, ignore here;
-    // Exit Trigger B is handled by pointerDown.
+    // If session active but not same domino/half, ignore here
     if (this.isActive()) return;
 
-    // New session: get committed geometry from grid
+    // New session
     const cells = findDominoCells(this.grid, String(id));
     if (!cells || cells.length !== 2) return;
 
@@ -223,9 +263,19 @@ const RotationSession = {
   },
 
   // ----------------------------------------------------------
-  // PointerDown: Adjust entry or Exit Trigger B
+  // PointerDown: Ambiguous start or Exit Trigger B
   // ----------------------------------------------------------
   handlePointerDown(ev) {
+    // Ambiguous timeout check
+    if (this.state === RS.Ambiguous) {
+      const now = performance.now();
+      if (now - this.ambigStartTime > this.lastNativeDblClickInterval) {
+        logRotation("AmbiguousTimeout→ExitA", { id: this.rotatingDomino.id });
+        this.emitProposalAndAwait();
+        return;
+      }
+    }
+
     if (!this.isActive()) return;
 
     const wrapper = ev.target.closest(".domino-wrapper");
@@ -234,33 +284,64 @@ const RotationSession = {
     const sameDomino =
       wrapper && this.rotatingDomino && wrapper.dataset.dominoId === String(this.rotatingDomino.id);
 
-    const sameHalf =
-      sameDomino &&
-      halfEl &&
-      ((halfEl.classList.contains("half1") ? 1 : 0) === this.pivotHalf);
+    const clickedHalf =
+      halfEl && halfEl.classList.contains("half1") ? 1 : 0;
 
-    if (sameHalf) {
-      // BoardRotateAdjust (terminal, snapped)
-      this.state = RS.Adjust;
-      this.adjustPointerId = ev.pointerId;
-      this.adjustStartCell = this.cellFromPointer(ev);
-      logRotation("AdjustStart", {
+    const sameHalf =
+      sameDomino && halfEl && clickedHalf === this.pivotHalf;
+
+    // Preview → Ambiguous
+    if (sameHalf && this.state === RS.Preview) {
+      this.state = RS.Ambiguous;
+      this.ambigPointerId = ev.pointerId;
+      this.ambigStartXY = { x: ev.clientX, y: ev.clientY };
+      this.ambigStartTime = performance.now();
+      this.ambigHalf = this.pivotHalf;
+      logRotation("AmbiguousStart", {
         id: this.rotatingDomino.id,
-        startCell: this.adjustStartCell,
-        ghost: this.ghost
+        xy: this.ambigStartXY,
+        interval: this.lastNativeDblClickInterval
       });
       return;
     }
 
-    // Exit Trigger B — pointerDown anywhere else
+    // Exit Trigger B
     logRotation("ExitTriggerB", { id: this.rotatingDomino.id });
     this.emitProposalAndAwait();
   },
 
   // ----------------------------------------------------------
-  // PointerMove during Adjust: snapped translation
+  // PointerMove: Ambiguous → Adjust or Adjust move
   // ----------------------------------------------------------
   handlePointerMove(ev) {
+    // Ambiguous timeout check
+    if (this.state === RS.Ambiguous) {
+      const now = performance.now();
+      if (now - this.ambigStartTime > this.lastNativeDblClickInterval) {
+        logRotation("AmbiguousTimeout→ExitA", { id: this.rotatingDomino.id });
+        this.emitProposalAndAwait();
+        return;
+      }
+    }
+
+    // Ambiguous → Adjust on movement
+    if (this.state === RS.Ambiguous && ev.pointerId === this.ambigPointerId) {
+      const dx = ev.clientX - this.ambigStartXY.x;
+      const dy = ev.clientY - this.ambigStartXY.y;
+
+      if (dx !== 0 || dy !== 0) {
+        this.state = RS.Adjust;
+        this.adjustPointerId = ev.pointerId;
+        this.adjustStartCell = this.cellFromPointer(ev);
+        logRotation("Ambiguous→Adjust", {
+          id: this.rotatingDomino.id,
+          startCell: this.adjustStartCell
+        });
+        return;
+      }
+    }
+
+    // Adjust move
     if (this.state !== RS.Adjust) return;
     if (ev.pointerId !== this.adjustPointerId) return;
     if (!this.ghost) return;
@@ -285,9 +366,26 @@ const RotationSession = {
   },
 
   // ----------------------------------------------------------
-  // PointerUp during Adjust: Exit Trigger A
+  // PointerUp: Ambiguous stays ambiguous; Adjust → Exit A
   // ----------------------------------------------------------
   handlePointerUp(ev) {
+    // Ambiguous timeout check
+    if (this.state === RS.Ambiguous) {
+      const now = performance.now();
+      if (now - this.ambigStartTime > this.lastNativeDblClickInterval) {
+        logRotation("AmbiguousTimeout→ExitA", { id: this.rotatingDomino.id });
+        this.emitProposalAndAwait();
+        return;
+      }
+    }
+
+    // Ambiguous pointerUp does not resolve
+    if (this.state === RS.Ambiguous && ev.pointerId === this.ambigPointerId) {
+      logRotation("AmbiguousPointerUp", { id: this.rotatingDomino.id });
+      return;
+    }
+
+    // Adjust → Exit Trigger A
     if (this.state !== RS.Adjust) return;
     if (ev.pointerId !== this.adjustPointerId) return;
 
@@ -356,8 +454,6 @@ function installExclusivity(boardEl) {
     if (!RotationSession.isActive()) return;
     if (!boardEl.contains(ev.target)) return;
 
-    // Allow events that originate on a domino wrapper to pass through
-    // so rotation can see same‑half / other‑half clicks.
     const wrapper = ev.target.closest(".domino-wrapper");
     if (wrapper) return;
 
@@ -379,8 +475,6 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
 
   trayEl.addEventListener("click", (ev) => RotationSession.handleTrayClick(ev));
 
-  // Rotation handlers run in capture phase so they see events
-  // before exclusivity stops propagation.
   const capture = true;
 
   document.addEventListener("dblclick", (ev) => RotationSession.handleDblClick(ev));
@@ -392,7 +486,6 @@ export function initRotation(dominos, grid, trayEl, boardEl, renderPuzzle) {
   document.addEventListener("pips:rotate:commit", (ev) => RotationSession.handleEngineCommit(ev));
   document.addEventListener("pips:rotate:reject", (ev) => RotationSession.handleEngineReject(ev));
 
-  // Install exclusivity *after* rotation handlers, also in capture phase.
   installExclusivity(boardEl);
 }
 
