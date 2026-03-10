@@ -4,6 +4,10 @@
 //          Contract‑clean. Two‑element DOM model compliant.
 //          Instrumented (phase, snapshot, ghost, dispatch).
 // ============================================================
+// INVARIANT (Chapter 3A):
+// This module never commits geometry. It may compute transient pixel placement
+// and propose logical board positions, but final placement is always expressed
+// by the board renderer during its Placement Expression Phase.
 
 import { isRotationSessionActive } from "./rotation.js";
 
@@ -347,6 +351,12 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       } else if (state.snapshot?.source === "board") {
         logDispatch("pips:return-to-tray", { id: state.snapshot.id });
         logStateChange("Dragging", "Idle:Commit", state.ghost);
+        
+        // === Geometry Authority Handoff (Chapter 3A):
+        //     Drag/drop ends here. From this point on, geometry is no longer
+        //     overlay‑authoritative. The board renderer will re‑express placement
+        //     during its Placement Expression Phase based on committed state.
+        
         boardEl.dispatchEvent(
           new CustomEvent("pips:return-to-tray", {
             bubbles: true,
