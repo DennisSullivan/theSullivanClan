@@ -67,6 +67,8 @@ export function startPuzzle(puzzleJson) {
     console.error("startPuzzle: missing #board or #tray elements in DOM");
     return state;
   }
+  boardEl.style.setProperty("--board-rows", state.boardRows);
+  boardEl.style.setProperty("--board-cols", state.boardCols);
 
   // renderPuzzle is passed to rotation mode and used for re-renders
   function renderPuzzle() {
