@@ -18,7 +18,7 @@ export function renderBoard(boardEl, boardState, options = {}) {
   // Clear the board before re‑rendering all dominos.
   boardEl.innerHTML = "";
 
-  for (const d of boardState.dominos) {
+  for (const d of boardState.dominos.values()) {
     if (!d.cells) continue;
     const cell0 = d.cells[0];
     const cell1 = d.cells[1];
