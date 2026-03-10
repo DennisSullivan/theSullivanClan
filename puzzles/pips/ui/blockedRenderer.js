@@ -8,6 +8,9 @@
 // ============================================================
 
 export function renderBlockedCells(blocked, boardEl) {
+console.log("renderBlockedCells called");
+console.log("blocked size:", blocked.size);
+console.log("blocked contents:", [...blocked]);
   if (!boardEl || !(blocked instanceof Set)) return;
 
   // Remove previous blocked overlays
