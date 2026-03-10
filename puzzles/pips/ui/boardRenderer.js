@@ -1,11 +1,11 @@
 // ============================================================
 // FILE: ui/boardRenderer.js
 // PURPOSE: Render board cells and dominos (two‑element DOM model).
-// NOTES:
-//   - Grid is authoritative for logical placement.
-//   - rotationGhost is a visual-only override for one domino.
-//   - HARD INVARIANT: wrapper origin is ALWAYS half0.
-//   - Pixel placement is computed here (CSS no longer positions dominos).
+// CONTRACT:
+//   - Board grid owns inter‑cell spacing (cell-gap).
+//   - Domino geometry uses cell-size only.
+//   - Wrapper origin is top‑left of bounding box.
+//   - No renderer may double‑count cell-gap.
 // ============================================================
 
 import { createDominoElement } from "./createDominoElement.js";
@@ -24,18 +24,23 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   const rows = grid.length;
   const cols = grid[0].length;
 
+  // ----------------------------------------------------------
+  // Board grid — authoritative geometry owner
+  // ----------------------------------------------------------
   boardEl.style.position = "relative";
+  boardEl.style.display = "grid";
   boardEl.style.gridTemplateColumns =
-    `repeat(${cols}, calc(var(--cell-size) + var(--cell-gap)))`;
+    `repeat(${cols}, var(--cell-size))`;
   boardEl.style.gridTemplateRows =
-    `repeat(${rows}, calc(var(--cell-size) + var(--cell-gap)))`;
+    `repeat(${rows}, var(--cell-size))`;
+  boardEl.style.gap = "var(--cell-gap)";
 
   // ----------------------------------------------------------
-  // Precompute cell size + gap (pixel placement)
+  // Precompute cell size (NO gap math here)
   // ----------------------------------------------------------
-  const cs = parseFloat(getComputedStyle(boardEl).getPropertyValue("--cell-size"));
-  const cg = parseFloat(getComputedStyle(boardEl).getPropertyValue("--cell-gap"));
-  const cellSpan = cs + cg;
+  const cs = parseFloat(
+    getComputedStyle(boardEl).getPropertyValue("--cell-size")
+  );
 
   // ----------------------------------------------------------
   // 1. Render background cells
@@ -56,7 +61,7 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
   }
 
   // ----------------------------------------------------------
-  // 2. Render dominos (grid-derived, ghost-aware)
+  // 2. Render dominos (grid‑derived, ghost‑aware)
   // ----------------------------------------------------------
   const ghost = getRotationGhost();
   const ghostId = ghost ? String(ghost.id) : null;
@@ -73,48 +78,39 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
       cells = findDominoCells(grid, String(d.id));
     }
 
-    if (cells.length === 0) continue;
+    if (!cells || cells.length !== 2) continue;
 
     const cell0 = cells.find(c => c.half === 0);
     const cell1 = cells.find(c => c.half === 1);
     if (!cell0 || !cell1) continue;
 
-    // Determine orientation from geometry
-    let half0Side = "left";
-    if (cell0.row === cell1.row) {
-      half0Side = cell0.col < cell1.col ? "left" : "right";
-    } else {
-      half0Side = cell0.row < cell1.row ? "top" : "bottom";
-    }
-
     // ----------------------------------------------------------
-    // Create wrapper + canonical inner DOM
+    // Create wrapper
     // ----------------------------------------------------------
     const wrapper = document.createElement("div");
     wrapper.classList.add("domino-wrapper", "on-board");
     wrapper.dataset.dominoId = String(d.id);
 
-    // Geometry for drag/drop + renderer
     wrapper.dataset.row0 = String(cell0.row);
     wrapper.dataset.col0 = String(cell0.col);
     wrapper.dataset.row1 = String(cell1.row);
     wrapper.dataset.col1 = String(cell1.col);
 
-    // Anchor wrapper at bounding-box top-left (NOT at half0)
-    // Pixel placement (geometry anchor: top-left of bounding box)
+    // ----------------------------------------------------------
+    // Anchor wrapper at bounding‑box top‑left (cell origin)
+    // ----------------------------------------------------------
     const minRow = Math.min(cell0.row, cell1.row);
     const minCol = Math.min(cell0.col, cell1.col);
-    
-    wrapper.style.left = `${minCol * cellSpan}px`;
-    wrapper.style.top  = `${minRow * cellSpan}px`;
+
+    wrapper.style.left = `${minCol * cs}px`;
+    wrapper.style.top  = `${minRow * cs}px`;
 
     // ----------------------------------------------------------
-    // Geometry-driven wrapper sizing (REQUIRED)
+    // Geometry‑driven wrapper sizing (NO gap)
     // ----------------------------------------------------------
     const sameRow = (cell0.row === cell1.row);
     const sameCol = (cell0.col === cell1.col);
-    
-    // Assumes adjacency already guaranteed by engine/grid
+
     wrapper.style.setProperty("--row-span", sameCol ? "2" : "1");
     wrapper.style.setProperty("--col-span", sameRow ? "2" : "1");
 
@@ -124,9 +120,8 @@ export function renderBoard(dominos, grid, regionMap, blocked, regions, boardEl)
 
     const inner = createDominoElement();
     wrapper.appendChild(inner);
-    
-    renderDomino(d, wrapper);
 
+    renderDomino(d, wrapper);
     boardEl.appendChild(wrapper);
   }
 }
