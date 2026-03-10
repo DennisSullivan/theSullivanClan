@@ -102,14 +102,17 @@
 }
 
 .blocked-overlay {
-//  outline: 1px solid red;
   position: absolute;
+  top: calc(-1 * var(--grid-line));
+  left: calc(-1 * var(--grid-line));
+
+  width:  calc(100% + var(--cell-gap) + 2 * var(--grid-line));
+  height: calc(100% + var(--cell-gap) + 2 * var(--grid-line));
+
   background: #ffffff;
   pointer-events: none;
   z-index: 15;
-
-  width:  calc(var(--cell-size) + var(--cell-gap) + var(--grid-line));
-  height: calc(var(--cell-size) + var(--cell-gap) + var(--grid-line));
+  outline: 1px solid red;
 }
 
 
