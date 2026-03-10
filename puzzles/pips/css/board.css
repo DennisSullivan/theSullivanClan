@@ -101,6 +101,13 @@
   pointer-events: none;
 }
 
+.blocked-overlay {
+  position: absolute;
+  background: var(--color-bg);
+  pointer-events: none;
+  z-index: 20;
+}
+
 
 /* ------------------------------------------------------------
    5. REGION BADGES / OUTLINES
