@@ -115,6 +115,10 @@ function applyStartingDominos(startingList, dominos, grid) {
     d.col0 = c0;
     d.row1 = r1;
     d.col1 = c1;
+    d.cells = [
+      { row: r0, col: c0 },
+      { row: r1, col: c1 }
+    ];
 
     // Commit occupancy via canonical grid helper
     setCell(grid, r0, c0, key, 0);
