@@ -103,8 +103,8 @@
 
 .blocked-overlay {
   position: absolute;
-  width: var(--cell-size);
-  height: var(--cell-size);
+  width: calc(var(--cell-size) + var(--cell-gap));
+  height: calc(var(--cell-size) + var(--cell-gap));
   background: #ffffff;
   pointer-events: none;
   z-index: 15;
