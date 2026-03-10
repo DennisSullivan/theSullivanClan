@@ -19,6 +19,7 @@ export function renderBoard(boardEl, boardState, options = {}) {
   boardEl.innerHTML = "";
 
   for (const d of boardState.dominos) {
+    if (!d.cells) continue;
     const cell0 = d.cells[0];
     const cell1 = d.cells[1];
 
