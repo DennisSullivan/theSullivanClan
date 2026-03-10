@@ -29,6 +29,65 @@ export function renderBoard(boardEl, boardState, options = {}) {
     }
   }
 
+  // 2A. Render mini‑puzzle outlines (Renderer Contract §11.4A)
+  // Mini‑puzzles are 4‑connected cell sets; outlines are derived from adjacency.
+  if (boardState.miniPuzzles) {
+    // Build a fast lookup: "row,col" → miniPuzzleId
+    const cellToPuzzle = new Map();
+
+    for (const puzzle of boardState.miniPuzzles) {
+      for (const cell of puzzle.cells) {
+        cellToPuzzle.set(`${cell.row},${cell.col}`, puzzle.id);
+      }
+    }
+
+    // Helper to test same mini‑puzzle membership
+    const samePuzzle = (r1, c1, r2, c2) =>
+      cellToPuzzle.get(`${r1},${c1}`) === cellToPuzzle.get(`${r2},${c2}`);
+
+    // For each cell that belongs to a mini‑puzzle, derive boundary edges
+    for (let row = 0; row < boardState.boardRows; row++) {
+      for (let col = 0; col < boardState.boardCols; col++) {
+        const key = `${row},${col}`;
+        if (!cellToPuzzle.has(key)) continue;
+
+        const cellEl = boardEl.querySelector(
+          `.board-cell[data-row="${row}"][data-col="${col}"]`
+        );
+
+        if (!cellEl) continue;
+
+        // Top edge
+        if (row === 0 || !samePuzzle(row, col, row - 1, col)) {
+          const edge = document.createElement("div");
+          edge.className = "subgrid-edge edge-top";
+          cellEl.appendChild(edge);
+        }
+
+        // Right edge
+        if (col === boardState.boardCols - 1 || !samePuzzle(row, col, row, col + 1)) {
+          const edge = document.createElement("div");
+          edge.className = "subgrid-edge edge-right";
+          cellEl.appendChild(edge);
+        }
+
+        // Bottom edge
+        if (row === boardState.boardRows - 1 || !samePuzzle(row, col, row + 1, col)) {
+          const edge = document.createElement("div");
+          edge.className = "subgrid-edge edge-bottom";
+          cellEl.appendChild(edge);
+        }
+
+        // Left edge
+        if (col === 0 || !samePuzzle(row, col, row, col - 1)) {
+          const edge = document.createElement("div");
+          edge.className = "subgrid-edge edge-left";
+          cellEl.appendChild(edge);
+        }
+      }
+    }
+  }
+
   // 3. Render dominos
   for (const d of boardState.dominos.values()) {
     if (!d.cells) continue;
