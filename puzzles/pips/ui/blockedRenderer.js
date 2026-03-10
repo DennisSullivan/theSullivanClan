@@ -20,8 +20,8 @@ export function renderBlockedCells(blocked, boardEl) {
     const el = document.createElement("div");
     el.className = "blocked-overlay";
 
-    el.style.left = `calc(${col} * (var(--cell-size) - (var(--cell-gap) / 2))`;
-    el.style.top  = `calc(${row} * (var(--cell-size) - (var(--cell-gap) / 2))`;
+    el.style.left = `calc(${col} * (var(--cell-size) + var(--cell-gap)) - var(--grid-line))`;
+    el.style.top  = `calc(${row} * (var(--cell-size) + var(--cell-gap)) - var(--grid-line))`;
 
     boardEl.appendChild(el);
   }
