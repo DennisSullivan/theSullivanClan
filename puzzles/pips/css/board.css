@@ -106,8 +106,8 @@
   background: var(--color-bg);
   pointer-events: none;
   z-index: 20;
-  background: rgba(255, 0, 0, 0.35);
-  outline: 2px solid red;
+  background: var(--color-bg);
+  box-shadow: inset 0 0 0 2px #444;
 }
 
 
@@ -127,6 +127,7 @@
 .badge-layer {
   position: absolute;
   pointer-events: none;
+  background: #444;
   z-index: 30;
 }
 
