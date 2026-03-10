@@ -10,6 +10,7 @@
 export function renderBlockedCells(blocked, boardEl) {
   if (!boardEl || !(blocked instanceof Set)) return;
 
+  console.log("Blocked called");
   // Remove previous blocked overlays
   boardEl.querySelectorAll(".blocked-overlay").forEach(el => el.remove());
 
