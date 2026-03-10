@@ -11,7 +11,7 @@
 :root {
   --cell-size: 48px;
   --cell-gap: 4px;
-
+  --grid-line: 1px;
   --domino-thickness: 1px;
 
   --color-bg: #fafafa;
@@ -103,11 +103,12 @@
 
 .blocked-overlay {
   position: absolute;
-  width: calc(var(--cell-size) + var(--cell-gap) + var(--grid-line) + var(--grid-line));
-  height: calc(var(--cell-size) + var(--cell-gap) + var(--grid-line) + var(--grid-line));
   background: #ffffff;
   pointer-events: none;
   z-index: 15;
+
+  width:  calc(var(--cell-size) + var(--cell-gap) + var(--grid-line));
+  height: calc(var(--cell-size) + var(--cell-gap) + var(--grid-line));
 }
 
 
