@@ -22,8 +22,8 @@ export function renderBlockedCells(blocked, boardEl) {
 
     el.style.left = `calc(${col} * (var(--cell-size) + var(--cell-gap)) - (var(--cell-gap) / 2))`;
     el.style.top  = `calc(${row} * (var(--cell-size) + var(--cell-gap)) - (var(--cell-gap) / 2))`;
-    el.style.width  = "var(--cell-size) + var(--cell-gap)";
-    el.style.height = "var(--cell-size) + var(--cell-gap)";
+    el.style.width  = "var(--cell-size)" + "var(--cell-gap)";
+    el.style.height = "var(--cell-size)" + "var(--cell-gap)";
 
     boardEl.appendChild(el);
   }
