@@ -35,10 +35,8 @@
 .domino-wrapper {
   position: absolute;
 
-  width: calc(var(--col-span) * var(--cell-size)
-           + (var(--col-span) - 1) * var(--cell-gap));
-  height: calc(var(--row-span) * var(--cell-size)
-            + (var(--row-span) - 1) * var(--cell-gap));
+  width: calc(var(--col-span) * var(--cell-size));
+  height: calc(var(--row-span) * var(--cell-size));
 
   display: flex;
   align-items: center;
