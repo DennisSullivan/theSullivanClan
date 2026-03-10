@@ -19,8 +19,8 @@ export function renderBoard(boardEl, boardState, options = {}) {
   boardEl.innerHTML = "";
 
   // 2. Render board cells
-  for (let row = 0; row < boardState.rows; row++) {
-    for (let col = 0; col < boardState.cols; col++) {
+  for (let row = 0; row < boardState.boardRows; row++) {
+    for (let col = 0; col < boardState.boardCols; col++) {
       const cell = document.createElement("div");
       cell.className = "board-cell";
       cell.dataset.row = row;
