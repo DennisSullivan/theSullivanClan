@@ -10,20 +10,21 @@
 export function renderBlockedCells(blocked, boardEl) {
   if (!boardEl || !(blocked instanceof Set)) return;
 
-  console.log("Blocked called");
   // Remove previous blocked overlays
   boardEl.querySelectorAll(".blocked-overlay").forEach(el => el.remove());
 
   for (const key of blocked) {
     const [row, col] = key.split(",").map(Number);
 
-    const el = document.createElement("div");
-    el.className = "blocked-overlay";
+    const cell = boardEl.querySelector(
+      `.board-cell[data-row="${row}"][data-col="${col}"]`
+    );
 
-    el.style.left = `calc(${col} * (var(--cell-size) + var(--cell-gap)) - var(--grid-line))`;
-    el.style.top  = `calc(${row} * (var(--cell-size) + var(--cell-gap)) - var(--grid-line))`;
+    if (!cell) continue;
 
-    boardEl.appendChild(el);
+    const overlay = document.createElement("div");
+    overlay.className = "blocked-overlay";
+
+    cell.appendChild(overlay);
   }
 }
-
