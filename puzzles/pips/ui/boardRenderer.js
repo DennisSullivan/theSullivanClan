@@ -13,6 +13,17 @@ import { renderDomino } from "./dominoRenderer.js";
 // as committed (grid‑authoritative) or transient (overlay‑authoritative). Callers
 // may pass options to indicate transient rendering such as ghost previews.
 export function renderBoard(boardEl, boardState, options = {}) {
+  for (let row = 0; row < boardState.rows; row++) {
+    for (let col = 0; col < boardState.cols; col++) {
+      const cell = document.createElement("div");
+      cell.className = "board-cell";
+      cell.dataset.row = row;
+      cell.dataset.col = col;
+  
+      boardEl.appendChild(cell);
+    }
+  }
+
   const { ghost = false, ghostId = null } = options;
 
   // Clear the board before re‑rendering all dominos.
