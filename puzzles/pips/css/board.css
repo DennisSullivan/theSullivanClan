@@ -40,7 +40,7 @@
   --row-span: 1;
   --col-span: 2;
 
-   // Mini puzzle outline color
+   /* Mini puzzle outline color */
    --subgrid-outline-color: #000;
 }
 
