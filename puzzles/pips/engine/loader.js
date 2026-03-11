@@ -46,6 +46,8 @@ export function loadPuzzle(json) {
 
   // Build region map
   const regionMap = buildRegionMap(boardRows, boardCols, json.regions || []);
+  // Build mini puzzle map
+  const miniPuzzles = deriveMiniPuzzles(boardRows, boardCols, blocked);
 
   // ------------------------------------------------------------
   // Assemble engine state
@@ -58,6 +60,7 @@ export function loadPuzzle(json) {
     regionMap,
     blocked,
     regions: json.regions || [],
+    miniPuzzles,
     startingDominoIds: new Set(
       (json.startingDominos || []).map(e => String(e.domino))
     )
@@ -124,4 +127,62 @@ function applyStartingDominos(startingList, dominos, grid) {
     setCell(grid, r0, c0, key, 0);
     setCell(grid, r1, c1, key, 1);
   }
+}
+
+// ------------------------------------------------------------
+// deriveMiniPuzzles(boardRows, boardCols, blocked)
+// Computes maximal 4-connected components of non-blocked cells.
+// ------------------------------------------------------------
+function deriveMiniPuzzles(boardRows, boardCols, blocked) {
+  const visited = new Set();
+  const puzzles = [];
+  let nextId = 0;
+
+  const key = (r, c) => `${r},${c}`;
+
+  const directions = [
+    [ 1,  0],
+    [-1,  0],
+    [ 0,  1],
+    [ 0, -1]
+  ];
+
+  for (let row = 0; row < boardRows; row++) {
+    for (let col = 0; col < boardCols; col++) {
+      const k = key(row, col);
+      if (blocked.has(k) || visited.has(k)) continue;
+
+      const cells = [];
+      const stack = [[row, col]];
+      visited.add(k);
+
+      while (stack.length) {
+        const [r, c] = stack.pop();
+        cells.push({ row: r, col: c });
+
+        for (const [dr, dc] of directions) {
+          const nr = r + dr;
+          const nc = c + dc;
+          const nk = key(nr, nc);
+
+          if (
+            nr >= 0 && nr < boardRows &&
+            nc >= 0 && nc < boardCols &&
+            !blocked.has(nk) &&
+            !visited.has(nk)
+          ) {
+            visited.add(nk);
+            stack.push([nr, nc]);
+          }
+        }
+      }
+
+      puzzles.push({
+        id: nextId++,
+        cells
+      });
+    }
+  }
+
+  return puzzles;
 }
