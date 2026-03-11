@@ -59,7 +59,8 @@
    ------------------------------------------------------------ */
 #board {
   position: relative;
-
+  border: none;
+   
   display: grid;
   background: var(--color-bg);
   grid-template-rows: repeat(var(--board-rows), var(--cell-size));
