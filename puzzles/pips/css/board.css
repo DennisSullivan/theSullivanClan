@@ -39,6 +39,9 @@
   /* Geometry variables set per domino by JS */
   --row-span: 1;
   --col-span: 2;
+
+   // Mini puzzle outline color
+   --subgrid-outline-color: #000;
 }
 
 
@@ -117,7 +120,7 @@
 
 .subgrid-edge {
   position: absolute;
-  background: #000;
+  background: var(--subgrid-outline-color);
   pointer-events: none;
   border-radius: 2px;
   z-index: 20;
