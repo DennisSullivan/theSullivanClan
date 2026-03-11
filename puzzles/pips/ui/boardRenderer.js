@@ -84,6 +84,47 @@ export function renderBoard(boardEl, boardState, options = {}) {
           edge.className = "subgrid-edge edge-left";
           cellEl.appendChild(edge);
         }
+        // ----------------------------------------------------
+        // Corner connectors (Renderer Contract §11.4A)
+        // Draw only when both adjacent edges exist
+        // ----------------------------------------------------
+
+        const hasTop =
+          row === 0 || !samePuzzle(row, col, row - 1, col);
+        const hasRight =
+          col === boardState.boardCols - 1 || !samePuzzle(row, col, row, col + 1);
+        const hasBottom =
+          row === boardState.boardRows - 1 || !samePuzzle(row, col, row + 1, col);
+        const hasLeft =
+          col === 0 || !samePuzzle(row, col, row, col - 1);
+
+        // Top‑left corner
+        if (hasTop && hasLeft) {
+          const corner = document.createElement("div");
+          corner.className = "subgrid-corner corner-tl";
+          cellEl.appendChild(corner);
+        }
+
+        // Top‑right corner
+        if (hasTop && hasRight) {
+          const corner = document.createElement("div");
+          corner.className = "subgrid-corner corner-tr";
+          cellEl.appendChild(corner);
+        }
+
+        // Bottom‑right corner
+        if (hasBottom && hasRight) {
+          const corner = document.createElement("div");
+          corner.className = "subgrid-corner corner-br";
+          cellEl.appendChild(corner);
+        }
+
+        // Bottom‑left corner
+        if (hasBottom && hasLeft) {
+          const corner = document.createElement("div");
+          corner.className = "subgrid-corner corner-bl";
+          cellEl.appendChild(corner);
+        }
       }
     }
   }
