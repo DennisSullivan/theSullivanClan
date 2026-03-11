@@ -254,13 +254,13 @@
    9. DEBUG HELPERS
    ------------------------------------------------------------ */
 .domino-wrapper.on-board.debug-outline {
-  outline: 1px dashed rgba(255,0,0,0.6);
+//  outline: 1px dashed rgba(255,0,0,0.6);
 }
 
 .domino-wrapper.debug-outline .domino {
-  outline: 1px solid rgba(0,255,0,0.6);
+//  outline: 1px solid rgba(0,255,0,0.6);
 }
 
 .board-cell.debug-outline {
-  outline: 1px dotted rgba(0,0,255,0.25);
+//  outline: 1px dotted rgba(0,0,255,0.25);
 }
