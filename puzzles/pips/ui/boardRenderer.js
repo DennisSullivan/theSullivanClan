@@ -1,21 +1,15 @@
 // boardRenderer.js
-// This file is responsible for rendering the board’s current state into the DOM.
-// It renders committed dominos using grid‑authoritative placement so alignment is
-// deterministic and drift‑free, and it renders transient dominos (such as ghosts)
-// using overlay‑authoritative pixel placement for smooth interaction and layering.
+// Renders the board’s current state into the DOM.
+// Committed dominos use grid‑authoritative placement.
+// Transient dominos (ghosts) use overlay‑authoritative placement.
 
 import { createDominoElement } from "./createDominoElement.js";
 import { renderDomino } from "./dominoRenderer.js";
 
-// renderBoard renders all dominos for the current board state into the given board
-// element. It derives logical geometry from the board state, then enters the
-// Placement Expression Phase (Chapter 3A) to decide whether each domino is rendered
-// as committed (grid‑authoritative) or transient (overlay‑authoritative). Callers
-// may pass options to indicate transient rendering such as ghost previews.
 export function renderBoard(boardEl, boardState, options = {}) {
   const { ghost = false, ghostId = null } = options;
 
-  // 1. Clear the board FIRST
+  // 1. Clear board
   boardEl.innerHTML = "";
 
   // 2. Render board cells
@@ -29,10 +23,8 @@ export function renderBoard(boardEl, boardState, options = {}) {
     }
   }
 
-  // 2A. Render mini‑puzzle outlines (Renderer Contract §11.4A)
-  // Mini‑puzzles are 4‑connected cell sets; outlines are derived from adjacency.
+  // 2A. Mini‑puzzle outlines (§11.4A)
   if (boardState.miniPuzzles) {
-    // Build a fast lookup: "row,col" → miniPuzzleId
     const cellToPuzzle = new Map();
 
     for (const puzzle of boardState.miniPuzzles) {
@@ -41,11 +33,16 @@ export function renderBoard(boardEl, boardState, options = {}) {
       }
     }
 
-    // Helper to test same mini‑puzzle membership
     const samePuzzle = (r1, c1, r2, c2) =>
       cellToPuzzle.get(`${r1},${c1}`) === cellToPuzzle.get(`${r2},${c2}`);
 
-    // For each cell that belongs to a mini‑puzzle, derive boundary edges
+    const edgeFlags = (r, c) => ({
+      top:    r === 0 || !samePuzzle(r, c, r - 1, c),
+      right:  c === boardState.boardCols - 1 || !samePuzzle(r, c, r, c + 1),
+      bottom: r === boardState.boardRows - 1 || !samePuzzle(r, c, r + 1, c),
+      left:   c === 0 || !samePuzzle(r, c, r, c - 1),
+    });
+
     for (let row = 0; row < boardState.boardRows; row++) {
       for (let col = 0; col < boardState.boardCols; col++) {
         const key = `${row},${col}`;
@@ -54,76 +51,83 @@ export function renderBoard(boardEl, boardState, options = {}) {
         const cellEl = boardEl.querySelector(
           `.board-cell[data-row="${row}"][data-col="${col}"]`
         );
-
         if (!cellEl) continue;
 
-        // Top edge
-        if (row === 0 || !samePuzzle(row, col, row - 1, col)) {
-          const edge = document.createElement("div");
-          edge.className = "subgrid-edge edge-top";
-          cellEl.appendChild(edge);
+        const { top, right, bottom, left } = edgeFlags(row, col);
+
+        // ---- Edges ----
+        if (top) {
+          const e = document.createElement("div");
+          e.className = "subgrid-edge edge-top";
+          cellEl.appendChild(e);
+        }
+        if (right) {
+          const e = document.createElement("div");
+          e.className = "subgrid-edge edge-right";
+          cellEl.appendChild(e);
+        }
+        if (bottom) {
+          const e = document.createElement("div");
+          e.className = "subgrid-edge edge-bottom";
+          cellEl.appendChild(e);
+        }
+        if (left) {
+          const e = document.createElement("div");
+          e.className = "subgrid-edge edge-left";
+          cellEl.appendChild(e);
         }
 
-        // Right edge
-        if (col === boardState.boardCols - 1 || !samePuzzle(row, col, row, col + 1)) {
-          const edge = document.createElement("div");
-          edge.className = "subgrid-edge edge-right";
-          cellEl.appendChild(edge);
+        // ---- Gap bridges ----
+        if (col < boardState.boardCols - 1 && samePuzzle(row, col, row, col + 1)) {
+          const n = edgeFlags(row, col + 1);
+
+          if (top && n.top) {
+            const b = document.createElement("div");
+            b.className = "subgrid-bridge bridge-top";
+            cellEl.appendChild(b);
+          }
+          if (bottom && n.bottom) {
+            const b = document.createElement("div");
+            b.className = "subgrid-bridge bridge-bottom";
+            cellEl.appendChild(b);
+          }
         }
 
-        // Bottom edge
-        if (row === boardState.boardRows - 1 || !samePuzzle(row, col, row + 1, col)) {
-          const edge = document.createElement("div");
-          edge.className = "subgrid-edge edge-bottom";
-          cellEl.appendChild(edge);
+        if (row < boardState.boardRows - 1 && samePuzzle(row, col, row + 1, col)) {
+          const n = edgeFlags(row + 1, col);
+
+          if (left && n.left) {
+            const b = document.createElement("div");
+            b.className = "subgrid-bridge bridge-left";
+            cellEl.appendChild(b);
+          }
+          if (right && n.right) {
+            const b = document.createElement("div");
+            b.className = "subgrid-bridge bridge-right";
+            cellEl.appendChild(b);
+          }
         }
 
-        // Left edge
-        if (col === 0 || !samePuzzle(row, col, row, col - 1)) {
-          const edge = document.createElement("div");
-          edge.className = "subgrid-edge edge-left";
-          cellEl.appendChild(edge);
+        // ---- Corners ----
+        if (top && left) {
+          const c = document.createElement("div");
+          c.className = "subgrid-corner corner-tl";
+          cellEl.appendChild(c);
         }
-        // ----------------------------------------------------
-        // Corner connectors (Renderer Contract §11.4A)
-        // Draw only when both adjacent edges exist
-        // ----------------------------------------------------
-
-        const hasTop =
-          row === 0 || !samePuzzle(row, col, row - 1, col);
-        const hasRight =
-          col === boardState.boardCols - 1 || !samePuzzle(row, col, row, col + 1);
-        const hasBottom =
-          row === boardState.boardRows - 1 || !samePuzzle(row, col, row + 1, col);
-        const hasLeft =
-          col === 0 || !samePuzzle(row, col, row, col - 1);
-
-        // Top‑left corner
-        if (hasTop && hasLeft) {
-          const corner = document.createElement("div");
-          corner.className = "subgrid-corner corner-tl";
-          cellEl.appendChild(corner);
+        if (top && right) {
+          const c = document.createElement("div");
+          c.className = "subgrid-corner corner-tr";
+          cellEl.appendChild(c);
         }
-
-        // Top‑right corner
-        if (hasTop && hasRight) {
-          const corner = document.createElement("div");
-          corner.className = "subgrid-corner corner-tr";
-          cellEl.appendChild(corner);
+        if (bottom && right) {
+          const c = document.createElement("div");
+          c.className = "subgrid-corner corner-br";
+          cellEl.appendChild(c);
         }
-
-        // Bottom‑right corner
-        if (hasBottom && hasRight) {
-          const corner = document.createElement("div");
-          corner.className = "subgrid-corner corner-br";
-          cellEl.appendChild(corner);
-        }
-
-        // Bottom‑left corner
-        if (hasBottom && hasLeft) {
-          const corner = document.createElement("div");
-          corner.className = "subgrid-corner corner-bl";
-          cellEl.appendChild(corner);
+        if (bottom && left) {
+          const c = document.createElement("div");
+          c.className = "subgrid-corner corner-bl";
+          cellEl.appendChild(c);
         }
       }
     }
@@ -133,23 +137,16 @@ export function renderBoard(boardEl, boardState, options = {}) {
   for (const d of boardState.dominos.values()) {
     if (!d.cells) continue;
 
-    const cell0 = d.cells[0];
-    const cell1 = d.cells[1];
-
-    const wrapper = document.createElement("div");
-    wrapper.classList.add("domino-wrapper", "on-board");
-    wrapper.dataset.dominoId = String(d.id);
-
-    wrapper.dataset.row0 = String(cell0.row);
-    wrapper.dataset.col0 = String(cell0.col);
-    wrapper.dataset.row1 = String(cell1.row);
-    wrapper.dataset.col1 = String(cell1.col);
-
+    const [cell0, cell1] = d.cells;
     const minRow = Math.min(cell0.row, cell1.row);
     const minCol = Math.min(cell0.col, cell1.col);
 
     const sameRow = cell0.row === cell1.row;
     const sameCol = cell0.col === cell1.col;
+
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("domino-wrapper", "on-board");
+    wrapper.dataset.dominoId = String(d.id);
 
     wrapper.style.setProperty("--row-span", sameCol ? "2" : "1");
     wrapper.style.setProperty("--col-span", sameRow ? "2" : "1");
@@ -159,11 +156,11 @@ export function renderBoard(boardEl, boardState, options = {}) {
     if (isTransient) {
       const cs = parseFloat(getComputedStyle(boardEl).getPropertyValue("--cell-size"));
       const cg = parseFloat(getComputedStyle(boardEl).getPropertyValue("--cell-gap"));
-      const cellSpan = cs + cg;
+      const span = cs + cg;
 
       wrapper.style.position = "absolute";
-      wrapper.style.left = `${minCol * cellSpan}px`;
-      wrapper.style.top  = `${minRow * cellSpan}px`;
+      wrapper.style.left = `${minCol * span}px`;
+      wrapper.style.top  = `${minRow * span}px`;
       wrapper.classList.add("ghost");
     } else {
       wrapper.style.position = "relative";
@@ -176,7 +173,6 @@ export function renderBoard(boardEl, boardState, options = {}) {
     const inner = createDominoElement();
     wrapper.appendChild(inner);
     renderDomino(d, wrapper);
-
     boardEl.appendChild(wrapper);
   }
 }
