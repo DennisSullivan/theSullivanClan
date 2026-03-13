@@ -3,7 +3,7 @@
   "title": "Die Five 2x2 Clusters (6x6) — Meaningful Rules",
   "width": 6,
   "height": 6,
-  "dominos": ["00", "01", "11", "23", "24", "34", "45", "56", "66"],
+  "dominos": ["00", "01", "11", "22", "23", "34", "45", "56", "66"],
   "startingDominos": [
     { "domino": "12", "cells": [ {"row":5,"col":5}, {"row":4,"col":5} ] }
   ],
