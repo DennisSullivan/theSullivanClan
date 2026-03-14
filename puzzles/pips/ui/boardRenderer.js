@@ -8,6 +8,7 @@ import { renderDomino } from "./dominoRenderer.js";
 
 export function renderBoard(boardEl, boardState, options = {}) {
   const { ghost = false, ghostId = null } = options;
+console.log("renderBoard dominos:", [...boardState.dominos.values()]);
 
   // 1. Clear board
   boardEl.innerHTML = "";
