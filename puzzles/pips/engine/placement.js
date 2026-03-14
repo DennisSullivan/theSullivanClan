@@ -1,34 +1,27 @@
 // ============================================================
 // FILE: engine/placement.js
 // PURPOSE:
-//   Provide the single, contract-compliant commit boundary for all
-//   engine geometry + occupancy changes.
+//   Single, contract-compliant commit boundary for all engine
+//   geometry + occupancy changes (cells-authoritative).
 //
-// CONTRACT SUMMARY (authoritative):
-//   - The engine mutates logical state ONLY at explicit commit points.
-//   - The engine does NOT track drag or rotation sessions.
-//   - The engine does NOT store pivot, snapshots, angles, or transforms.
-//   - The engine accepts/rejects a final PlacementProposal atomically.
-//   - Rejection has zero side effects.
-//   - Starting dominos are immutable for the duration of the puzzle.
+// CONTRACT SUMMARY:
+//   - Engine mutates state ONLY at explicit commit points.
+//   - No drag/rotation session tracking.
+//   - No geometry inference; no row/col fields.
+//   - Atomic accept/reject with zero side effects on rejection.
+//   - Starting dominos are immutable.
 //
 // REQUIRED ENGINE STATE SHAPE (from loader.js):
 //   state = {
-//     boardRows, boardCols,
 //     dominos: Map(id -> domino),
 //     grid: 2D array grid[row][col] = null | { dominoId, half },
 //     blocked: Set("r,c"),
-//     regionMap,
-//     regions,
 //     startingDominoIds: Set(id)
 //   }
 //
 // PROPOSAL SHAPE:
-//   proposal = { dominoId, row0, col0, row1, col1 }
-//
-// NOTES:
-//   - This module is engine-only: no DOM, no UI heuristics.
-//   - Legacy exports removed. Callers must use commitPlacement().
+//   - Placement: { dominoId, cells: [{row,col},{row,col}] }
+//   - Removal:   { dominoId, cells: null }
 // ============================================================
 
 // ------------------------------------------------------------
@@ -37,22 +30,7 @@
 export function resolveDomino(state, id) {
   if (!state || !state.dominos) return undefined;
   const key = String(id);
-  if (state.dominos instanceof Map) return state.dominos.get(key);
-  return undefined;
-}
-
-function isOnBoard(domino) {
-  return (
-    domino &&
-    domino.row0 !== null &&
-    domino.col0 !== null &&
-    domino.row1 !== null &&
-    domino.col1 !== null
-  );
-}
-
-function isBlocked(state, r, c) {
-  return !!(state.blocked && state.blocked.has && state.blocked.has(`${r},${c}`));
+  return state.dominos instanceof Map ? state.dominos.get(key) : undefined;
 }
 
 function inBounds(state, r, c) {
@@ -61,12 +39,16 @@ function inBounds(state, r, c) {
   return r >= 0 && c >= 0 && r < rows && c < cols;
 }
 
-function isInt(n) {
-  return Number.isInteger(n);
+function isBlocked(state, r, c) {
+  return !!(state.blocked && state.blocked.has && state.blocked.has(`${r},${c}`));
 }
 
-function areAdjacent(r0, c0, r1, c1) {
-  return Math.abs(r0 - r1) + Math.abs(c0 - c1) === 1;
+function areAdjacent(a, b) {
+  return Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1;
+}
+
+function isInt(n) {
+  return Number.isInteger(n);
 }
 
 // ------------------------------------------------------------
@@ -86,100 +68,59 @@ export function validatePlacementProposal(state, proposal) {
   const d = resolveDomino(state, dominoId);
   if (!d) return { ok: false, reason: "unknown-domino" };
 
-  // Starting domino immutability
   if (!state.startingDominoIds || !state.startingDominoIds.has) {
     return { ok: false, reason: "missing-startingDominoIds" };
   }
   if (state.startingDominoIds.has(dominoId)) {
-    return {
-      ok: false,
-      reason: "starting-domino-immutable",
-      info: { dominoId }
-    };
+    return { ok: false, reason: "starting-domino-immutable", info: { dominoId } };
   }
 
-  const r0 = proposal.row0, c0 = proposal.col0;
-  const r1 = proposal.row1, c1 = proposal.col1;
+  const { cells } = proposal;
 
-  // ------------------------------------------------------------
-  // REMOVAL PROPOSAL (all coordinates null)
-  // ------------------------------------------------------------
-  const isRemoval =
-    r0 === null && c0 === null &&
-    r1 === null && c1 === null;
-
-  if (isRemoval) {
+  // Removal
+  if (cells === null) {
     return { ok: true, info: { removal: true } };
   }
 
-  // ------------------------------------------------------------
-  // PLACEMENT VALIDATION
-  // ------------------------------------------------------------
-  if (![r0, c0, r1, c1].every(isInt)) {
-    return {
-      ok: false,
-      reason: "invalid-coordinates",
-      info: { proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 } }
-    };
+  // Placement
+  if (!Array.isArray(cells) || cells.length !== 2) {
+    return { ok: false, reason: "invalid-cells" };
   }
 
-  if (r0 === r1 && c0 === c1) {
-    return {
-      ok: false,
-      reason: "identical-cells",
-      info: { proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 } }
-    };
+  const [a, b] = cells;
+
+  if (![a, b].every(c => isInt(c.row) && isInt(c.col))) {
+    return { ok: false, reason: "invalid-coordinates", info: { cells } };
   }
 
-  if (!areAdjacent(r0, c0, r1, c1)) {
-    return {
-      ok: false,
-      reason: "non-adjacent",
-      info: { proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 } }
-    };
+  if (a.row === b.row && a.col === b.col) {
+    return { ok: false, reason: "identical-cells", info: { cells } };
   }
 
-  const in0 = inBounds(state, r0, c0);
-  const in1 = inBounds(state, r1, c1);
-  if (!in0 || !in1) {
-    return {
-      ok: false,
-      reason: "out-of-bounds",
-      info: {
-        proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 },
-        bounds: { in0, in1 }
-      }
-    };
+  if (!areAdjacent(a, b)) {
+    return { ok: false, reason: "non-adjacent", info: { cells } };
   }
 
-  const blocked0 = isBlocked(state, r0, c0);
-  const blocked1 = isBlocked(state, r1, c1);
-  if (blocked0 || blocked1) {
-    return {
-      ok: false,
-      reason: "blocked",
-      info: {
-        proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 },
-        blocked: { cell0: blocked0, cell1: blocked1 }
-      }
-    };
+  if (!inBounds(state, a.row, a.col) || !inBounds(state, b.row, b.col)) {
+    return { ok: false, reason: "out-of-bounds", info: { cells } };
   }
 
-  const grid = state.grid;
-  const cell0 = grid[r0][c0];
-  const cell1 = grid[r1][c1];
+  if (isBlocked(state, a.row, a.col) || isBlocked(state, b.row, b.col)) {
+    return { ok: false, reason: "blocked", info: { cells } };
+  }
 
-  const conflict0 = cell0 && String(cell0.dominoId) !== dominoId;
-  const conflict1 = cell1 && String(cell1.dominoId) !== dominoId;
+  const g = state.grid;
+  const ca = g[a.row][a.col];
+  const cb = g[b.row][b.col];
 
-  if (conflict0 || conflict1) {
+  const conflictA = ca && String(ca.dominoId) !== dominoId;
+  const conflictB = cb && String(cb.dominoId) !== dominoId;
+
+  if (conflictA || conflictB) {
     return {
       ok: false,
       reason: "occupied",
-      info: {
-        proposal: { dominoId, row0: r0, col0: c0, row1: r1, col1: c1 },
-        occupancy: { cell0, cell1, conflict0, conflict1 }
-      }
+      info: { conflictA, conflictB, cells }
     };
   }
 
@@ -197,58 +138,29 @@ export function commitPlacement(state, proposal) {
 
   const dominoId = String(proposal.dominoId);
   const d = resolveDomino(state, dominoId);
-  const grid = state.grid;
+  const g = state.grid;
 
-  const r0 = proposal.row0, c0 = proposal.col0;
-  const r1 = proposal.row1, c1 = proposal.col1;
-
-  const isRemoval =
-    r0 === null && c0 === null &&
-    r1 === null && c1 === null;
-
-  // ------------------------------------------------------------
-  // REMOVAL COMMIT
-  // ------------------------------------------------------------
-  if (isRemoval) {
-    // Clear any existing occupancy
-    for (let rr = 0; rr < grid.length; rr++) {
-      for (let cc = 0; cc < grid[0].length; cc++) {
-        const occ = grid[rr][cc];
-        if (occ && String(occ.dominoId) === dominoId) {
-          grid[rr][cc] = null;
-        }
-      }
+  // Clear any existing occupancy for this domino
+  for (let r = 0; r < g.length; r++) {
+    for (let c = 0; c < g[0].length; c++) {
+      if (g[r][c]?.dominoId === dominoId) g[r][c] = null;
     }
+  }
 
-    // Null geometry
-    if (d) {
-      d.row0 = null; d.col0 = null;
-      d.row1 = null; d.col1 = null;
-    }
-
+  // Removal
+  if (proposal.cells === null) {
+    d.cells = null;
     return { accepted: true };
   }
 
-  // ------------------------------------------------------------
-  // NORMAL PLACEMENT COMMIT
-  // ------------------------------------------------------------
-  // Clear old occupancy
-  for (let rr = 0; rr < grid.length; rr++) {
-    for (let cc = 0; cc < grid[0].length; cc++) {
-      const occ = grid[rr][cc];
-      if (occ && String(occ.dominoId) === dominoId) {
-        grid[rr][cc] = null;
-      }
-    }
-  }
-
-  // Write new occupancy
-  grid[r0][c0] = { dominoId, half: 0 };
-  grid[r1][c1] = { dominoId, half: 1 };
-
-  // Update geometry
-  d.row0 = r0; d.col0 = c0;
-  d.row1 = r1; d.col1 = c1;
+  // Placement
+  const [a, b] = proposal.cells;
+  g[a.row][a.col] = { dominoId, half: 0 };
+  g[b.row][b.col] = { dominoId, half: 1 };
+  d.cells = [
+    { row: a.row, col: a.col },
+    { row: b.row, col: b.col }
+  ];
 
   return { accepted: true };
 }
