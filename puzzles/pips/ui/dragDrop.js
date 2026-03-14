@@ -51,14 +51,9 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       console.log("dragDrop:ghost:null");
       return;
     }
-/*    console.log("dragDrop:ghost", {
-      id: ghost.id,
-      row0: ghost.row0,
-      col0: ghost.col0,
-      row1: ghost.row1,
-      col1: ghost.col1
-    }); */
   }
+  
+  console.log("PROPOSAL CELLS", proposal.dominoId, proposal.cells);
 
   function logDispatch(type, detail) {
     console.log(`dragDrop:dispatch:${type}`, detail);
