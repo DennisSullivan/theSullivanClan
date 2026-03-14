@@ -109,7 +109,7 @@ const RotationSession = {
     if (!d) return;
 
     // Only rotate tray dominos (not on board)
-    if (d.row0 !== null || d.row1 !== null) return;
+    if (d.cells !== null) return;
 
     d.trayOrientation = ((d.trayOrientation || 0) + 90) % 360;
     logRotation("TrayRotate", { id, orientation: d.trayOrientation });
@@ -528,7 +528,14 @@ const RotationSession = {
       return;
     }
 
-    const proposal = { ...this.ghost };
+    const proposal = {
+      dominoId: String(this.rotatingDomino.id),
+      cells: [
+        { row: this.ghost.row0, col: this.ghost.col0 },
+        { row: this.ghost.row1, col: this.ghost.col1 }
+      ]
+    };
+
     logRotation("ProposalEmit", { proposal });
 
     this.state = RS.AwaitResult;
