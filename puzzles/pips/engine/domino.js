@@ -4,6 +4,13 @@
 // NOTES:
 //   - No DOM, no UI, no grid mutation.
 //   - Placement authority is d.cells only.
+//
+// INVARIANT:
+//   This engine is cells-authoritative.
+//   No code in this repository may read or write:
+//     row0, col0, row1, col1
+//   All placement geometry must flow through:
+//     proposal.cells -> domino.cells -> grid
 // ============================================================
 
 // Canonical tray ordering for 0–6 domino set.
