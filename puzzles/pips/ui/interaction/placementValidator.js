@@ -1,139 +1,208 @@
 // ============================================================
-// FILE: engine/placement.js
+// FILE: placementValidator.js
 // PURPOSE:
-//   Single, contract-compliant commit boundary for all
-//   engine geometry + occupancy changes (cells-based).
+//   Contract-compliant bridge between UI events and the engine’s
+//   single commit boundary (cells-based).
 // ============================================================
 
-export function resolveDomino(state, id) {
-  if (!state || !state.dominos) return undefined;
-  const key = String(id);
-  if (state.dominos instanceof Map) return state.dominos.get(key);
-  return undefined;
-}
-
-function isBlocked(state, r, c) {
-  return !!(state.blocked && state.blocked.has && state.blocked.has(`${r},${c}`));
-}
-
-function inBounds(state, r, c) {
-  const rows = state.grid.length;
-  const cols = state.grid[0]?.length || 0;
-  return r >= 0 && c >= 0 && r < rows && c < cols;
-}
-
-function areAdjacent(a, b) {
-  return Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1;
-}
+import { commitPlacement, validatePlacementProposal } from "../../engine/placement.js";
+import { evaluateAllRegions } from "../../engine/regionRules.js";
 
 // ------------------------------------------------------------
-// Validation (pure)
+// dispatchEvents(target, names, detail)
 // ------------------------------------------------------------
-export function validatePlacementProposal(state, proposal) {
-  if (!state || !state.grid || !state.dominos) {
-    return { ok: false, reason: "missing-state" };
-  }
-  if (!proposal || typeof proposal !== "object") {
-    return { ok: false, reason: "missing-proposal" };
-  }
-
-  const dominoId = String(proposal.dominoId ?? "");
-  if (!dominoId) return { ok: false, reason: "missing-dominoId" };
-
-  const d = resolveDomino(state, dominoId);
-  if (!d) return { ok: false, reason: "unknown-domino" };
-
-  if (!state.startingDominoIds?.has) {
-    return { ok: false, reason: "missing-startingDominoIds" };
-  }
-  if (state.startingDominoIds.has(dominoId)) {
-    return { ok: false, reason: "starting-domino-immutable", info: { dominoId } };
-  }
-
-  const { cells } = proposal;
-
-  // Removal
-  if (cells === null) {
-    return { ok: true, info: { removal: true } };
-  }
-
-  if (!Array.isArray(cells) || cells.length !== 2) {
-    return { ok: false, reason: "invalid-cells" };
-  }
-
-  const [a, b] = cells;
-  if (![a, b].every(c => Number.isInteger(c.row) && Number.isInteger(c.col))) {
-    return { ok: false, reason: "invalid-coordinates" };
-  }
-
-  if (a.row === b.row && a.col === b.col) {
-    return { ok: false, reason: "identical-cells" };
-  }
-
-  if (!areAdjacent(a, b)) {
-    return { ok: false, reason: "non-adjacent" };
-  }
-
-  if (!inBounds(state, a.row, a.col) || !inBounds(state, b.row, b.col)) {
-    return { ok: false, reason: "out-of-bounds" };
-  }
-
-  if (isBlocked(state, a.row, a.col) || isBlocked(state, b.row, b.col)) {
-    return { ok: false, reason: "blocked" };
-  }
-
-  const g = state.grid;
-  const ca = g[a.row][a.col];
-  const cb = g[b.row][b.col];
-
-  const conflictA = ca && String(ca.dominoId) !== dominoId;
-  const conflictB = cb && String(cb.dominoId) !== dominoId;
-
-  if (conflictA || conflictB) {
-    return {
-      ok: false,
-      reason: "occupied",
-      info: { conflictA, conflictB }
-    };
-  }
-
-  return { ok: true };
+function dispatchEvents(target, names, detail) {
+  names.forEach((name) => {
+    target.dispatchEvent(
+      new CustomEvent(name, {
+        detail,
+        bubbles: true
+      })
+    );
+  });
 }
 
-// ------------------------------------------------------------
-// Commit (atomic)
-// ------------------------------------------------------------
-export function commitPlacement(state, proposal) {
-  const v = validatePlacementProposal(state, proposal);
-  if (!v.ok) {
-    return { accepted: false, reason: v.reason, info: v.info };
+// ============================================================
+// installPlacementValidator(appRoot, puzzle)
+// ============================================================
+export function installPlacementValidator(appRoot, puzzle) {
+  if (!appRoot || !puzzle) {
+    throw new Error("installPlacementValidator: missing args");
   }
 
-  const dominoId = String(proposal.dominoId);
-  const d = resolveDomino(state, dominoId);
-  const g = state.grid;
+  if (!puzzle.startingDominoIds || !puzzle.startingDominoIds.has) {
+    throw new Error(
+      "placementValidator: puzzle.startingDominoIds missing — loader must supply authoritative state"
+    );
+  }
 
-  // Clear old occupancy
-  for (let r = 0; r < g.length; r++) {
-    for (let c = 0; c < g[0].length; c++) {
-      if (g[r][c]?.dominoId === dominoId) g[r][c] = null;
+  const { regionMap, regions } = puzzle;
+
+  // ------------------------------------------------------------
+  // pips:drop:proposal → engine commitPlacement
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:drop:proposal", (ev) => {
+    const { proposal } = ev.detail || {};
+    if (!proposal) return;
+
+    const { id, cells } = proposal;
+    if (!id) return;
+
+    const res = commitPlacement(puzzle, {
+      dominoId: String(id),
+      cells
+    });
+
+    if (!res.accepted) {
+      dispatchEvents(ev.target, ["pips:drop:reject:board"], {
+        id: String(id),
+        reason: res.reason,
+        info: res.info
+      });
+      return;
     }
+
+    // Derive row/col for renderer convenience only
+    const payload =
+      cells === null
+        ? { id: String(id) }
+        : {
+            id: String(id),
+            r0: cells[0].row,
+            c0: cells[0].col,
+            r1: cells[1].row,
+            c1: cells[1].col
+          };
+
+    dispatchEvents(ev.target, ["pips:drop:commit:board"], payload);
+    dispatchEvents(ev.target, ["pips:state:update"], {});
+  });
+
+  // ------------------------------------------------------------
+  // pips:return-to-tray → engine removal
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:return-to-tray", (ev) => {
+    const { id } = ev.detail || {};
+    if (!id) return;
+
+    const res = commitPlacement(puzzle, {
+      dominoId: String(id),
+      cells: null
+    });
+
+    if (!res.accepted) {
+      dispatchEvents(ev.target, ["pips:return-to-tray:reject"], {
+        id: String(id),
+        reason: res.reason,
+        info: res.info
+      });
+      return;
+    }
+
+    dispatchEvents(ev.target, ["pips:return-to-tray:commit"], {
+      id: String(id)
+    });
+
+    dispatchEvents(ev.target, ["pips:state:update"], {});
+  });
+
+  // ============================================================
+  // pips:rotate:proposal → engine validate + commitPlacement
+  // ============================================================
+  appRoot.addEventListener("pips:rotate:proposal", (ev) => {
+    const { proposal } = ev.detail || {};
+    if (!proposal) return;
+
+    const { id, cells } = proposal;
+    if (!id) return;
+
+    const validation = validatePlacementProposal(puzzle, {
+      dominoId: String(id),
+      cells
+    });
+
+    if (!validation.ok) {
+      dispatchEvents(ev.target, ["pips:rotate:reject"], {
+        id: String(id),
+        reason: validation.reason,
+        info: validation.info
+      });
+      dispatchEvents(ev.target, ["pips:state:update"], {});
+      return;
+    }
+
+    const res = commitPlacement(puzzle, {
+      dominoId: String(id),
+      cells
+    });
+
+    if (!res.accepted) {
+      dispatchEvents(ev.target, ["pips:rotate:reject"], {
+        id: String(id),
+        reason: res.reason,
+        info: res.info
+      });
+      dispatchEvents(ev.target, ["pips:state:update"], {});
+      return;
+    }
+
+    dispatchEvents(ev.target, ["pips:rotate:commit"], {
+      id: String(id),
+      r0: cells[0].row,
+      c0: cells[0].col,
+      r1: cells[1].row,
+      c1: cells[1].col
+    });
+
+    dispatchEvents(ev.target, ["pips:state:update"], {});
+  });
+
+  // ------------------------------------------------------------
+  // Rotation requests (must submit proposal)
+  // ------------------------------------------------------------
+  appRoot.addEventListener("pips:board-rotate-request", (ev) => {
+    const { id } = ev.detail || {};
+    dispatchEvents(ev.target, ["pips:board-rotate-reject"], {
+      id: id ?? null,
+      reason: "rotation-must-submit-proposal"
+    });
+  });
+
+  // ------------------------------------------------------------
+  // Check solution (post-commit only)
+  // ------------------------------------------------------------
+  function validateBlockedAndRegions() {
+    const { grid, blocked } = puzzle;
+
+    for (let r = 0; r < grid.length; r++) {
+      for (let c = 0; c < grid[0].length; c++) {
+        if (!grid[r][c]) continue;
+        if (blocked && blocked.has(`${r},${c}`)) {
+          return { ok: false, reason: "blocked", cell: { r, c } };
+        }
+      }
+    }
+
+    const regionResults = evaluateAllRegions(grid, regionMap, regions);
+    for (const rr of regionResults) {
+      if (!rr.satisfied) {
+        return {
+          ok: false,
+          reason: "region",
+          regionId: rr.id,
+          currentValue: rr.currentValue,
+          rule: rr.rule
+        };
+      }
+    }
+
+    return { ok: true };
   }
 
-  // Removal
-  if (proposal.cells === null) {
-    d.cells = null;
-    return { accepted: true };
-  }
+  appRoot.addEventListener("pips:check-solution", () => {
+    const res = validateBlockedAndRegions();
+    dispatchEvents(appRoot, ["pips:solution-result"], res);
+  });
 
-  // Placement
-  const [a, b] = proposal.cells;
-  g[a.row][a.col] = { dominoId, half: 0 };
-  g[b.row][b.col] = { dominoId, half: 1 };
-  d.cells = [
-    { row: a.row, col: a.col },
-    { row: b.row, col: b.col }
-  ];
-
-  return { accepted: true };
+  console.log("installPlacementValidator: complete (cells-authoritative)");
 }
