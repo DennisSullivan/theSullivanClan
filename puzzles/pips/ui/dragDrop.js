@@ -53,8 +53,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     }
   }
   
-  console.log("PROPOSAL CELLS", proposal.dominoId, proposal.cells);
-
   function logDispatch(type, detail) {
     console.log(`dragDrop:dispatch:${type}`, detail);
   }
@@ -343,6 +341,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       if (state.ghost) {
         logStateChange("Dragging", "Idle:Commit", state.ghost);
         logDispatch("pips:drop:proposal", state.ghost);
+        console.log("PROPOSAL CELLS", proposal.dominoId, proposal.cells);
         boardEl.dispatchEvent(
           new CustomEvent("pips:drop:proposal", {
             bubbles: true,
