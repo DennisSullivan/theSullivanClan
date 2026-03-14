@@ -42,11 +42,10 @@ export function installPlacementValidator(appRoot, puzzle) {
   // pips:drop:proposal → engine commitPlacement
   // ------------------------------------------------------------
   appRoot.addEventListener("pips:drop:proposal", (ev) => {
-    const { proposal } = ev.detail || {};
-    if (!proposal) return;
+    const { dominoId, cells } = ev.detail || {};
+    if (!dominoId || !cells) return;
   
-    const { id, cells } = proposal;
-    if (!id) return;
+    const id = String(dominoId);
   
     const res = commitPlacement(puzzle, {
       dominoId: String(id),
@@ -110,14 +109,11 @@ export function installPlacementValidator(appRoot, puzzle) {
   // ============================================================
   // pips:rotate:proposal → engine validate + commitPlacement
   // ============================================================
-  appRoot.addEventListener("pips:rotate:proposal", (ev) => {
+  appRoot.addEventListener("pips:drop:proposal", (ev) => {
     const { dominoId, cells } = ev.detail || {};
     if (!dominoId || !cells) return;
   
-    const validation = validatePlacementProposal(puzzle, {
-      dominoId: String(dominoId),
-      cells
-    });
+    const id = String(dominoId);
 
 
     if (!validation.ok) {
