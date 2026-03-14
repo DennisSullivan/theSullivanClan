@@ -81,6 +81,7 @@ function loadDominos(idList) {
 
     d.homeSlot = index++;
     d.trayOrientation = 0;
+    d.cells = null;
 
     map.set(String(id), d);
   }
@@ -104,28 +105,20 @@ function applyStartingDominos(startingList, dominos, grid) {
       d = createDomino(key);
       d.homeSlot = -1;        // ensures it NEVER appears in the tray
       d.trayOrientation = 0;
+      d.cells = null;
       dominos.set(key, d);
     }
 
     d.isStarting = true;
 
-    const r0 = cells[0].row;
-    const c0 = cells[0].col;
-    const r1 = cells[1].row;
-    const c1 = cells[1].col;
-
-    d.row0 = r0;
-    d.col0 = c0;
-    d.row1 = r1;
-    d.col1 = c1;
     d.cells = [
-      { row: r0, col: c0 },
-      { row: r1, col: c1 }
+      { row: cells[0].row, col: cells[0].col },
+      { row: cells[1].row, col: cells[1].col }
     ];
-
+    
     // Commit occupancy via canonical grid helper
-    setCell(grid, r0, c0, key, 0);
-    setCell(grid, r1, c1, key, 1);
+    setCell(grid, d.cells[0].row, d.cells[0].col, key, 0);
+    setCell(grid, d.cells[1].row, d.cells[1].col, key, 1);
   }
 }
 
