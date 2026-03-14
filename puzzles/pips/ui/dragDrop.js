@@ -371,8 +371,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
           })
         );
       }
-    }
-
+    
     reset();
   }
 
