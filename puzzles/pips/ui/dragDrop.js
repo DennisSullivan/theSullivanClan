@@ -341,14 +341,21 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       if (state.ghost) {
         logStateChange("Dragging", "Idle:Commit", state.ghost);
         logDispatch("pips:drop:proposal", state.ghost);
-        console.log("PROPOSAL CELLS", proposal.dominoId, proposal.cells);
+    
+        console.log(
+          "PROPOSAL CELLS",
+          state.ghost.dominoId,
+          state.ghost.cells
+        );
+    
         boardEl.dispatchEvent(
           new CustomEvent("pips:drop:proposal", {
             bubbles: true,
-            detail: { proposal: state.ghost }
+            detail: state.ghost
           })
         );
-      } else if (state.snapshot?.source === "board") {
+      }
+    } else if (state.snapshot?.source === "board") {
         logDispatch("pips:return-to-tray", { id: state.snapshot.id });
         logStateChange("Dragging", "Idle:Commit", state.ghost);
         
