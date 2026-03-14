@@ -144,7 +144,8 @@ appRoot.addEventListener("pips:rotate:commit", (ev) => {
   // Optional: if your validator emits an explicit tray-return event,
   // re-render on that too so the UI always snaps back cleanly.
   appRoot.addEventListener("pips:drop:tray", () => {
-    console.log("MAIN: pips:drop:tray → renderPuzzle()");
+    console.log("REJECT DETAIL", e.detail);
+    console.log("REJECT PROPOSAL CELLS", e.detail?.proposal?.cells);
     renderPuzzle();
   });
 
