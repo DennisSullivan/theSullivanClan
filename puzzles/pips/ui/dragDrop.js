@@ -223,7 +223,13 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       col1 >= 0 && col1 < cols;
 
     state.ghost = valid
-      ? { id: snap.id, row0, col0, row1, col1 }
+      ? {
+          dominoId: snap.id,
+          cells: [
+            { row: row0, col: col0 },
+            { row: row1, col: col1 }
+          ]
+        }
       : null;
 
     logGhost(state.ghost);
