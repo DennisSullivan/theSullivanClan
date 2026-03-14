@@ -88,6 +88,15 @@ export function startPuzzle(puzzleJson) {
   // Rotation commit → engine accepted the rotated geometry
   // ------------------------------------------------------------
   appRoot.addEventListener("pips:rotate:commit", (ev) => {
+    const { dominoId, cells } = ev.detail || {};
+    console.log("[ROTATION] UI Commit", { dominoId, cells });
+  
+    // Optional: highlight the rotated domino
+    // highlightDomino(id);
+    
+      renderPuzzle();
+  });
+appRoot.addEventListener("pips:rotate:commit", (ev) => {
     const { id, r0, c0, r1, c1 } = ev.detail || {};
   
     console.log(
@@ -119,13 +128,6 @@ export function startPuzzle(puzzleJson) {
     // showRotationError(reason, info);
   
     // Re-render from authoritative engine state
-    renderPuzzle();
-  });
-  
-  // ------------------------------------------------------------
-  // State update → engine geometry changed (commit or cancel)
-  // ------------------------------------------------------------
-  appRoot.addEventListener("pips:state:update", () => {
     renderPuzzle();
   });
 
