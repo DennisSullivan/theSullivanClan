@@ -75,31 +75,6 @@ export function clearCell(grid, row, col) {
 
 
 // ------------------------------------------------------------
-// placeDomino(grid, domino)
-// Writes both halves of a domino into the grid.
-// INPUTS:
-//   domino - canonical Domino object with row0/col0 and row1/col1
-// NOTES:
-//   - Does NOT validate legality.
-//   - Assumes coordinates are already correct.
-// ------------------------------------------------------------
-export function placeDomino(grid, domino) {
-  setCell(grid, domino.row0, domino.col0, domino.id, 0);
-  setCell(grid, domino.row1, domino.col1, domino.id, 1);
-}
-
-
-// ------------------------------------------------------------
-// removeDomino(grid, domino)
-// Clears both halves of a domino from the grid.
-// ------------------------------------------------------------
-export function removeDomino(grid, domino) {
-  clearCell(grid, domino.row0, domino.col0);
-  clearCell(grid, domino.row1, domino.col1);
-}
-
-
-// ------------------------------------------------------------
 // isCellFree(grid, row, col)
 // Returns true if the cell is inside the grid and empty.
 // ------------------------------------------------------------
