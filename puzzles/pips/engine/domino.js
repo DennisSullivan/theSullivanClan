@@ -1,11 +1,9 @@
 // ============================================================
 // FILE: domino.js
-// PURPOSE: Define the canonical Domino model and helpers.
+// PURPOSE: Canonical Domino model (pure, cells-based).
 // NOTES:
-//   - Pure data module: no DOM, no UI.
-//   - Domino geometry is always row0/col0 and row1/col1.
-//   - MASTER_TRAY defines canonical tray ordering.
-//   - Medium diagnostics for impossible branches.
+//   - No DOM, no UI, no grid mutation.
+//   - Placement authority is d.cells only.
 // ============================================================
 
 // Canonical tray ordering for 0–6 domino set.
@@ -19,10 +17,6 @@ export const MASTER_TRAY = [
   "66"
 ];
 
-/**
- * isValidDominoId(id)
- * Returns true if id is a valid "ab" string with 0 ≤ a ≤ b ≤ 6.
- */
 export function isValidDominoId(id) {
   if (typeof id !== "string" || !/^[0-6][0-6]$/.test(id)) return false;
   const a = Number(id[0]);
@@ -30,10 +24,6 @@ export function isValidDominoId(id) {
   return a <= b;
 }
 
-/**
- * getPipsFromId(id)
- * Returns { pip0, pip1 } for a valid domino id.
- */
 export function getPipsFromId(id) {
   return {
     pip0: Number(id[0]),
@@ -41,28 +31,10 @@ export function getPipsFromId(id) {
   };
 }
 
-/**
- * getHomeSlot(id)
- * Returns the index of the domino in MASTER_TRAY.
- */
 export function getHomeSlot(id) {
   return MASTER_TRAY.indexOf(id);
 }
 
-/**
- * createDomino(id)
- * Constructs a canonical domino model object.
- *
- * RETURNS:
- *   {
- *     id, pip0, pip1,
- *     row0, col0, row1, col1,
- *     trayOrientation,
- *   }
- *
- * DIAGNOSTICS:
- *   - Throws if id is invalid.
- */
 export function createDomino(id) {
   if (!isValidDominoId(id)) {
     throw new Error(`Invalid domino ID: ${id}`);
@@ -74,80 +46,30 @@ export function createDomino(id) {
     id,
     pip0,
     pip1,
-    row0: null,
-    col0: null,
-    row1: null,
-    col1: null,
+
+    // Placement authority:
+    // null  → tray
+    // [{row,col},{row,col}] → board
+    cells: null,
+
+    // Tray-only metadata
     trayOrientation: 0
   };
 }
 
-/**
- * isOnBoard(domino)
- * Returns true if both halves have non-null coordinates.
- */
+// Pure predicate
 export function isOnBoard(domino) {
-  return (
-    domino.row0 !== null &&
-    domino.col0 !== null &&
-    domino.row1 !== null &&
-    domino.col1 !== null
-  );
+  return Array.isArray(domino.cells) && domino.cells.length === 2;
 }
 
-/**
- * clearBoardState(domino, grid)
- * Removes the domino from the grid and resets geometry.
- */
-export function clearBoardState(domino, grid) {
-  if (isOnBoard(domino)) {
-    grid[domino.row0][domino.col0] = null;
-    grid[domino.row1][domino.col1] = null;
-  }
-
-  domino.row0 = null;
-  domino.col0 = null;
-  domino.row1 = null;
-  domino.col1 = null;
-}
-
-/**
- * setCells(domino, r0, c0, r1, c1, grid)
- * Writes the domino into the grid at the given coordinates.
- * WARNING:
- *   - Does not validate occupancy or bounds.
- *   - Caller must ensure correctness.
- */
-export function setCells(domino, r0, c0, r1, c1, grid) {
-  if (isOnBoard(domino)) {
-    grid[domino.row0][domino.col0] = null;
-    grid[domino.row1][domino.col1] = null;
-  }
-
-  domino.row0 = r0;
-  domino.col0 = c0;
-  domino.row1 = r1;
-  domino.col1 = c1;
-
-  grid[r0][c0] = { dominoId: domino.id, half: 0 };
-  grid[r1][c1] = { dominoId: domino.id, half: 1 };
-}
-
-/**
- * getCells(domino)
- * Returns an array of the two cell coordinates.
- */
+// Pure accessor
 export function getCells(domino) {
-  return [
-    { row: domino.row0, col: domino.col0 },
-    { row: domino.row1, col: domino.col1 }
-  ];
+  return domino.cells
+    ? domino.cells.map(({ row, col }) => ({ row, col }))
+    : [];
 }
 
-/**
- * cloneDomino(domino)
- * Deep‑clones a domino object.
- */
+// Structural clone only
 export function cloneDomino(domino) {
   return JSON.parse(JSON.stringify(domino));
 }
