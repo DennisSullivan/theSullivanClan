@@ -22,6 +22,13 @@
 // PROPOSAL SHAPE:
 //   - Placement: { dominoId, cells: [{row,col},{row,col}] }
 //   - Removal:   { dominoId, cells: null }
+//
+// INVARIANT:
+//   This engine is cells-authoritative.
+//   No code in this repository may read or write:
+//     row0, col0, row1, col1
+//   All placement geometry must flow through:
+//     proposal.cells -> domino.cells -> grid
 // ============================================================
 
 // ------------------------------------------------------------
