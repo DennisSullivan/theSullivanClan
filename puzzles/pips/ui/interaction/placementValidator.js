@@ -109,46 +109,50 @@ export function installPlacementValidator(appRoot, puzzle) {
   // ============================================================
   // pips:rotate:proposal → engine validate + commitPlacement
   // ============================================================
-  appRoot.addEventListener("pips:drop:proposal", (ev) => {
+  appRoot.addEventListener("pips:rotate:proposal", (ev) => {
     const { dominoId, cells } = ev.detail || {};
     if (!dominoId || !cells) return;
   
     const id = String(dominoId);
-
-
+  
+    const validation = validatePlacementProposal(puzzle, {
+      dominoId: id,
+      cells
+    });
+  
     if (!validation.ok) {
       dispatchEvents(ev.target, ["pips:rotate:reject"], {
-        id: String(id),
+        id,
         reason: validation.reason,
         info: validation.info
       });
       dispatchEvents(ev.target, ["pips:state:update"], {});
       return;
     }
-
+  
     const res = commitPlacement(puzzle, {
-      dominoId: String(id),
+      dominoId: id,
       cells
     });
-
+  
     if (!res.accepted) {
       dispatchEvents(ev.target, ["pips:rotate:reject"], {
-        id: String(id),
+        id,
         reason: res.reason,
         info: res.info
       });
       dispatchEvents(ev.target, ["pips:state:update"], {});
       return;
     }
-
+  
     dispatchEvents(ev.target, ["pips:rotate:commit"], {
-      id: String(id),
+      dominoId: id,
       r0: cells[0].row,
       c0: cells[0].col,
       r1: cells[1].row,
       c1: cells[1].col
     });
-
+  
     dispatchEvents(ev.target, ["pips:state:update"], {});
   });
 
