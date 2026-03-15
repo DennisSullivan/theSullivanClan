@@ -38,7 +38,7 @@
   width: calc(var(--col-span) * var(--cell-size));
   height: calc(var(--row-span) * var(--cell-size));
 
-/*  display: flex; */
+  display: flex;
   align-items: center;
   justify-content: center;
 
