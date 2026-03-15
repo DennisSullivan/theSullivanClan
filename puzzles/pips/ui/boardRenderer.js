@@ -8,10 +8,17 @@ import { renderDomino } from "./dominoRenderer.js";
 
 export function renderBoard(boardEl, boardState, options = {}) {
   const { ghost = false, ghostId = null } = options;
-console.log("renderBoard dominos:", [...boardState.dominos.values()]);
 
-  // 1. Clear board
-  boardEl.innerHTML = "";
+  const cellsLayer   = boardEl.querySelector(".board-cells");
+  const dominosLayer = boardEl.querySelector(".board-dominos");
+
+  if (!cellsLayer || !dominosLayer) {
+    throw new Error("renderBoard: board layers missing (.board-cells / .board-dominos)");
+  }
+
+  // 1. Clear layers (never clear boardEl itself)
+  cellsLayer.innerHTML = "";
+  dominosLayer.innerHTML = "";
 
   // 2. Render board cells
   for (let row = 0; row < boardState.boardRows; row++) {
@@ -20,7 +27,7 @@ console.log("renderBoard dominos:", [...boardState.dominos.values()]);
       cell.className = "board-cell";
       cell.dataset.row = row;
       cell.dataset.col = col;
-      boardEl.appendChild(cell);
+      cellsLayer.appendChild(cell);
     }
   }
 
@@ -49,92 +56,39 @@ console.log("renderBoard dominos:", [...boardState.dominos.values()]);
         const key = `${row},${col}`;
         if (!cellToPuzzle.has(key)) continue;
 
-        const cellEl = boardEl.querySelector(
+        const cellEl = cellsLayer.querySelector(
           `.board-cell[data-row="${row}"][data-col="${col}"]`
         );
         if (!cellEl) continue;
 
         const { top, right, bottom, left } = edgeFlags(row, col);
 
-        // ---- Edges ----
-        if (top) {
-          const e = document.createElement("div");
-          e.className = "subgrid-edge edge-top";
-          cellEl.appendChild(e);
-        }
-        if (right) {
-          const e = document.createElement("div");
-          e.className = "subgrid-edge edge-right";
-          cellEl.appendChild(e);
-        }
-        if (bottom) {
-          const e = document.createElement("div");
-          e.className = "subgrid-edge edge-bottom";
-          cellEl.appendChild(e);
-        }
-        if (left) {
-          const e = document.createElement("div");
-          e.className = "subgrid-edge edge-left";
-          cellEl.appendChild(e);
-        }
+        if (top)    cellEl.appendChild(edge("edge-top"));
+        if (right)  cellEl.appendChild(edge("edge-right"));
+        if (bottom) cellEl.appendChild(edge("edge-bottom"));
+        if (left)   cellEl.appendChild(edge("edge-left"));
 
-        // ---- Gap bridges ----
         if (col < boardState.boardCols - 1 && samePuzzle(row, col, row, col + 1)) {
           const n = edgeFlags(row, col + 1);
-
-          if (top && n.top) {
-            const b = document.createElement("div");
-            b.className = "subgrid-bridge bridge-top";
-            cellEl.appendChild(b);
-          }
-          if (bottom && n.bottom) {
-            const b = document.createElement("div");
-            b.className = "subgrid-bridge bridge-bottom";
-            cellEl.appendChild(b);
-          }
+          if (top && n.top)       cellEl.appendChild(bridge("bridge-top"));
+          if (bottom && n.bottom) cellEl.appendChild(bridge("bridge-bottom"));
         }
 
         if (row < boardState.boardRows - 1 && samePuzzle(row, col, row + 1, col)) {
           const n = edgeFlags(row + 1, col);
-
-          if (left && n.left) {
-            const b = document.createElement("div");
-            b.className = "subgrid-bridge bridge-left";
-            cellEl.appendChild(b);
-          }
-          if (right && n.right) {
-            const b = document.createElement("div");
-            b.className = "subgrid-bridge bridge-right";
-            cellEl.appendChild(b);
-          }
+          if (left && n.left)   cellEl.appendChild(bridge("bridge-left"));
+          if (right && n.right) cellEl.appendChild(bridge("bridge-right"));
         }
 
-        // ---- Corners ----
-        if (top && left) {
-          const c = document.createElement("div");
-          c.className = "subgrid-corner corner-tl";
-          cellEl.appendChild(c);
-        }
-        if (top && right) {
-          const c = document.createElement("div");
-          c.className = "subgrid-corner corner-tr";
-          cellEl.appendChild(c);
-        }
-        if (bottom && right) {
-          const c = document.createElement("div");
-          c.className = "subgrid-corner corner-br";
-          cellEl.appendChild(c);
-        }
-        if (bottom && left) {
-          const c = document.createElement("div");
-          c.className = "subgrid-corner corner-bl";
-          cellEl.appendChild(c);
-        }
+        if (top && left)     cellEl.appendChild(corner("corner-tl"));
+        if (top && right)    cellEl.appendChild(corner("corner-tr"));
+        if (bottom && right) cellEl.appendChild(corner("corner-br"));
+        if (bottom && left)  cellEl.appendChild(corner("corner-bl"));
       }
     }
   }
 
-  // 3. Render dominos
+  // 3. Render dominos (overlay layer only)
   for (const d of boardState.dominos.values()) {
     if (!d.cells) continue;
 
@@ -174,6 +128,26 @@ console.log("renderBoard dominos:", [...boardState.dominos.values()]);
     const inner = createDominoElement();
     wrapper.appendChild(inner);
     renderDomino(d, wrapper);
-    boardEl.querySelector(".board-dominos").appendChild(wrapper);
+
+    dominosLayer.appendChild(wrapper);
   }
+}
+
+// ---- helpers ----
+function edge(cls) {
+  const e = document.createElement("div");
+  e.className = `subgrid-edge ${cls}`;
+  return e;
+}
+
+function bridge(cls) {
+  const b = document.createElement("div");
+  b.className = `subgrid-bridge ${cls}`;
+  return b;
+}
+
+function corner(cls) {
+  const c = document.createElement("div");
+  c.className = `subgrid-corner ${cls}`;
+  return c;
 }
