@@ -81,7 +81,6 @@ export function renderDomino(domino, wrapper) {
   // ------------------------------------------------------------
   inner.classList.remove(
     "domino-horizontal",
-    "domino-vertical",
     "half0-left",
     "half0-right",
     "half0-top",
@@ -101,14 +100,12 @@ export function renderDomino(domino, wrapper) {
       inner.classList.add("domino-horizontal");
       if (c0 < c1) inner.classList.add("half0-left");
       else         inner.classList.add("half0-right");
-    }
-  
-    if (isVertical) {
-      inner.classList.add("domino-vertical");
+    } else if (isVertical) {
       if (r0 < r1) inner.classList.add("half0-top");
       else         inner.classList.add("half0-bottom");
     }
   }
+
 
   // ------------------------------------------------------------
   // Accessibility label
