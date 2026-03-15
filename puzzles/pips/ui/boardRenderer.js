@@ -127,6 +127,10 @@ export function renderBoard(boardEl, boardState, options = {}) {
 
     const inner = createDominoElement();
     wrapper.appendChild(inner);
+    wrapper.dataset.row0 = cell0.row;
+    wrapper.dataset.col0 = cell0.col;
+    wrapper.dataset.row1 = cell1.row;
+    wrapper.dataset.col1 = cell1.col;
     renderDomino(d, wrapper);
 
     dominosLayer.appendChild(wrapper);
