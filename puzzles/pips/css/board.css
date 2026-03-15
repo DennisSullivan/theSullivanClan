@@ -60,15 +60,28 @@
 #board {
   position: relative;
   border: none;
-   
-  display: grid;
   background: var(--color-bg);
+  overflow: visible;
+  touch-action: none;
+}
+
+.board-cells {
+  display: grid;
+  grid-template-rows: repeat(var(--board-rows), var(--cell-size));
+  grid-template-columns: repeat(var(--board-cols), var(--cell-size));
+  gap: var(--cell-gap);
+}
+
+.board-dominos {
+  position: absolute;
+  inset: 0;
+
+  display: grid;
   grid-template-rows: repeat(var(--board-rows), var(--cell-size));
   grid-template-columns: repeat(var(--board-cols), var(--cell-size));
   gap: var(--cell-gap);
 
-  overflow: visible;
-  touch-action: none;
+  pointer-events: none;
 }
 
 
@@ -198,22 +211,9 @@
    6. DOMINO WRAPPER — BOARD ROOT ELEMENT
    ------------------------------------------------------------ */
 .domino-wrapper.on-board {
-  position: absolute;
+  position: relative;
   z-index: 100;
   pointer-events: auto;
-
-  /* Pixel-truth placement from JS */
-  left: calc(var(--col) * (var(--cell-size) + var(--cell-gap)));
-  top: calc(var(--row) * (var(--cell-size) + var(--cell-gap)));
-
-  /* Geometry-driven sizing */
-  width: calc(var(--col-span) * var(--cell-size)
-           + (var(--col-span) - 1) * var(--cell-gap));
-  height: calc(var(--row-span) * var(--cell-size)
-            + (var(--row-span) - 1) * var(--cell-gap));
-
-  transform: translate(var(--domino-nudge-x), var(--domino-nudge-y));
-  transform-origin: top left;
 }
 
 /* Dragging state */
