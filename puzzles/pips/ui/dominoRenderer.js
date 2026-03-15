@@ -75,44 +75,38 @@ export function renderDomino(domino, wrapper) {
     Number.isFinite(r1) &&
     Number.isFinite(c1);
 
-  // Clear any previous orientation classes
-  inner.classList.remove("domino-horizontal", "domino-vertical");
-
-  if (!coordsAreValid) {
-
-  } else {
+  // ------------------------------------------------------------
+  // Orientation + half placement (visual only)
+  // Geometry is defined in Domino Geometry Contract.
+  // ------------------------------------------------------------
+  inner.classList.remove(
+    "domino-horizontal",
+    "domino-vertical",
+    "half0-left",
+    "half0-right",
+    "half0-top",
+    "half0-bottom"
+  );
+  
+  if (coordsAreValid) {
     const sameRow = r0 === r1;
     const sameCol = c0 === c1;
     const colDelta = Math.abs(c0 - c1);
     const rowDelta = Math.abs(r0 - r1);
-
+  
     const isHorizontal = sameRow && colDelta === 1;
-    const isVertical = sameCol && rowDelta === 1;
-    const isAdjacent = isHorizontal || isVertical;
-
-    if (!isAdjacent) {
-      console.warn("renderDomino: coords are not orthogonally adjacent", {
-        id: domino?.id,
-        row0: r0,
-        col0: c0,
-        row1: r1,
-        col1: c1
-      });
-    } else {
-        inner.classList.remove(
-        "domino-horizontal",
-        "domino-vertical",
-        "half0-right",
-        "half0-bottom"
-      );
-      
-      if (isHorizontal) {
-        inner.classList.add("domino-horizontal");
-        if (c0 > c1) inner.classList.add("half0-right");
-      } else if (isVertical) {
-        inner.classList.add("domino-vertical");
-        if (r0 > r1) inner.classList.add("half0-bottom");
-      }
+    const isVertical   = sameCol && rowDelta === 1;
+  
+    if (isHorizontal) {
+      inner.classList.add("domino-horizontal");
+      if (c0 < c1) inner.classList.add("half0-left");
+      else         inner.classList.add("half0-right");
+    }
+  
+    if (isVertical) {
+      inner.classList.add("domino-vertical");
+      if (r0 < r1) inner.classList.add("half0-top");
+      else         inner.classList.add("half0-bottom");
     }
   }
 
