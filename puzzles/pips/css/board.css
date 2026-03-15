@@ -48,7 +48,7 @@
    Domino half placement (contract‑correct)
    ------------------------------------------------------------ */
 
-.domino {
+.domino-wrapper.on-board .domino {
   display: grid;
 }
 
