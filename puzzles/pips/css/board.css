@@ -44,6 +44,38 @@
    --subgrid-outline-color: #000;
 }
 
+/* ------------------------------------------------------------
+   Domino half placement (contract‑correct)
+   ------------------------------------------------------------ */
+
+.domino {
+  display: grid;
+}
+
+.domino.domino-horizontal {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+.domino.domino-vertical {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* Horizontal placement */
+.domino.domino-horizontal.half0-left  .half0 { grid-column: 1; }
+.domino.domino-horizontal.half0-left  .half1 { grid-column: 2; }
+
+.domino.domino-horizontal.half0-right .half0 { grid-column: 2; }
+.domino.domino-horizontal.half0-right .half1 { grid-column: 1; }
+
+/* Vertical placement */
+.domino.domino-vertical.half0-top    .half0 { grid-row: 1; }
+.domino.domino-vertical.half0-top    .half1 { grid-row: 2; }
+
+.domino.domino-vertical.half0-bottom .half0 { grid-row: 2; }
+.domino.domino-vertical.half0-bottom .half1 { grid-row: 1; }
+
 
 /* ------------------------------------------------------------
    2. REGION COLOR INDICES
