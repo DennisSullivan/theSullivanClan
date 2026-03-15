@@ -174,6 +174,6 @@ console.log("renderBoard dominos:", [...boardState.dominos.values()]);
     const inner = createDominoElement();
     wrapper.appendChild(inner);
     renderDomino(d, wrapper);
-    boardEl.appendChild(wrapper);
+    boardEl.querySelector(".board-dominos").appendChild(wrapper);
   }
 }
