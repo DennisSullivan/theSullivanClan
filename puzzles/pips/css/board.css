@@ -50,6 +50,8 @@
 
 .domino-wrapper.on-board .domino {
   display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
 }
 
 .domino.domino-horizontal {
