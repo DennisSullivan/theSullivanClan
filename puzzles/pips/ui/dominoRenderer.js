@@ -103,12 +103,12 @@ export function renderDomino(domino, wrapper) {
       else         inner.classList.add("half0-right");
     }
   
-    if (isHorizontal) {
+    if (isVertical) {
       inner.classList.add("domino-vertical");
       if (r0 < r1) inner.classList.add("half0-top");
       else         inner.classList.add("half0-bottom");
     }
-    console.log("isHorizontal =", isHorizontal, "and isHorizontal =", isHorizontal);
+    console.log("isHorizontal =", isHorizontal, "and isVertical =", isVertical);
   }
 
   // ------------------------------------------------------------
