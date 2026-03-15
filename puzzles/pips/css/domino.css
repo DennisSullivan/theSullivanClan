@@ -1,40 +1,34 @@
 /* ============================================================
    FILE: domino.css
-   PURPOSE: Final unified stylesheet for the two‑element DOM model.
+   PURPOSE: Domino body, tray geometry, pip grid, seam.
    CONTRACT:
-     - Wrapper handles geometry (row/col span) + rotation.
+     - Wrapper handles tray geometry + rotation.
+     - Board placement is owned by board.css.
      - Inner .domino handles orientation + pip grid.
      - Halves contain 3×3 pip grids.
      - Pip visibility driven by data-pip.
      - Center seam is a physical property of the domino body.
    ============================================================ */
 
+
 /* ------------------------------------------------------------
-   ROOT VARIABLES
+   ROOT VARIABLES (visual only — no board geometry)
    ------------------------------------------------------------ */
 :root {
-  --cell-size: 48px;
-  --cell-gap: 4px;
-
   --domino-bg: #ffffff;
   --domino-border: #000;
   --pip-color: #000;
 
   --domino-radius: 6px;
-  --transition-fast: 120ms ease-out;
-
-  /* Geometry variables set per domino by JS */
-  --row-span: 1;
-  --col-span: 2;
 }
 
+
 /* ============================================================
-   WRAPPER (geometry + placement + rotation)
+   WRAPPER (tray geometry + rotation)
    ============================================================ */
 
 .domino-wrapper {
   position: absolute;
-
   width: calc(var(--col-span) * var(--cell-size));
   height: calc(var(--row-span) * var(--cell-size));
 
@@ -59,8 +53,9 @@
   pointer-events: none;
 }
 
+
 /* ============================================================
-   INNER DOMINO (orientation + border)
+   INNER DOMINO (visual body)
    ============================================================ */
 
 .domino {
@@ -76,21 +71,13 @@
   pointer-events: none;
 }
 
-/* Orientation only */
+/* Orientation (tray only — board overrides with grid) */
 .domino.domino-horizontal {
   flex-direction: row;
 }
 
 .domino.domino-vertical {
   flex-direction: column;
-}
-
-.domino.domino-horizontal.half0-right {
-  flex-direction: row-reverse;
-}
-
-.domino.domino-vertical.half0-bottom {
-  flex-direction: column-reverse;
 }
 
 .domino-wrapper.in-tray .domino {
@@ -101,8 +88,9 @@
   box-shadow: none;
 }
 
+
 /* ============================================================
-   CENTER SEAM — PHYSICAL DOMINO DIVIDER
+   CENTER SEAM
    ============================================================ */
 
 .domino::after {
@@ -130,11 +118,7 @@
   transform: translateY(-0.5px);
 }
 
-/* ------------------------------------------------------------
-   TRAY / DEFAULT SEAM (no geometry available)
-   ------------------------------------------------------------ */
-
-/* Default to horizontal seam when no orientation class exists */
+/* Default seam when no orientation known */
 .domino:not(.domino-horizontal):not(.domino-vertical)::after {
   width: 1px;
   height: 100%;
@@ -142,6 +126,7 @@
   top: 0;
   transform: translateX(-0.5px);
 }
+
 
 /* ============================================================
    HALVES (3×3 pip grid)
@@ -159,8 +144,9 @@
   box-sizing: border-box;
 }
 
+
 /* ============================================================
-   PIPS (7-position grid)
+   PIPS
    ============================================================ */
 
 .domino .pip {
@@ -185,8 +171,9 @@
   height: calc(var(--cell-size) * 0.105);
 }
 
+
 /* ============================================================
-   PIP ACTIVATION RULES
+   PIP ACTIVATION
    ============================================================ */
 
 .domino .half[data-pip="0"] .pip { opacity: 0; }
@@ -218,21 +205,6 @@
 .domino .half[data-pip="6"] .p6,
 .domino .half[data-pip="6"] .p7 { opacity: 1; }
 
-/* ============================================================
-   BOARD CELLS
-   ============================================================ */
-
-.board-cell {
-  width: var(--cell-size);
-  height: var(--cell-size);
-  background: #eee;
-  border-radius: 4px;
-  position: relative;
-}
-
-.board-cell.blocked {
-  background: #bbb;
-}
 
 /* ============================================================
    TRAY SLOTS
