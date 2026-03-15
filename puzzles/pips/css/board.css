@@ -23,14 +23,11 @@
 
   --transition-fast: 120ms ease-out;
 
-  /* Static nudge:
-     (cell-gap/2) + (grid-/2) - (domino-/2)
-     Defaults → 2px
-  */
+  /* Static nudge */
   --domino-nudge-x: 2px;
   --domino-nudge-y: 2px;
 
-  /* Region color palette (renderer‑assigned) */
+  /* Region color palette */
   --color-region-0: #e8f0ff;
   --color-region-1: #e8ffe8;
   --color-region-2: #fff4e8;
@@ -40,9 +37,10 @@
   --row-span: 1;
   --col-span: 2;
 
-   /* Mini puzzle outline color */
-   --subgrid-outline-color: #000;
+  /* Mini puzzle outline color */
+  --subgrid-outline-color: #000;
 }
+
 
 /* ------------------------------------------------------------
    Domino half placement (contract‑correct)
@@ -147,7 +145,6 @@
   background: #ffffff;
   pointer-events: none;
   z-index: 15;
-/*  outline: 1px solid red; */
 }
 
 .subgrid-edge {
@@ -177,7 +174,6 @@
 .edge-left  { left: 0; }
 .edge-right { right: 0; }
 
-/* Mini puzzle outline color */
 .subgrid-corner {
   position: absolute;
   width: 6px;
@@ -189,7 +185,6 @@
   z-index: 20;
 }
 
-/* Place corners at the true cell corners */
 .corner-tl { top: 0; left: 0; border-right: none; border-bottom: none; border-top-left-radius: 6px; }
 .corner-tr { top: 0; right: 0; border-left:  none; border-bottom: none; border-top-right-radius: 6px; }
 .corner-br { bottom: 0; right: 0; border-left: none; border-top:    none; border-bottom-right-radius: 6px; }
@@ -203,11 +198,9 @@
   border-radius: 2px;
 }
 
-/* Horizontal bridges across the grid gap */
 .bridge-top    { top: 0;    left: 100%; width: var(--cell-gap); height: 2px; }
 .bridge-bottom { bottom: 0; left: 100%; width: var(--cell-gap); height: 2px; }
 
-/* Vertical bridges across the grid gap */
 .bridge-left  { left: 0;  top: 100%; height: var(--cell-gap); width: 2px; }
 .bridge-right { right: 0; top: 100%; height: var(--cell-gap); width: 2px; }
 
@@ -251,7 +244,6 @@
   pointer-events: auto;
 }
 
-/* Dragging state */
 .domino-wrapper.dragging {
   z-index: 1000;
   pointer-events: none;
@@ -293,14 +285,6 @@
 /* ------------------------------------------------------------
    9. DEBUG HELPERS
    ------------------------------------------------------------ */
-.domino-wrapper.on-board.debug-outline {
-/*  outline: 1px dashed rgba(255,0,0,0.6); */
-}
-
-.domino-wrapper.debug-outline .domino {
-/*  outline: 1px solid rgba(0,255,0,0.6); */
-}
-
-.board-cell.debug-outline {
-/*  outline: 1px dotted rgba(0,0,255,0.25); */
-}
+.domino-wrapper.on-board.debug-outline {}
+.domino-wrapper.debug-outline .domino {}
+.board-cell.debug-outline {}
