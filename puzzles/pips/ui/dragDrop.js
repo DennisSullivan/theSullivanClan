@@ -110,7 +110,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     inner.classList.remove(
       "domino-horizontal",
       "domino-vertical",
-      "half0-right",
+      "half1-left",
       "half0-bottom"
     );
 
@@ -122,7 +122,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     if (isHorizontal) {
       inner.classList.add("domino-horizontal");
-      if (col0 > col1) inner.classList.add("half0-right");
+      if (col0 > col1) inner.classList.add("half1-left");
     } else if (isVertical) {
       inner.classList.add("domino-vertical");
       if (row0 > row1) inner.classList.add("half0-bottom");
