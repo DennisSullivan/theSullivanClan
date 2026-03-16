@@ -83,7 +83,7 @@ export function renderDomino(domino, wrapper) {
     "domino-horizontal",
     "domino-vertical",
     "half0-left",
-    "half0-right",
+    "half1-left",
     "half0-top",
     "half0-bottom"
   );
@@ -100,7 +100,7 @@ export function renderDomino(domino, wrapper) {
     if (isHorizontal) {
       inner.classList.add("domino-horizontal");
       if (c0 < c1) inner.classList.add("half0-left");
-      else         inner.classList.add("half0-right");
+      else         inner.classList.add("half1-left");
     }
   
     if (isVertical) {
