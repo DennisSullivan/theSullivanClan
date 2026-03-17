@@ -112,7 +112,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       "domino-vertical",
       "half0-left",
       "half1-left",
-      "half0-top"
+      "half0-top",
       "half0-bottom"
     );
 
