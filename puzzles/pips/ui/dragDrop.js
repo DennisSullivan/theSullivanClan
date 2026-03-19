@@ -174,14 +174,12 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const dc = snap.col1 - snap.col0;
 
     const { dx, dy } = snap.pointerOffset;
-    const boardRect = boardEl.getBoundingClientRect();
-
     const centerScreen = {
       x: ev.clientX - dx,
       y: ev.clientY - dy
     };
 
-    boardRect = boardEl.getBoundingClientRect();
+    const boardRect = boardEl.getBoundingClientRect();
     const inside =
       centerScreen.x >= boardRect.left &&
       centerScreen.x <= boardRect.right &&
@@ -286,15 +284,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
 
     if (![row0, col0, row1, col1].every(Number.isFinite)) return reset();
 
-    const center = getDominoCenterScreen(wrapper);
-
-    const pointerOffset = {
-      dx: ev.clientX - center.x,
-      dy: ev.clientY - center.y
-    };
-    
-    const centerScreen = center;
-
+    const centerScreen = { x: ev.clientX, y: ev.clientY };
+    const pointerOffset = { dx: 0, dy: 0 };
     const source = trayEl.contains(wrapper) ? "tray" : "board";
 
     state.snapshot = {
