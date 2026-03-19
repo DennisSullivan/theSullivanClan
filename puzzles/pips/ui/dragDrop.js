@@ -174,6 +174,8 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
     const dc = snap.col1 - snap.col0;
 
     const { dx, dy } = snap.pointerOffset;
+    const boardRect = boardEl.getBoundingClientRect();
+
     const centerScreen = {
       x: ev.clientX - dx,
       y: ev.clientY - dy
