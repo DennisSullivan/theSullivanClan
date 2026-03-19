@@ -181,7 +181,7 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       y: ev.clientY - dy
     };
 
-    const boardRect = boardEl.getBoundingClientRect();
+    boardRect = boardEl.getBoundingClientRect();
     const inside =
       centerScreen.x >= boardRect.left &&
       centerScreen.x <= boardRect.right &&
