@@ -132,25 +132,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       inner.classList.add("domino-vertical");
       if (row0 > row1) inner.classList.add("half0-bottom");
     }
-    // Tray drag: half identity must be explicit.
-    // Geometry inference is invalid for 180° / 270°.
-    if (state.snapshot?.source === "tray" &&
-        state.snapshot.trayOrientation != null) {
-    
-      const o = state.snapshot.trayOrientation % 360;
-    
-      inner.classList.remove(
-        "half0-left",
-        "half1-left",
-        "half0-top",
-        "half0-bottom"
-      );
-    
-      if (o === 0)        inner.classList.add("half0-left");
-      else if (o === 90)  inner.classList.add("half0-top");
-      else if (o === 180) inner.classList.add("half1-left");
-      else                inner.classList.add("half0-bottom"); // 270
-    }
   }
 
   // ------------------------------------------------------------
@@ -322,11 +303,6 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
       row0, col0,
       row1, col1,
       pointerOffset
-
-      // Tray orientation is authoritative during drag.
-      trayOrientation: trayEl.contains(wrapper)
-        ? Number(wrapper.dataset.trayOrientation)
-        : null
     };
 
     logSnapshot(state.snapshot);
