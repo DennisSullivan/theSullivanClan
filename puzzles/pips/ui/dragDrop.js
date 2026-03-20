@@ -147,14 +147,23 @@ export function installDragDrop({ boardEl, trayEl, rows, cols }) {
   function createClone(wrapper, centerScreen) {
     const clone = wrapper.cloneNode(true);
     clone.classList.add("domino-drag-clone");
-
+  
+    // Keep clone geometry stable in viewport space
+    clone.style.position = "fixed";
     clone.style.left = `${centerScreen.x}px`;
-    clone.style.top = `${centerScreen.y}px`;
-
-    clone.style.transform = "";
-    clone.style.removeProperty("transform");
+    clone.style.top  = `${centerScreen.y}px`;
+  
+    // IMPORTANT: do not let inner domino use on-board absolute positioning
+    const inner = clone.querySelector(".domino");
+    if (inner) {
+      inner.classList.remove("on-board");
+      inner.classList.add("in-tray"); // or a dedicated "drag" class
+    }
+  
+    // Optional: if you have a center-anchor transform in CSS, don't wipe it
+    // clone.style.removeProperty("transform");
+  
     clone.classList.remove("in-tray", "on-board");
-
     document.body.appendChild(clone);
     return clone;
   }
